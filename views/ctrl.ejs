@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <link rel="stylesheet" type="text/css" href="/stylesheets/style.css" media="all">
+    <meta name="viewport" content="width=device-width, user-scalable=no">
+    <title><%= title %></title>
+  </head>
+  <body id="body">
+    <script src="/javascripts/jquery-1.11.0.js"></script>
+    <script type="text/javascript" src="/javascripts/waapisim.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+<h1>id ctrl</h1>
+  <ul id="trans_ctrl">
+  </ul><br>
+<h1>all ctrl</h1>
+<p>
+  selector: 
+   stream<input type="checkbox" value="stream" class="selector">  
+   buffer<input type="checkbox" value="buff" class="selector">  
+   recorded<input type="checkbox" value="recorded" class="selector">  
+   fieldrec<input type="checkbox" value="fieldrec" class="selector">  
+   empty<input type="checkbox" value="empty" class="selector">  
+    <input type="range" value="1" min="1" max="30" step="1" id="empty_selector"> <span id="empty_val">1</span>
+  <br>
+  trans | <span id="all_emit">input mode: all<input type="radio" value="all" class="emit_mode" name="emit_all"> broadcast<input type="radio" value="broadcast" class="emit_mode" name="emit_all"> nextdoor<input type="radio" value="nextdoor" class="emit_mode" name="emit_all"> random<input type="radio" value="random" class="emit_mode" name="emit_all"> self<input type="radio" value="self" class="emit_mode" name="emit_all"> noemit<input type="radio" value="no_emit" class="emit_mode" name="emit_all"></span>  
+  <br>
+  <span id="all_buff">buff: <input type="checkbox" value="buff" class="checkbox_mode" name="buff_all"></span> <span id="buffclear" class="clickCtrl" name="buffClear">clear</span>
+   | <span id="all_receive">receive: <input type="checkbox" value="receive" class="checkbox_mode" name="recv_all"></span>
+   | <span id="all_play">play: <input type="checkbox" value="play" class="checkbox_mode" name="play_all"></span>
+  <br>
+  <span id="samplerate">sample rate: 11025<input type="radio" value="11025" name="rate_all" class="sampleRate"> 22050<input type="radio" value="22050" name="rate_all" class="sampleRate" checked> 44100<input type="radio" value="44100" name="rate_all" class="sampleRate"> 88200<input type="radio" value="88200" name="rate_all" class="sampleRate"></span>
+  <br>
+  <span> buffer size: 256<input type="radio" value="256" name="buff_all" class="bufferSize"> 1024<input type="radio" value="1024" name="buff_all" class="bufferSize"> 4096<input type="radio" value="4096" name="buff_all" class="bufferSize"> 8192<input type="radio" value="8192" name="buff_all" class="bufferSize"> 16384<input type="radio" value="16384" name="buff_all" class="bufferSize"></span> 
+  <br>
+  <span id="reset" name="buffClear">client buffer clear</span>
+</p>
+<p>
+  streamBuff: <span id="streamBuff_length"></span>
+  <br>
+  recordedBuff: "<span id="recordedBuff_name"></span>" : <span id="recordedBuff_length"></span>
+  <br>
+  fieldrecBuff: "<span id="fieldrecBuff_name"></span>" : <span id="fieldrecBuff_length"></span>
+</p>
+  <h1 class="h1" name="audio_import">audio import</h1>
+  <p class="audio_import">audio file send<br>
+  file name:<input type="text" id="fileName" value="test.wav"> <span id="fileSend" name="fieldrec">as fieldrec</span> <span id="fileSend" name="recorded">as recorded</span>
+  <br>
+  <span name="audioClear" class="clickCtrl">audio clear</span>
+  </p>
+  <h1 class="h1" name="oscillator">oscillator;</h1>
+  <p class="oscillator">
+  volume: <input type="checkbox" name="osc_swt_all" class="osc_ctrl_checkbox">  
+  <input type="text" name="osc_vol_all" class="osc_ctrl" size="1" value="0.5"><input type="range" name="osc_vol_all" class="osc_ctrl" min="0" max="1" step="0.1" value="0">
+  <br>
+　pitch; <input type="text" name="osc_frq_all" class="osc_ctrl" size="4" value="440"> <input type="range" name="osc_frq_all" class="osc_ctrl" min="20" max="20000" step="1" value="440">
+  <br>
+  portament;  <input type="text" name="osc_prt_all" class="osc_ctrl" size="4" value="0.1"> <input type="range" name="osc_prt_all" class="osc_ctrl" min="0" max="20" step="0.1" value="0.1">
+  <br>
+  difftype; <input type="radio" value="none" name="osc_frd_all" class="osc_ctrl_radio">none <input type="radio" value="mod" name="osc_frd_all" class="osc_ctrl_radio">modulation <input type="radio" value="hrmn" name="osc_frd_all" class="osc_ctrl_radio">harmony | val<input type="range" id="osc_diff_val" class="osc_prm" min="1" max="5" value="1"> <span id="osc_diff_val_txt">1</span> | base pitch <input type="range" id="osc_diff_frq" class="osc_prm" min="20" max="10000" value="440"> <span id="osc_diff_frq_txt">440</span>
+  <br>
+  Latency; <input type="range" name="osc_ltc_all" class="osc_ctrl" min="0" max="100" value="0"> | random:<input type="checkbox" name="osc_lrd_all" id="osc_latency_random">
+  </p>
+
+
+  <br>
+  <h1 class="h1" name="debug">debug</h1>
+  <p class="debug">
+    <span id="vlChk">all value check</span>
+    <br>
+    stream on console: <input type="checkbox" value="0" class="consoleCtrl">
+    <br>
+    reset: <span id="reset" name="allClear">all clear</span> <span id="reset" name="buffClear">buffer clear</span>
+  </p>
+  <p class="debug">debug click</p>
+  <h1 class="h1" name="recorderjs">recorder</h1>
+  <p class="recorderjs">
+  <input type="checkbox" name="rec" class="recorder">
+  url: <ul id="rec_url"></ul>
+  </p>
+  <h1>usage</h1>
+  <p>
+  on client
+  <ul>
+  <li>"S" or space key...all stop</li>
+  <li>"P"...playMode off/on</li>
+  <li>"R"...receiveMode off/on</li>
+  <li>"E"...emit_flag off/on</li>
+  <li>"N"...reconnect</li>
+  </ul>
+  on ctrl
+  <ul>
+  <li>"S"...oneshot</li>
+  </ul>
+  </p>
+    <script type="text/javascript">
+      var socket = io.connect();
+    </script>
+    <script type="text/javascript" src="/javascripts/ctrl.js"></script>
+    <script type="text/javascript" src="/javascripts/ctrl_ui.js"></script>
+    <script type="text/javascript" src="/javascripts/ctrl_osc.js"></script>
+<% include head/footer %>
