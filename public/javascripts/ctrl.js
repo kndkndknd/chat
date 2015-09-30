@@ -43,6 +43,22 @@ $(function() {
     });
   });
 });
+$(function() {
+  $(document).on('click', '.radio_mode', function(){
+    var targetId = $(this).attr('name').slice(5);
+    var type = $(this).attr('name').substr(0,4);
+    /*
+    if(type === "scrn") {
+      var mode = ($'input[name="' + type + '_' + targetId + '"]:checked').val();
+    }*/
+    var mode = $('input[name="' + type + '_' + targetId + '"]:checked').val();
+    socket.json.emit('modeCtrl_from_client', {
+      type: type,
+      target: targetId,
+      mode: mode
+    });
+  });
+});
 
 $(function() {
   $(document).on('click', '#buffclear', function(){
@@ -125,6 +141,25 @@ $(function() {
 });
 
 $(function() {
+  $(document).on('change', '.bpm', function(){
+    var targetId = $(this).attr('name').slice(5);
+    var seqBPM = $(this).val();
+//    $('.bpm_txt').html(seqBPM);
+    var sendval;
+    if(seqBPM === "0") {
+      sendval = 0;
+    } else {
+      sendval = Math.floor(15000/seqBPM);
+    }
+    socket.json.emit('modeCtrl_from_client', {
+      type: "BPM",
+      target: targetId,
+      mode: sendval
+    });
+  });
+});
+
+$(function() {
   $(document).on('click', '.oneshot', function(){
     var id = $(this).attr('id');
     var type = id.substr(8,4);
@@ -150,6 +185,18 @@ $(function() {
   });
 });
 
+$(function() {
+  $(document).on('change', '.file_select', function(){
+    if($(this).val() != ""){
+    var url = "./public/files/" + $(this).val();
+    var target = $(this).attr('name');
+    socket.emit('importReq_from_client', {
+      target: target,
+      url: url
+    });
+    }
+  });
+});
 
 $(function() {
   $(document).on('click', '.recorder', function(){
@@ -180,3 +227,4 @@ $(function() {
     socket.emit('debugCtrl_from_client', {type:"valueCheck"});
   });
 });
+

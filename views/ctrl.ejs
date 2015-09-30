@@ -24,9 +24,14 @@
   <br>
   trans | <span id="all_emit">input mode: all<input type="radio" value="all" class="emit_mode" name="emit_all"> broadcast<input type="radio" value="broadcast" class="emit_mode" name="emit_all"> nextdoor<input type="radio" value="nextdoor" class="emit_mode" name="emit_all"> random<input type="radio" value="random" class="emit_mode" name="emit_all"> self<input type="radio" value="self" class="emit_mode" name="emit_all"> noemit<input type="radio" value="no_emit" class="emit_mode" name="emit_all"></span>  
   <br>
+  screen: <input type="radio" value="video" class="radio_mode" name="scrn_all">video <input type="radio" value="flash" class="radio_mode" name="scrn_all">flash <input type="radio" value="spectrum" class="radio_mode" name="scrn_all">spectram
+
+  <br>
   <span id="all_buff">buff: <input type="checkbox" value="buff" class="checkbox_mode" name="buff_all"></span> <span id="buffclear" class="clickCtrl" name="buffClear">clear</span>
    | <span id="all_receive">receive: <input type="checkbox" value="receive" class="checkbox_mode" name="recv_all"></span>
    | <span id="all_play">play: <input type="checkbox" value="play" class="checkbox_mode" name="play_all"></span>
+  <br>
+  sequence: <input type="range" min="0" max="120" step="1" value="0" class="bpm" name="beat_all"> <span class="bpm_txt" name="beattxt_all">0</span>
   <br>
   <span id="samplerate">sample rate: 11025<input type="radio" value="11025" name="rate_all" class="sampleRate"> 22050<input type="radio" value="22050" name="rate_all" class="sampleRate" checked> 44100<input type="radio" value="44100" name="rate_all" class="sampleRate"> 88200<input type="radio" value="88200" name="rate_all" class="sampleRate"></span>
   <br>
@@ -43,10 +48,17 @@
 </p>
   <h1 class="h1" name="audio_import">audio import</h1>
   <p class="audio_import">audio file send<br>
-  file name:<input type="text" id="fileName" value="test.wav"> <span id="fileSend" name="fieldrec">as fieldrec</span> <span id="fileSend" name="recorded">as recorded</span>
-  <br>
+  recorded;<select class="file_select" name="recorded">
+    <% for(var i=0;i<recordedFile.length;i++){ %>
+    <option value="<%= recordedFile[i] %>"><%= recordedFile[i] %></option>
+    <% } %>
+  </select>
+  fieldrec;<select class="file_select" name="fieldrec">
+    <% for(var i=0;i<recordedFile.length;i++){ %>
+    <option value="<%= recordedFile[i] %>"><%= recordedFile[i] %></option>
+    <% } %>
+  </select><br>
   <span name="audioClear" class="clickCtrl">audio clear</span>
-  </p>
   <h1 class="h1" name="oscillator">oscillator;</h1>
   <p class="oscillator">
   volume: <input type="checkbox" name="osc_swt_all" class="osc_ctrl_checkbox">  
@@ -91,8 +103,15 @@
   <ul>
   <li>"S"...oneshot</li>
   </ul>
+  recorded files
+  <ul id="rF">
+    <% for(var i=0;i<recordedFile.length;i++){ %>
+    <li><%= recordedFile[i] %></li>
+    <% } %>
+  </ul>
   </p>
     <script type="text/javascript">
+      var recordedFile = <%- JSON.stringify(recordedFile) %>;
       var socket = io.connect();
     </script>
     <script type="text/javascript" src="/javascripts/ctrl.js"></script>

@@ -1,37 +1,46 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <link rel="stylesheet" type="text/css" href="/stylesheets/style.css" media="all">
-    <title><%= title %></title>
-  </head>
-  <body id="body">
-    <script src="/javascripts/jquery-1.11.0.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
-<div id="wrapper">
-<canvas id="cnvs">
-canvas not applied.
-</canvas>
-</div>
+<head>
+  <link rel="stylesheet" type="text/css" href="/stylesheets/style.css" media="all">
+  <title><%= title %></title>
+</head>
+<body id="body">
+  <script src="/javascripts/jquery-1.11.0.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <div id="wrapper">
+  <video id="video" style="display:none;"></video>
+  <canvas id="cnvs">
+    canvas not applied.
+  </canvas>
+  </div>
   <script type="text/javascript">
-    var socket = io.connect();
-    var speak_flag = <%= init_speak %>;
-    var sampleRate = <%= init_rate %>;
-    var bufferSize = <%= init_size %>;
-    var jumpBit = <%= init_jump %>;
-    var emitMode = <%- JSON.stringify(emitMode) %>;
-    var receiveMode = <%= receiveMode %>;
-    var playMode = <%= playMode %>;
-    var decay = Math.floor((1000*bufferSize)/sampleRate);
-    var oscVolume = <%= init_osc_vol %>;
-    var oscPitch = <%= init_osc_pitch %>;
-    var oscPortament = <%= init_osc_portament %>;
-    var oscDifftype = <%= init_osc_difftype %>;
-    var oscDiffval = <%= init_osc_diffval %>;
-    var oneshotBuff = [];
+  var socket = io.connect();
+  var speak_flag = <%= init_speak %>;
+  var sampleRate = <%= init_rate %>;
+  var bufferSize = <%= init_size %>;
+  var jumpBit = <%= init_jump %>;
+  var emitMode = <%- JSON.stringify(emitMode) %>;
+  var receiveMode = <%= receiveMode %>;
+  var playMode = <%= playMode %>;
+  var decay = Math.floor((1000*bufferSize)/sampleRate);
+  var oscVolume = <%= init_osc_vol %>;
+  var oscPitch = <%= init_osc_pitch %>;
+  var oscPortament = <%= init_osc_portament %>;
+  var oscDifftype = <%- JSON.stringify(init_osc_difftype) %>;
+  var oscDiffval = <%= init_osc_diffval %>;
+  var seqBPM = 0;
+  var oneshotBuff = [];
+  var video;
+  var buffer;
+  var bufferContext;
+  var image;
+  var receive;
+  var receive_ctx;
+  var scrnMode;
   </script>
   <script src="/javascripts/keyboard.js"></script>
-  <script src="/javascripts/getusermedia.js"></script>
   <script src="/javascripts/canvas.js"></script>
+  <script src="/javascripts/getusermedia.js"></script>
   <script src="/javascripts/osc.js"></script>
   <script src="/javascripts/sock.js"></script>
   <script src="/javascripts/Recorderjs/recorder.js"></script>

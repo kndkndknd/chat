@@ -1,19 +1,21 @@
 
 
-exports.emtCtrl = function emitCtrl(id, stream, emitMode, io, socket){
+exports.emtCtrl = function emitCtrl(id, stream, emitMode, io, socket, video){
   var transList = io.sockets.adapter.rooms.trans;
   if(emitMode == "all"){
 //    socket.to('trans').emit('stream_from_server',{
     io.sockets.to('trans').emit('stream_from_server',{
       id: id,
-      stream: stream
+      stream: stream,
+      video: video
     });
 //    console.log("emit all from " + id);
   } else if(emitMode == "broadcast"){
     socket.broadcast.to('trans').emit('stream_from_server', {
     //socket.broadcast.emit('stream_from_server', {
       id: id,
-      stream: stream
+      stream: stream,
+      video: video
     });
     //socket.broadcast.emit('debug_from_server', id);
 //    console.log("emit broadcast from " + id);
@@ -21,7 +23,8 @@ exports.emtCtrl = function emitCtrl(id, stream, emitMode, io, socket){
     socket.emit('stream_from_server', {
     //socket.to(id).json.emit('stream_from_server', {
       id: id,
-      stream: stream
+      stream: stream,
+      video: video
     });
 //    console.log("emit to self from " + id);
   } else if(emitMode == "nextdoor"){
@@ -45,7 +48,8 @@ exports.emtCtrl = function emitCtrl(id, stream, emitMode, io, socket){
     };*/
     socket.to(target).json.emit('stream_from_server', {
       id: id,
-      stream: stream
+      stream: stream,
+      video: video
     });
 //    console.log("emit to next door from " + id);
   } else if(emitMode == "random"){
@@ -57,42 +61,49 @@ exports.emtCtrl = function emitCtrl(id, stream, emitMode, io, socket){
     var target = arr[Math.floor(Math.random() * arr.length)];
     socket.to(target).json.emit('stream_from_server', {
       id: id,
-      stream: stream
+      stream: stream,
+      video: video
     });
 //    console.log("emit random from " + id);
   }
 }
 
-exports.slctCtrl = function selectControl(selector, stream, streamBuff, recordedBuff, fieldrecBuff) {
-  var rtn;
+exports.slctCtrl = function selectControl(selector, stream, streamBuff, recordedBuff, fieldrecBuff, videoBuff,video, recImg) {
+  var rtn = [];
+  //var rtn;
   var r = Math.random();
   var n = selector.length;
   var m = n;
   for(var i=0;i<n;i++){
     if(selector[i]==="stream"){
       if(r < (m/n)){
-        rtn = stream;
+        rtn = [stream,video];
         m--;
       }
     } else if(selector[i]==="buff"){
       if(r < (m/n)){
-        rtn = streamBuff.shift();
-        streamBuff.push(rtn);
+        //rtn = streamBuff.shift();
+        var i = Math.floor(Math.random() * streamBuff.length);
+        rtn = [streamBuff[i],videoBuff[i]];
+        //rtn = [streamBuff.shift(),videoBuff.shift()];
+        //streamBuff.push(rtn[0]);
       }
       m--;
     } else if(selector[i]==="recorded"){
       if(r < (m/n))
-        rtn = recordedBuff.shift();
-        recordedBuff.push(rtn);
+        //rtn = [recordedBuff.shift(),"spectrum"];
+        rtn = [recordedBuff[Math.floor(Math.random() * recordedBuff.length)], recImg];
+        //recordedBuff.push(rtn[0]);
       m--;
     } else if(selector[i]==="fieldrec"){
       if(r < (m/n))
-        rtn = fieldrecBuff.shift();
-        fieldrecBuff.push(rtn);
+        rtn = [fieldrecBuff[Math.floor(Math.random() * fieldrecBuff.length)], "spectrum"];
+        //rtn = [fieldrecBuff.shift(),"spectrum"];
+        //fieldrecBuff.push(rtn);
       m--;
     } else if(selector[i]==="empty"){
       if(r < (m/n))
-        rtn = new Float32Array(8192);
+        rtn = [new Float32Array(8192), "none"];
       m--;
     }
   }
@@ -114,7 +125,13 @@ exports.ctrlCtrl = function controlCtrl(socket, io, transroom, target, mode, typ
       socket.to(target).json.emit('playCtrl_from_server', mode);
     } else if (type === "server") {
       socket.to(target).json.emit('serverCtrl_from_server', mode);
+    } else if (type === "scrn") {
+      socket.to(target).json.emit('scrnCtrl_from_server', mode);
+    } else {
+      socket.to(target).json.emit(type + "Ctrl_from_server", mode);
     }
+
+      
     if (target in transroom) {
       transroom[target][type + "Mode"] = mode;
     }
@@ -165,7 +182,7 @@ exports.sttsCtrl = function statusCtrl(json, socket, io, selfieroom, transroom,c
         model = "iphone";
       }
       //transHashに追加
-      transroom[socket.id] = {sampleRate: json.sampleRate, emitMode: json.emitMode, receiveMode: json.receiveMode, playMode: json.playMode, model: model, serverMode: json.serverMode};
+      transroom[socket.id] = {sampleRate: json.sampleRate, emitMode: json.emitMode, receiveMode: json.receiveMode, playMode: json.playMode, model: model, serverMode: json.serverMode, scrnMode: json.scrnMode, BPMMode: json.BPMMode};
       socket.emit('status_from_server_id', socket.id);
     }
     if(io.sockets.adapter.rooms.selfie != undefined) {

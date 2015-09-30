@@ -14,6 +14,7 @@ $('#emitmode').val(emitMode);
 $('#receivemode').val(receiveMode);
 
 var streamBuffer = [];
+var videoBuffer = [];
 var mic_flag = true;
 var rec_flag = false;
 var recorder = null;
@@ -24,6 +25,8 @@ var self_flag = false;
 var emit_flag;
 var play_flag;
 var receive_flag;
+
+
 if(emitMode != "no_emit") {
   emit_flag = true;
 } else {
@@ -46,7 +49,12 @@ function playAudioStream(flo32arr) {
   audio_src.connect(audioContext.destination);
   
   audio_src.connect(analyser);
-  onScreenProcess();
+  if(scrnMode === "video" || scrnMode === "flash"){
+    playVideo(videoBuffer.shift());
+  }else{
+    onScreenProcess();
+  }
+  //sendVideo();
   audio_src.start(0);
 }
 
@@ -65,9 +73,14 @@ function onAudioProcess(e) {
           j = j + jumpBit;
       }
       if(emit_flag) {
-        emitStream(bufferData, emitMode);
+        if(scrnMode){
+          var emitVideo = sendVideo();
+          emitStream(bufferData, emitMode, emitVideo);
+        } else {
+          emitStream(bufferData, emitMode, "");
+        }
       }
-      if(playMode){
+      if(playMode && seqBPM === 0){
         if(serverMode){
           if(Math.random()<0.4)
             playAudioStream(streamBuffer.shift());
@@ -77,19 +90,26 @@ function onAudioProcess(e) {
       }
     }
 
-  $('#buffer').html(streamBuffer.length);
+  //$('#buffer').html(streamBuffer.length);
 }
 
 function initialize() {
   var javascriptnode = audioContext.createScriptProcessor(8192, 1, 1);
 
 	navigator.getUserMedia(
-		{video : false, audio : true},
+		{video : true, audio : true},
 		function(stream) {
 		  var mediastreamsource;
 			mediastreamsource = audioContext.createMediaStreamSource(stream);
     	mediastreamsource.connect(javascriptnode);
-      recorder = new Recorder(mediastreamsource, { workerPath: '/javascripts/Recorderjs/recorderWorker.js' });
+    //  recorder = new Recorder(mediastreamsource, { workerPath: '/javascripts/Recorderjs/recorderWorker.js' });
+      //
+      //video
+      video = document.getElementById('video');
+      video.src = window.URL.createObjectURL(stream);
+      video.play();
+      video.volume = 0;
+      renderStart();
 		},
 		function(e) {
 			console.log(e);
@@ -98,6 +118,10 @@ function initialize() {
 //javascriptnodeにダミーのインプットをつながないとiOSは音が出ないとのこと。
   javascriptnode.onaudioprocess = onAudioProcess;
 	javascriptnode.connect(audioContext.destination);
+  //video
+  image = document.createElement("img");
+  receive = document.getElementById("cnvs");
+  receive_ctx = receive.getContext("2d");
 }
 
 window.addEventListener("load", initialize, false);
@@ -117,5 +141,27 @@ var wavExported = function(blob) {
 function onScreenProcess() {
   var data = new Uint8Array(256);
   analyser.getByteFrequencyData(data);
+  //console.log(data);
   redraw(data[148],data[102],data[44]);
 }
+
+var sequencer;
+function startSeq(bpm){
+  sequencer = setInterval(function(){
+    playAudioStream(streamBuffer.shift());
+  }, bpm);
+  console.log(sequencer);
+  /*
+  var deleteNum = Math.floor(bpm/(bufferSize/sampleRate)) - 1;
+  console.log(deleteNum);
+  streamBuffer.splice(0,deleteNum);
+  videoBuffer.splice(0,deleteNum);
+  */
+}
+function stopSeq(){
+  clearInterval(sequencer);
+  console.log(sequencer);
+  streamBuffer = [];
+  videoBuffer = [];
+}
+

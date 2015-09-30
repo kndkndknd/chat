@@ -8,6 +8,7 @@ var express = require ('express'),
 var fs = require('fs');
 var expo = require('./export.js');
 var pcm = require('pcm');
+var images = require('./public/files/image.json');
 
 //初期値　emittypeとspeak_flag要らないのでは。。。
 var emittype = 2;
@@ -24,6 +25,7 @@ var buffMode = false;
 var transHash = {},
     selfieHash = {};
 var streamBuff = [];
+var videoBuff = [];
 var fileBuff = []; //不要？
 var recordedBuff = {"name": "none", "arr":[]};
 var fieldrecBuff = {"name": "none", "arr":[]};
@@ -34,6 +36,7 @@ var selfieroom = {},
     ctrlroom = {};
 var oscroom = {};
 var loadBuff = [];
+var recordedFile = [];
 
 var selector = ["stream"]; //all/stream/buff/recorded/empty
 
@@ -52,17 +55,55 @@ app.use(app.router);
 app.use(express.static(path.join(__dirname, 'public')));
 
 //routing
+/*
+fs.readdir('./public/files', function(err, files){
+  if (err) throw err;
+  files.forEach(function (file) {
+    recordedFile.push(file);
+  });
+});*/
 
 app.get('/ctrl', function(req, res){
+  var arr = [""];
+
+  fs.readdir('./public/files', function(err, files){
+    if (err) throw err;
+    files.forEach(function (file) {
+      arr.push(file);
+      console.log(file);
+    });
   res.render('ctrl', {
-    title: 'ctrl'
+    title: 'ctrl',
+    //recordedFile: recordedFile
+    recordedFile: arr
   });
+
+  });
+/*
+  console.log(arr);
+  res.render('ctrl', {
+    title: 'ctrl',
+    //recordedFile: recordedFile
+    recordedFile: arr
+  });*/
 });
 
 app.get('/rec', function(req, res){
   res.render('rec',{
     title: 'wav recording',
     buff: recordedBuff["arr"].shift()
+  });
+});
+
+app.get('/video', function(req, res){
+  res.render('video',{
+    title: 'video test'
+  });
+});
+
+app.get('/video_r', function(req, res){
+  res.render('video_receive',{
+    title: 'video test'
   });
 });
 
@@ -104,18 +145,34 @@ io.sockets.on('connection', function(socket) {
     }
   });
 
-  //for feedback
+  //for video(debug)
+  /* 
+  socket.on('video_from_client', function(data) {
+    console.log(data);
+    //io.sockets.emit('video_from_server', data);
+    socket.broadcast.emit('video_from_server', data);
+  });*/
 
   //for trans feedback
   //フィードバックのパケット受信・送信
   socket.on('stream_from_client', function(data) {
-    if(streamConsole) 
-      console.log(data.stream[0]);
-    if(buffMode)
+    //console.log(data.video);
+    if(buffMode){
       streamBuff.push(data.stream);
-    var strm = expo.slctCtrl(selector, data.stream, streamBuff, recordedBuff["arr"], fieldrecBuff["arr"]);
-    expo.emtCtrl(socket.id, strm, data.emitMode,io, socket);
+      videoBuff.push(data.video);
+    }
+    var recImg = "spectrum";
+    if(recordedBuff["name"] != null && images[recordedBuff["name"]] != null)
+      recImg = images[recordedBuff["name"]];
+    var strm = expo.slctCtrl(selector, data.stream, streamBuff, recordedBuff["arr"], fieldrecBuff["arr"], videoBuff, data.video, recImg);
+    expo.emtCtrl(socket.id, strm[0], data.emitMode,io, socket, strm[1]);
+    if(streamConsole) {
+      console.log(strm[0]);
+      console.log(strm[1]);
+    }
   });
+
+
   //下記３つのコントロール、やってることほぼ同じだし関数化したい
   socket.on('modeCtrl_from_client', function(data){
     console.log(data);
