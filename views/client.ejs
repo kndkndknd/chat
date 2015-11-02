@@ -14,6 +14,9 @@
   </canvas>
   </div>
   <script type="text/javascript">
+  if(navigator.userAgent.indexOf('iPhone') > 0|| navigator.userAgent.indexOf('Android') > 0) {
+    location.href = '/mobile/';
+  }
   var socket = io.connect();
   var speak_flag = <%= init_speak %>;
   var sampleRate = <%= init_rate %>;
@@ -22,6 +25,7 @@
   var emitMode = <%- JSON.stringify(emitMode) %>;
   var receiveMode = <%= receiveMode %>;
   var playMode = <%= playMode %>;
+  var speedMode = <%- JSON.stringify(speedMode) %>;
   var decay = Math.floor((1000*bufferSize)/sampleRate);
   var oscVolume = <%= init_osc_vol %>;
   var oscPitch = <%= init_osc_pitch %>;

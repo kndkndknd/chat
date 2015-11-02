@@ -36,10 +36,13 @@ $(function() {
     }
     var targetId = $(this).attr('name').slice(5);
     var mode = $(this).prop('checked');
+    var val = $(this).val();
+    console.log(val);
     socket.json.emit('modeCtrl_from_client', {
       type: type,
       target: targetId,
-      mode: mode
+      mode: mode,
+      val: val
     });
   });
 });
@@ -47,10 +50,6 @@ $(function() {
   $(document).on('click', '.radio_mode', function(){
     var targetId = $(this).attr('name').slice(5);
     var type = $(this).attr('name').substr(0,4);
-    /*
-    if(type === "scrn") {
-      var mode = ($'input[name="' + type + '_' + targetId + '"]:checked').val();
-    }*/
     var mode = $('input[name="' + type + '_' + targetId + '"]:checked').val();
     socket.json.emit('modeCtrl_from_client', {
       type: type,
@@ -73,7 +72,6 @@ $(function() {
 $(function() {
   $(document).on('click', '.clickCtrl', function(){
     var type = $(this).attr('name');
-    //audioClear, buffClear, clientClear
     socket.json.emit('modeCtrl_from_client', {
       type: type,
       target: "all",
@@ -81,35 +79,19 @@ $(function() {
     });
   });
 });
-$(function() {
-  $(document).on('click', '.selector', function(){
-    var selector = $('.selector:checked').map(function() {
-        return $(this).val();
-    }).get();
-    if($.inArray("empty", selector)>0) {
-      for(var i=0;i<($("#empty_selector").val())-1;i++) {
-        selector.push("empty");
-      }
-    }
-    socket.emit('selectorCtrl_from_client', selector);
-  });
-});
 
 $(function() {
-  $(document).on('change', '#empty_selector', function(){
-
+  $(document).on('change', '.rangeCtrl', function(){
+    var mode = $(this).attr('name');
+    var target = $(this).attr('id');
     var val = $(this).val();
-    var selector = $('.selector:checked').map(function() {
-        return $(this).val();
-    }).get();
-    if($.inArray("empty", selector)>0) {
-      for(var i=0;i<($("#empty_selector").val())-1;i++) {
-        selector.push("empty");
-      }
-    }
-    socket.emit('selectorCtrl_from_client', selector);
-    $('#empty_val').html(val);
-    
+    $('#' + mode + '_val').html(val);
+    $('#' + target + '_val').html(val);
+    socket.emit('rangeCtrl_from_client', {
+      mode: mode,
+      target: target,
+      val: val
+    });
   });
 });
 
@@ -144,7 +126,6 @@ $(function() {
   $(document).on('change', '.bpm', function(){
     var targetId = $(this).attr('name').slice(5);
     var seqBPM = $(this).val();
-//    $('.bpm_txt').html(seqBPM);
     var sendval;
     if(seqBPM === "0") {
       sendval = 0;

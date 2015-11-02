@@ -1,10 +1,9 @@
-//var socket = io.connect();
 var myid = socket.id;
 
+var selector = {"stream":true, "buff":true, "1":true, "2":true, "3":true, "4":true};
 
 /*socket.ioによるステータス操作*/
 
-//statusEmit();
 
 socket.json.emit('status_from_client', {
   type: 'trans',
@@ -12,9 +11,10 @@ socket.json.emit('status_from_client', {
   emitMode: emitMode,
   receiveMode: receiveMode,
   playMode: playMode,
-  serverMode: false,
+  spedMode: speedMode,
   scrnMode: scrnMode,
-  BPMMode: seqBPM
+  BPMMode: seqBPM,
+  selector: selector
 });
 
 socket.on('status_from_server_id', function(data) {
@@ -22,7 +22,6 @@ socket.on('status_from_server_id', function(data) {
 });
 
 socket.on('emitCtrl_from_server', function(data) {
-//  alert(data);
   emitMode = data;
   $('#emitmode').val(emitMode);
   if(data === "no_emit"){
@@ -51,8 +50,9 @@ socket.on('playCtrl_from_server', function(data) {
     }
   }
 });
-socket.on('serverCtrl_from_server',function(data) {
-  serverMode = data;
+socket.on('speedCtrl_from_server',function(data) {
+  console.log(data);
+  speedMode = data;
 });
 
 socket.on('rateCtrl_from_server', function(data) {
@@ -65,12 +65,10 @@ socket.on('buffCtrl_from_server', function(data) {
 });
 
 socket.on('stream_from_server',function(data) {
-  if(receiveMode) {
+  if(receiveMode && selector[data.type]) {
     streamBuffer.push(data.stream);
     videoBuffer.push(data.video);
   }
-  //if(data.video != "none") {
-  //}
 });
 
 socket.on('clear_from_server', function(data) {
@@ -102,7 +100,6 @@ socket.on('oneshotCtrl_from_server', function(data) {
   }
 });
 function emitStream(bufferData, emitMode, video) {
-  //$("#print").html(emitMode);
   socket.json.emit('stream_from_client',{
     stream: bufferData,
     emitMode: emitMode,

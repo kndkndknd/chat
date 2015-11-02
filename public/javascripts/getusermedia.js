@@ -38,7 +38,7 @@ if(emitMode != "no_emit") {
 function playAudioStream(flo32arr) {
   var audio_buf = audioContext.createBuffer(1, bufferSize, sampleRate),
       audio_src = audioContext.createBufferSource();
-  var current_time = audioContext.currentTime; //異常あればはずす
+  var current_time = audioContext.currentTime;
 
   var audioData = audio_buf.getChannelData(0);
   for(var i = 0; i < audioData.length; i++){
@@ -50,11 +50,11 @@ function playAudioStream(flo32arr) {
   
   audio_src.connect(analyser);
   if(scrnMode === "video" || scrnMode === "flash"){
-    playVideo(videoBuffer.shift());
+    if(videoBuffer != [])
+      playVideo(videoBuffer.shift());
   }else{
     onScreenProcess();
   }
-  //sendVideo();
   audio_src.start(0);
 }
 
@@ -80,17 +80,20 @@ function onAudioProcess(e) {
           emitStream(bufferData, emitMode, "");
         }
       }
-      if(playMode && seqBPM === 0){
-        if(serverMode){
+      if(playMode && seqBPM === 0 && streamBuffer != []){
+        if(speedMode === "fast"){
           if(Math.random()<0.4)
             playAudioStream(streamBuffer.shift());
         } else {
           playAudioStream(streamBuffer.shift());
         }
+        if(speedMode ==="slow"){
+          streamBuffer = [];
+          videoBuffer = [];
+        }
       }
     }
 
-  //$('#buffer').html(streamBuffer.length);
 }
 
 function initialize() {
@@ -102,9 +105,6 @@ function initialize() {
 		  var mediastreamsource;
 			mediastreamsource = audioContext.createMediaStreamSource(stream);
     	mediastreamsource.connect(javascriptnode);
-    //  recorder = new Recorder(mediastreamsource, { workerPath: '/javascripts/Recorderjs/recorderWorker.js' });
-      //
-      //video
       video = document.getElementById('video');
       video.src = window.URL.createObjectURL(stream);
       video.play();
@@ -115,7 +115,6 @@ function initialize() {
 			console.log(e);
 		}
 	);
-//javascriptnodeにダミーのインプットをつながないとiOSは音が出ないとのこと。
   javascriptnode.onaudioprocess = onAudioProcess;
 	javascriptnode.connect(audioContext.destination);
   //video
@@ -141,7 +140,6 @@ var wavExported = function(blob) {
 function onScreenProcess() {
   var data = new Uint8Array(256);
   analyser.getByteFrequencyData(data);
-  //console.log(data);
   redraw(data[148],data[102],data[44]);
 }
 
@@ -151,12 +149,6 @@ function startSeq(bpm){
     playAudioStream(streamBuffer.shift());
   }, bpm);
   console.log(sequencer);
-  /*
-  var deleteNum = Math.floor(bpm/(bufferSize/sampleRate)) - 1;
-  console.log(deleteNum);
-  streamBuffer.splice(0,deleteNum);
-  videoBuffer.splice(0,deleteNum);
-  */
 }
 function stopSeq(){
   clearInterval(sequencer);

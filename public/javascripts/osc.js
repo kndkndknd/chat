@@ -11,11 +11,7 @@ socket.on('oscCtrl_from_server', function(data) {
     gain.gain.value = data.val;
     oscVolume = data.val;
   } else if(data.type === "frq") {
-    //osc.frequency.setTargetAtTime(data.val, 0, 0.5);
-    //osc.frequency.setTargetAtTime(data.val, audioContext.currentTime() + latency, oscPortament);
-    //alert(audioContext.currentTime);
     osc.frequency.setTargetAtTime(data.val, audioContext.currentTime, oscPortament);
-    //osc.frequency.setTargetAtTime(data.val, latency, latency + oscPortament);
   } else if(data.type == "prt") {
     oscPortament = data.val;
   } else if(data.type === "diff") {
