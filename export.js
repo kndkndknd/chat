@@ -1,5 +1,24 @@
 exports.emtCtrl = function emitCtrl(id, stream, emitMode, mobileMode, io, socket, video, selfMode, type){
   var transList = io.sockets.adapter.rooms.trans;
+/*  if(emitMode == "all"){
+//    socket.to('trans').emit('stream_from_server',{
+    io.sockets.to('trans').emit('stream_from_server',{
+    //io.sockets.emit('stream_from_server',{
+      id: id,
+      type: type,
+      stream: stream,
+      video: video
+    });
+    if(mobileMode){
+      io.sockets.to('mobile').emit('stream_from_server',{
+        id: id,
+        type: type,
+        stream: stream,
+        video: video
+      });
+    }
+//    console.log("emit all from " + id);
+  } else */
   if(emitMode == "broadcast"){
     socket.broadcast.to('trans').emit('stream_from_server', {
       id: id,
@@ -23,6 +42,17 @@ exports.emtCtrl = function emitCtrl(id, stream, emitMode, mobileMode, io, socket
         video: video
       });
     }
+    //socket.broadcast.emit('debug_from_server', id);
+//    console.log("emit broadcast from " + id);
+/*  } else if(emitMode == "self"){
+    socket.emit('stream_from_server', {
+    //socket.to(id).json.emit('stream_from_server', {
+      id: id,
+      type: type,
+      stream: stream,
+      video: video
+    });*/
+//    console.log("emit to self from " + id);
   } else if(emitMode == "nextdoor"){
     var arr = [];
     for (key in io.sockets.adapter.rooms.trans) {
@@ -40,6 +70,7 @@ exports.emtCtrl = function emitCtrl(id, stream, emitMode, mobileMode, io, socket
       stream: stream,
       video: video
     });
+//    console.log("emit to next door from " + id);
   } else if(emitMode == "random"){
     var arr = [];
     for (key in io.sockets.adapter.rooms.trans) {
@@ -56,8 +87,10 @@ exports.emtCtrl = function emitCtrl(id, stream, emitMode, mobileMode, io, socket
         arr.push(key);
       }
     }
+    //console.log(arr);
     var num = Math.floor(Math.random() * arr.length);
     var target = arr[num];
+    //console.log(target);
     if(target != id) {
     socket.to(target).json.emit('stream_from_server', {
       id: id,
@@ -74,6 +107,7 @@ exports.emtCtrl = function emitCtrl(id, stream, emitMode, mobileMode, io, socket
       });
     }
 
+//    console.log("emit random from " + id);
   } else if(emitMode === "self") {
     socket.emit('stream_from_server', {
       id: id,
@@ -106,6 +140,7 @@ exports.slctCtrl = function selectControl(fader, stream, streamBuff, recordedBuf
     rtn = [recordedBuff[4]["arr"].shift(), recordedBuff[4]["video"], "4"];
     recordedBuff[4]["arr"].push(rtn[0]);
   }
+  //console.log(rtn[0][0]);
   return rtn;
 }
 
@@ -151,14 +186,24 @@ exports.sttsCtrl = function statusCtrl(json, socket, io, transroom,ctrlroom, mob
       console.log(io.sockets.adapter.rooms.ctrl);
     } else if(json.type == 'selfie') {
       socket.join('selfie');
+      //console.log(io.sockets.manager.rooms['/feedback']);
     } else if(json.type == 'trans') {
       socket.join('trans');
       console.log(io.sockets.adapter.rooms.trans);
+      //console.log(JSON.stringify(socket.handshake));
+      //console.log(socket.handshake["address"]);
+      //console.log(io.sockets.manager.rooms['/trans']);
+      //
       var model = "unknown";
       var ua = String(socket.handshake["headers"]["user-agent"]);
       console.log(socket.handshake["headers"]["user-agent"]);
       console.log(ua);
-      if(ua.indexOf("Mac OS X 10_8_5") >=0 ) {
+      /*if(ua.indexOf("Android 5.0.2; Nexus 7") >= 0) {
+        model = "Nexus7 32GB";
+       // console.log("Android");
+      } else if(ua.indexOf("Android 4.4.4; Nexus 7") >= 0) {
+        model = "Nexus7 16GB";
+      } else*/ if(ua.indexOf("Mac OS X 10_8_5") >=0 ) {
         model = "MacBookPro Retina";
       } else if(ua.indexOf("Ubuntu") >= 0) {
         model = "Lubuntu";
@@ -178,6 +223,11 @@ exports.sttsCtrl = function statusCtrl(json, socket, io, transroom,ctrlroom, mob
       socket.join('mobile');
       mobileroom[socket.id] = {"BPM":json.BPM};
     }
+    /*
+    if(io.sockets.adapter.rooms.selfie != undefined) {
+      selfieroom = io.sockets.adapter.rooms.selfie;
+    }*/
+    //不要なIDの削除
     for ( key in transroom ) {
       if ( key in io.sockets.adapter.rooms.trans ) {
       } else {
@@ -211,19 +261,24 @@ exports.sndImp = function wavImport(url, pcm, fname, bufferSize, io,trackNo) {
   var tmpBuff = new Float32Array(bufferSize);
   var i = 0;
   console.log('wav load start');
+//pcm.getPcmData('test.mp3', { stereo: true, sampleRate: 44100 },
   pcm.getPcmData(url, { stereo: true, sampleRate: 44100 },
     function(sample, channel) {
+    // Sample is from [-1.0...1.0], channel is 0 for left and 1 for right
       tmpBuff[i] = sample;
       i++;
       if(i==bufferSize){
         rtnBuff.push(tmpBuff);
+        //recordedBuff.push(tmpBuff);
         tmpBuff = new Float32Array(bufferSize);
         i = 0;
       }
+      //recordedBuff.push(sample);
     },
     function(err, output) {
       if (err)
         throw new Error(err);
+      //console.log(recordedBuff.length);
       console.log(fname + " as " + trackNo +" load end. length:" + String(rtnBuff.length));
       io.sockets.to('ctrl').emit('status_from_server', {
         "trackNo": trackNo,

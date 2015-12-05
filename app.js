@@ -10,6 +10,7 @@ var expo = require('./export.js');
 var pcm = require('pcm');
 var images = require('./public/images/image.json');
 
+//初期値　emittypeとspeak_flag要らないのでは。。。
 var emittype = 2;
 var speak_flag = false,
     sampleRate = 22050,
@@ -23,9 +24,21 @@ var streamConsole = false;
 var buffMode = false;
 var mobileBPM = 100;
 var mobiSwitch = true;
+/*
+var transHash = {},
+    selfieHash = {};
+    */
+//var streamFreqency = 0;
 var streamBuff = {"stream":[], "video":[]};
+//var videoBuff = [];
+//var fileBuff = []; //不要？
+//var recordedBuff = {"name": "none", "arr":[]};
 var recordedBuff = {1:{"name": "none", "arr":[], "video":"spectrum"},2:{"name": "none", "arr":[], "video":"spectrum"},3:{"name": "none", "arr":[], "video":"spectrum"}, 4:{"name": "none", "arr":[], "video":"spectrum"}};
 var fader = {"1":0, "2":0, "3":0, "4":0, "stream":1, "buff":0, "empty":0};
+//var fieldrecBuff = {"name": "none", "arr":[]};
+//var recordedBuff = [];
+var log = "./feedback.csv"
+//var selfieroom = {},
 var transroom = {},
     mobileroom = {},
     ctrlroom = {};
@@ -33,6 +46,7 @@ var oscroom = {};
 var loadBuff = [];
 var recordedFile = [];
 
+//var selector = ["stream"]; //all/stream/buff/recorded/empty
 
 var app = express();
 
@@ -48,6 +62,14 @@ app.use(express.methodOverride());
 app.use(app.router);
 app.use(express.static(path.join(__dirname, 'public')));
 
+//routing
+/*
+fs.readdir('./public/files', function(err, files){
+  if (err) throw err;
+  files.forEach(function (file) {
+    recordedFile.push(file);
+  });
+});*/
 
 app.get('/ctrl', function(req, res){
   var arr = [""];
@@ -60,10 +82,18 @@ app.get('/ctrl', function(req, res){
     });
   res.render('ctrl', {
     title: 'ctrl',
+    //recordedFile: recordedFile
     recordedFile: arr
   });
 
   });
+/*
+  console.log(arr);
+  res.render('ctrl', {
+    title: 'ctrl',
+    //recordedFile: recordedFile
+    recordedFile: arr
+  });*/
 });
 
 app.get('/rec', function(req, res){
@@ -105,6 +135,7 @@ var server = http.createServer(app).listen(port);
 
 //socket.io
 var io = require('socket.io').listen(server);
+//io.set('log level', 1);
 
 
 io.sockets.on('connection', function(socket) {
@@ -114,14 +145,30 @@ io.sockets.on('connection', function(socket) {
     recordedBuff[data.target]["arr"] = expo.sndImp(data.url,pcm,recordedBuff[data.target]["name"],bufferSize,io, data.target);
   });
 
+  //for video(debug)
+  /* 
+  socket.on('video_from_client', function(data) {
+    console.log(data);
+    //io.sockets.emit('video_from_server', data);
+    socket.broadcast.emit('video_from_server', data);
+  });*/
 
   //for trans feedback
+  //フィードバックのパケット受信・送信
   socket.on('stream_from_client', function(data) {
+    //console.log(data.video);
     if(buffMode){
       streamBuff["stream"].push(data.stream);
       streamBuff["video"].push(data.video);
     }
+    //var recImg = "spectrum";
+    /*
+    if(recordedBuff["name"] != null && images[recordedBuff["name"]] != null)
+      recImg = images[recordedBuff["name"]];
+      */
     var strm = expo.slctCtrl(fader, data.stream, streamBuff, recordedBuff, data.video);
+    //console.log(strm[0][0])
+    //console.log(transroom[socket.id]["selfMode"]);
     expo.emtCtrl(socket.id, strm[0], data.emitMode, transroom[socket.id]["mobileMode"],io, socket, strm[1], transroom[socket.id]["selfMode"], strm[2]);
     if(streamConsole) {
       console.log(strm[0]);
@@ -130,10 +177,12 @@ io.sockets.on('connection', function(socket) {
   });
 
 
+  //下記３つのコントロール、やってることほぼ同じだし関数化したい
   socket.on('modeCtrl_from_client', function(data){
     console.log(data);
     if(data.type ==="buff") {
       buffMode = data.mode;
+      //console.log("buffMode:" + String(data.mode));
       console.log("buffMode:" + String(data.mode) + "(length:" + String(streamBuff.length) + ")");
       io.sockets.to('ctrl').emit('status_from_server', {
         buffer: {
@@ -203,6 +252,12 @@ io.sockets.on('connection', function(socket) {
       expo.ctrlCtrl(socket, io, transroom, data.target, data.mode, data.type, fader);
     }
   });
+/*
+  socket.on('selectorCtrl_from_client', function(data){
+    //console.log("fuck");
+    console.log(data);
+    selector =data;
+  });*/
 
   socket.on('faderCtrl_from_client', function(data){
     fader[data.target] = Number(data.val);
@@ -346,6 +401,8 @@ io.sockets.on('connection', function(socket) {
       }
       if(data.mode === "random") 
         val = val + (val * Math.random());
+      socket
+    //} else if(data.type != "frd") {
     } else {
       if(data.target === "all") {
         io.sockets.emit('oscCtrl_from_server', data);
@@ -369,6 +426,7 @@ io.sockets.on('connection', function(socket) {
 
   socket.on('recordedURL_from_client', function(data){
     console.log(data);
+    //io.sockets.to('ctrl').emit('recordedURL_from_server', data);
     io.sockets.emit('recordedURL_from_server', data);
   });
   //for all client(status check)
@@ -381,6 +439,9 @@ io.sockets.on('connection', function(socket) {
 
   //for debug
   socket.on('debugCtrl_from_client', function(data) {
+//    socket.broadcast.emit('debug_from_server', data);
+    //if('consoleCtrl' in data) {
+    //} else if (data==="allClear") {
     if (data.type==="allClear") {
       console.log(data);
       for (key in transroom) {

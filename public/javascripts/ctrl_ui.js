@@ -9,6 +9,7 @@ function list(data) {
       var rMode ='<li>receive; <input type="checkbox" value="receive" name="recv_' + translist + '" class="checkbox_mode">';
       var pMode =' play<input type="checkbox" value="play" name="play_' + translist + '" class="checkbox_mode">';
       var sMode =' | slow<input type="radio" value="slow" name="sped_' + translist + '" class="radio_mode"> normal<input type="radio" value="norm" name="sped_' + translist + '" class="radio_mode"> fast<input type="radio" value="fast" name="sped_' + translist + '" class="radio_mode"> </li>';
+      //faderMode 選択的再生、クライアント側機能
       var fMode ='<li>mute: stream<input type="checkbox" value="stream" name="fadr_' + translist + '" class="checkbox_mode"> buff<input type="checkbox" value="buff" name="fadr_' + translist + '" class="checkbox_mode"> 1<input type="checkbox" value="1" name="fadr_' + translist + '" class="checkbox_mode"> 2<input type="checkbox" value="2" name="fadr_' + translist + '" class="checkbox_mode"> 3<input type="checkbox" value="3" name="fadr_' + translist + '" class="checkbox_mode"> 4<input type="checkbox" value="4" name="fadr_' + translist + '" class="checkbox_mode"></li>';
       var sRate = '<li>sample rate: <label><input type="radio" name="rate_' + translist + '" class="sampleRate" value="11025" >11025</label> <label><input type="radio" value="22050" name="rate_' + translist + '" class="sampleRate">22050</label> <label><input type="radio" value="44100" name="rate_' + translist + '" class="sampleRate" checked>44100</label> <label><input type="radio" value="88200" name="rate_' + translist + '" class="sampleRate">88200</label></li>';
       var vMode = '<li><form>screen; <label><input type="radio" value="video" name="scrn_' + translist + '" class="radio_mode">video</label> <label><input type="radio" value="flash" name="scrn_' + translist + '" class="radio_mode">flash</label> <label><input type="radio" value="spectrum" name="scrn_' + translist + '" class="radio_mode">spectrum</label></form></li>';
@@ -48,6 +49,7 @@ function list(data) {
       }
       $('input[name="beat_' + translist + '"]').val(aBPM);
       $('#beattxt_' + translist).text(aBPM);
+      //$('#beattxt_' + translist).html("fuck");
     } 
   } else if(data.transroom === {}){
     $('#trans_ctrl').append("no client connected");
@@ -71,6 +73,7 @@ window.addEventListener("keydown", keyDown);
 
 function keyDown(e){
   var key_code = e.keyCode;
+  //alert(key_code);
   if(key_code === 83) {
     socket.emit('oneshotCtrl_from_client', {
       type: 'trig',

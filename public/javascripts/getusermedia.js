@@ -105,6 +105,7 @@ function initialize() {
 		  var mediastreamsource;
 			mediastreamsource = audioContext.createMediaStreamSource(stream);
     	mediastreamsource.connect(javascriptnode);
+      //video
       video = document.getElementById('video');
       video.src = window.URL.createObjectURL(stream);
       video.play();

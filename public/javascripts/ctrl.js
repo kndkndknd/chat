@@ -94,7 +94,6 @@ $(function() {
     });
   });
 });
-
 $(function() {
   $(document).on('change', '.sampleRate', function(){
     var name = $(this).attr('name');

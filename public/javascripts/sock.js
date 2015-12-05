@@ -1,5 +1,6 @@
 var myid = socket.id;
 
+//tmp
 var selector = {"stream":true, "buff":true, "1":true, "2":true, "3":true, "4":true};
 
 /*socket.ioによるステータス操作*/
