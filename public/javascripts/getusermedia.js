@@ -4,6 +4,8 @@ window.AudioContext = window.AudioContext || window.webkitAudioContext || window
 
 
 var audioContext = new AudioContext();
+var micgain = audioContext.createGain();
+micgain.gain.value = 1;
 var analyser = audioContext.createAnalyser();
   analyser.fftSize = 1024;
   analyser.smoothingTimeConstant = 0.9;
@@ -15,6 +17,7 @@ $('#receivemode').val(receiveMode);
 
 var streamBuffer = [];
 var videoBuffer = [];
+var oneshotBuffer = [];
 var mic_flag = true;
 var rec_flag = false;
 var recorder = null;
@@ -38,15 +41,20 @@ if(emitMode != "no_emit") {
 function playAudioStream(flo32arr) {
   var audio_buf = audioContext.createBuffer(1, bufferSize, sampleRate),
       audio_src = audioContext.createBufferSource();
-  var current_time = audioContext.currentTime;
+  var current_time = audioContext.currentTime; //異常あればはずす
 
   var audioData = audio_buf.getChannelData(0);
+  //if(typeof flo32arr != "undefined"){
+  //if(flo32arr){
   for(var i = 0; i < audioData.length; i++){
     audioData[i] = flo32arr[i];
+  //}
   }
 
   audio_src.buffer = audio_buf;
-  audio_src.connect(audioContext.destination);
+  audio_src.connect(micgain);
+  micgain.connect(audioContext.destination);
+  //audio_src.connect(audioContext.destination);
   
   audio_src.connect(analyser);
   if(scrnMode === "video" || scrnMode === "flash"){
@@ -55,6 +63,7 @@ function playAudioStream(flo32arr) {
   }else{
     onScreenProcess();
   }
+  //sendVideo();
   audio_src.start(0);
 }
 
@@ -62,9 +71,9 @@ function playAudioStream(flo32arr) {
 function onAudioProcess(e) {
     var input = e.inputBuffer.getChannelData(0);
 
-    if(self_flag) {
-      playAudioStream(input);
-    }else{
+    //if(playMode) {
+    if(emit_flag) {
+    //}else{
       var bufferData = new Float32Array(bufferSize);
       var j=0;
       
@@ -72,28 +81,65 @@ function onAudioProcess(e) {
 	      bufferData[i] = input[j];
           j = j + jumpBit;
       }
-      if(emit_flag) {
+      //if(emit_flag) {
         if(scrnMode){
           var emitVideo = sendVideo();
           emitStream(bufferData, emitMode, emitVideo);
         } else {
           emitStream(bufferData, emitMode, "");
         }
-      }
-      if(playMode && seqBPM === 0 && streamBuffer != []){
-        if(speedMode === "fast"){
-          if(Math.random()<0.4)
-            playAudioStream(streamBuffer.shift());
-        } else {
+    }
+    if(playMode && seqBPM === 0 && streamBuffer.length > 0){
+    //if(playMode && seqBPM === 0 && streamBuffer.length > 0){
+      if(speedMode === "fast"){
+      //if(serverMode){
+        if(Math.random()<0.4)
           playAudioStream(streamBuffer.shift());
+      } else {
+        if(poolLength > 0 && streamBuffer.length >= poolLength){
+          console.log('release');
+          //releasePool(1000 * bufferSize/sampleRate);
+          //setTimeout(restartPool(),(poolLength * 1000 * bufferSize/sampleRate));
+          //releasePool(5000);
+          //setTimeout(restartPool(),(poolLength * 5000));
+          releasePool();
+          poolTimer = setInterval(releasePool(),5000);
+          setTimeout(restartPool(),25000);
+          /*
+          for(var i = 0; i < poolLength; i++) {
+            playAudioStream(streamBuffer.shift());
+          }*/
+        } else if(poolLength < 1){
+          playAudioStream(streamBuffer.shift());
+        } else {
+          console.log(streamBuffer.length);
         }
-        if(speedMode ==="slow"){
-          streamBuffer = [];
-          videoBuffer = [];
-        }
+      }
+      if(speedMode ==="slow"){
+        streamBuffer = null;
+        videoBuffer = null;
+        streamBuffer = [];
+        videoBuffer = [];
       }
     }
+  //$('#buffer').html(streamBuffer.length);
+}
+var poolTimer;
+/*
+function releasePool(length){
+  poolTimer = setInterval(function(){
+    console.log('fuck');
+    playAudioStream(streamBuffer.shift());
+  }, length);
+}
+*/
 
+function releasePool(){
+  console.log('int');
+}
+function restartPool(){
+  console.log('stop');
+  clearInterval(poolTimer);
 }
 
 function initialize() {
@@ -105,6 +151,8 @@ function initialize() {
 		  var mediastreamsource;
 			mediastreamsource = audioContext.createMediaStreamSource(stream);
     	mediastreamsource.connect(javascriptnode);
+    //  recorder = new Recorder(mediastreamsource, { workerPath: '/javascripts/Recorderjs/recorderWorker.js' });
+      //
       //video
       video = document.getElementById('video');
       video.src = window.URL.createObjectURL(stream);
@@ -116,12 +164,14 @@ function initialize() {
 			console.log(e);
 		}
 	);
+//javascriptnodeにダミーのインプットをつながないとiOSは音が出ないとのこと。
   javascriptnode.onaudioprocess = onAudioProcess;
 	javascriptnode.connect(audioContext.destination);
   //video
   image = document.createElement("img");
   receive = document.getElementById("cnvs");
   receive_ctx = receive.getContext("2d");
+  //setInterval('reLoad()',initReload * 1000);
 }
 
 window.addEventListener("load", initialize, false);
@@ -141,15 +191,31 @@ var wavExported = function(blob) {
 function onScreenProcess() {
   var data = new Uint8Array(256);
   analyser.getByteFrequencyData(data);
+  //console.log(data);
   redraw(data[148],data[102],data[44]);
 }
 
 var sequencer;
-function startSeq(bpm){
-  sequencer = setInterval(function(){
-    playAudioStream(streamBuffer.shift());
-  }, bpm);
+function startSeq(bpm,type){
+  if(type === "stream"){
+    sequencer = setInterval(function(){
+      playAudioStream(streamBuffer.shift());
+    }, bpm);
+  } else {
+    sequencer = setInterval(function(){
+      var oneShot = oneshotBuffer.shift();
+      playAudioStream(oneShot);
+      oneshotBuffer.push(oneShot);
+    }, bpm);
+  }
+
   console.log(sequencer);
+  /*
+  var deleteNum = Math.floor(bpm/(bufferSize/sampleRate)) - 1;
+  console.log(deleteNum);
+  streamBuffer.splice(0,deleteNum);
+  videoBuffer.splice(0,deleteNum);
+  */
 }
 function stopSeq(){
   clearInterval(sequencer);
@@ -157,4 +223,9 @@ function stopSeq(){
   streamBuffer = [];
   videoBuffer = [];
 }
+/*
+function reLoad() {
+  location.reload();
+}*/
+
 

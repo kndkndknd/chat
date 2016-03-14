@@ -44,25 +44,40 @@ function redraw(r,g,b) {
 function renderStart() {
   video = document.getElementById('video');
   buffer = document.createElement('canvas');
+  //var canvas_src = document.getElementById('canvas_src');
   bufferContext = buffer.getContext('2d');
+  //var srcContext = canvas_src.getContext('2d');
 
   var render = function() {
     requestAnimationFrame(render);
     var width = video.videoWidth;
     var height = video.videoHeight;
     if(width == 0 || height ==0) {return;}
+    //buffer.width = canvas_src.width = width;
+    //buffer.height = canvas_src.height = height;
     buffer.width = width;
     buffer.height = height;
     bufferContext.drawImage(video, 0, 0);
 
+    //socket.emit('video_from_client', 'fuck');
   }
   render();
-}
-
-function sendVideo(){
+    /*
+  video.addEventListener("playing", function() {
+    debug = buffer.toDataURL("image/webp");
   buffer.width = video.videoWidth;
   buffer.height = video.videoHeight;
   bufferContext.drawImage(video, 0, 0);
+    setInterval(sendVideo,1000);
+  });*/
+}
+
+function sendVideo(){
+//var sendVideo = function(){
+  buffer.width = video.videoWidth;
+  buffer.height = video.videoHeight;
+  bufferContext.drawImage(video, 0, 0);
+  //socket.emit("video_from_client", buffer.toDataURL("image/webp"));
   return buffer.toDataURL("image/webp");
 }
 

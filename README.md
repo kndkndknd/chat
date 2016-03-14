@@ -1,3 +1,8 @@
+#2016年2月28日の改訂
+UjeonggukでのChoi Joonyongとのデュオのための改訂
+Chromeのアップデートに伴いGetUserMediaがhttp通信でできなくなったためHTTPS化しました。
+ctrl.ejsからの操作でなくclient.ejsの操作でだいたいのことができるようにしています。
+
 #2015年11月29日の改訂
 space dikeでの矢代諭史とのデュオのための改訂
 1〜4の出力について音声ファイル以外に画像ファイルもインポート可能にしました。public/filesに入っているものをctrlから指定してインポートします

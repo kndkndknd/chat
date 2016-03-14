@@ -3,6 +3,7 @@ socket.json.emit('status_from_client', {
   type:'ctrl'
 });
 socket.on('status_from_server', function(data) {
+  //console.log('status');
   list(data);
 });
 socket.on('recordedURL_from_server', function(data){
@@ -29,27 +30,39 @@ $(function() {
 $(function() {
   $(document).on('click', '.checkbox_mode', function(){
     var type = $(this).attr('name').substr(0,4);
+    var mode = $(this).prop('checked');
     if(type ==="recv"){
       type = "receive";
     } else if(type === "srvr") {
       type = "server";
     }
-    var targetId = $(this).attr('name').slice(5);
-    var mode = $(this).prop('checked');
-    var val = $(this).val();
-    console.log(val);
-    socket.json.emit('modeCtrl_from_client', {
-      type: type,
-      target: targetId,
-      mode: mode,
-      val: val
-    });
+    if( $(this).attr('name') != "rec"){
+      var targetId = $(this).attr('name').slice(5);
+      var val = $(this).val();
+      //要テスト
+      console.log(val);
+      socket.json.emit('modeCtrl_from_client', {
+        type: type,
+        target: targetId,
+        mode: mode,
+        val: val
+      });
+    } else {
+      socket.json.emit('modeCtrl_from_client', {
+        type: "rec",
+        mode: mode
+      });
+    }
   });
 });
 $(function() {
   $(document).on('click', '.radio_mode', function(){
     var targetId = $(this).attr('name').slice(5);
     var type = $(this).attr('name').substr(0,4);
+    /*
+    if(type === "scrn") {
+      var mode = ($'input[name="' + type + '_' + targetId + '"]:checked').val();
+    }*/
     var mode = $('input[name="' + type + '_' + targetId + '"]:checked').val();
     socket.json.emit('modeCtrl_from_client', {
       type: type,
@@ -58,6 +71,20 @@ $(function() {
     });
   });
 });
+
+$(function() {
+  $(document).on('click', '#time', function(){
+    if(started === false) {
+      $('#time').html('00:00');
+      started = true;
+      socket.emit('time_from_client');
+    }
+  });
+});
+socket.on('time_from_server', function(data) {
+  $('#time').html(data);
+});
+
 
 $(function() {
   $(document).on('click', '#buffclear', function(){
@@ -72,6 +99,7 @@ $(function() {
 $(function() {
   $(document).on('click', '.clickCtrl', function(){
     var type = $(this).attr('name');
+    //audioClear, buffClear, clientClear
     socket.json.emit('modeCtrl_from_client', {
       type: type,
       target: "all",
@@ -79,21 +107,57 @@ $(function() {
     });
   });
 });
+/*
+$(function() {
+  $(document).on('click', '.selector', function(){
+    var selector = $('.selector:checked').map(function() {
+        return $(this).val();
+    }).get();
+    if($.inArray("empty", selector)>0) {
+      for(var i=0;i<($("#empty_selector").val())-1;i++) {
+        selector.push("empty");
+      }
+    }
+    socket.emit('selectorCtrl_from_client', selector);
+  });
+});
+*/
 
 $(function() {
   $(document).on('change', '.rangeCtrl', function(){
     var mode = $(this).attr('name');
-    var target = $(this).attr('id');
+    //var target = $(this).attr('id');
+    var target = $(this).attr('id').slice(mode.length+1);
     var val = $(this).val();
-    $('#' + mode + '_val').html(val);
-    $('#' + target + '_val').html(val);
+    $('#' + mode + "_" + target + '_val').html(val);
+    //$('#' + target + '_val').html(val);
     socket.emit('rangeCtrl_from_client', {
       mode: mode,
+      type: mode,
       target: target,
       val: val
     });
   });
 });
+/*
+$(function() {
+  $(document).on('change', '#empty_selector', function(){
+
+    var val = $(this).val();
+    var selector = $('.selector:checked').map(function() {
+        return $(this).val();
+    }).get();
+    if($.inArray("empty", selector)>0) {
+      for(var i=0;i<($("#empty_selector").val())-1;i++) {
+        selector.push("empty");
+      }
+    }
+    socket.emit('selectorCtrl_from_client', selector);
+    $('#empty_val').html(val);
+    
+  });
+});
+*/
 $(function() {
   $(document).on('change', '.sampleRate', function(){
     var name = $(this).attr('name');
@@ -125,6 +189,7 @@ $(function() {
   $(document).on('change', '.bpm', function(){
     var targetId = $(this).attr('name').slice(5);
     var seqBPM = $(this).val();
+//    $('.bpm_txt').html(seqBPM);
     var sendval;
     if(seqBPM === "0") {
       sendval = 0;
@@ -167,11 +232,14 @@ $(function() {
 
 $(function() {
   $(document).on('change', '.file_select', function(){
+    console.log('ch');
     if($(this).val() != ""){
     var url = "./public/files/" + $(this).val();
     var target = $(this).attr('name');
+    var type = $(this).attr('id');
     socket.emit('importReq_from_client', {
       target: target,
+      type: type,
       url: url
     });
     }

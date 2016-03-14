@@ -27,6 +27,7 @@
   var playMode = <%= playMode %>;
   var speedMode = <%- JSON.stringify(speedMode) %>;
   var decay = Math.floor((1000*bufferSize)/sampleRate);
+  var initReload = <%= initReload %>;
   var oscVolume = <%= init_osc_vol %>;
   var oscPitch = <%= init_osc_pitch %>;
   var oscPortament = <%= init_osc_portament %>;
@@ -41,6 +42,7 @@
   var receive;
   var receive_ctx;
   var scrnMode;
+  var poolLength = 0;
   </script>
   <script src="/javascripts/keyboard.js"></script>
   <script src="/javascripts/canvas.js"></script>

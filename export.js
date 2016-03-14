@@ -1,6 +1,6 @@
-exports.emtCtrl = function emitCtrl(id, stream, emitMode, mobileMode, io, socket, video, selfMode, type){
+exports.emtCtrl = function emitCtrl(id, stream, emitMode, mobileMode, io, socket, video, selfMode, type, transroom){
   var transList = io.sockets.adapter.rooms.trans;
-/*  if(emitMode == "all"){
+  if(emitMode == "all"){
 //    socket.to('trans').emit('stream_from_server',{
     io.sockets.to('trans').emit('stream_from_server',{
     //io.sockets.emit('stream_from_server',{
@@ -18,8 +18,7 @@ exports.emtCtrl = function emitCtrl(id, stream, emitMode, mobileMode, io, socket
       });
     }
 //    console.log("emit all from " + id);
-  } else */
-  if(emitMode == "broadcast"){
+  } else if(emitMode == "broadcast"){
     socket.broadcast.to('trans').emit('stream_from_server', {
       id: id,
       type: type,
@@ -56,7 +55,8 @@ exports.emtCtrl = function emitCtrl(id, stream, emitMode, mobileMode, io, socket
   } else if(emitMode == "nextdoor"){
     var arr = [];
     for (key in io.sockets.adapter.rooms.trans) {
-      arr.push(key);
+      if(transroom[key]["receiveMode"])  //receiveMode有効の範囲で相手指定
+        arr.push(key);
     }
     var target = arr[0];
     for (var i=0;i<arr.length;i++){
@@ -79,7 +79,8 @@ exports.emtCtrl = function emitCtrl(id, stream, emitMode, mobileMode, io, socket
           arr.push(key);
         }
       } else {
-        arr.push(key);
+        if(transroom[key]["receiveMode"])
+          arr.push(key);
       }
     }
     if(mobileMode){
@@ -118,39 +119,52 @@ exports.emtCtrl = function emitCtrl(id, stream, emitMode, mobileMode, io, socket
   }
 }
 
-exports.slctCtrl = function selectControl(fader, stream, streamBuff, recordedBuff, video) {
+exports.slctCtrl = function selectControl(fader, stream, streamBuff, recordedBuff, video, images) {
   var rtn = [new Float32Array(8192), "none", "empty"];
   var n = Math.floor(Math.random() * (fader["stream"] + fader["buff"] + fader["1"] + fader["2"] + fader["3"] + fader["4"] + fader["empty"]));
   if(n < fader["stream"]){
     rtn = [stream, video, "stream"];
   } else if(n < (fader["stream"] + fader["buff"])){
-    rtn = [streamBuff["stream"].shift(), streamBuff["video"].shift(), "buff"];
-    streamBuff["stream"].push(rtn[0]);
-    streamBuff["video"].push(rtn[1]);
+    //rtn = [streamBuff["stream"].shift(), streamBuff["video"].shift(), "buff"];
+    //streamBuff["stream"].push(rtn[0]);
+    //streamBuff["video"].push(rtn[1]);
+    var num = Math.floor(Math.random() * streamBuff["stream"].length);
+    rtn = [streamBuff["stream"][num], streamBuff["video"][num], "buff"];
   } else if(n < (fader["stream"] + fader["buff"] + fader["1"])){
-    rtn = [recordedBuff[1]["arr"].shift(), recordedBuff[1]["video"], "1"];
+    rtn = [recordedBuff[1]["arr"].shift(), "data:image/jpeg;base64," + images["1"][Math.floor(Math.random()* images["1"].length)], "1"];
     recordedBuff[1]["arr"].push(rtn[0]);
   } else if(n < (fader["stream"] + fader["buff"] + fader["1"] + fader["2"])){
-    rtn = [recordedBuff[2]["arr"].shift(), recordedBuff[2]["video"], "2"];
+    rtn = [recordedBuff[2]["arr"].shift(), "data:image/jpeg;base64," + images["2"][Math.floor(Math.random()* images["2"].length)], "2"];
     recordedBuff[2]["arr"].push(rtn[0]);
   } else if(n < (fader["stream"] + fader["buff"] + fader["1"] + fader["2"] + fader["3"])){
-    rtn = [recordedBuff[3]["arr"].shift(), recordedBuff[3]["video"], "3"];
+    rtn = [recordedBuff[3]["arr"].shift(), "data:image/jpeg;base64," + images["3"][Math.floor(Math.random()* images["3"].length)], "3"];
     recordedBuff[3]["arr"].push(rtn[0]);
   } else if(n < (fader["stream"] + fader["buff"] + fader["1"] + fader["2"] + fader["3"] + fader["4"])){
-    rtn = [recordedBuff[4]["arr"].shift(), recordedBuff[4]["video"], "4"];
+    rtn = [recordedBuff[4]["arr"].shift(), "data:image/jpeg;base64," + images["4"][Math.floor(Math.random()* images["4"].length)], "4"];
     recordedBuff[4]["arr"].push(rtn[0]);
   }
   //console.log(rtn[0][0]);
   return rtn;
 }
 
-exports.ctrlCtrl = function controlCtrl(socket, io, transroom, target, mode, type, fader){
+exports.ctrlCtrl = function controlCtrl(socket, io, transroom, target, mode, type, fader, val){
   if(target === "all"){
-    io.sockets.emit(type + "Ctrl_from_server", mode);
-    for (key in transroom) {
-      transroom[key][type + "Mode"] = mode;
+    if(type != "pool"){
+      io.sockets.emit(type + "Ctrl_from_server", mode);
+      for (key in transroom) {
+        transroom[key][type + "Mode"] = mode;
+      }
+    } else {
+      console.log(val);
+      io.sockets.emit(type + "Ctrl_from_server", {
+        val: val
+      });
+      for (key in transroom) {
+        transroom[key][type] = val;
+      }
     }
   } else {
+    console.log(type);
     if (type === "emit") {
       socket.to(target).json.emit('emitCtrl_from_server', mode);
     } else if (type === "receive") {
@@ -162,12 +176,25 @@ exports.ctrlCtrl = function controlCtrl(socket, io, transroom, target, mode, typ
     } else if (type === "scrn") {
       socket.to(target).json.emit('scrnCtrl_from_server', mode);
     } else if (type === "self") {
+      transroom[target]["selfMode"] = val;
+    } else if (type === "mute") {
+      transroom[target]["selector"][val] = mode;
+      socket.to(target).json.emit("muteCtrl_from_server", {
+        mode: mode,
+        val: val
+      });
+    } else if (type === "pool") {
+      transroom[target]["pool"] = val;
+      socket.to(target).json.emit("poolCtrl_from_server", {
+        val: val
+      });
     } else {
+      console.log(type + "Ctrl_from_server");
       socket.to(target).json.emit(type + "Ctrl_from_server", mode);
     }
 
       
-    if (target in transroom) {
+    if (target in transroom && (type != "mute" || type != "pool")) {
       transroom[target][type + "Mode"] = mode;
     }
   }
@@ -177,8 +204,8 @@ exports.ctrlCtrl = function controlCtrl(socket, io, transroom, target, mode, typ
     fader: fader
   });
 }
-exports.sttsCtrl = function statusCtrl(json, socket, io, transroom,ctrlroom, mobileroom, fader, streamBuff, recordedBuff){
-    console.log(io.sockets.adapter.rooms);
+exports.sttsCtrl = function statusCtrl(json, socket, io, transroom,ctrlroom, mobileroom, fader, streamBuff, recordedBuff, deletedRoom){
+    //console.log(io.sockets.adapter.rooms);
     console.log("status");
     if(json.type == 'ctrl') {
       console.log("ctrl");
@@ -189,36 +216,58 @@ exports.sttsCtrl = function statusCtrl(json, socket, io, transroom,ctrlroom, mob
       //console.log(io.sockets.manager.rooms['/feedback']);
     } else if(json.type == 'trans') {
       socket.join('trans');
-      console.log(io.sockets.adapter.rooms.trans);
-      //console.log(JSON.stringify(socket.handshake));
-      //console.log(socket.handshake["address"]);
+      //console.log(io.sockets.adapter.rooms.trans);
       //console.log(io.sockets.manager.rooms['/trans']);
       //
       var model = "unknown";
       var ua = String(socket.handshake["headers"]["user-agent"]);
-      console.log(socket.handshake["headers"]["user-agent"]);
-      console.log(ua);
-      /*if(ua.indexOf("Android 5.0.2; Nexus 7") >= 0) {
-        model = "Nexus7 32GB";
-       // console.log("Android");
-      } else if(ua.indexOf("Android 4.4.4; Nexus 7") >= 0) {
-        model = "Nexus7 16GB";
-      } else*/ if(ua.indexOf("Mac OS X 10_8_5") >=0 ) {
-        model = "MacBookPro Retina";
-      } else if(ua.indexOf("Ubuntu") >= 0) {
-        model = "Lubuntu";
-      } else if(ua.indexOf("Mac OS X 10_6_8") >= 0) {
-        if(ua.indexOf("Firefox") >= 0) {
-          model = "2009_MacbookPro";
-        } else {
-          model = "Old MacBook";
+      var ipAd = socket.handshake["address"];
+    //  console.log(socket.handshake["headers"]["user-agent"]);
+    //  console.log(ua);
+
+      //if(transroom[socket.id] != null) {
+        if(ua.indexOf("Mac OS X 10_8_5") >=0 ) {
+          model = "MacBookPro Retina";
+        } else if(ua.indexOf("Ubuntu") >= 0) {
+          model = "Lubuntu";
+        } else if(ua.indexOf("Mac OS X 10_6_8") >= 0) {
+          if(ua.indexOf("Firefox") >= 0) {
+            model = "2009_MacbookPro";
+          } else {
+            model = "Old MacBook";
+          }
+        } else if(ua.indexOf("indows") >= 0) {
+          model = "Windows";
         }
-      } else if(ua.indexOf("indows") >= 0) {
-        model = "Windows";
-      }
       //transHashに追加
-      transroom[socket.id] = {sampleRate: json.sampleRate, emitMode: json.emitMode, receiveMode: json.receiveMode, playMode: json.playMode, model: model, spedMode: json.spedMode, scrnMode: json.scrnMode, BPMMode: json.BPMMode, mobileMode: false, selfMode: false, selector:json.selector};
+      transroom[socket.id] = {ipAd: ipAd, sampleRate: json.sampleRate, emitMode: json.emitMode, receiveMode: json.receiveMode, playMode: json.playMode, model: model, spedMode: json.spedMode, scrnMode: json.scrnMode, BPMMode: json.BPMMode, mobileMode: json.mobileMode, selfMode: json.selfMode, selector:json.selector, gain:json.gain, pool:json.pool};
       socket.emit('status_from_server_id', socket.id);
+
+      //deletedRoomに入っていた場合の救済
+      //}
+      /*
+      for (key in deletedRoom){
+        if(ipAd === key){
+          transroom[socket.id] = {ipAd: key};
+          for ( n in deletedRoom[key] ) {
+            transroom[socket.id][n] = deletedRoom[key][n];
+          }
+          //transroom[socket.id] = {sampleRate: deletedRoom[key]["sampleRate"], emitMode: deletedRoom[key]["emitMode"], receiveMode: deletedRoom[key]["receiveMode"], playMode: deletedRoom[key]["playMode"], model: deletedRoom[key]["model"], spedMode: deletedRoom[key]["spedMode"], scrnMode: deletedRoom[key]["scrnMode"], BPMMode: deletedRoom[key]["BPMMode"], mobileMode: deletedRoom[key]["mobileMode"], selfMode: deletedRoom[key]["selfMode"], selector:deletedRoom[key]["selector"], ipAd: key};
+          console.log('transroom rewrite');
+          console.log(transroom);
+          console.log(transroom[socket.id]);
+          //該当端末側の設定を変更する
+          socket.to(socket.id).emit('speedCtrl_from_server', transroom[socket.id]["spedMode"]);
+          socket.to(socket.id).emit('rateCtrl_from_server', transroom[socket.id]["sampleRate"]);
+          socket.to(socket.id).emit('scrnCtrl_from_server', transroom[socket.id]["scrnMode"]);
+          socket.to(socket.id).emit('BPMCtrl_from_server', transroom[socket.id]["BPMMode"]);
+          socket.to(socket.id).emit('emitCtrl_from_server', transroom[socket.id]["emitMode"]);
+          socket.to(socket.id).emit('receiveCtrl_from_server', transroom[socket.id]["receiveMode"]);
+          socket.to(socket.id).emit('playCtrl_from_server', transroom[socket.id]["playMode"]);
+          delete deletedRoom[ipAd];
+        }
+      }*/
+    //  console.log(transroom);
     } else if(json.type == 'mobile') {
       socket.join('mobile');
       mobileroom[socket.id] = {"BPM":json.BPM};

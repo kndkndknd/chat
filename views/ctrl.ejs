@@ -8,6 +8,7 @@
   <body id="body">
     <script src="/javascripts/jquery-1.11.0.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+<h1 id="time">start</h1>
 <h1>id ctrl</h1>
   <ul id="trans_ctrl">
   </ul><br>
@@ -16,20 +17,25 @@
 <h1>all ctrl</h1>
 <p>
   selector: 
-  stream <input type="range" class="rangeCtrl" name="fader" id="stream" min="0" max="127" value="1"> <span id="stream_val">1</span><br>
-  buffer <input type="range" class="rangeCtrl" name="fader" id="buff" min="0" max="127" value="0"> <span id="buff_val">0</span><br> 
-   1     <input type="range" class="rangeCtrl" name="fader" id="1" min="0" max="127" value="0"> <span id="1_val">0</span><br>
-   2     <input type="range" class="rangeCtrl" name="fader" id="2" min="0" max="127" value="0"> <span id="2_val">0</span><br>
-   3     <input type="range" class="rangeCtrl" name="fader" id="3" min="0" max="127" value="0"> <span id="3_val">0</span><br>
-   4     <input type="range" class="rangeCtrl" name="fader" id="4" min="0" max="127" value="0"> <span id="4_val">0</span><br>
-   empty <input type="range" class="rangeCtrl" value="0" min="0" max="127" name="fader" id="empty"> <span id="empty_val">0</span>
+  stream <input type="range" class="rangeCtrl" name="fader" id="fader_stream" min="0" max="127" value="1"> <span id="fader_stream_val">1</span><br>
+  buffer <input type="range" class="rangeCtrl" name="fader" id="fader_buff" min="0" max="127" value="0"> <span id="fader_buff_val">0</span><br> 
+   1     <input type="range" class="rangeCtrl" name="fader" id="fader_1" min="0" max="127" value="0"> <span id="fader_1_val">0</span><br>
+   2     <input type="range" class="rangeCtrl" name="fader" id="fader_2" min="0" max="127" value="0"> <span id="fader_2_val">0</span><br>
+   3     <input type="range" class="rangeCtrl" name="fader" id="fader_3" min="0" max="127" value="0"> <span id="fader_3_val">0</span><br>
+   4     <input type="range" class="rangeCtrl" name="fader" id="fader_4" min="0" max="127" value="0"> <span id="fader_4_val">0</span><br>
+   empty <input type="range" class="rangeCtrl" value="0" min="0" max="127" name="fader" id="fader_empty"> <span id="fader_empty_val">0</span>
   <br>
   trans | broadcast<input type="radio" value="broadcast" class="emit_mode" name="emit_all"> nextdoor<input type="radio" value="nextdoor" class="emit_mode" name="emit_all"> random<input type="radio" value="random" class="emit_mode" name="emit_all"> self<input type="radio" value="self" class="emit_mode" name="emit_all">  no_emit<input type="radio" value="no_emit" class="emit_mode" name="emit_all"></span>  | with self<input type="checkbox" value="self" name="self_all" class="checkbox_mode"> | with mobile<input type="checkbox" value="mobile" class="checkbox_mode" name="mobi_all">
   <br>
+  selected mute: <input type="checkbox" value="stream" class="checkbox_mode" name="mute_all" id="mute_all_stream" checked>stream <input type="checkbox" value="buff" class="checkbox_mode" name="mute_all" id="mute_all_buff" checked>buff <input type="checkbox" value="1" class="checkbox_mode" name="mute_all" id="mute_all_1" checked>1 <input type="checkbox" value="2" class="checkbox_mode" name="mute_all" id="mute_all_2" checked>2 <input type="checkbox" value="3" class="checkbox_mode" name="mute_all" id="mute_all_3" checked>3 <input type="checkbox" value="4" class="checkbox_mode" name="mute_all" id="mute_all_4" checked>4
+  <br>
   screen: <input type="radio" value="video" class="radio_mode" name="scrn_all">video <input type="radio" value="flash" class="radio_mode" name="scrn_all">flash <input type="radio" value="spectrum" class="radio_mode" name="scrn_all">spectram
   <br>
-  mobile: <input type="checkbox" value="switch" class="checkbox_mode" name="mbsw_all" checked> bpm:<input type="range" value="0" min="0" max="120" class="rangeCtrl" id="all" name="mobiBPM"> <span id="mobiBPM_val">0</span>
-
+  gain: <input type="range" value="1" class="rangeCtrl" min="0" max="1" step="0.05" id="gain_all" name="gain"> | <span id="gain_all_val">1</span>
+  <br>
+  pool: <input type="range" value="0" class="rangeCtrl" min="0" max="5" step="1" id="pool_all" name="pool"> | <span id="pool_all_val">0</span>
+  <br>
+  mobile: <input type="checkbox" value="switch" class="checkbox_mode" name="mbsw_all" checked> bpm:<input type="range" value="0" min="0" max="120" class="rangeCtrl" id="mobiBPM_all" name="mobiBPM"> <span id="mobiBPM_all_val">0</span>
   <br>
   <span id="all_buff">buff: <input type="checkbox" value="buff" class="checkbox_mode" name="buff_all"></span> <span id="buffclear" class="clickCtrl" name="buffClear">clear</span>
    | <span id="all_receive">receive: <input type="checkbox" value="receive" class="checkbox_mode" name="recv_all"></span>
@@ -44,6 +50,9 @@
   <span id="reset" name="buffClear">client buffer clear</span>
 </p>
 <p>
+record: <input type="checkbox" class="checkbox_mode" name="rec">
+</p>
+<p>
   streamBuff: <span id="streamBuff_length"></span>
   <br>
   recordedBuff: "<span id="recordedBuff_name"></span>" : <span id="recordedBuff_length"></span>
@@ -52,32 +61,51 @@
 </p>
   <h1 class="h1" name="audio_import">audio import</h1>
   <p class="audio_import">audio file send<br>
-  1;<select class="file_select" name="1">
+  1;<select class="file_select" name="1" id="snd">
     <% for(var i=0;i<recordedFile.length;i++){ %>
     <option value="<%= recordedFile[i] %>"><%= recordedFile[i] %></option>
     <% } %>
   </select>
-  2;<select class="file_select" name="2">
+  2;<select class="file_select" name="2" id="snd">
     <% for(var i=0;i<recordedFile.length;i++){ %>
     <option value="<%= recordedFile[i] %>"><%= recordedFile[i] %></option>
     <% } %>
   </select>
-  3;<select class="file_select" name="3">
+  3;<select class="file_select" name="3" id="snd">
     <% for(var i=0;i<recordedFile.length;i++){ %>
     <option value="<%= recordedFile[i] %>"><%= recordedFile[i] %></option>
     <% } %>
   </select>
-  4;<select class="file_select" name="4">
-    <% for(var i=0;i<recordedFile.length;i++){ %>
-    <option value="<%= recordedFile[i] %>"><%= recordedFile[i] %></option>
-    <% } %>
-  </select>
-  fieldrec;<select class="file_select" name="fieldrec">
+  4;<select class="file_select" name="4" id="snd">
     <% for(var i=0;i<recordedFile.length;i++){ %>
     <option value="<%= recordedFile[i] %>"><%= recordedFile[i] %></option>
     <% } %>
   </select><br>
-  <span name="audioClear" class="clickCtrl">audio clear</span>
+
+  <h1 class="h1" name="img_import">image import</h1>
+  <p class="image_import">image file send<br>
+  1;<select class="file_select" name="1" id="img">
+    <% for(var i=0;i<imgFile.length;i++){ %>
+    <option value="<%= imgFile[i] %>"><%= imgFile[i] %></option>
+    <% } %>
+  </select>
+  2;<select class="file_select" name="2" id="img">
+    <% for(var i=0;i<imgFile.length;i++){ %>
+    <option value="<%= imgFile[i] %>"><%= imgFile[i] %></option>
+    <% } %>
+  </select>
+  3;<select class="file_select" name="3" id="img">
+    <% for(var i=0;i<imgFile.length;i++){ %>
+    <option value="<%= imgFile[i] %>"><%= imgFile[i] %></option>
+    <% } %>
+  </select>
+  4;<select class="file_select" name="4" id="img">
+    <% for(var i=0;i<imgFile.length;i++){ %>
+    <option value="<%= imgFile[i] %>"><%= imgFile[i] %></option>
+    <% } %>
+  </select><br>
+
+
   <h1 class="h1" name="oscillator">oscillator;</h1>
   <p class="oscillator">
   volume: <input type="checkbox" name="osc_swt_all" class="osc_ctrl_checkbox">  
@@ -132,6 +160,7 @@
     <script type="text/javascript">
       var recordedFile = <%- JSON.stringify(recordedFile) %>;
       var socket = io.connect();
+      var started = <%= started %>;
     </script>
     <script type="text/javascript" src="/javascripts/ctrl.js"></script>
     <script type="text/javascript" src="/javascripts/ctrl_ui.js"></script>

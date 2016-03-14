@@ -62,10 +62,8 @@ function playAudioStream(flo32arr) {
 
 socket.on('stream_from_server',function(data) {
   console.log(data.stream[0]);
-  if(data.type === "stream" || data.type === "buff") {
     streamBuffer = [data.stream];
     videoBuffer = [data.video];
-  }
 });
 
 socket.on('playCtrl_from_server', function(data) {

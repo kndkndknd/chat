@@ -1,0 +1,13 @@
+<% include head/header %>
+
+<p><button style="display: block">Play/pause</button></p>
+
+<script src="/javascripts/rhythm.js"></script>
+<script src="/javascripts/playSocket.js"></script>
+<script>
+var sample = new RhythmSample();
+document.querySelector('button').addEventListener('click', function() {
+sample.play("kick", 80);
+});
+</script>
+</body></html>
