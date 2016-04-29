@@ -310,7 +310,7 @@ exports.sndImp = function wavImport(url, pcm, fname, bufferSize, io,trackNo) {
   var tmpBuff = new Float32Array(bufferSize);
   var i = 0;
   console.log('wav load start');
-//pcm.getPcmData('test.mp3', { stereo: true, sampleRate: 44100 },
+//pcm.getPcmData('me.mp3', { stereo: true, sampleRate: 44100 },
   pcm.getPcmData(url, { stereo: true, sampleRate: 44100 },
     function(sample, channel) {
     // Sample is from [-1.0...1.0], channel is 0 for left and 1 for right
@@ -351,3 +351,97 @@ exports.oscStts = function oscStatus(socket, io, oscroom){
     oscroom[socket.id] = {volume: 0.5, frequency: 440, portament: 0.1};
   console.log(oscroom);
 }
+
+exports.keyCtrl = function keyControl(io, data){
+  if(data.mode === 'self_switch') {
+    io.sockets.emit('selfCtrl_from_server', data.value);
+  } else if(data.mode === 'chat' || data.mode === 'text' || data.mode === 'self') {
+    io.sockets.emit('modeCtrl_from_server', data.mode);
+  }
+}
+
+exports.textCtrl = function textControl(kChar, charArr, nameList, io, socket){
+  var idArr = [];
+  var charList = {"S":[4,["A","H"]],"SA":[0,["T"]],"SAT":[0,["O"]],"SATO":[0,["S"]],"SATOS":[0,["H"]],"SATOSH":[0,["I"]],"SATOSHI":[0,[]],"A":[3,["T","S","N"]],"AT":[0,["O"]],"ATO":[0,["S"]],"ATOS":[0,["H"]],"ATOSH":[0,["I"]],"ATOSHI":[0,[]],"T":[0,["O"]],"TO":[0,["S"]],"TOS":[0,["H"]],"TOSH":[0,["I"]],"TOSHI":[0,[]],"O":[4,["S"]],"OS":[0,["H"]],"OSH":[0,["I"]],"OSHI":[0,[]],"S":[4,["H","A"]],"SH":[4,["I"]],"SHI":[4,["R"]],"H":[4,["I"]],"HI":[4,["R"]],"I":[4,["R"]],"Y":[1,["A"]],"YA":[1,["S"]],"YAS":[1,["H"]], "YASH":[1,["I"]],"YASHI":[1,["R"]],"YASHIR":[1,["O"]],"YASHIRO":[1,[]],"AS":[1,["H"]], "ASH":[1,["I"]],"ASHI":[1,["R"]],"ASHIR":[1,["O"]],"ASHIRO":[1,[]],"SHIR":[1,["O"]],"SHIRO":[1,[]],"HIR":[1,["O"]],"HIRO":[1,[]],"IR":[1,["O"]],"IRO":[1,[]],"R":[1,["O"]],"RO":[1,[]],"K":[2,["A"]],"KA":[2,["N"]],"KAN":[2,["D"]], "KAND":[2,["A"]],"KANDA":[2,[]],"AN":[2,["D"]], "AND":[2,["A"]],"ANDA":[2,[]],"N":[2,["D"]], "ND":[2,["A"]],"NDA":[2,[]],"D":[2,["A"]],"DA":[2,[]]};
+  //console.log(idArr);
+  var me;
+  for (key in io.sockets.adapter.rooms.trans) {
+    idArr.push(key);
+    if(key === socket.id){
+      me = idArr.length - 1;
+    }
+  }
+  if(charArr.length === 0) {
+    if(nameList[0].indexOf(kChar) > -1){
+      charArr[0] = 0;
+      charArr[1] = kChar;
+    } else if(nameList[1].indexOf(kChar) > -1){
+      charArr[0] = 1;
+      charArr[1] = kChar;
+    } else if(nameList[2].indexOf(kChar) > -1){
+      charArr[0] = 2;
+      charArr[1] = kChar;
+    } else if(nameList[3].indexOf(kChar) > -1){
+      charArr[0] = 3;
+      charArr[1] = kChar;
+    } else if(nameList[4].indexOf(kChar) > -1){
+      charArr[0] = 4;
+      charArr[1] = kChar;
+    }
+  } else {
+    if(charList[charArr[1]][1].indexOf(kChar) > -1) {
+      charArr[0] = charList[charArr[1]][0];
+      charArr[1] = charArr[1] + kChar;
+    } else {
+      if(charArr[0] === 3) {
+        io.sockets.emit('speak_from_server', charArr[1]);
+      } else if (charArr[0] === 4) {
+        if(me === 0) {
+          console.log
+          socket.emit('speak_from_server', charArr[1]);
+          if(idArr.length > 1) {
+            socket.to(idArr[1]).emit('speak_from_server', charArr[1]);
+          }
+        } else if(me === 1) {
+          socket.to(idArr[0]).emit('speak_from_server', charArr[1]);
+          socket.emit('speak_from_server', charArr[1]);
+        } else {
+          socket.to(idArr[0]).emit('speak_from_server', charArr[1]);
+          if(idArr.length > 1) {
+            socket.to(idArr[1]).emit('speak_from_server', charArr[1]);
+          }
+        }
+      } else {
+        if(charArr[0] === me) {
+          socket.emit('speak_from_server', charArr[1]);
+        } else {
+          if(idArr.length > charArr[0]) {
+            socket.to(idArr[charArr[0]]).emit('speak_from_server', charArr[1]);
+          }
+        }
+      }
+
+      if(nameList[0].indexOf(kChar) > -1){
+        charArr[0] = 0;
+        charArr[1] = kChar;
+      } else if(nameList[1].indexOf(kChar) > -1){
+        charArr[0] = 1;
+        charArr[1] = kChar;
+      } else if(nameList[2].indexOf(kChar) > -1){
+        charArr[0] = 2;
+        charArr[1] = kChar;
+      } else if(nameList[3].indexOf(kChar) > -1){
+        charArr[0] = 3;
+        charArr[1] = kChar;
+      } else if(nameList[4].indexOf(kChar) > -1){
+        charArr[0] = 4;
+        charArr[1] = kChar;
+      } else {
+        charArr = []; 
+      }
+    }
+  }
+  return charArr;
+
+}
+

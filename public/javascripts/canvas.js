@@ -24,15 +24,6 @@ function sizing(){
 
 function redraw(r,g,b) {
   ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
-  if(r<40)
-    r = r + 30;
-  if(g<40)
-    g = g + 30;
-  if(b<40)
-    b = b + 30;
-  console.log(r);
-  console.log(g);
-  console.log(b);
 
   ctx.fillRect(0,0,canvas.width,canvas.height);
   setTimeout(function(){
@@ -111,3 +102,20 @@ var playVideo = function(video){
 
   }
 }
+
+var animation;
+
+var animationSelf = function(){
+  var data = new Uint8Array(256);
+  analyser.getByteFrequencyData(data);
+  var r = data[148];
+  var g = data[104];
+  var b = data[44];
+  ctx.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  console.log("r:" + String(r));
+  console.log("g:" + String(g));
+  console.log("b:" + String(b));
+  animation = requestAnimationFrame(animationSelf);
+};
+//animation();

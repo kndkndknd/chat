@@ -1,3 +1,7 @@
+#2016年4月29日の改訂
+八広HIGHTIでの矢代諭史とのデュオのための改訂
+Socket.ioを介さない内蔵マイクとスピーカーによるフィードバックのモードを追加
+[Speak.js]("https://github.com/mattytemple/speak-js")を使用したテキスト読み上げモードの追加も行ったが演奏には使用しなかった
 #2016年2月28日の改訂
 UjeonggukでのChoi Joonyongとのデュオのための改訂
 Chromeのアップデートに伴いGetUserMediaがhttp通信でできなくなったためHTTPS化しました。

@@ -51,6 +51,8 @@ var oscroom = {};
 var loadBuff = [];
 var recordedFile = [];
 var initReload = 200;
+var charArr = [];
+var nameList = {0:["T"], 1:["Y","R"], 2:["K","N","D"], 3:["A"], 4:["O","S","H","I"]};
 
 var app = express();
 
@@ -112,7 +114,7 @@ app.get('/', function(req, res){
     init_rate: sampleRate,
     init_jump: jumpBit,
     init_size: bufferSize,
-    speedMode: speedMode,
+    //speedMode: speedMode,
     emitMode: emitMode,
     receiveMode: receiveMode,
     playMode: playMode,
@@ -132,7 +134,13 @@ app.get('/mobile', function(req, res){
     sw: mobiSwitch
   });
 });
+app.get('/feedback', function(req, res){
+  res.render('feedback',{
+    title: 'mobile'
+  });
+});
 var port = process.env.PORT || 8888;
+//var port = process.env.PORT || 3000;
 var server = https.createServer(options,app).listen(port);
 
 //socket.io
@@ -171,7 +179,9 @@ io.sockets.on('connection', function(socket) {
   //下記３つのコントロール、やってることほぼ同じだし関数化したい
   socket.on('modeCtrl_from_client', function(data){
     console.log(data);
-    if(data.type ==="buff") {
+    if(data.type === "keyCtrl") {
+      expo.keyCtrl(io,data);
+    } else if(data.type ==="buff") {
       buffMode = data.mode;
       console.log("buffMode:" + String(data.mode) + "(length:" + String(streamBuff["stream"].length) + ")");
       io.sockets.to('ctrl').emit('status_from_server', {
@@ -398,6 +408,14 @@ io.sockets.on('connection', function(socket) {
       recordedBuff[data.target]["arr"].push(tmp);
     }
     socket.emit('buffRtn_from_server',rtnarr);
+  });
+
+  socket.on('keycode_from_client', function(data){
+    console.log(data);
+    //expo.textCtrl(data, io, socket);
+    var kChar = String.fromCharCode(data);
+    charArr = expo.textCtrl(kChar, charArr, nameList, io, socket);
+    console.log(charArr);
   });
 
   //for debug

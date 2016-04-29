@@ -9,20 +9,20 @@ var oneshotBuff = [];
 
 //statusEmit();
 
-console.log(micgain.gain.value);
+console.log(chatGain.gain.value);
 socket.json.emit('status_from_client', {
   type: 'trans',
   sampleRate: sampleRate,
   emitMode: emitMode,
   receiveMode: receiveMode,
   playMode: playMode,
-  spedMode: speedMode,
+ // spedMode: speedMode,
   scrnMode: scrnMode,
   BPMMode: seqBPM,
   selector: selector,
   mobileMode: false,
   selfMode: false,
-  gain: micgain.gain.value,
+  gain: chatGain.gain.value,
   pool: poolLength
 });
 
@@ -123,8 +123,8 @@ socket.on('scrnCtrl_from_server', function(data) {
 
 socket.on('gainCtrl_from_server', function(data) {
   //console.log(data);
-  micgain.gain.value = data;
-  console.log('micgain value: ' + String(micgain.gain.value));
+  chatGain.gain.value = data;
+  console.log('chatGain value: ' + String(chatGain.gain.value));
 });
 
 socket.on('poolCtrl_from_server', function(data) {
@@ -155,6 +155,34 @@ socket.on('buffRtn_from_server', function(data){
   oneshotBuffer = data;
 });
 
+socket.on('modeCtrl_from_server', function(data){
+  console.log('mode:' + String(data));
+  modeChange(data);
+});
+socket.on('selfCtrl_from_server', function(data){
+  if(mode === "self") {
+    selfGain.gain.value = data;
+  }
+});
+
+socket.on('speak_from_server', function(data){
+  var pitchval = Math.floor(100 * Math.random());
+  console.log("speak " + data, {pitch: pitchval});
+  speak(data);
+  ctx.fillStyle = "white";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "black";
+  ctx.font = "bold " + String(Math.floor(canvas.width * 4 / (3 * data.length))) +"px 'Arial'";
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(data,(canvas.width/2),(canvas.height/2));
+  ctx.restore();
+  setTimeout(function(){
+    ctx.fillStyle = "white";
+    ctx.fillRect(0,0,canvas.width,canvas.height); 
+  },500);
+});
+
 function emitStream(bufferData, emitMode, video) {
   //$("#print").html(emitMode);
   socket.json.emit('stream_from_client',{
@@ -169,4 +197,43 @@ function buffRequest(bufftarget,length) {
     target: bufftarget,
     length: length
   });
+}
+function modeChange(data) {
+  if(data === "chat"){
+    cancelAnimationFrame(animation);
+    ctx.fillStyle = "black";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    mode = "chat";
+    selfGain.gain.value = 0;
+    playMode = true;
+    receiveMode = true;
+    emit_flag = true;
+    emitMode = "random";
+  } else if(data === "self") {
+    mode = "self";
+    selfGain.gain.value = 1;
+    filter.frequency.value = 5000;
+    playMode = false;
+    receiveMode = false;
+    emit_flag = false;
+    emitMode = "no_emit";
+    streamBuffer = null;
+    videoBuffer = null;
+    streamBuffer = [];
+    videoBuffer = [];
+    animationSelf();
+  } else if(data === "text") {
+    ctx.fillStyle = "white";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    mode = "text";
+    selfGain.gain.value = 0;
+    playMode = false;
+    receiveMode = false;
+    emit_flag = false;
+    emitMode = "no_emit";
+    streamBuffer = null;
+    videoBuffer = null;
+    streamBuffer = [];
+    videoBuffer = [];
+  }
 }

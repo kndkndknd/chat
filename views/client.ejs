@@ -12,11 +12,12 @@
   <canvas id="cnvs">
     canvas not applied.
   </canvas>
+    <div id="audio"></div>
   </div>
   <script type="text/javascript">
-  if(navigator.userAgent.indexOf('iPhone') > 0|| navigator.userAgent.indexOf('Android') > 0) {
-    location.href = '/mobile/';
-  }
+  //if(navigator.userAgent.indexOf('iPhone') > 0|| navigator.userAgent.indexOf('Android') > 0) {
+  //  location.href = '/mobile/';
+  //}
   var socket = io.connect();
   var speak_flag = <%= init_speak %>;
   var sampleRate = <%= init_rate %>;
@@ -25,7 +26,6 @@
   var emitMode = <%- JSON.stringify(emitMode) %>;
   var receiveMode = <%= receiveMode %>;
   var playMode = <%= playMode %>;
-  var speedMode = <%- JSON.stringify(speedMode) %>;
   var decay = Math.floor((1000*bufferSize)/sampleRate);
   var initReload = <%= initReload %>;
   var oscVolume = <%= init_osc_vol %>;
@@ -41,9 +41,13 @@
   var image;
   var receive;
   var receive_ctx;
-  var scrnMode;
+  var scrnMode="video";
   var poolLength = 0;
+  var mode = "chat";
+  var empty_cli = 1;
+  var textView = "";
   </script>
+  <script src="/javascripts/speakClient.js"></script>
   <script src="/javascripts/keyboard.js"></script>
   <script src="/javascripts/canvas.js"></script>
   <script src="/javascripts/getusermedia.js"></script>
