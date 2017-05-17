@@ -1,19 +1,35 @@
 {
-  "name": "application-name",
-  "version": "0.0.1",
+  "name": "20160522",
+  "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node app.js"
-  },
-  "engines": {
-    "node": "0.10.26",
-    "npm": "1.4.3"
+    "start": "node ./bin/www",
+    "build": "babel ./public/js_src -d ./public/javascripts"
   },
   "dependencies": {
-    "express": "3.4.8",
-    "ejs": "1.0.0",
-    "socket.io": "1.3.5",
-    "pcm": "1.0.3",
-    "easyimage": "2.1.0"
+    "body-parser": "~1.13.2",
+    "cookie-parser": "~1.3.5",
+    "debug": "~2.2.0",
+    "ejs": "~2.3.3",
+    "express": "~4.13.1",
+    "morgan": "~1.6.1",
+    "node-schedule": "^1.1.0",
+    "serve-favicon": "~2.3.0",
+    "socket.io": "^1.4.6",
+    "dash-button": "~2.0.1",
+    "request": "latest",
+    "johnny-five": "latest"
+  },
+  "description": "for performance in 2016.05.22",
+  "main": "app.js",
+  "author": "knd",
+  "license": "ISC",
+  "devDependencies": {
+    "babel": "^6.5.2",
+    "babel-cli": "^6.7.7",
+    "babel-preset-es2015": "^6.6.0",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.2",
+    "gulp-plumber": "^1.1.0"
   }
 }

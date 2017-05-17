@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <link rel="stylesheet" type="text/css" href="/stylesheets/style.css" media="all">
+  <link rel="stylesheet" type="text/css" href="/css/client.css" media="all">
   <title><%= title %></title>
 </head>
 <body id="body">
@@ -12,47 +12,17 @@
   <canvas id="cnvs">
     canvas not applied.
   </canvas>
-    <div id="audio"></div>
   </div>
   <script type="text/javascript">
-  //if(navigator.userAgent.indexOf('iPhone') > 0|| navigator.userAgent.indexOf('Android') > 0) {
-  //  location.href = '/mobile/';
-  //}
   var socket = io.connect();
-  var speak_flag = <%= init_speak %>;
-  var sampleRate = <%= init_rate %>;
-  var bufferSize = <%= init_size %>;
-  var jumpBit = <%= init_jump %>;
-  var emitMode = <%- JSON.stringify(emitMode) %>;
-  var receiveMode = <%= receiveMode %>;
-  var playMode = <%= playMode %>;
-  var decay = Math.floor((1000*bufferSize)/sampleRate);
-  var initReload = <%= initReload %>;
-  var oscVolume = <%= init_osc_vol %>;
-  var oscPitch = <%= init_osc_pitch %>;
-  var oscPortament = <%= init_osc_portament %>;
-  var oscDifftype = <%- JSON.stringify(init_osc_difftype) %>;
-  var oscDiffval = <%= init_osc_diffval %>;
-  var seqBPM = 0;
-  var oneshotBuff = [];
   var video;
-  var buffer;
-  var bufferContext;
-  var image;
-  var receive;
-  var receive_ctx;
-  var scrnMode="video";
-  var poolLength = 0;
-  var mode = "chat";
-  var empty_cli = 1;
-  var textView = "";
+  var mode = "none"; //"osc" or "feedback" or "whitenoise"
+  var videoMode = "none"; //"record" or "playback"
+  var no = <%= no %>;
+  var strings = "";
   </script>
-  <script src="/javascripts/speakClient.js"></script>
-  <script src="/javascripts/keyboard.js"></script>
   <script src="/javascripts/canvas.js"></script>
-  <script src="/javascripts/getusermedia.js"></script>
-  <script src="/javascripts/osc.js"></script>
+  <script src="/javascripts/webaudio.js"></script>
   <script src="/javascripts/sock.js"></script>
-  <script src="/javascripts/Recorderjs/recorder.js"></script>
 </body>
 </html>
