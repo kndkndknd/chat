@@ -18,7 +18,8 @@
     "socket.io": "^1.4.6",
     "dash-button": "~2.0.1",
     "request": "latest",
-    "johnny-five": "latest"
+    "johnny-five": "latest",
+    "pcm": "latest"
   },
   "description": "for performance in 2016.05.22",
   "main": "app.js",

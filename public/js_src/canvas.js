@@ -62,7 +62,6 @@ const sendVideo = () => {
   return buffer.toDataURL("image/webp");
 }
 
-
 const textPrint = (str) => {
   console.log("text print");
   ctx.fillStyle = "white";
@@ -73,6 +72,7 @@ const textPrint = (str) => {
     } else {
       ctx.font = "bold " + String(Math.floor((canvas.height * 5 / 4) / str.length)) + "px 'Arial'";
     }
+    //ctx.rotate(270 * Math.PI /180);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(str, canvas.width / 2, canvas.height / 2);

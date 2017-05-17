@@ -1,4 +1,7 @@
 let serverFlag = false;
+let standAlone = false;
+let stringsClient = "";
+
 socket.emit('infoReqFromClient');
 socket.on('infoFromServer',(data) =>{
   no = data["number"];
@@ -9,6 +12,9 @@ socket.on('infoFromServer',(data) =>{
 
 socket.on('stringsFromServer', (data) =>{
   textPrint(data);
+  if(data === "B"){
+    bass();
+  }
 });
 
 socket.on('cmdFromServer', (data) => {
@@ -26,7 +32,7 @@ socket.on('instructionFromServer', (data) => {
 });
 
 socket.on('chunkFromServer', (data) => {
-  console.log(data["mode"]);
+//  console.log(data["mode"]);
   if(videoMode === "lookback"){
     playAudioStream(data["audio"]);
     playVideo(data["video"]);
@@ -43,16 +49,25 @@ socket.on('chunkFromServer', (data) => {
 });
 
 socket.on('chatFromServer', (data) => {
-  if(videoMode === "chat"){
-    if(data != {}){
+  if(videoMode === "chat" || videoMode === "stream" || videoMode === "chat_stream"){
+    if(data["audio"] != undefined) {
       playAudioStream(data["audio"]);
+    }
+    if(data["video"] != undefined) {
       playVideo(data["video"]);
     }
+    if(data["target"] === undefined){
       socket.emit('chatFromClient',chatBuffer);
-//    }
+//      console.log('chat');
+    } else {
+      textPrint(data["target"]);
+      socket.emit('wavReqFromClient', data["target"]);
+//      console.log('stream');
+    }
   }
 });
 
+//let prevCmd = "";
 
 const charEmit = (char) => {
   socket.emit('charFromClient', char);
@@ -62,18 +77,30 @@ const doCmd = (cmd) => {
   switch(cmd["cmd"]){
     case "FEEDBACK":
     case "FEED":
-      stop();
-      mode = "feedback"
-      console.log("feedback")
-      feedbackGain.gain.value = 1;
-      textPrint("FEEDBACK");
+//      stop();
+      if(feedbackGain.gain.value > 0) {
+        mode = "none";
+        feedbackGain.gain.value = 0;
+        textPrint("");
+      } else {
+        mode = "feedback"
+        console.log("feedback")
+        feedbackGain.gain.value = 1;
+        textPrint("FEEDBACK");
+      }
       break;
     case "WHITENOISE":
     case "NOISE":
-      stop();
-      mode = "whitenoise";
-      noiseGain.gain.value = 0.3;
-      textPrint("WHITENOISE");
+//      stop();
+      if(noiseGain.gain.value > 0){
+        mode = "none";
+        noiseGain.gain.value = 0;
+        textPrint("");
+      } else {
+        mode = "whitenoise";
+        noiseGain.gain.value = 0.3;
+        textPrint("WHITENOISE");
+      }
       break;
     case "RECORD":
     case "REC":
@@ -91,6 +118,7 @@ const doCmd = (cmd) => {
       videoStop();
       textPrint("PLAYBACK");
       setTimeout(() => {
+        textPrint("");
         videoMode = "play";
         console.log("playback")
       },800);
@@ -113,7 +141,10 @@ const doCmd = (cmd) => {
       if(videoMode === "none"){
         videoMode = "lookback";
         textPrint("LOOP BACK");
-        setTimeout(() => {socket.emit('reqChunkFromClient',"loop_all");},500);
+        setTimeout(() => {
+          textPrint("");
+          socket.emit('reqChunkFromClient',"loop_all");
+        },500);
       } else {
         textPrint("ERROR");
         setTimeout(() => {textPrint("");},1000);
@@ -150,23 +181,60 @@ const doCmd = (cmd) => {
       }, 500);
       break;
     case "CHAT":
+    case "VIDEOCHAT":
+    /*
+      if(videoMode === "stream" || videoMode === "chat_stream"){
+        videoMode = "chat_stream";
+      } else {
+        videoMode = "chat";
+      }
+      */
       videoMode = "chat";
       textPrint("VIDEO CHAT");
       setTimeout(()=> {
         chatEmit(chatBuffer);
-        textPrint("")
+        textPrint("");
+      },800);
+      break;
+    case "DRUM":
+    case "SILENCE":
+      textPrint(cmd["cmd"]);
+      setTimeout(()=> {
+        wavRequest(cmd["cmd"]);
+        textPrint("");
+      },800);
+      break;
+    case "SAMPLERATE":
+    case "RATE":
+      sampleRateChange();
+      console.log(sampleRate);
+      textPrint(String(sampleRate) + "Hz");
+      setTimeout(() => {
+        textPrint("");
+      },800);
+      break;
+    case "FILTER":
+      let printText = filterChange();
+      textPrint("FILTER: " + String(printText) + "Hz");
+      setTimeout(() => {
+        textPrint("");
       },800);
       break;
     case "CLICK":
       click();
       break;
     case "SINEWAVE":
-      stop();
-      mode = "sinewave";
-      chordChange = 0;
-      textPrint(String(cmd["property"]) + "Hz");
-      osc.frequency.value = cmd["property"];
-      oscGain.gain.value = 0.5;
+      if(oscGain.gain.value > 0 && osc.frequency.value === cmd["property"]) {
+        mode = "none";
+        oscGain.gain.value = 0;
+        textPrint("");
+      } else {
+        mode = "sinewave";
+        chordChange = 0;
+        textPrint(String(cmd["property"]) + "Hz");
+        osc.frequency.value = cmd["property"];
+        oscGain.gain.value = 0.5;
+      }
       break;
     case "SWITCH ON":
     case "SWITCH OFF":
@@ -178,23 +246,19 @@ const doCmd = (cmd) => {
 
     default:
       strings = "";
+      //textPrint("STOP");
       break;
 
   }
 }
 
 const stop = () => {
-  switch (mode) {
-    case "sinewave":
-      oscGain.gain.value = 0;
-      break;
-    case "feedback":
-      feedbackGain.gain.value = 0;
-      break;
-    case "whitenoise":
-      noiseGain.gain.value = 0;
-      break;
-  }
+  oscGain.gain.value = 0;
+  feedbackGain.gain.value = 0;
+  noiseGain.gain.value = 0;
+  bassGain.gain.value = 0;
+  bassFlag = false;
+  textPrint("");
   mode = "none";
   textPrint("STOP");
 }
@@ -214,6 +278,12 @@ const chatEmit = (data) => {
   console.log("chat emit");
 }
 
+const wavRequest = (data) => {
+  videoMode = "chat";
+  socket.emit('wavReqFromClient', data);
+  console.log(data);
+}
+
 const chunkEmit = (data) => {
   socket.emit('chunkFromClient', data);
 }
@@ -227,6 +297,68 @@ setInterval(() => {
 
 $(() =>{
   $(document).on("keydown", (e)=> {
-    charEmit(e.keyCode);
+    if(e.keyCode === 188){
+      if(standAlone) {
+        standAlone = false;
+        textPrint("network connect");
+        setTimeout(()=>{
+          textPrint("");
+        },300);
+      } else {
+        standAlone = true;
+        textPrint("stand alone");
+        setTimeout(()=>{
+          textPrint("");
+        },300);
+      }
+    } else if(standAlone){
+      let charCode = keycodeMap[String(e.keyCode)];
+      if(charCode === "enter"){
+        console.log(isNaN(Number(stringsClient)));
+        if (isNaN(Number(stringsClient)) === false && stringsClient != "") {
+          doCmd({
+            "cmd":"SINEWAVE",
+            "property": Number(stringsClient)
+          });
+          console.log("sinewave stand alone")
+        } else {
+          doCmd({"cmd":stringsClient});
+          console.log(stringsClient + " stand alone")
+        }
+        stringsClient = "";
+      } else if(charCode === "escape") {
+        console.log("stop stand alone");
+        doCmd({"cmd":"STOP"});
+        stringsClient = "";
+      } else if(charCode === "left_arrow" || charCode === "backspace"){
+        stringsClient = "";
+        textPrint("");
+      } else if(e.keyCode >= 48 && e.keyCode <= 90 || e.keyCode === 190 || e.keyCode === 32){
+        switch(charCode){
+          case "C":
+            click();
+            break;
+          case "B":
+            bass();
+            break;
+          case "F":
+            doCmd({"cmd":"FEEDBACK"});
+            break;
+          case "W":
+          case "N":
+            doCmd({"cmd":"WHITENOISE"})
+            break;
+          case "S":
+            doCmd({"cmd":"SAMPLERATE"});
+            break;
+          default:
+            stringsClient = stringsClient + charCode;
+            textPrint(stringsClient);
+            break;
+        }
+      }
+    } else {
+      charEmit(e.keyCode);
+    }
   });
 });

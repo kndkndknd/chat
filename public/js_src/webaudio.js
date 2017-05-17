@@ -25,6 +25,13 @@ oscGain.connect(audioContext.destination);
 osc.frequency.value = 440;
 oscGain.gain.value = 0;
 osc.start(0);
+let bassOsc = audioContext.createOscillator();
+let bassGain = audioContext.createGain();
+bassOsc.connect(bassGain);
+bassGain.connect(audioContext.destination);
+bassOsc.frequency.value = 20;
+bassGain.gain.value = 0;
+bassOsc.start(0);
 
 let clickOsc = audioContext.createOscillator();
 let clickGain = audioContext.createGain();
@@ -71,9 +78,21 @@ const alertPlay = () => {
   console.log("alert");
 }
 const click = () => {
+  textPrint("CLICK")
   let t0 = audioContext.currentTime;
+//  clickGain.gain.value = 0.7;
   clickGain.gain.setValueAtTime(0.7, t0);
   clickGain.gain.setTargetAtTime(0,t0,0.03);
+  setTimeout(()=>{
+    textPrint("");
+  },300);
+//  setTimeout(()=>{
+//    clickGain.gain.value = 0;
+//    let t1 = audioContext.currentTime;
+//    clickGain.gain.setTargetAtTime(0, t1, t1+25);
+//  }, 20)
+  //clickGain.gain.setValueAtTime(0, t0+30);
+//  clickGain.gain.linearRampToValueAtTime(0, t0+30);
 }
 
 const loadSample = (ctx, url) => {
@@ -87,8 +106,66 @@ const loadSample = (ctx, url) => {
   }
   req.send();
 }
-loadSample(audioContext, "/sounds/alert.wav");
+loadSample(audioContext, "/files/alert.wav");
 
+const bassLine = [55,68.75,68.75,82.5,82.5,103.125,110];
+let bassFlag = false;
+
+const bass = ()  => {
+  if(bassFlag){
+    bassGain.gain.value = 0;
+    bassFlag = false;
+    textPrint("");
+  } else {
+    bassOsc.frequency.value = bassLine[Math.floor(bassLine.length * Math.random())];
+    bassGain.gain.value = 0.7;
+    textPrint("BASS");
+    bassFlag = true;
+  }
+}
+
+const sampleRateChange = () =>{
+  switch(sampleRate){
+    case 22050:
+      sampleRate = 44100;
+      break;
+    case 44100:
+      sampleRate = 88200;
+      break;
+    case 88200:
+      sampleRate = 11025;
+      break;
+    case 11025:
+      sampleRate = 22050;
+      break;
+    default:
+      sampleRate = 22050;
+      break;
+  }
+}
+
+const filterChange = () => {
+  let returnValue = 0;
+  switch(filter.frequency.value){
+    case 200:
+      returnValue = 2000;
+      break;
+    case 2000:
+      returnValue = 8000;
+      break;
+    case 8000:
+      returnValue = 14000;
+      break;
+    case 14000:
+      returnValue = 0;
+      break;
+    default:
+      returnValue = 200;
+      break;
+  }
+  filter.frequency.value = returnValue;
+  return returnValue;
+}
 
 //video record/play ここから
 let image;
@@ -164,8 +241,8 @@ const initialize = () =>{
   } }, (stream) =>{
     let mediastreamsource = void 0;
     mediastreamsource = audioContext.createMediaStreamSource(stream);
-    mediastreamsource.connect(javascriptnode);
     mediastreamsource.connect(filter);
+    filter.connect(javascriptnode);
     filter.connect(feedbackGain);
     //      selfGain.connect(analyser);
     feedbackGain.connect(audioContext.destination);

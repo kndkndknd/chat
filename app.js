@@ -10,15 +10,14 @@ const routes = require('./routes/index');
 const users = require('./routes/users');
 
 const five = require('johnny-five');
+const pcm = require('pcm');
+
 
 const DashButton = require("dash-button");
 const request = require('request');
 const exportComponent = require('./exportFunction.js');
 const keycodeMap = require ('./lib/keyCode.json');
-
-const fs = require('fs');
-const pcm = require('pcm');
-
+const videoBuff = require ('./lib/image.json');
 const board = new five.Board();
 let boardSwitch = false;
 
@@ -30,7 +29,6 @@ board.on('ready', () => {
 
 //getUserMediaのためのHTTPS化
 const https = require('https');
-//let schedule = require('node-schedule');
 
 //https鍵読み込み
 const ssl_server_key = './server_key/server_key.pem',
@@ -52,6 +50,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   let err = new Error('Not Found');
@@ -59,6 +58,10 @@ app.use(function(req, res, next) {
   next(err);
 });
 
+// error handlers
+
+// development error handler
+// will print stacktrace
 if (app.get('env') === 'development') {
   app.use(function(err, req, res, next) {
     res.status(err.status || 500);
@@ -88,13 +91,56 @@ let io = require('socket.io').listen(server);
 
 console.log("server start");
 
-const cmdList = ["FEEDBACK","WHITENOISE","SINEWAVE","RECORD","PLAYBACK","LOOKBACK","LOOPBACK","CHAT","CLICK","NOISE","FEED","PLAY","REC","LOOK","LOOP","MOD","MODULATION","CHORD","STOP"];
+// 用途要確認
+let startTime;
+let toDay;
+let thisYear;
+let thisMonth;
+let thisDate;
+let scheduler;
+
+
+const pcm2arr = (url) => {
+  let tmpBuff = new Float32Array(8192);
+  let rtnBuff = [];
+  var i = 0;
+  pcm.getPcmData(url, { stereo: true, sampleRate: 44100 },
+    function(sample, channel) {
+      tmpBuff[i] = sample;
+      i++;
+      if(i === 8192){
+        rtnBuff.push(tmpBuff);
+        //recordedBuff.push(tmpBuff);
+        tmpBuff = new Float32Array(8192);
+        i = 0;
+      }
+    },
+    function(err, output) {
+      if (err)
+        throw new Error(err);
+      //console.log(recordedBuff.length);
+      console.log('wav loaded from ' + url);
+    }
+  );
+  return rtnBuff;
+}
+
+//exports.sndImp = function wavImport(url, pcm, fname, bufferSize, io,trackNo) {
+const audioBuff = {
+  "DRUM": pcm2arr("./public/files/drum.wav"),
+  "SILENCE": pcm2arr("./public/files/silence.wav")
+}
+
+
+const instructionArr = ["DO NOT MOVE", "BE QUIET", "GET OUT"];
+const cmdList = ["FEEDBACK","WHITENOISE","SINEWAVE","RECORD","PLAYBACK","LOOKBACK","LOOPBACK","CHAT","VIDEOCHAT","CLICK","NOISE","FEED","PLAY","REC","DRUM","SILENCE","LOOK","LOOP","SAMPLERATE","FILTER","RATE","MOD","MODULATION","CHORD","STOP"];
 const instructionDuration = [10000, 30000, 60000]
 let strings = "";
 let prevCmd = "";
 
 // for dashbottun
-const PHY_ADDR = "**:**:**:**:**";
+/*
+const PHY_ADDR = "34:d2:70:8d:c0:09"; //wilkinson
 let button = new DashButton(PHY_ADDR);
 let buttonFlag = false;
 
@@ -102,6 +148,7 @@ button.addListener(() => {
   let property = "";
   let chooseCmd = "";
   let buttonList = cmdList;
+//  buttonList.unshift("SWITCH");
   if(buttonFlag){
     chooseCmd = "STOP";
     buttonFlag = false;
@@ -145,6 +192,9 @@ button.addListener(() => {
     io.emit("cmdFromServer", {"cmd" : chooseCmd, "property" : property});
   }
 });
+*/
+
+// for instruction from server
 
 // for pool audio visual chunk
 let audiovisualChunk = [];
@@ -166,11 +216,12 @@ io.sockets.on('connection',(socket)=>{
   });
 
   socket.on('charFromClient', (keyCode) => {
-    console.log(keyCode);
     let character = keycodeMap[String(keyCode)];
-    if(character === "enter" || character === "space" ) {
-      console.log("do cmd " + strings);
+    //      strings = exportComponent.char2Cmd(io, strings, character, cmdList, keyCode);
+    if(character === "enter") {
       if(cmdList.indexOf(strings) > -1) {
+        console.log(cmdList.indexOf(strings));
+        console.log("do cmd " + strings);
         io.emit("cmdFromServer", {"cmd" : strings});
       } else if (isNaN(Number(strings)) === false && strings != "") {
         console.log("sinewave " + strings + "Hz");
@@ -209,16 +260,35 @@ io.sockets.on('connection',(socket)=>{
     } else if(character === "escape"){
       io.emit("cmdFromServer", {"cmd": "STOP"});
       strings =  "";
-    } else if(keyCode >= 48 && keyCode <= 90 || keyCode === 190){ //alphabet or number
+    } else if(keyCode >= 48 && keyCode <= 90 || keyCode === 190 || keyCode === 32){ //alphabet or number
       //add strings;
       strings =  strings + character;
       io.emit("stringsFromServer", strings);
+      if(strings === "B") {
+        strings = "";
+      }
+//
     } else if(character === "up_arrow"){
       strings = prevCmd;
       io.emit("stringsFromServer", strings);
     }
   });
-
+  socket.on('wavReqFromClient',(data)=>{
+    let idList = [];
+    for (let key in io["sockets"]["connected"]) {
+      idList.push(key);
+    }
+    console.log('emit' + data);
+    console.log(idList);
+//    let audioChoose = Math.floor(Math.random() * audioBuff.length);
+//    console.log(audioChoose);
+    io.to(idList[Math.floor(Math.random() * idList.length)]).emit('chatFromServer', {
+      "audio": audioBuff[data][Math.floor(Math.random() * audioBuff[data].length)],
+//      "audio": audioBuff[data][audioChoose],
+      "video": videoBuff[data][Math.floor(Math.random() * videoBuff.length)],
+      "target": data
+    });
+  })
   socket.on('reqChunkFromClient', (data)=>{
 //    forin(io["sockets"]["connected"]){
 //    }
