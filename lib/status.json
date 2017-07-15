@@ -1,0 +1,88 @@
+{
+  "mod":{
+    "repeat":"0",
+    "modList":{
+      "0": "0.5",
+      "1": "0.5",
+      "2": "1",
+      "3": "18"
+    }
+  },
+  "chord": {
+    "repeat": "0",
+    "chordList":{
+      "0" : "1",
+      "1" : "4/3",
+      "2" : "9/4",
+      "3" : "15/8",
+      "4" : "17/8",
+      "5" : "7/3",
+      "6" : "11/3"
+    }
+  },
+  "portament" : {
+    "0" : "0",
+    "1" : "50",
+    "2" : "500",
+    "3" : "5000",
+    "4" : "50000"
+  },
+  "sampleRate":{
+    "CHAT": "22050",
+    "BUFFER": "22050",
+    "PLAYBACK": "22050",
+    "FILE": "22050",
+    "DRUM": "22050"
+  },
+  "connected":{
+    "okappachan":{},
+    "pocke":{},
+    "ctrl":{},
+    "other":{},
+    "all": {}
+  },
+  "cmd":{
+    "now": {
+      "SINEWAVE": false,
+      "WHITENOISE": false,
+      "FEEDBACK": false,
+      "CHAT": false,
+      "PLAYBACK": false,
+      "TIMELAPSE": false,
+      "FILE": false,
+      "DRUM": false,
+      "SILENCE": false,
+      "RECORD": false,
+      "SWITCH": false
+    },
+    "mute": {
+      "okappachan": false,
+      "pocke": false
+    },
+    "target": {
+      "all": true
+    },
+    "prevCmd": "",
+    "prevTime": "",
+    "list":{
+      "FEEDBACK": "FEEDBACK",
+      "FEED": "FEEDBACK",
+      "WHITENOISE": "WHITENOISE",
+      "NOISE": "WHITENOISE",
+      "VIDEOCHAT": "CHAT",
+      "CHAT": "CHAT",
+      "CLICK": "CLICK",
+      "RECORD": "RECORD",
+      "REC": "RECORD",
+      "SAMPLERATE": "SAMPLERATE",
+      "RATE": "SAMPLERATE",
+      "DRUM": "DRUM",
+      "SILENCE": "SILENCE",
+      "PLAY": "PLAYBACK",
+      "PLAYBACK": "PLAYBACK",
+      "LAPSE": "TIMELAPSE",
+      "TIMELAPSE": "TIMELAPSE",
+      "FILTER": "FILTER"
+    }
+  }
+ }
