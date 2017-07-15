@@ -30,14 +30,14 @@ osc.connect(oscGain);
 oscGain.connect(masterGain);
 osc.frequency.value = 440;
 oscGain.gain.value = 0;
-osc.start(0);
+// osc.start(0);
 let bassOsc = audioContext.createOscillator();
 let bassGain = audioContext.createGain();
 bassOsc.connect(bassGain);
 bassGain.connect(masterGain);
 bassOsc.frequency.value = 20;
 bassGain.gain.value = 0;
-bassOsc.start(0);
+// bassOsc.start(0);
 
 
 let clickOsc = audioContext.createOscillator();
@@ -46,7 +46,7 @@ clickOsc.connect(clickGain);
 clickGain.connect(masterGain);
 clickOsc.frequency.value = 440;
 clickGain.gain.value = 0;
-clickOsc.start(0);
+// clickOsc.start(0);
 
 //whitenoise
 let whitenoise = audioContext.createOscillator();
@@ -64,10 +64,9 @@ whitenoise.connect(whitenoiseNode);
 whitenoiseNode.connect(noiseGain);
 noiseGain.connect(audioContext.destination);
 //whitenoiseNode.connect(audioContext.destination);
-whitenoise.start(0);
 
 // chat
-chatBuffer = {};
+//chatBuffer = {};
 //let chatGain = audioContext.createGain();
 //chatGain.gain.value = 1;
 // chatGain.connect(audioContext.destination);
@@ -258,6 +257,7 @@ const playAudioStream = (flo32arr) => {
 //video record/play ここまで
 
 const initialize = () =>{
+  /*
   navigator.getUserMedia({ video: true, audio: {
     "mandatory": {
       "googEchoCancellation": false,
@@ -290,6 +290,23 @@ const initialize = () =>{
   image = document.createElement("img");
   receive = document.getElementById("cnvs");
   receive_ctx = receive.getContext("2d");
+  */
 };
+
+const Play = () => {
+  $("#iphone").remove();
+  console.log("start");
+  osc.start(0);
+  bassOsc.start(0);
+  clickOsc.start(0);
+  whitenoise.start(0);
+  sizing();
+}
+let ua = navigator.userAgent.toLowerCase();
+//console.log(ua);
+if(!((ua.indexOf('iphone') > -1) || (ua.indexOf('ipad') > -1))){
+  Play();
+}
+
 
 window.addEventListener("load", initialize, false);

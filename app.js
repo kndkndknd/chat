@@ -13,7 +13,7 @@ const routes = require('./routes/index');
 const users = require('./routes/users');
 
 //const five = require('johnny-five');
-const pcm = require('pcm');
+//const pcm = require('pcm');
 
 
 //const DashButton = require("dash-button");
@@ -64,33 +64,39 @@ app.use(favicon(path.join(__dirname, 'lib/favicon.ico')));
 let cli_no = 0;
 /* GET home page. */
 app.get('/', function(req, res, next) {
-  res.render('client', {
-    title: 'knd',
-    no:cli_no,
-    prop: 'all'
-  });
+  res.render('info', {
+    title: 'knd'});
 });
+/*
 app.get('/okappachan', function(req, res, next) {
   res.render('client', {
     title: 'okappachan',
-    no: cli_no,
-    prop: 'all'});
+    prop: 'okappachan',
+    no: cli_no});
   cli_no = cli_no + 1;
 });
 app.get('/pocke', function(req, res, next) {
   res.render('client', {
     title: "pocke",
-    no: cli_no,
-    prop: 'all'});
+    prop: 'pocke',
+    no: cli_no});
+  cli_no = cli_no + 1;
+});
+*/
+app.get('/oisogashi',function(req, res, next) {
+  res.render('client', {
+    title: "oisogashi",
+    prop: "all",
+    no: cli_no});
   cli_no = cli_no + 1;
 });
 
 app.get('/ctrl', function(req, res, next) {
   res.render('ctrl', {
     title: 'ctrl',
+    prop: 'ctrl',
     status: statusList,
-    no: cli_no,
-    prop: 'all'
+    no: cli_no
    });
   cli_no = cli_no + 1;
 });
@@ -138,7 +144,7 @@ app.use(function(err, req, res, next) {
 
 module.exportComponent = app;
 
-let port = 8888;
+let port = 3000;
 let server = https.createServer(options,app).listen(port);
 let io = require('socket.io').listen(server);
 
@@ -152,7 +158,7 @@ let thisMonth;
 let thisDate;
 let scheduler;
 
-
+/*
 const pcm2arr = (url) => {
   let tmpBuff = new Float32Array(8192);
   let rtnBuff = [];
@@ -184,6 +190,7 @@ const audioBuff = {
   "SILENCE": pcm2arr("./public/files/silence.wav"),
   "PLAYBACK": []
 };
+*/
 const videoBuff = {"PLAYBACK": []};
 //const recBuffer = {"audio":[],"video":[]};
 //const sampleRateList = {};

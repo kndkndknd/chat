@@ -32,24 +32,16 @@ exports.roomEmit = function roomEmit(io, name, data, target){
 
 exports.randomIdEmit = function randomIdEmit(io,ids, target, name, data){
   let idList = [];
-  if(target["all"]){
-    for(let key in ids["all"]){
+  if(target["okappachan"]){
+    for(let key in ids["okappachan"]){
       //if(statusList["connected"]["okappachan"]=== "connected"){
         idList.push(key);
       //}
     }
-  } else {
-    if(target["okappachan"]){
-      for(let key in ids["okappachan"]){
-        //if(statusList["connected"]["okappachan"]=== "connected"){
-          idList.push(key);
-        //}
-      }
-    }
-    if(target["pocke"]){
-      for(let key in ids["pocke"]){
-        idList.push(key);
-      }
+  }
+  if(target["pocke"]){
+    for(let key in ids["pocke"]){
+      idList.push(key);
     }
   }
   io.to(idList[Math.floor(Math.random() * idList.length)]).emit(name, data);

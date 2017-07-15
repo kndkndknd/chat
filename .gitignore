@@ -1,0 +1,11 @@
+node_modules
+.DS_Store
+server_key
+**.aiff
+**.wav
+**.aif
+**.mp3
+**.mov
+**.mp4
+.stfolder
+.stignore

@@ -30,7 +30,7 @@ socket.on('instructionFromServer', (data) => {
   mode = "instruction"
   setTimeout(()=>{
     whitePrint();
-//  wavReqFromClient  textPrint("");
+//    textPrint("");
   }, data["duration"])
 });
 

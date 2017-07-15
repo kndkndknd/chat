@@ -38,8 +38,8 @@
     "okappachan":{},
     "pocke":{},
     "ctrl":{},
-    "other":{},
-    "all": {}
+    "all":{},
+    "other":{}
   },
   "cmd":{
     "now": {
@@ -60,6 +60,8 @@
       "pocke": false
     },
     "target": {
+      "okappachan": true,
+      "pocke": true,
       "all": true
     },
     "prevCmd": "",

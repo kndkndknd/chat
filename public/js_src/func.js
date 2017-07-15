@@ -1,6 +1,8 @@
 let serverFlag = false;
 let standAlone = false;
 
+
+
 const charEmit = (char) => {
   socket.emit('charFromClient', char);
 }
@@ -92,6 +94,7 @@ const doCmd = (cmd) => {
     case "MOD":
       if(mode==="sinewave"){
         osc.frequency.value = osc.frequency.value + (no * modList[(modChange % modList.length)]);
+        freqVal = osc.frequency.value;
         modChange = modChange + 1;
         chordChange = 0;
         whitePrint();
@@ -177,13 +180,14 @@ const doCmd = (cmd) => {
       break;
     case "SINEWAVE":
       whitePrint();
-      if(oscGain.gain.value > 0 && osc.frequency.value === cmd["property"]) {
+      if(oscGain.gain.value > 0 && freqVal === cmd["property"]) {
         mode = "none";
         oscGain.gain.value = 0;
 //        textPrint("");
       } else {
         mode = "sinewave";
         chordChange = 0;
+        freqVal = cmd["property"];
         textPrint(String(cmd["property"]) + "Hz");
 //        osc.frequency.value = cmd["property"];
         console.log(t0);
@@ -267,7 +271,7 @@ const doCmd = (cmd) => {
           }, 500);
         }
       } else {
-        if(isNaN(Number(cmd["property"])) === false && cmd["property"] != ""){
+        if(isNaN(Number(cmd["property"])) === false && cmd["property"] != "" && Number(cmd["property"])<= 1){
           masterGain.gain.value = Number(cmd["property"]);
         }
         textPrint("VOLUME " + cmd["property"]);
@@ -331,7 +335,7 @@ const chunkEmit = (data) => {
 const statusView = () => {
   let statusText = "";
   if(oscGain.gain.value > 0){
-    statusText = String(osc.frequency.value) + "Hz";
+    statusText = String(freqVal) + "Hz";
   }
   if(feedbackGain.gain.value > 0){
     if(statusText === ""){
@@ -361,6 +365,7 @@ const statusView = () => {
   textPrint(statusText);
 }
 
+/*
 const emitInterval = 120000;
 setInterval(() => {
   if(videoMode === "none"){
@@ -368,3 +373,4 @@ setInterval(() => {
     videoMode = "chunkEmit";
   }
 }, emitInterval);
+*/
