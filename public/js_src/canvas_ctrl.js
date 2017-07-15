@@ -18,8 +18,8 @@ const draw=() =>{
 }
 
 const sizing=() =>{
-  $("#cnvs").attr({ height: $(window).height() });
-  $("#cnvs").attr({ width: $(window).width() });
+  $("#cnvs").attr({ height: $(window).height()/4 });
+  $("#cnvs").attr({ width: $(window).width()/4 });
 }
 
 const playVideo = (video) => {
@@ -28,9 +28,6 @@ const playVideo = (video) => {
   image.src = video;
   var wdth;
   var hght;
-  wdth = $(window).width();
-  hght = (wdth * 3) / 4;
-  /*
   if(receive.width > (receive.height*3/4)) {
     hght = receive.height;
     wdth = hght * 4 / 3;
@@ -38,7 +35,6 @@ const playVideo = (video) => {
     wdth = receive.width;
     hght = wdth * 3 / 4;
   }
-  */
   image.onload = function(){
     receive_ctx.drawImage(image, 0, 0, wdth, hght);
   }

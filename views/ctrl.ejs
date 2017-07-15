@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <link rel="stylesheet" type="text/css" href="/css/ctrl.css" media="all">
+  <title><%= title %></title>
+</head>
+<body id="body">
+  <script src="/javascripts/jquery-1.11.0.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <div id="wrapper">
+  <video id="video" style="display:none;"></video>
+  <canvas id="cnvs">
+    canvas not applied.
+  </canvas>
+  </div>
+  <ul id="status">
+    <li>おかっぱちゃんハウス: </li>
+    <li>pocke: </li>
+  </ul>
+  <div id="targetCtrl">
+    target: <input type="checkbox" class="checkbox" id="target" name="okappachan" value="okappachan" checked="checked">おかっぱちゃんハウス  <input type="checkbox" class="checkbox" id="target" name="pocke" value="pocke" checked="checked">pocke
+    <br>
+    mute : <input type="checkbox" class="checkbox" id="mute" name="okappachan" value="okappachan">おかっぱちゃんハウス  <input type="checkbox" class="checkbox" id="mute" name="pocke" value="pocke">pocke
+  </div>
+  <div id="sampleRate">
+    <ul>Sample Rate
+    <li id="CHAT" class="sampleRate">CHAT: 22050</li>
+    <li id="TIMELAPSE" class="sampleRate">TIMELAPSE: 22050</li>
+    <li id="PLAYBACK" class="sampleRate">PLAYBACK: 22050</li>
+    <li id="FILE" class="sampleRate">FILE: 22050</li>
+    <li id="DRUM" class="sampleRate">DRUM: 22050</li>
+  </div>
+  <div id="cmdStatus">
+    now doing: <ul id="cmd" class="cmdStatus"></ul><br>
+    prevCmd: <div id="prevCmd" class="cmdStatus"></div><br>
+    prevCmd did at <div id="cmdTimeLine" class="cmdStatus"></div>
+  </div>
+  <script type="text/javascript">
+  var socket = io.connect();
+  var video;
+  var mode = "none"; //"osc" or "feedback" or "whitenoise"
+  var videoMode = "none"; //"record" or "playback"
+  var title = "<%= title %>";
+//  var no = <%= no %>;
+  var strings = "";
+  </script>
+  <script src="/javascripts/canvas_ctrl.js"></script>
+  <script src="/javascripts/webaudio.js"></script>
+  <script src="/javascripts/keyboard.js"></script>
+  <script src="/javascripts/keycode.js"></script>
+  <script src="/javascripts/ctrl.js"></script>
+  <script src="/javascripts/sock.js"></script>
+  <script src="/javascripts/func.js"></script>
+</body>
+</html>

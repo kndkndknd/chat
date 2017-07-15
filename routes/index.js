@@ -1,8 +1,21 @@
+var express = require('express');
+var router = express.Router();
+let cli_no = 0;
+/* GET home page. */
+router.get('/', function(req, res, next) {
+  res.render('client', {
+    title: 'client',
+    no: cli_no});
+  cli_no = cli_no + 1;
+});
 
-/*
- * GET home page.
- */
+router.get('/ctrl', function(req, res, next) {
+  res.render('instruct', {
+    title: 'ctrl',
+    status: statusList,
+    no: cli_no
+   });
+  cli_no = cli_no + 1;
+});
 
-exports.index = function(req, res){
-  res.render('index', { title: 'Express' });
-};
+module.exports = router;

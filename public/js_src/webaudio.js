@@ -3,6 +3,10 @@ window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
 window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.msAudioContext;
 
 let audioContext = new AudioContext();
+let masterGain = audioContext.createGain();
+masterGain.gain.value = 0.7;
+let prevGain = 0.7;
+masterGain.connect(audioContext.destination);
 
 // feedback
 let feedbackGain = audioContext.createGain();
@@ -20,23 +24,26 @@ let sampleRate = 44100;
 // sinewave
 let osc = audioContext.createOscillator();
 let oscGain = audioContext.createGain();
+let oscPortament = 0;
 osc.connect(oscGain);
-oscGain.connect(audioContext.destination);
+//oscGain.connect(audioContext.destination);
+oscGain.connect(masterGain);
 osc.frequency.value = 440;
 oscGain.gain.value = 0;
 osc.start(0);
 let bassOsc = audioContext.createOscillator();
 let bassGain = audioContext.createGain();
 bassOsc.connect(bassGain);
-bassGain.connect(audioContext.destination);
+bassGain.connect(masterGain);
 bassOsc.frequency.value = 20;
 bassGain.gain.value = 0;
 bassOsc.start(0);
 
+
 let clickOsc = audioContext.createOscillator();
 let clickGain = audioContext.createGain();
 clickOsc.connect(clickGain);
-clickGain.connect(audioContext.destination);
+clickGain.connect(masterGain);
 clickOsc.frequency.value = 440;
 clickGain.gain.value = 0;
 clickOsc.start(0);
@@ -61,11 +68,17 @@ whitenoise.start(0);
 
 // chat
 chatBuffer = {};
+//let chatGain = audioContext.createGain();
+//chatGain.gain.value = 1;
+// chatGain.connect(audioContext.destination);
+
+
 
 const modList= [0.5, 0.5, 1, 18];
 const chordList = [1, 4/3, 9/4, 15/8, 17/8, 7/3, 11/3];
 let chordChange = 0;
 let modChange = 0;
+let freqVal;
 
 // alert sound
 let alertBuffer = null;
@@ -115,10 +128,11 @@ const bass = ()  => {
   if(bassFlag){
     bassGain.gain.value = 0;
     bassFlag = false;
-    textPrint("");
+    whitePrint();
   } else {
     bassOsc.frequency.value = bassLine[Math.floor(bassLine.length * Math.random())];
     bassGain.gain.value = 0.7;
+    whitePrint();
     textPrint("BASS");
     bassFlag = true;
   }
@@ -172,15 +186,10 @@ let image;
 let receive;
 let receive_ctx;
 const onAudioProcess = (e) => {
-  if(videoMode === "record") {
-    let input = e.inputBuffer.getChannelData(0);
-    let bufferData = new Float32Array(bufferSize);
-    for (let i = 0; i < bufferSize; i++) {
-      bufferData[i] = input[i];
-    }
-    streamBuffer.push(bufferData);
-    videoBuffer.push(sendVideo());
-  }
+
+//    streamBuffer.push(bufferData);
+//    videoBuffer.push(sendVideo());
+  /*
   if(videoMode === "play"){
     if(streamBuffer.length > 0){
       playAudioStream(streamBuffer.shift());
@@ -193,38 +202,57 @@ const onAudioProcess = (e) => {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
   }
-  if(videoMode === "chat"){
-    let chatInput = e.inputBuffer.getChannelData(0);
-    let chatAudio = new Float32Array(bufferSize);
-    for (let i = 0; i < bufferSize; i++) {
-      chatAudio[i] = chatInput[i];
-    }
-    chatBuffer["audio"] = chatAudio;
-    chatBuffer["video"] = sendVideo();
-  }
-  if(videoMode === "chunkEmit"){
+  */
+  if(videoMode != "none"){
     let input = e.inputBuffer.getChannelData(0);
     let bufferData = new Float32Array(bufferSize);
-    for (let i = 0; i < bufferSize; i++) {
+//    let buffer8Data = new Uiny8Array(bufferSize/2);
+//    let bufferData = new Float32Array(bufferSize / 2);
+//    for (let i = 0; i < (bufferSize / 2); i+2) {
+//      buffer8Data[i] = Math.round(input[i] * 100000000);
+//    }
+    for (let i=0; i<(bufferSize); i++ ){
+//    let j=0;
+//    for (let i=0; i<(bufferSize / 2); i++ ){
+//      j = i * 2;
+//      bufferData[i] = input[j];
       bufferData[i] = input[i];
+//      console.log("i="+ String(i) + " j=" + String(j));
     }
-    let sendChunk = {"audio":bufferData, "video": sendVideo()};
-    chunkEmit(sendChunk);
-    videoMode = "none";
+//    console.log(buffer8Data[1000]);
+    if(videoMode === "record") {
+//      chunkEmit({"audio":buffer8Data, "video":sendVideo(), "target": "PLAYBACK"});
+        chunkEmit({"audio":bufferData, "video":sendVideo(), "target": "PLAYBACK"});
+    }
+    if(videoMode === "chat"){
+//      chatBuffer["audio"] = buffer8Data;
+      chatBuffer["audio"] = bufferData;
+      chatBuffer["video"] = sendVideo();
+      chatBuffer["target"] = "CHAT";
+    }
+    if(videoMode === "chunkEmit"){
+//      let sendChunk = {"audio":buffer8Data, "video": sendVideo(), "target": "timelapse"};
+      let sendChunk = {"audio":bufferData, "video": sendVideo(), "target": "timelapse"};
+      chunkEmit(sendChunk);
+      videoMode = "none";
+    }1
   }
 }
 const playAudioStream = (flo32arr) => {
+//const playAudioStream = (int8arr) => {
   let audio_buf = audioContext.createBuffer(1, bufferSize, sampleRate),
       audio_src = audioContext.createBufferSource();
 
   let audioData = audio_buf.getChannelData(0);
   for(let i = 0; i < audioData.length; i++){
     audioData[i] = flo32arr[i];
+//      audioData[i] = int8arr[i]/100000000;
+//      if(i+1 < audioData.length){audioData[i+1] = audioData[i];}
   }
 
   audio_src.buffer = audio_buf;
-  audio_src.connect(audioContext.destination);
-
+//  audio_src.connect(audioContext.destination);
+  audio_src.connect(masterGain);
   audio_src.start(0);
 }
 //video record/play ここまで

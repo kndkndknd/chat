@@ -15,6 +15,46 @@ exports.chunkEmit = function chunkEmit(io, audiovisualChunk){
     io.emit('chunkFromServer', audiovisualChunk.shift());
   }
 }
+
+exports.roomEmit = function roomEmit(io, name, data, target){
+  if(target["all"]){
+    io.emit(name,data);
+  } else {
+    if(target["okappachan"]){
+      io.to("okappachan").emit(name,data);
+    }
+    if(target["pocke"]){
+      io.to("pocke").emit(name,data);
+    }
+    io.to("ctrl").emit(name,data);
+  }
+}
+
+exports.randomIdEmit = function randomIdEmit(io,ids, target, name, data){
+  let idList = [];
+  if(target["all"]){
+    for(let key in ids["all"]){
+      //if(statusList["connected"]["okappachan"]=== "connected"){
+        idList.push(key);
+      //}
+    }
+  } else {
+    if(target["okappachan"]){
+      for(let key in ids["okappachan"]){
+        //if(statusList["connected"]["okappachan"]=== "connected"){
+          idList.push(key);
+        //}
+      }
+    }
+    if(target["pocke"]){
+      for(let key in ids["pocke"]){
+        idList.push(key);
+      }
+    }
+  }
+  io.to(idList[Math.floor(Math.random() * idList.length)]).emit(name, data);
+}
+
 /*
 exports.char2Cmd = function char2Strings(io, strings, character, cmdList, keyCode) {
   if(character === "enter" || character === "space" ) { console.log("do cmd " + strings);
