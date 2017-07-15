@@ -38,7 +38,6 @@
     "okappachan":{},
     "pocke":{},
     "ctrl":{},
-    "all":{},
     "other":{}
   },
   "cmd":{
@@ -85,6 +84,23 @@
       "LAPSE": "TIMELAPSE",
       "TIMELAPSE": "TIMELAPSE",
       "FILTER": "FILTER"
+    },
+    "stream": {
+      "VIDEOCHAT": "CHAT",
+      "CHAT": "CHAT",
+      "DRUM": "DRUM",
+      "SILENCE": "SILENCE",
+      "PLAY": "PLAYBACK",
+      "PLAYBACK": "PLAYBACK",
+      "LAPSE": "TIMELAPSE",
+      "TIMELAPSE": "TIMELAPSE"
+    },
+    "streamFlag": {
+      "CHAT": false,
+      "DRUM": false,
+      "SILENCE": false,
+      "PLAYBACK": false,
+      "TIMELAPSE": false
     }
   }
  }

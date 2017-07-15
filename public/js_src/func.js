@@ -1,7 +1,6 @@
 let serverFlag = false;
 let standAlone = false;
-
-
+let streamStatus;
 
 const charEmit = (char) => {
   socket.emit('charFromClient', char);
@@ -94,7 +93,6 @@ const doCmd = (cmd) => {
     case "MOD":
       if(mode==="sinewave"){
         osc.frequency.value = osc.frequency.value + (no * modList[(modChange % modList.length)]);
-        freqVal = osc.frequency.value;
         modChange = modChange + 1;
         chordChange = 0;
         whitePrint();
@@ -129,30 +127,12 @@ const doCmd = (cmd) => {
         //textPrint("");
       }, 500);
       break;
+      /*
     case "CHAT":
     case "DRUM":
     case "SILENCE":
     case "TIMELAPSE":
-    case "PLAYBACK":
-      videoMode = "chat";
-      whitePrint();
-      if(cmd["cmd"] === "TIMELAPSE"){
-        textPrint("PAST EVENT");
-      } else {
-        textPrint(cmd["cmd"]);
-      }
-      setTimeout(()=> {
-        /*
-        socket.emit('wavReqFromClient', {
-          "target": "CHAT",
-          "chunk": chatBuffer
-        });*/
-//        chunkEmit(chatBuffer);
-//        chatEmit(chatBuffer);
-        whitePrint();
-//        textPrint("");
-      },800);
-      break;
+    case "PLAYBACK":*/
       /*
     case "SAMPLERATE":
     case "RATE":
@@ -180,14 +160,13 @@ const doCmd = (cmd) => {
       break;
     case "SINEWAVE":
       whitePrint();
-      if(oscGain.gain.value > 0 && freqVal === cmd["property"]) {
+      if(oscGain.gain.value > 0 && osc.frequency.value === cmd["property"]) {
         mode = "none";
         oscGain.gain.value = 0;
 //        textPrint("");
       } else {
         mode = "sinewave";
         chordChange = 0;
-        freqVal = cmd["property"];
         textPrint(String(cmd["property"]) + "Hz");
 //        osc.frequency.value = cmd["property"];
         console.log(t0);
@@ -197,22 +176,23 @@ const doCmd = (cmd) => {
       }
       break;
     case "MUTE":
-      if(muteFlag){
-        masterGain.gain.value = prevGain;
-        muteFlag = false;
-      } else {
+      if(cmd["property"]){
         prevGain = masterGain.gain.value;
         masterGain.gain.value = 0;
+        whitePrint();
+        textPrint("MUTE");
+        setTimeout(()=>{whitePrint();},500);
+      } else {
+        masterGain.gain.value = prevGain;
+        whitePrint();
+        textPrint("UNMUTE");
+        setTimeout(()=>{whitePrint();},500);
 /*        oscGain.gain.value = 0;
         noiseGain.gain.value = 0;
         feedbackGain.gain.value = 0;
         bassGain.gain.value = 0;
         clickGain.gain.value = 0;*/
 
-        muteFlag = true;
-        whitePrint();
-        textPrint("MUTE");
-        setTimeout(()=>{whitePrint();},500);
       }
       break;
     case "SINEWAVE_UP":
@@ -271,7 +251,7 @@ const doCmd = (cmd) => {
           }, 500);
         }
       } else {
-        if(isNaN(Number(cmd["property"])) === false && cmd["property"] != "" && Number(cmd["property"])<= 1){
+        if(isNaN(Number(cmd["property"])) === false && cmd["property"] != ""){
           masterGain.gain.value = Number(cmd["property"]);
         }
         textPrint("VOLUME " + cmd["property"]);
@@ -292,7 +272,29 @@ const doCmd = (cmd) => {
       break;
 
     default:
-      whitePrint();
+      for(let key in streamStatus){
+        if(key === cmd["cmd"]){
+            videoMode = "chat";
+            whitePrint();
+            if(cmd["cmd"] === "TIMELAPSE"){
+              textPrint("PAST EVENT");
+            } else {
+              textPrint(cmd["cmd"]);
+            }
+            setTimeout(()=> {
+              /*
+              socket.emit('wavReqFromClient', {
+                "target": "CHAT",
+                "chunk": chatBuffer
+              });*/
+      //        chunkEmit(chatBuffer);
+      //        chatEmit(chatBuffer);
+              whitePrint();
+      //        textPrint("");
+            },800);
+        }
+      }
+//      whitePrint();
       //textPrint("STOP");
       break;
 
@@ -335,7 +337,7 @@ const chunkEmit = (data) => {
 const statusView = () => {
   let statusText = "";
   if(oscGain.gain.value > 0){
-    statusText = String(freqVal) + "Hz";
+    statusText = String(osc.frequency.value) + "Hz";
   }
   if(feedbackGain.gain.value > 0){
     if(statusText === ""){
@@ -365,12 +367,10 @@ const statusView = () => {
   textPrint(statusText);
 }
 
-/*
 const emitInterval = 120000;
 setInterval(() => {
   if(videoMode === "none"){
-    console.log("送信");
+    // console.log("送信");
     videoMode = "chunkEmit";
   }
 }, emitInterval);
-*/

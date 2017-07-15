@@ -34,6 +34,11 @@ socket.on('instructionFromServer', (data) => {
   }, data["duration"])
 });
 
+socket.on('streamStatusFromServer', (data) =>{
+  streamStatus = data;
+  console.log(streamStatus);
+});
+
 socket.on('chunkFromServer', (data) => {
 //  console.log(data["mode"]);
   if(videoMode === "lookback"){
@@ -61,24 +66,21 @@ socket.on('chatFromServer', (data) => {
       if(data["sampleRate"] != undefined){
         sampleRate = data["sampleRate"];
       }
-      playAudioStream(data["audio"]);
+       playAudioStream(data["audio"]);
     }
     if(data["video"] != undefined && data["video"] != "") {
-      playVideo(data["video"]);
+       playVideo(data["video"]);
     } else {
       whitePrint();
       textPrint(data["target"]);
     }
-    switch(data["target"]){
-      case "CHAT":
-        socket.emit('chunkFromClient', chatBuffer);
-        break;
-      case "DRUM":
-      case "SILENCE":
-      case "PLAYBACK":
-      case "TIMELAPSE":
-        socket.emit('wavReqFromClient', data["target"]);
-        break;
+    if(data["target"] === "CHAT"){
+      socket.emit('chunkFromClient', chatBuffer);
+    /*//test code
+    } else if(data["target"] === "TEST") {
+      console.log("TEST");*/
+    } else {
+      socket.emit('wavReqFromClient', data["target"]);
     }
   }
 });

@@ -7,7 +7,6 @@
 <body id="body">
   <script src="/javascripts/jquery-1.11.0.js"></script>
   <script src="/socket.io/socket.io.js"></script>
-  <div id="iphone">push start <button id="button" onclick="Play()" style="WIDTH:200px;HEIGHT:100px"> start </button></div>
   <div id="wrapper">
   <video id="video" style="display:none;"></video>
   <canvas id="cnvs">
@@ -17,17 +16,17 @@
   <script type="text/javascript">
   var socket = io.connect();
   var video;
-  var title = "<%= prop %>";
+  var title = "<%= title %>";
   var mode = "none"; //"osc" or "feedback" or "whitenoise"
   var videoMode = "none"; //"record" or "playback"
   var no = <%= no %>;
   var strings = "";
   </script>
+  <script src="/javascripts/func.js"></script>
   <script src="/javascripts/sock.js"></script>
   <script src="/javascripts/keycode.js"></script>
   <script src="/javascripts/keyboard.js"></script>
   <script src="/javascripts/canvas.js"></script>
   <script src="/javascripts/webaudio.js"></script>
-  <script src="/javascripts/func.js"></script>
 </body>
 </html>

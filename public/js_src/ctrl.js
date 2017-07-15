@@ -11,18 +11,44 @@ socket.on("statusFromServer", (data) =>{
 
 //チェックボックス操作
 $(function() {
-  $(document).on('change', '.checkbox', () =>{
-    console.log($(this).attr('id'));
-    let json = {"okappachan": $("[name=okappachan]").prop("checked"),"pocke": $("[name=pocke]").prop("checked")}
-    socket.emit('targetCtrl_from_client', json);
+  $(document).on('change', '#mute', () =>{
+    let json = {"okappachan": $('[name=mute_okappachan]').prop("checked"),"pocke": $('[name=mute_pocke]').prop("checked")};
+    socket.emit('targetCtrlFromClient', {
+      "type": "mute",
+      "data": json
+    });
+    console.log(json);
   });
 });
+$(function() {
+  $(document).on('change', '#target', () =>{
+    let json = {"okappachan": $('[name=target_okappachan]').prop("checked"),"pocke": $('[name=target_pocke]').prop("checked")};
+    socket.emit('targetCtrlFromClient', {
+      "type": "target",
+      "data": json
+    });
+    console.log(json);
+  });
+});
+
+$(function() {
+  $(document).on('change', '#uploadSubmit', () =>{
+    let file = $("#uploadFile").val();
+    console.log(file);
+    socket.emit('uploadReqFromClient', file);
+    $('#uploadSubmit').prop("checked",false);
+    textPrint("upload");
+  });
+});
+
 
 const sampleRateView = (sampleRate) => {
   for(let key in sampleRate){
     $('#' + key).text(key + ": " + sampleRate[key]);
   }
 }
+
+
 const cmdView = (cmdStatus) => {
   //現状の実施コマンド記載
   $('#cmd li').remove();

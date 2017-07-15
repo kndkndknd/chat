@@ -13,7 +13,8 @@ const routes = require('./routes/index');
 const users = require('./routes/users');
 
 //const five = require('johnny-five');
-//const pcm = require('pcm');
+const pcm = require('pcm');
+const exec = require('child_process').exec;
 
 
 //const DashButton = require("dash-button");
@@ -67,26 +68,15 @@ app.get('/', function(req, res, next) {
   res.render('info', {
     title: 'knd'});
 });
-/*
 app.get('/okappachan', function(req, res, next) {
   res.render('client', {
     title: 'okappachan',
-    prop: 'okappachan',
     no: cli_no});
   cli_no = cli_no + 1;
 });
 app.get('/pocke', function(req, res, next) {
   res.render('client', {
     title: "pocke",
-    prop: 'pocke',
-    no: cli_no});
-  cli_no = cli_no + 1;
-});
-*/
-app.get('/oisogashi',function(req, res, next) {
-  res.render('client', {
-    title: "oisogashi",
-    prop: "all",
     no: cli_no});
   cli_no = cli_no + 1;
 });
@@ -94,7 +84,6 @@ app.get('/oisogashi',function(req, res, next) {
 app.get('/ctrl', function(req, res, next) {
   res.render('ctrl', {
     title: 'ctrl',
-    prop: 'ctrl',
     status: statusList,
     no: cli_no
    });
@@ -158,7 +147,7 @@ let thisMonth;
 let thisDate;
 let scheduler;
 
-/*
+
 const pcm2arr = (url) => {
   let tmpBuff = new Float32Array(8192);
   let rtnBuff = [];
@@ -175,8 +164,10 @@ const pcm2arr = (url) => {
       }
     },
     function(err, output) {
-      if (err)
+      if (err) {
+        console.log("err");
         throw new Error(err);
+      }
       //console.log(recordedBuff.length);
       console.log('wav loaded from ' + url);
     }
@@ -190,16 +181,11 @@ const audioBuff = {
   "SILENCE": pcm2arr("./public/files/silence.wav"),
   "PLAYBACK": []
 };
-*/
 const videoBuff = {"PLAYBACK": []};
 //const recBuffer = {"audio":[],"video":[]};
 //const sampleRateList = {};
 //const modList= [0.5, 0.5, 1, 18];
 //const chordList = [1, 4/3, 9/4, 15/8, 17/8, 7/3, 11/3];
-
-const homeDir = '/home/knd/'
-const libDir = '20170624/lib/'
-const dbDir = '/20170624/'
 
 const instructionArr = ["HANG", "WALK", "QUIET", "MOVE", "STACK"];
 const cmdList = ["FEEDBACK","WHITENOISE","SINEWAVE","RECORD","PLAYBACK","LOOKBACK","LOOPBACK","CHAT","VIDEOCHAT","CLICK","NOISE","FEED","PLAY","REC","DRUM","SILENCE","LOOK","LOOP","FILTER","MOD","MODULATION","CHORD","STOP"];
@@ -210,7 +196,7 @@ let strings = "";
 
 
 // for connection check
-const intervalValue = 10000; // 1min
+const intervalValue = 30000; // 1min
 //const chunkInterval = 2000; // change later
 setInterval(function() {
 //  io.emit("connectionChkFromServer");
@@ -234,8 +220,10 @@ io.sockets.on('connection',(socket)=>{
   socket.on("connectFromClient", (data) => {
     socket.join(data);
     console.log(io.sockets.adapter.rooms);
+    // console.log("test");
     statusList["connected"][data][socket.id] = true;
     io.to("ctrl").emit("statusFromServer", statusList);
+    io.emit('streamStatusFromServer', statusList["cmd"]["streamFlag"]);
   });
   /*
   socket.on("connectionChkFromClientt", (data) =>{
@@ -259,7 +247,6 @@ io.sockets.on('connection',(socket)=>{
   });
   */
   socket.on('chunkFromClient', (data)=>{
-//    console.log("chunk");
     chunkFromClient(data);
   });
 
@@ -269,7 +256,6 @@ io.sockets.on('connection',(socket)=>{
   });
 
   socket.on('wavReqFromClient',(data)=>{
-//    console.log("what the fuck");
     wavReqFromClient(data);
   })
   /*
@@ -306,13 +292,30 @@ io.sockets.on('connection',(socket)=>{
   });
 */
   socket.on("uploadReqFromClient", (data) =>{
-    uploadReqFromClient();
+    let dataArr = data.split(".");
+     uploadReqFromClient({
+    //  movImport({
+      "type": dataArr[1],
+      "file": dataArr[0]
+    });
   });
 
   //from ctrl.js
-  socket.on("targetCtrl_from_client", (data) =>{
-//    console.log(data["target"]);
-    statusList["cmd"]["target"] = data;
+  socket.on("targetCtrlFromClient", (data) =>{
+    console.log(data);
+    statusList["cmd"][data["type"]] = data["data"];
+    if(data["type"] === "mute"){
+      for(let key in data["data"]){
+        io.to(key).emit('cmdFromServer', {
+          "cmd": "MUTE",
+          "property": data["data"][key]
+        });
+      }
+/*      io.to("pocke").emit('cmdFromServer', {
+        "cmd": "MUTE",
+        "property": data["data"]["pocke"]
+      });*/
+    }
     console.log(statusList["cmd"]["target"]);
     socket.emit('statusFromServer',statusList);
   });
@@ -333,28 +336,7 @@ io.sockets.on('connection',(socket)=>{
   });
 });
 
-const uploadReqFromClient = (data) => {
-  if(data["type"] === "mov"){
-    exec('/bin/bash ' + homeDir + 'dbdownloader download ' + dbDir + data["file"] + ' ' + homeDir + libDir + data["file"],(error, stdout, stderr) => {
-      if(stdout){
-        console.log('stdout: ' + stdout);
-      }
-      if(stderr){
-        console.log('stderr: ' + stderr);
-      }
-      if (error !== null) {
-        console.log('Exec error: ' + error);
-      }
-    });
 
-/*      exec 'ffmpeg -i -vn -acodec copy ' + homeDir + libDir + data["file"] + ' ' + homeDir + libDir + data["sndfile"];
-    //pcmで音声処理
-    for(let i=0;i++;i<data["length"]){
-      exec 'ffmpeg -i '; //秒ごとに抽出
-
-    }*/
-  }
-}
 
 const disconnect = (socket) =>{
 
@@ -368,11 +350,17 @@ const charFromClient = (keyCode) =>{
     let cmd = cmdSelect(strings);
     if(cmd) {
       exportComponent.roomEmit(io, 'cmdFromServer', cmd, statusList["cmd"]["target"]);
-      if(cmd["cmd"] === "CHAT" || cmd["cmd"] === "DRUM" || cmd["cmd"] === "PLAYBACK" || cmd["cmd"] === "TIMELAPSE" || cmd["cmd"] === "SILENCE"){
-        setTimeout(() =>{
-          wavReqFromClient(cmd["cmd"]);
-        },800);
+      for(let key in statusList["cmd"]["stream"]){
+        if(cmd["cmd"] === key){
+          // console.log("stream");
+          statusList["cmd"]["streamFlag"][statusList["cmd"]["stream"][key]] = true;
+          setTimeout(() =>{
+            wavReqFromClient(cmd["cmd"]);
+          },800);
+        }
       }
+      //if(cmd["cmd"] === "CHAT" || cmd["cmd"] === "DRUM" || cmd["cmd"] === "PLAYBACK" || cmd["cmd"] === "TIMELAPSE" || cmd["cmd"] === "SILENCE"){
+      //}
     }
     if (isNaN(Number(strings)) === false && strings != "") {
       let json = sineWave(strings);
@@ -389,9 +377,18 @@ const charFromClient = (keyCode) =>{
         } else if(isNaN(Number(strArr[1])) === false && strArr[1] != ""){
           json = sineWave(strArr[1]);
         }
-        if(json && (cmd != "CHAT" || cmd != "DRUM" || cmd != "PLAYBACK" || cmd != "TIMELAPSE" || cmd != "SILENCE")){
-          io.to(Id).emit("cmdFromServer", json);
-          io.emit("statusViewFromServer");
+//        if(json && (cmd != "CHAT" || cmd != "DRUM" || cmd != "PLAYBACK" || cmd != "TIMELAPSE" || cmd != "SILENCE")){
+        if(json){
+          let flag = true;
+          for(let key in statusList["cmd"]["stream"]){
+            if(cmd === key){
+              flag = false;
+            }
+          }
+          if(flag){
+            io.to(Id).emit("cmdFromServer", json);
+            io.emit("statusViewFromServer");
+          }
         }
       } else if(strArr[0] === "VOL" || strArr[0] === "VOLUME"){
         console.log("VOLUME " + strArr[1]);
@@ -409,6 +406,13 @@ const charFromClient = (keyCode) =>{
           "cmd": "PORTAMENT",
           "property": Number(strArr[1])
         }, statusList["cmd"]["target"]);
+      } else if(strArr[1] === "OFF" || strArr[1] === "STOP"){
+        for(let key in statusList["cmd"]["stream"]){
+          if(key === strArr[0]){
+            statusList["cmd"]["streamFlag"][statusList["cmd"]["stream"][key]] = false;
+            // console.log(statusList["cmd"]["streamFlag"]);
+          }
+        }
       }
       if(strArr[1] === "RATE" && statusList["sampleRate"][strArr[0]] != undefined){
         switch(statusList["sampleRate"][strArr[0]]){
@@ -430,6 +434,8 @@ const charFromClient = (keyCode) =>{
 //        io.to("ctrl").emit('statusFromServer', statusList);
       }
     } else if(strings === "RATE" || strings === "SAMPLERATE") {
+//    }
+//    if(strings === "RATE" || strings === "SAMPLERATE") {
       let rtnRate;
       let aveRate =0;
       let keys = 0;
@@ -508,31 +514,39 @@ const charFromClient = (keyCode) =>{
 }
 
 const wavReqFromClient = (data) => {
+  console.log(statusList["cmd"]["streamFlag"]);
 //  let targetId = exportComponent.randomTarget(statusList["connected"],statusList["cmd"]["target"]);
   let json = {
     "target": data,
     "sampleRate": Number(statusList["sampleRate"][data])
   };
-  if(data === "PLAYBACK"){
+  if(data === "PLAYBACK" && statusList["cmd"]["streamFlag"]["PLAYBACK"]){
     json["audio"] = audioBuff[data].shift();
     json["video"] = videoBuff[data].shift();
     audioBuff[data].push(json["audio"]);
     videoBuff[data].push(json["video"]);
-  } else if(data === "TIMELAPSE"){
+  } else if(data === "TIMELAPSE" && statusList["cmd"]["streamFlag"]["TIMELAPSE"]){
     if(audiovisualChunk.length > 0) {
       let tmpBuff = audiovisualChunk.shift();
       audiovisualChunk.push(tmpBuff);
       json["audio"] = tmpBuff["audio"];
       json["video"] = tmpBuff["video"];
     }
-  } else if(data === "CHAT"){
-    //      json["audio"] = "";
-    //      json["video"] = "";
-  } else {
-      json["audio"] = audioBuff[data][Math.floor(Math.random() * audioBuff[data].length)];
-      json["video"] = "";
+  } else if(data === "CHAT" && statusList["cmd"]["streamFlag"][data]){
+          json["audio"] = "";
+          json["video"] = "";
+  } else if((data === "DRUM" || data === "SILENCE") && statusList["cmd"]["streamFlag"][data]){
+    json["audio"] = audioBuff[data][Math.floor(Math.random() * audioBuff[data].length)];
+    json["video"] = "";
+  } else if(statusList["cmd"]["streamFlag"][data]){
+      json["audio"] = audioBuff[data].shift();
+      json["video"] = videoBuff[data].shift();
+      audioBuff[data].push(json["audio"]);
+      videoBuff[data].push(json["video"]);
   }
-  exportComponent.randomIdEmit(io,statusList["connected"],statusList["cmd"]["target"],'chatFromServer',json);
+  if(json["audio"] != undefined){
+    exportComponent.randomIdEmit(io,statusList["connected"],statusList["cmd"]["target"],'chatFromServer',json);
+  }
   /*  io.to(targetId).emit('chatFromServer', {
       "audio": audio,
       "video": video,
@@ -543,7 +557,8 @@ const wavReqFromClient = (data) => {
 }
 
 const chunkFromClient = (data) => {
-  if(data["target"] === "CHAT"){
+  //  console.log(data["target"]);
+  if(data["target"] === "CHAT" && statusList["cmd"]["streamFlag"][data["target"]]){
     let json = {
       "audio": data["audio"],
       "video": data["video"],
@@ -558,16 +573,19 @@ const chunkFromClient = (data) => {
     videoBuff["PLAYBACK"].push(data["video"]);
 //      recBuffer["audio"].push(data["audio"]);
 //      recBuffer["video"].push(data["video"]);
-  } else if(data["target"] === "timelapse"){
+  } else if(data["target"] === "timelapse" || data["target"] === "TIMELAPSE"){
     audiovisualChunk.push({"audio": data["audio"], "video": data["video"]});
     console.log("chunk length: " + String(audiovisualChunk.length));
   }
-}
+} //もともと小文字だったので表示されないとしたらそのせい（TIMELAPSE）
 
 const stopFromServer = () => {
   exportComponent.roomEmit(io, 'cmdFromServer', {"cmd": "STOP"}, statusList["cmd"]["target"]);
   for(let key in statusList["cmd"]["now"]){
     statusList["cmd"]["now"][key] = false;
+  }
+  for(let key in statusList["cmd"]["streamFlag"]){
+    statusList["cmd"]["streamFlag"][key] = false;
   }
   console.log(statusList["cmd"]["now"]);
   io.to("ctrl").emit('statusFromServer', statusList);
@@ -612,3 +630,157 @@ const targetNoSelect = (i) =>{
   }
   return rtnId;
 }
+
+let bikiNo = 0;
+
+const uploadReqFromClient = (data) => {
+  if(data["type"] === "mp4" || data["type"] === "mov"){
+    let downloadMov = '/bin/bash ' + process.env.HOME + '/sh/db_uploader.sh download ' + dbDir + data["file"] + '.' + data["type"] + ' ' + process.env.HOME + libDir + data["file"] + '.' + data["type"];
+    exec(downloadMov, (error, stdout, stderr) => {
+      if(stdout){
+        console.log('stdout: ' + stdout);
+        movImport(data);
+      }
+      if(stderr){
+        console.log('stderr: ' + stderr);
+        movImport(data);
+      }
+      if (error !== null) {
+        console.log('Exec error: ' + error);
+      }
+    });
+  } else {
+    console.log("対象外です");
+  }
+}
+
+const movImport = (data) =>{
+  let sndConvert = 'ffmpeg -i ' + process.env.HOME + libDir + data["file"] + '.' + data["type"] + ' -vn -acodec copy ' + process.env.HOME + libDir + data["file"] + '.aac';
+  let arr = [];
+  videoBuff[data["file"]] = arr;
+  console.log(sndConvert);
+//  console.log(imgConvert);
+  exec(sndConvert,(error,stdout,stderr) =>{ //引数の順序おかしい？stdoutとstderrが逆になってるような。。。
+    if(stdout){
+      console.log('stdout: ' + stdout);
+      statusList["cmd"]["list"][data["file"]] = data["file"];
+      statusList["cmd"]["stream"][data["file"]] = data["file"];
+      statusList["cmd"]["streamFlag"][data["file"]] = false;
+      audioConvert(data);
+    }
+    if(stderr){
+      console.log('stderr: ' + stderr);
+      statusList["cmd"]["list"][data["file"]] = data["file"];
+      statusList["cmd"]["stream"][data["file"]] = data["file"];
+      statusList["cmd"]["streamFlag"][data["file"]] = false;
+      io.emit('streamStatusFromServer', statusList["cmd"]["streamFlag"]);
+      audioConvert(data);
+    }
+    if (error !== null) {
+      console.log('Exec error: ' + error);
+      // audioConvert(data);
+      // statusList["cmd"]["list"][data["file"]] = data["file"];
+      // statusList["cmd"]["stream"][data["file"]] = data["file"];
+    }
+  });
+  /*
+  exec(imgConvert,(error,stdout,stderr) =>{
+    if(stdout){
+      console.log('stdout: ' + stdout);
+    }
+    if(stderr){
+      console.log('stderr: ' + stderr);
+    }
+    if (error !== null) {
+      console.log('Exec error: ' + error);
+    }
+  });
+  */
+//  setTimeout(() =>{
+//  },5000)
+}
+const audioConvert = (data) =>{
+//  console.log(statusList);
+  audioBuff[data["file"]] = pcm2arr(process.env.HOME + libDir + data["file"] + '.aac');
+  videoBuff[data["file"]] = [];
+/*  setTimeout(() => {
+    console.log(audioBuff["test"])},10000);
+*/
+  //できれば文字を大文字変換する機能を具備したい
+  let imgConvert = 'ffmpeg -i ' + process.env.HOME + libDir + data["file"] + '.' + data["type"] + ' -r 2 -f image2 "' + process.env.HOME + libDir + '%06d.jpg"';
+  // 'ffmpeg -itsoffset -1 -i ' + process.env.HOME + libDir + 'BIKI_0.mov' + ' -y -ss ' + 0 + ' -f image2 -an ' + process.env.HOME + libDir +  'BIKI_0_' + String(0) + '.jpg'; //静止画エンコード反映要
+  console.log(imgConvert);
+  exec(imgConvert,(err,stdout,stderr)=>{
+    if(stdout){
+      console.log('stdout: ' + stdout);
+      for(let i=1;i<20;i++){
+        let fileName = ('000000' + String(i)).slice(-6);
+        imageConvert(process.env.HOME + libDir + fileName + '.jpg', data["file"]);
+      }
+      setTimeout(()=>{
+        console.log(ata["file"] + " maybe import done");
+        exec('rm ' + process.env.HOME + libDir + '*');
+      },10000)
+    }
+    if(stderr){
+      console.log('stderr: ' + stderr);
+      for(let i=1;i<20;i++){
+        let fileName = ('000000' + String(i)).slice(-6);
+        imageConvert(process.env.HOME + libDir + fileName + '.jpg', data["file"]);
+      }
+      setTimeout(()=>{
+        console.log(data["file"] + " maybe import done");
+        exec('rm ' + process.env.HOME + libDir + '*');
+      },10000)
+    }
+    if(err !== null){
+      console.log('exec error: '+ err);
+    }
+  });
+
+  /*
+  for(let j;j<6;j++){
+    let imgConvert = 'ffmpeg -itsoffset -1 -i ' + process.env.HOME + libDir + 'BIKI_0.mov' + ' -y -ss ' + j + ' -f image2 -an ' + process.env.HOME + libDir +  'BIKI_0_' + String(j) + '.jpg'; //静止画エンコード反映要
+    console.log(imgConvert);
+    exec(imgConvert,(err,stdout,stderr)=>{
+      if(stdout){
+        console.log('stdout: ' + stdout);
+        arr.push(imageConvert('./lib/' + outputImg + String(i) + '.jpg'));
+        console.log("img");
+      }
+      if(stderr){
+        console.log('stderr: ' + stderr);
+        arr.push(imageConvert('./lib/' + outputImg + String(i) + '.jpg'));
+        console.log("img");
+      }
+      if(err !== null){
+        console.log('exec error: '+ err);
+      }
+    });
+  }
+  bikiNo = bikiNo + 1;
+  */
+}
+
+
+const imageConvert = (file, buff) =>{
+//  let rtn;
+  fs.readFile(file, 'base64', (err,data) =>{
+    if(err) throw err;
+    videoBuff[buff].push('data:image/webp;base64,' + data);
+  });
+}
+
+const homeDir = '/home/knd/'
+const libDir = '/node_web/lib/db/'
+// const dbDir = '/20170624/'
+const dbDir = '/20170624/'
+
+
+// uploadReqFromClient({
+/*
+movImport({
+  "type": "mov",
+  "file": "TEST"
+});
+*/

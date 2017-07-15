@@ -18,10 +18,10 @@
     <li>pocke: </li>
   </ul>
   <div id="targetCtrl">
-    target: <input type="checkbox" class="checkbox" id="target" name="okappachan" value="okappachan" checked="checked">おかっぱちゃんハウス  <input type="checkbox" class="checkbox" id="target" name="pocke" value="pocke" checked="checked">pocke
+    target: <input type="checkbox" class="checkbox" id="target" name="target_okappachan" value="okappachan" checked="checked">おかっぱちゃんハウス  <input type="checkbox" class="checkbox" id="target" name="target_pocke" value="pocke" checked="checked">pocke
     <br>
-    mute : <input type="checkbox" class="checkbox" id="mute" name="okappachan" value="okappachan">おかっぱちゃんハウス  <input type="checkbox" class="checkbox" id="mute" name="pocke" value="pocke">pocke
-  </div>
+
+    mute : <input type="checkbox" class="checkbox" id="mute" name="mute_okappachan" value="mute">おかっぱちゃんハウス  <input type="checkbox" class="checkbox" id="mute" name="mute_pocke" value="mute">pocke
   <div id="sampleRate">
     <ul>Sample Rate
     <li id="CHAT" class="sampleRate">CHAT: 22050</li>
@@ -34,6 +34,9 @@
     now doing: <ul id="cmd" class="cmdStatus"></ul><br>
     prevCmd: <div id="prevCmd" class="cmdStatus"></div><br>
     prevCmd did at <div id="cmdTimeLine" class="cmdStatus"></div>
+  </div>
+  <div id="upLoad">
+    <input type="text" id="uploadFile" size="15"><input type="checkbox" id="uploadSubmit" value="upload">
   </div>
   <script type="text/javascript">
   var socket = io.connect();

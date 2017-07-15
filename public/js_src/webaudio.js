@@ -30,14 +30,14 @@ osc.connect(oscGain);
 oscGain.connect(masterGain);
 osc.frequency.value = 440;
 oscGain.gain.value = 0;
-// osc.start(0);
+osc.start(0);
 let bassOsc = audioContext.createOscillator();
 let bassGain = audioContext.createGain();
 bassOsc.connect(bassGain);
 bassGain.connect(masterGain);
 bassOsc.frequency.value = 20;
 bassGain.gain.value = 0;
-// bassOsc.start(0);
+bassOsc.start(0);
 
 
 let clickOsc = audioContext.createOscillator();
@@ -46,7 +46,7 @@ clickOsc.connect(clickGain);
 clickGain.connect(masterGain);
 clickOsc.frequency.value = 440;
 clickGain.gain.value = 0;
-// clickOsc.start(0);
+clickOsc.start(0);
 
 //whitenoise
 let whitenoise = audioContext.createOscillator();
@@ -62,11 +62,12 @@ whitenoiseNode.onaudioprocess = (ev) => {
 }
 whitenoise.connect(whitenoiseNode);
 whitenoiseNode.connect(noiseGain);
-noiseGain.connect(audioContext.destination);
+noiseGain.connect(masterGain);
 //whitenoiseNode.connect(audioContext.destination);
+whitenoise.start(0);
 
 // chat
-//chatBuffer = {};
+chatBuffer = {};
 //let chatGain = audioContext.createGain();
 //chatGain.gain.value = 1;
 // chatGain.connect(audioContext.destination);
@@ -203,21 +204,15 @@ const onAudioProcess = (e) => {
   }
   */
   if(videoMode != "none"){
-    let input = e.inputBuffer.getChannelData(0);
+    /*
+    let input = e.inputBuffer.getChannelData(0); //copyFromchannelの可否確認
     let bufferData = new Float32Array(bufferSize);
-//    let buffer8Data = new Uiny8Array(bufferSize/2);
-//    let bufferData = new Float32Array(bufferSize / 2);
-//    for (let i = 0; i < (bufferSize / 2); i+2) {
-//      buffer8Data[i] = Math.round(input[i] * 100000000);
-//    }
-    for (let i=0; i<(bufferSize); i++ ){
-//    let j=0;
-//    for (let i=0; i<(bufferSize / 2); i++ ){
-//      j = i * 2;
-//      bufferData[i] = input[j];
+    for (let i=0; i<bufferSize; i++ ){
       bufferData[i] = input[i];
-//      console.log("i="+ String(i) + " j=" + String(j));
     }
+    */
+    let bufferData = new Float32Array(bufferSize);
+    e.inputBuffer.copyFromChannel(bufferData, 0);
 //    console.log(buffer8Data[1000]);
     if(videoMode === "record") {
 //      chunkEmit({"audio":buffer8Data, "video":sendVideo(), "target": "PLAYBACK"});
@@ -234,21 +229,25 @@ const onAudioProcess = (e) => {
       let sendChunk = {"audio":bufferData, "video": sendVideo(), "target": "timelapse"};
       chunkEmit(sendChunk);
       videoMode = "none";
-    }1
+    }
   }
 }
 const playAudioStream = (flo32arr) => {
 //const playAudioStream = (int8arr) => {
   let audio_buf = audioContext.createBuffer(1, bufferSize, sampleRate),
       audio_src = audioContext.createBufferSource();
-
-  let audioData = audio_buf.getChannelData(0);
+//  let audioData = audio_buf.getChannelData(0);
+//  for(let i = 0; i < audioData.length; i++){
+//    audioData[i] = flo32arr[i];
+//  }
+//  let audioData = new Float32Array.from(flo32arr);
+//  console.log(flo32arr);
+  let audioData = new Float32Array(bufferSize);
   for(let i = 0; i < audioData.length; i++){
     audioData[i] = flo32arr[i];
-//      audioData[i] = int8arr[i]/100000000;
-//      if(i+1 < audioData.length){audioData[i+1] = audioData[i];}
   }
-
+  audio_buf.copyToChannel(audioData, 0);
+  console.log(audio_buf);
   audio_src.buffer = audio_buf;
 //  audio_src.connect(audioContext.destination);
   audio_src.connect(masterGain);
@@ -257,7 +256,6 @@ const playAudioStream = (flo32arr) => {
 //video record/play ここまで
 
 const initialize = () =>{
-  /*
   navigator.getUserMedia({ video: true, audio: {
     "mandatory": {
       "googEchoCancellation": false,
@@ -273,7 +271,8 @@ const initialize = () =>{
     filter.connect(javascriptnode);
     filter.connect(feedbackGain);
     //      selfGain.connect(analyser);
-    feedbackGain.connect(audioContext.destination);
+//    feedbackGain.connect(audioContext.destination);
+    feedbackGain.connect(masterGain);
     //video
     video = document.getElementById('video');
     video.src = window.URL.createObjectURL(stream);
@@ -290,23 +289,6 @@ const initialize = () =>{
   image = document.createElement("img");
   receive = document.getElementById("cnvs");
   receive_ctx = receive.getContext("2d");
-  */
 };
-
-const Play = () => {
-  $("#iphone").remove();
-  console.log("start");
-  osc.start(0);
-  bassOsc.start(0);
-  clickOsc.start(0);
-  whitenoise.start(0);
-  sizing();
-}
-let ua = navigator.userAgent.toLowerCase();
-//console.log(ua);
-if(!((ua.indexOf('iphone') > -1) || (ua.indexOf('ipad') > -1))){
-  Play();
-}
-
 
 window.addEventListener("load", initialize, false);
