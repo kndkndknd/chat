@@ -92,7 +92,8 @@ const doCmd = (cmd) => {
     case "MODULATION":
     case "MOD":
       if(mode==="sinewave"){
-        osc.frequency.value = osc.frequency.value + (no * modList[(modChange % modList.length)]);
+        freqVal = osc.frequency.value + (no * modList[(modChange % modList.length)]);
+        osc.frequency.value = freqVal;
         modChange = modChange + 1;
         chordChange = 0;
         whitePrint();
@@ -160,7 +161,7 @@ const doCmd = (cmd) => {
       break;
     case "SINEWAVE":
       whitePrint();
-      if(oscGain.gain.value > 0 && osc.frequency.value === cmd["property"]) {
+      if(oscGain.gain.value > 0 && freqVal === cmd["property"]) {
         mode = "none";
         oscGain.gain.value = 0;
 //        textPrint("");
@@ -170,7 +171,8 @@ const doCmd = (cmd) => {
         textPrint(String(cmd["property"]) + "Hz");
 //        osc.frequency.value = cmd["property"];
         console.log(t0);
-        osc.frequency.setTargetAtTime(cmd["property"],t0,oscPortament);
+        freqVal = cmd["property"];
+        osc.frequency.setTargetAtTime(freqVal,t0,oscPortament);
 //        osc.frequency.setValueAtTime(cmd["property"], t0+oscPortament);
         oscGain.gain.value = 0.5;
       }
@@ -270,7 +272,22 @@ const doCmd = (cmd) => {
 //        textPrint("");
       }, 1500);
       break;
-
+      /*
+    case "VOICE":
+      whitePrint();
+      if(voice){
+        textPrint("VOICE OFF");
+        voice = false;
+      } else {
+        textPrint("VOICE MODE");
+        voice = true;
+      }
+      setTimeout(()=>{
+        whitePrint();
+//        textPrint("");
+      }, 500);
+      break;
+*/
     default:
       for(let key in streamStatus){
         if(key === cmd["cmd"]){
@@ -325,6 +342,7 @@ const videoStop = () => {
   }
 }
 
+
 const wavRequest = (data) => {
 //  videoMode = "chat";
 //  socket.emit('wavReqFromClient', {"target": data});
@@ -334,10 +352,11 @@ const chunkEmit = (data) => {
   socket.emit('chunkFromClient', data);
 }
 
+
 const statusView = () => {
   let statusText = "";
   if(oscGain.gain.value > 0){
-    statusText = String(osc.frequency.value) + "Hz";
+    statusText = String(freqVal) + "Hz";
   }
   if(feedbackGain.gain.value > 0){
     if(statusText === ""){

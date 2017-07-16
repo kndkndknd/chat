@@ -38,7 +38,7 @@
     "okappachan":{},
     "pocke":{},
     "ctrl":{},
-    "other":{}
+    "all":{}
   },
   "cmd":{
     "now": {
@@ -56,7 +56,8 @@
     },
     "mute": {
       "okappachan": false,
-      "pocke": false
+      "pocke": false,
+      "all": false
     },
     "target": {
       "okappachan": true,
@@ -83,7 +84,8 @@
       "PLAYBACK": "PLAYBACK",
       "LAPSE": "TIMELAPSE",
       "TIMELAPSE": "TIMELAPSE",
-      "FILTER": "FILTER"
+      "FILTER": "FILTER",
+      "VOICE": "VOICE"
     },
     "stream": {
       "VIDEOCHAT": "CHAT",

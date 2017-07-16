@@ -12,7 +12,7 @@ const dateUtils = require('date-utils');
 const routes = require('./routes/index');
 const users = require('./routes/users');
 
-//const five = require('johnny-five');
+const five = require('johnny-five');
 const pcm = require('pcm');
 const exec = require('child_process').exec;
 
@@ -23,27 +23,19 @@ const exportComponent = require('./exportFunction.js');
 const keycodeMap = require ('./lib/keyCode.json');
 let statusList = require ('./lib/status.json');
 //const videoBuff = require ('./lib/image.json');
-/*const board = new five.Board();
+const board = new five.Board();
 let boardSwitch = false;
-
 board.on('ready', () => {
   console.log("relay connected, NC open");
   let initRelay = new five.Led(13);
   initRelay.on();
 });
-*/
+
+
 //getUserMediaのためのHTTPS化
 const https = require('https');
 
 //https鍵読み込み
-/*
-const ssl_server_key = './server_key/server_key.pem',
-    ssl_server_crt = './server_key/server_crt.pem',
-    fs = require('fs');
-const options = {
-  key: fs.readFileSync(ssl_server_key),
-  cert: fs.readFileSync(ssl_server_crt)
-};*/
 const options = {
   key: fs.readFileSync(process.env.HTTPSKEY_PATH + 'privkey.pem'),
   cert: fs.readFileSync(process.env.HTTPSKEY_PATH + 'cert.pem')
@@ -65,8 +57,10 @@ app.use(favicon(path.join(__dirname, 'lib/favicon.ico')));
 let cli_no = 0;
 /* GET home page. */
 app.get('/', function(req, res, next) {
-  res.render('info', {
-    title: 'knd'});
+  res.render('client', {
+    title: 'knd',
+    no: cli_no});
+  cli_no = cli_no + 1;
 });
 app.get('/okappachan', function(req, res, next) {
   res.render('client', {
@@ -133,7 +127,7 @@ app.use(function(err, req, res, next) {
 
 module.exportComponent = app;
 
-let port = 3000;
+let port = 8888;
 let server = https.createServer(options,app).listen(port);
 let io = require('socket.io').listen(server);
 
@@ -320,6 +314,16 @@ io.sockets.on('connection',(socket)=>{
     socket.emit('statusFromServer',statusList);
   });
 
+  socket.on('standAlonefromClient', (data) =>{
+    if(data){
+      socket.leave("all");
+      socket.join("standalone");
+    } else {
+      socket.leave("standalone");
+      socket.join("all");
+    }
+  });
+
   socket.on("disconnect", (socket) =>{
 //    disconnect();
     console.log("disconnect: " + socket.id);
@@ -347,6 +351,7 @@ const charFromClient = (keyCode) =>{
   //      strings = exportComponent.char2Cmd(io, strings, character, cmdList, keyCode);
   if(character === "enter") {
 //    if(cmdList.indexOf(strings) > -1) {
+    console.log(strings);
     let cmd = cmdSelect(strings);
     if(cmd) {
       exportComponent.roomEmit(io, 'cmdFromServer', cmd, statusList["cmd"]["target"]);
@@ -367,6 +372,7 @@ const charFromClient = (keyCode) =>{
       exportComponent.roomEmit(io, 'cmdFromServer', json, statusList["cmd"]["target"]);
     } else if( ~strings.indexOf("_") ) {
       let strArr = strings.split("_");
+      console.log(strArr);
       let rtnRate = "";
       if(isNaN(Number(strArr[0])) === false && strArr[0] != ""){
         let json = false;
@@ -407,6 +413,7 @@ const charFromClient = (keyCode) =>{
           "property": Number(strArr[1])
         }, statusList["cmd"]["target"]);
       } else if(strArr[1] === "OFF" || strArr[1] === "STOP"){
+        console.log("off");
         for(let key in statusList["cmd"]["stream"]){
           if(key === strArr[0]){
             statusList["cmd"]["streamFlag"][statusList["cmd"]["stream"][key]] = false;
@@ -655,7 +662,7 @@ const uploadReqFromClient = (data) => {
 }
 
 const movImport = (data) =>{
-  let sndConvert = 'ffmpeg -i ' + process.env.HOME + libDir + data["file"] + '.' + data["type"] + ' -vn -acodec copy ' + process.env.HOME + libDir + data["file"] + '.aac';
+  let sndConvert = 'ffmpeg -i ' + process.env.HOME + libDir + data["file"] + '.' + data["type"] + ' -vn -acodec copy -t 10 ' + process.env.HOME + libDir + data["file"] + '.aac';
   let arr = [];
   videoBuff[data["file"]] = arr;
   console.log(sndConvert);
@@ -707,7 +714,7 @@ const audioConvert = (data) =>{
     console.log(audioBuff["test"])},10000);
 */
   //できれば文字を大文字変換する機能を具備したい
-  let imgConvert = 'ffmpeg -i ' + process.env.HOME + libDir + data["file"] + '.' + data["type"] + ' -r 2 -f image2 "' + process.env.HOME + libDir + '%06d.jpg"';
+  let imgConvert = 'ffmpeg -i ' + process.env.HOME + libDir + data["file"] + '.' + data["type"] + '-t 10 -r 2 -f image2 "' + process.env.HOME + libDir + '%06d.jpg"';
   // 'ffmpeg -itsoffset -1 -i ' + process.env.HOME + libDir + 'BIKI_0.mov' + ' -y -ss ' + 0 + ' -f image2 -an ' + process.env.HOME + libDir +  'BIKI_0_' + String(0) + '.jpg'; //静止画エンコード反映要
   console.log(imgConvert);
   exec(imgConvert,(err,stdout,stderr)=>{

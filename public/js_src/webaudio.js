@@ -72,7 +72,10 @@ chatBuffer = {};
 //chatGain.gain.value = 1;
 // chatGain.connect(audioContext.destination);
 
-
+// voice
+const ssu = new SpeechSynthesisUtterance();
+ssu.lang = 'en-EN';
+let voice =false;
 
 const modList= [0.5, 0.5, 1, 18];
 const chordList = [1, 4/3, 9/4, 15/8, 17/8, 7/3, 11/3];

@@ -44,6 +44,11 @@ exports.randomIdEmit = function randomIdEmit(io,ids, target, name, data){
       idList.push(key);
     }
   }
+  if(target["all"]){
+    for(let key in ids["all"]){
+      idList.push(key);
+    }
+  }
   io.to(idList[Math.floor(Math.random() * idList.length)]).emit(name, data);
 }
 

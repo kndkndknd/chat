@@ -19,7 +19,9 @@ socket.on('statusViewFromServer', ()=>{
 })
 
 socket.on('cmdFromServer', (data) => {
-  doCmd(data);
+  if(standAlone === false){
+    doCmd(data);
+  }
 })
 
 socket.on('instructionFromServer', (data) => {

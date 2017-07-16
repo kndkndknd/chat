@@ -21,6 +21,7 @@ $(() =>{
 //          textPrint("");
         },300);
       }
+      socket.emit('standAlonefromClient', standAlone);
     } else if(standAlone){
       let charCode = keycodeMap[String(e.keyCode)];
       if(charCode === "enter"){
@@ -40,7 +41,7 @@ $(() =>{
         stringsClient = "";
       } else if(charCode === "left_arrow" || charCode === "backspace"){
         stringsClient = "";
-        textPrint("");
+        whitePrint();
       } else if(e.keyCode >= 48 && e.keyCode <= 90 || e.keyCode === 190 || e.keyCode === 189 || e.keyCode === 32 || e.keyCode === 16){
         switch(charCode){
           case "C":
@@ -77,7 +78,35 @@ $(() =>{
         textPrint(stringsClient);
       }
       if(e.keyCode != 16){
-        charEmit(e.keyCode);        
+        if(e.keyCode === 13 && stringsClient === "VOICE"){
+          if(voice){
+            voice = false;
+            whitePrint();
+            textPrint("VOICE OFF");
+            stringsClient = "";
+            setTimeout(()=>{
+              whitePrint();
+              charEmit(37);
+            },500);
+          } else {
+            voice = true;
+            whitePrint();
+            textPrint("VOICE MODE");
+            stringsClient = "";
+            setTimeout(()=>{
+              charEmit(37);
+            },500);
+          }
+//          stringsClient = "";
+        } else {
+          charEmit(e.keyCode);
+        }
+      }
+      // if(charCode = "enter" && voice && stringsClient != "VOICE") {
+      if(charCode === "enter" && voice && stringsClient != "VOICE"){
+        ssu.text = stringsClient;
+        speechSynthesis.speak(ssu);
+        stringsClient = "";
       }
     }
   });
