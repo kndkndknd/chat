@@ -1,55 +1,79 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+  <link rel="stylesheet" type="text/css" href="/css/normalize.css" media="all">
   <link rel="stylesheet" type="text/css" href="/css/ctrl.css" media="all">
   <title><%= title %></title>
 </head>
 <body id="body">
   <script src="/javascripts/jquery-1.11.0.js"></script>
   <script src="/socket.io/socket.io.js"></script>
-  <div id="wrapper">
+  <div id="wrapper" class="left">
   <video id="video" style="display:none;"></video>
   <canvas id="cnvs">
     canvas not applied.
   </canvas>
   </div>
-  <ul id="status">
-    <li>おかっぱちゃんハウス: </li>
-    <li>pocke: </li>
-  </ul>
-  <div id="targetCtrl">
-    target: <input type="checkbox" class="checkbox" id="target" name="okappachan" value="okappachan" checked="checked">おかっぱちゃんハウス  <input type="checkbox" class="checkbox" id="target" name="pocke" value="pocke" checked="checked">pocke
-    <br>
-    mute : <input type="checkbox" class="checkbox" id="mute" name="okappachan" value="okappachan">おかっぱちゃんハウス  <input type="checkbox" class="checkbox" id="mute" name="pocke" value="pocke">pocke
-  </div>
-  <div id="sampleRate">
-    <ul>Sample Rate
-    <li id="CHAT" class="sampleRate">CHAT: 22050</li>
-    <li id="TIMELAPSE" class="sampleRate">TIMELAPSE: 22050</li>
-    <li id="PLAYBACK" class="sampleRate">PLAYBACK: 22050</li>
-    <li id="FILE" class="sampleRate">FILE: 22050</li>
-    <li id="DRUM" class="sampleRate">DRUM: 22050</li>
-  </div>
-  <div id="cmdStatus">
-    now doing: <ul id="cmd" class="cmdStatus"></ul><br>
+  <div class="right">
+    <div>
+      shutter: <button id="shutter">
+    </div>
     prevCmd: <div id="prevCmd" class="cmdStatus"></div><br>
     prevCmd did at <div id="cmdTimeLine" class="cmdStatus"></div>
   </div>
+  <div id="connectList">
+  <table id="clientList">
+    <tr id="tr">
+      <th>client</th>
+      <th>id</th>
+      <th>CHAT_FROM</th>
+      <th>CHAT_TO</th>
+      <th>RECORD_FROM</th>
+      <th>PLAYBACK_TO</th>
+      <th>TIMELAPSE_TO</th>
+      <th>DRUM_TO</th>
+      <th>SILENCE_TO</th>
+      <th>BEFORE_TO</th>
+      <th>CHAT_RATE</th>
+    </tr>
+  </table>
+  <ul id="status">
+  </ul>
+  </div>
+  <div class="left">
+    <div id="sampleRate">
+    Sample Rate
+    <ul id="sampleRateList">
+    <li id="CHAT" class="sampleRate">CHAT: 22050</li>
+    <li id="TIMELAPSE" class="sampleRate">TIMELAPSE: 22050</li>
+    <li id="PLAYBACK" class="sampleRate">PLAYBACK: 22050</li>
+    <li id="DRUM" class="sampleRate">DRUM: 22050</li>
+    </div>
+  <div id="gainCtrl">
+  gain;
+  <ul id="gainList">
+  </ul>
+  </div>
+</div>
+<div class="right">
+  <div id="cmdStatus">
+    now doing: <ul id="cmd" class="cmdStatus"></ul><br>
+  </div>
+  ctrl;
+  <ul id="ctrlList">
+  </ul>
+  <div id="upLoad">
+    file upload:
+    <input type="text" id="uploadFile" size="15"><input type="checkbox" id="uploadSubmit" value="upload">
+  </div>
+</div>
   <script type="text/javascript">
   var socket = io.connect();
-  var video;
-  var mode = "none"; //"osc" or "feedback" or "whitenoise"
-  var videoMode = "none"; //"record" or "playback"
   var title = "<%= title %>";
-//  var no = <%= no %>;
   var strings = "";
   </script>
-  <script src="/javascripts/canvas_ctrl.js"></script>
-  <script src="/javascripts/webaudio.js"></script>
-  <script src="/javascripts/keyboard.js"></script>
-  <script src="/javascripts/keycode.js"></script>
+  <!-- <script src="/javascripts/keycode.js"></script> -->
+  <!-- <script src="/javascripts/func.js"></script> -->
   <script src="/javascripts/ctrl.js"></script>
-  <script src="/javascripts/sock.js"></script>
-  <script src="/javascripts/func.js"></script>
 </body>
 </html>
