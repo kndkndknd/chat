@@ -55,7 +55,7 @@
     "ctrl":{}
   },
   "pc": {
-    "MacBookPro2013": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36",
+    "MacBookPro2013": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36",
     "MacBook2008": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36",
     "MacBookPro2009": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2625.0 Safari/537.36",
     "Lubuntu": "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/60.0.3112.78 Chrome/60.0.3112.78 Safari/537.36",
@@ -117,6 +117,8 @@
       "all": false
     },
     "target": {
+      "inside": true,
+      "outside": true,
       "client": true
     },
     "prevCmd": "",
@@ -140,11 +142,16 @@
       "LAPSE": "TIMELAPSE",
       "TIMELAPSE": "TIMELAPSE",
       "FILTER": "FILTER",
-      "VOICE": "VOICE"
+      "VOICE": "VOICE",
+      "MONITORING": "CHAT",
+      "MONITOR": "CHAT",
+      "MUTE": "MUTE",
+      "SINEWAVE": "SINEWAVE"
     },
     "stream": {
       "VIDEOCHAT": "CHAT",
       "CHAT": "CHAT",
+      "MONITORING": "CHAT",
       "DRUM": "DRUM",
       "SILENCE": "SILENCE",
       "PLAY": "PLAYBACK",
@@ -170,13 +177,25 @@
       "PLAYBACK": false,
       "TIMELAPSE": false
     },
+    "streamCmd": {
+      "VIDEOCHAT": "CHAT",
+      "CHAT": "CHAT",
+      "MONITORING": "CHAT",
+      "DRUM": "DRUM",
+      "SILENCE": "SILENCE",
+      "PLAY": "PLAYBACK",
+      "PLAYBACK": "PLAYBACK",
+      "LAPSE": "TIMELAPSE",
+      "TIMELAPSE": "TIMELAPSE"
+    },
     "latency":{
       "CHAT": "0",
       "DRUM": "0",
       "SILENCE": "0",
       "PLAYBACK": "0",
       "TIMELAPSE": "0"
-    }
+    },
+    "glitch": false
   },
   "clients": {
     "dummy": {

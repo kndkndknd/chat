@@ -95,7 +95,8 @@ exports.toBase64 = function toBase64(buffer, video){
   buffer.width = video.videoWidth;
   buffer.height = video.videoHeight;
   bufferContext.drawImage(video, 0, 0);
-  return buffer.toDataURL("image/webp");
+  //return buffer.toDataURL("image/webp");
+  return buffer.toDataURL("image/jpeg");
 }
 
 exports.textPrint = function textPrint(ctx, canvas, text){
@@ -120,7 +121,7 @@ exports.whitePrint = function whitePrint(ctx, canvas) {
 exports.ctrlView = function ctrlView(statusList){
   let HTML = "";
   let clients = statusList["clients"];
-  let tableHTML = '<table border="1" id="clientList"><tr id="tr"><th>client</th> <th>id</th> <th>CHAT_FROM</th> <th>CHAT_TO</th> <th>RECORD_FROM</th> <th>PLAYBACK_TO</th> <th>TIMELAPSE_TO</th> <th>DRUM_TO</th> <th>SILENCE_TO</th> <th>BEFORE_TO</th> <th>CHAT_RATE</th>';
+  let tableHTML = '<table border="1" id="clientList"><tr id="tr"><th>client</th> <th>id</th> <th>room</th><th>CHAT_FROM</th> <th>CHAT_TO</th> <th>RECORD_FROM</th> <th>PLAYBACK_TO</th> <th>TIMELAPSE_TO</th> <th>DRUM_TO</th> <th>SILENCE_TO</th> <th>BEFORE_TO</th> <th>CHAT_RATE</th>';
   for(let key in clients){
     let chatFrom = "",
         chatTo = "",
@@ -168,7 +169,7 @@ exports.ctrlView = function ctrlView(statusList){
         }
       }
     }
-    tableHTML = tableHTML + '<tr id="clientTd"><td>'+ clients[key]["type"] + '</td><td id="IdTd">' + clients[key]["No"] + '</td><td><input type="checkbox" id="CHAT_FROM" class="route" name="' + key
+    tableHTML = tableHTML + '<tr id="clientTd"><td>'+ clients[key]["type"] + '</td><td id="IdTd">' + clients[key]["No"] + '</td><td>' + clients[key]["room"] + '</td><td><input type="checkbox" id="CHAT_FROM" class="route" name="' + key
     + '"' + chatFrom + '></td><td><input type="checkbox" id="CHAT_TO" class="route" name="' + key + '"' + chatTo + '></td><td><input type="checkbox" id="RECORD_FROM" class="route" name="'
     + key + '"' + recordFrom + '></td><td><input type="checkbox" id="PLAYBACK_TO" class="route" name="' + key + '"' + playbackTo + '></td><td><input type="checkbox" id="TIMELAPSE_TO" class="route" name="'
     + key + '"' + timelapseTo + '></td><td><input type="checkbox" id="DRUM_TO" class="route" name="' + key + '"' + drumTo + '></td><td><input type="checkbox" id="SILENCE_TO" class="route" name="'

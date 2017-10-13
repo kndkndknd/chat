@@ -99,6 +99,13 @@ let chatBuffer = {};
 let chatGain = audioContext.createGain();
 chatGain.gain.value = 1;
 chatGain.connect(masterGain);
+
+let convolver = audioContext.createConvolver();
+let revGain = audioContext.createGain();
+revGain.gain.value=1.0;
+convolver.connect(revGain);
+revGain.connect(masterGain);
+convolver.connect(masterGain);
 /*let streamGain = {
 "CHAT": 1,
 "PLAYBACK": 0.7,
@@ -206,17 +213,17 @@ const onAudioProcess = (e) => {
     e.inputBuffer.copyFromChannel(bufferData, 0);
     switch(videoMode){
       case "record":
-      modules.chunkEmit({"audio":bufferData, "video":modules.toBase64(buffer, video), "target": "PLAYBACK"},socket);
+      modules.chunkEmit({"audio":bufferData, "video":funcToBase64(buffer, video), "target": "PLAYBACK"},socket);
       break;
       case "chat":
       chatBuffer["audio"] = bufferData;
-      chatBuffer["video"] = modules.toBase64(buffer, video);
+      chatBuffer["video"] = funcToBase64(buffer, video);
       chatBuffer["target"] = "CHAT";
       break;
       case "pastBuff":
         streamBuffer.push({
           "audio": bufferData,
-          "video": modules.toBase64(buffer, video)
+          "video": funcToBase64(buffer, video)
         });
         break;
       case "pastPlay":
@@ -224,14 +231,14 @@ const onAudioProcess = (e) => {
         if(streamBuffer.length>0){
           beforeChunk = streamBuffer.shift();
         } else {
-          beforeChunk = {"audio": bufferData, "video": modules.toBase64(buffer, video)};
+          beforeChunk = {"audio": bufferData, "video": funcToBase64(buffer, video)};
         }
-          playAudioStream(beforeChunk["audio"],bufferRate,gainVal["SECBEFORE"]);
+          playAudioStream(beforeChunk["audio"],bufferRate,gainVal["SECBEFORE"],false);
           playVideo(beforeChunk["video"]);
            console.log(streamBuffer.length);
           streamBuffer.push({
             "audio": bufferData,
-            "video": modules.toBase64(buffer, video)
+            "video": funcToBase64(buffer, video)
           })
         break;
     }
@@ -239,12 +246,12 @@ const onAudioProcess = (e) => {
   if(timelapseFlag){
     let bufferData = new Float32Array(bufferSize);
     e.inputBuffer.copyFromChannel(bufferData, 0);
-    let sendChunk = {"audio":bufferData, "video": modules.toBase64(buffer, video), "target": "TIMELAPSE"};
+    let sendChunk = {"audio":bufferData, "video": funcToBase64(buffer, video), "target": "TIMELAPSE"};
     modules.chunkEmit(sendChunk,socket);
     timelapseFlag = false;
   }
 }
-const playAudioStream = (flo32arr, sampleRate, volume) => {
+const playAudioStream = (flo32arr, sampleRate, volume, glitch) => {
   let audio_buf = audioContext.createBuffer(1, bufferSize, sampleRate),
       audio_src = audioContext.createBufferSource();
   let audioData = new Float32Array(bufferSize);
@@ -255,6 +262,10 @@ const playAudioStream = (flo32arr, sampleRate, volume) => {
   // console.log(audio_buf);
   audio_src.buffer = audio_buf;
   audio_src.connect(masterGain);
+  /*if(glitch){
+    convolver.buffer = audio_buf;
+    audio_src.connect(convolver);
+  }*/
   audio_src.start(0);
 }
 //video record/play ここまで
@@ -262,7 +273,7 @@ const playAudioStream = (flo32arr, sampleRate, volume) => {
 const initialize = () =>{
   if(navigator.mediaDevices.getUserMedia){
     navigator.mediaDevices.getUserMedia({
-      video: true, audio: {
+      video: true, audio: /*true*/{
         "mandatory": {
           "googEchoCancellation": false,
           "googAutoGainControl": false,
@@ -492,7 +503,7 @@ const renderStart=()=> {
 
 /* socket */
 
-socket.emit('connectFromClient', title);
+socket.emit('connectFromClient', client);
 
 socket.on('stringsFromServer', (data) =>{
   modules.whitePrint(ctx, canvas);
@@ -536,15 +547,23 @@ socket.on('instructionFromServer', (data) => {
   }, data["duration"]);
 });
 
-socket.on('streamStatusFromServer', (data) =>{
-  streamStatus = data;
-  // console.log(streamStatus);
+socket.on('streamListFromServer', (data) =>{
+  streamList = data;
+  console.log(streamList);
 });
 
 socket.on('streamReqFromServer', (data) => {
   switch(data){
     case "CHAT":
-      socket.emit('chunkFromClient', chatBuffer);
+      //if(chatBuffer!= {}){
+        socket.emit('chunkFromClient', chatBuffer);
+      /*} else {
+        socket.emit('chunkFromClient', {
+          "audio" : "",
+          "video" : "",
+          "target": "CHAT"
+        });
+      }*/
     break;
   }
 });
@@ -555,29 +574,32 @@ socket.on('oscFromServer',(data) => {
 
 
 socket.on('chunkFromServer', (data) => {
-  if(videoMode === "chat"){
-    if(data["audio"] != undefined && data["audio"] != "") {
-      let chunkGain = 0.7;
-      if(data["target"] in gainVal){
-        chunkGain = gainVal[data["target"]];
-      }
-      if(data["sampleRate"] != undefined){
-        playAudioStream(data["audio"],data["sampleRate"],chunkGain);
-      } else {
-        playAudioStream(data["audio"],44100,chunkGain);
-      }
+  //if(videoMode === "chat"){
+  if(videoMode != "record"){
+  if(videoMode != "chat") videoMode = "chat";
+  if(data["audio"] != undefined && data["audio"] != "") {
+    let chunkGain = 0.7;
+    if(data["target"] in gainVal){
+      chunkGain = gainVal[data["target"]];
     }
-    if(data["video"] != undefined && data["video"] != "") {
-       playVideo(data["video"]);
+    if(data["sampleRate"] != undefined){
+      playAudioStream(data["audio"],data["sampleRate"],chunkGain,data["glitch"]);
     } else {
-      modules.whitePrint(ctx, canvas);
-      modules.textPrint(ctx, canvas, data["target"]);
+      playAudioStream(data["audio"],44100,chunkGain,data["glitch"]);
     }
-    if(data["target"] === "CHAT"){
-      socket.emit('AckFromClient', "CHAT");
-    } else {
-      socket.emit('wavReqFromClient', data["target"]);
-    }
+  }
+  if(data["video"] != undefined && data["video"] != "") {
+     playVideo(data["video"]);
+  } else {
+    modules.whitePrint(ctx, canvas);
+    modules.textPrint(ctx, canvas, data["target"]);
+  }
+  if(data["target"] === "CHAT"){
+    socket.emit('AckFromClient', "CHAT");
+   // console.log("ack");
+  } else {
+    socket.emit('wavReqFromClient', data["target"]);
+  }
   }
 });
 
@@ -609,7 +631,6 @@ const doCmd = (cmd) => {
     case "SINEWAVE":
       modules.whitePrint(ctx, canvas);
       if(oscGain.gain.value > 0 && freqVal === cmd["property"]) {
-        console.log("debug 0");
         mode = "none";
         oscGain.gain.value = 0;
 //        modules.textPrint(ctx, canvas, "");
@@ -685,6 +706,7 @@ const doCmd = (cmd) => {
       },800);
       break;
     case "GAIN":
+      //console.log("TEST");
       modules.textPrint(ctx, canvas, cmd["property"]["target"] + ": " + String(cmd["property"]["val"]));
       gainVal[cmd["property"]["target"].substr(0,cmd["property"]["target"].length - 4).toUpperCase()] = Number(cmd["property"]["val"]);
       if(eval(cmd["property"]["target"]) != undefined){
@@ -745,7 +767,8 @@ const doCmd = (cmd) => {
       prevGain = masterGain.gain.value;
       break;
     case "MUTE":
-      if(cmd["property"]){
+      //if(cmd["property"]){
+      if(masterGain.gain.value > 0){
         prevGain = masterGain.gain.value;
         masterGain.gain.value = 0;
         modules.whitePrint(ctx, canvas);
@@ -822,12 +845,20 @@ const doCmd = (cmd) => {
         $('#wrapper').before('<div id="ctrl">' + addHTML + '</div>');
       }
       break;
-      /*
-    case "MUNOU":
-      munouNoUnmei(cmd["property"]);
-      break;*/
+    case "INSTRUCTION":
+      videoStop();
+      modules.whitePrint(ctx, canvas);
+      modules.textPrint(ctx, canvas, cmd["property"]["text"]);
+      if(client != "inside") alertPlay();
+      mode = "instruction"
+      setTimeout(()=>{
+        modules.whitePrint(ctx, canvas);
+        mode = "none"
+      }, cmd["property"]["duration"]);
+      break;
     default:
-      for(let key in streamStatus){
+      console.log(cmd["cmd"]);
+      for(let key in streamList){
         if(key === cmd["cmd"]){
           // console.log(cmd["cmd"]);
           videoMode = "chat";
@@ -1007,3 +1038,13 @@ $(function() {
     });
   });
 });
+
+const funcToBase64 = () =>{
+  //console.log(buffer);
+  let bufferContext = buffer.getContext('2d');
+  buffer.width = video.videoWidth;
+  buffer.height = video.videoHeight;
+  bufferContext.drawImage(video, 0, 0);
+  //return buffer.toDataURL("image/webp");
+  return buffer.toDataURL("image/jpeg");
+}

@@ -16,6 +16,39 @@ exports.chunkEmit = function chunkEmit(io, audiovisualChunk){
   }
 }
 
+exports.glitchStream = function glitchImage(data){
+  //console.log(data);
+  let rtnJson = data;
+  //rtnJson["audio"] = [];
+  //rtnJson["video"] = "data:image/jpeg;base64,";
+  //let rtnAudio = {};
+  let rtnVideo = "data:image/jpeg;base64,";
+  let baseImgString = data["video"].split("data:image/jpeg;base64,")[1];
+  //let str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  let str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  //console.log("body; " + String(baseString.length));
+  //console.log(baseString);
+  //rtnJson["video"] += baseImgString.replace(str[Math.floor(Math.random()*str.length)], str[Math.floor(Math.random()*str.length)]);
+  rtnVideo += baseImgString.replace(str[Math.floor(Math.random()*str.length)], str[Math.floor(Math.random()*str.length)]);
+   
+  rtnJson["video"] = rtnVideo.replace(String(Math.floor(Math.random() + 10)), String(Math.floor(Math.random() + 10)));
+  //data["audio"].forEach((value,index,arr)=>{
+  /*
+  for(let key in data["audio"]){
+    if(data["audio"][key] > 0){
+      rtnAudio[key] = data["audio"][key];
+    } else {
+      //rtnAudio[key] = 0;
+      rtnAudio[key] = data["audio"][key] * -1;
+    }
+  }
+  //});
+  rtnJson["audio"] = rtnAudio;*/
+  //console.log(rtnJson);
+  rtnJson["glitch"] = true;
+  return rtnJson;
+}
+
 exports.pickupTarget = function pickupTarget(room, list, target, order){
   let idArr = [];
   for(let key in list){
@@ -33,10 +66,9 @@ exports.pickupTarget = function pickupTarget(room, list, target, order){
 
 exports.roomEmit = function roomEmit(io, name, data, target){
   for(let key in target){
-    if(key in io.sockets.adapter.rooms){
-      //console.log(key);
+    if(key in io.sockets.adapter.rooms && target[key]){
       io.to(key).emit(name,data);
-    } else if(key === "all"){
+    } else if(key === "all" && target[key]){
       io.emit(name,data);
     }
   }
@@ -56,7 +88,7 @@ exports.randomIdEmit = function randomIdEmit(io,ids, target, name, data){
 }
 
 exports.shutterReq = function shutterReq(io, data){
-  io.to("client").emit('cmdFromServer', {
+  io.to("all").emit('cmdFromServer', {
     "cmd": "SHUTTER",
     "property": data
   });

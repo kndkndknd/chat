@@ -42,6 +42,8 @@ const http = require('http');
 const options = {
   key: fs.readFileSync(process.env.HTTPSKEY_PATH + 'privkey.pem'),
   cert: fs.readFileSync(process.env.HTTPSKEY_PATH + 'cert.pem')
+//  key: fs.readFileSync('/home/knd/httpsKeys/' + 'key.pem'),
+//  cert: fs.readFileSync('/home/knd/httpsKeys/' + 'cert.pem')
 }
 
 
@@ -61,7 +63,19 @@ app.use(favicon(path.join(__dirname, 'lib/favicon.ico')));
 /* GET home page. */
 
 app.get('/', function(req, res, next) {
-  res.render('client', {title: 'knd'});
+  res.render('client', {title: 'client'});
+});
+
+app.get('/inside', function(req, res, next) {
+  res.render('client', {title: 'inside'});
+});
+
+app.get('/outside', function(req, res, next) {
+  res.render('client', {title: 'outside'});
+});
+
+app.get('/ios', function(req, res, next) {
+  res.render('ios', {title: 'ios'});
 });
 
 app.get('/ctrl', function(req, res, next) {
@@ -97,7 +111,8 @@ let io = require('socket.io').listen(server);
 let httpPort = 8000;
 let httpServer = http.createServer(app).listen(httpPort);
 
-//console.log("server start in " + os.networkInterfaces().en0[1]["address"] + ":" + String(port));
+console.log("server start in " + os.networkInterfaces().en0[0]["address"] + ":" + String(port));
+console.log("server start in " + os.networkInterfaces().en0[1]["address"] + ":" + String(port));
 
 const pcm2arr = (url) => {
   let tmpBuff = new Float32Array(8192);
@@ -144,7 +159,6 @@ const libDir = '/Downloads/';
 //const dbDir = '/20170624/'
 let timelapseFlag = false;
 
-// for connection check
 const intervalValue = 30000; // 1min
 setInterval(function() {
   for(let key in statusList["connected"]){
@@ -165,7 +179,7 @@ setInterval(function() {
       }
       let instruction = arr[Math.floor(Math.random() * arr.length)];
       console.log("instruction: " + instruction);
-      io.to("client").emit("instructionFromServer", {
+      io.to("all").emit("instructionFromServer", {
         "text": instruction,
         "duration": Math.round(Math.random() * 100) * 600
       });
@@ -205,12 +219,88 @@ app.post('/esp8266', function(req, res){
   }
 });
 */
+//let timeTable = require ('./lib/timeTable.json');
+
+
+const timeTableRead = () => {
+  let timeTable = JSON.parse(fs.readFileSync('./lib/timeTable.json', 'utf8'));
+  for(let time in timeTable["unparsed"]) {
+    timeTable["parsed"][Date.parse(time.replace(" ","T") + ":00+09:00") - Date.now()] = timeTable["unparsed"][time];
+  };
+  for(let time in timeTable["parsed"]){
+    if(time > 0){
+      setTimeout(()=>{
+        console.log(timeTable["parsed"][time]);
+        let room = Object.keys(timeTable["parsed"][time])[0];
+        switch(timeTable["parsed"][time][room]){
+          case "TIMELAPSE":
+            exportComponent.roomEmit(io, 'cmdFromServer',"TIMELAPSE", statusList["cmd"]["target"]);
+            console.log("stream start");
+            statusList["streamStatus"]["streamFlag"]["TIMELAPSE"] = true;
+            io.to(room).emit("cmdFromServer", {
+              "cmd": "INSTRUCTION",
+              "property": {
+                "text": "TIMELAPSE",
+                "duration": 5000
+              }
+            });
+            setTimeout(() =>{
+              let idArr = Object.keys(statusList["clients"])
+              streamReq("TIMELAPSE", idArr[Math.floor(Math.random()*idArr.length)]);
+            },500);
+            break;
+          case "17:00":
+            timelapseFlag = true;
+            console.log("start");
+            exportComponent.shutterReq(io, "oneshot");
+            if(room in io.sockets.adapter.rooms){
+              io.to(room).emit("cmdFromServer", {
+                "cmd": "INSTRUCTION",
+                "property": {
+                  "text": timeTable["parsed"][time][room],
+                  "duration": 60000
+                }
+              });
+            }
+            break;
+          case "RECORD":
+            let cmd = {};
+            cmd["cmd"] = "RECORD";
+            console.log("cmd: " + cmd["cmd"]);
+            let idArr = [];
+            idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], cmd["cmd"], "FROM");
+            // console.log(idArr);
+            for(let i=0;i<idArr.length;i++){
+              io.to(idArr[i]).emit('cmdFromServer', cmd);
+            }
+            break;
+          default:
+            if(room in io.sockets.adapter.rooms){ io.to(room).emit("cmdFromServer", {
+                "cmd": "INSTRUCTION",
+                "property": {
+                  "text": timeTable["parsed"][time][room],
+                  "duration": 60000
+                }
+              });
+            }
+            break;
+        }
+      },time);
+    }
+  }
+  return timeTable;
+}
+
+let timeTable = timeTableRead();
+console.log(timeTable["parsed"]);
 let cliNo = 0;
 io.sockets.on('connection',(socket)=>{
   socket.on("connectFromClient", (data) => {
     let sockId = String(socket.id);
     console.log("connect: " + sockId);
+    console.log(data);
     socket.join(data);
+    socket.join("all");
     if(data != "ctrl"){
       socket.join("default");
     }
@@ -233,31 +323,40 @@ io.sockets.on('connection',(socket)=>{
       if(Object.keys(statusList["clients"])[0] === 'dummy' && Object.keys(statusList["clients"].length === 1 )){
         delete statusList["clients"]["dummy"];
       }
-        statusList["clients"][sockId] = {
-          "room":data,
-          "No": cliNo,
-          "type": pcname,
-          "STREAMS": {
-            "SECBEFORE": {"TO": true, "ACK": true, "arr": 0, "LATENCY": "0", "RATE":"44100"},
-            "RECORD": {"FROM": true, "arr": 0}
-          }  
-        };
-        for(let key in statusList["cmd"]["streamFlag"]){
-          switch(key){
-            case "CHAT":
-              statusList["clients"][sockId]["STREAMS"][key] = {"FROM": true, "TO": true, "ACK": true, "arr": 0, "LATENCY": "0", "RATE":"44100"};
-              break;
-            //case "RECORD":
-             // statusList["clients"][sockId]["STREAMS"][key] = {"FROM": true, "arr": 0, "LATENCY": "0", "RATE":"44100"};
-              //break;
-            default:
-              statusList["clients"][sockId]["STREAMS"][key] = {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"44100"};
-          }
+      statusList["clients"][sockId] = {
+        "room":data,
+        "No": cliNo,
+        "type": pcname,
+        "STREAMS": {
+          "SECBEFORE": {"TO": true, "ACK": true, "arr": 0, "LATENCY": "0", "RATE":"44100"},
+          "RECORD": {"FROM": true, "arr": 0}
+        }  
+      };
+      for(let key in statusList["cmd"]["streamFlag"]){
+        switch(key){
+          case "CHAT":
+            statusList["clients"][sockId]["STREAMS"][key] = {"FROM": true, "TO": true, "ACK": true, "arr": 0, "LATENCY": "0", "RATE":"44100"};
+            break;
+          //case "RECORD":
+           // statusList["clients"][sockId]["STREAMS"][key] = {"FROM": true, "arr": 0, "LATENCY": "0", "RATE":"44100"};
+            //break;
+          default:
+            statusList["clients"][sockId]["STREAMS"][key] = {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"44100"};
         }
-      cliNo ++;
+      }
+      cliNo++;
     }
+    console.log(statusList["clients"]);
     io.to("ctrl").emit("statusFromServer", statusList);
-    io.emit('streamStatusFromServer', statusList["streamStatus"]["streamFlag"]);
+    io.emit('streamListFromServer', statusList["streamStatus"]["streamCmd"]);
+    /*debug
+    io.emit("cmdFromServer", {
+      "cmd": "INSTRUCTION",
+      "property": {
+        "text": 'input "text"',
+        "duration": 60000
+      }
+    });*/
   });
 
   socket.on("routingFromCtrl", (data) =>{
@@ -281,6 +380,8 @@ io.sockets.on('connection',(socket)=>{
         streamReq(data, String(socket.id));
       }
     } else {
+      //console.log("debug");
+      //console.log(socket.id);
       streamReq(data, String(socket.id));
     }
   });
@@ -313,6 +414,7 @@ io.sockets.on('connection',(socket)=>{
   });
 
   socket.on('cmdFromCtrl', (data) =>{
+    console.log("ctrlCmd: " + data["cmd"]);
     switch(data["cmd"]){
       case "FROM":
       case "TO":
@@ -327,8 +429,8 @@ io.sockets.on('connection',(socket)=>{
         if("gain" in statusList && data["property"]["target"] in statusList["gain"]){
           statusList["gain"][data["property"]["target"]] = String(data["property"]["val"]);
         }
-        // console.log(statusList["gain"]);
-        io.to("client").emit("cmdFromServer", {
+        //console.log(statusList["gain"]);
+        io.to("all").emit("cmdFromServer", {
           "cmd": "GAIN",
           "property": data["property"]
         });
@@ -390,58 +492,17 @@ io.sockets.on('connection',(socket)=>{
 
 });
 
-
-const charFromClient = (keyCode, socket) =>{
-  let character = keycodeMap[String(keyCode)];
-  //      strings = exportComponent.char2Cmd(io, strings, character, cmdList, keyCode);
-  if(character === "enter") {
-    exportComponent.roomEmit(io,'textFromServer', strings, statusList["cmd"]["target"]);
-    let cmd = cmdSelect(strings);
-    if(cmd) {
-      console.log("cmd: " + cmd["cmd"]);
-      if(cmd["cmd"] === "RECORD"){
-        let idArr = [];
-        idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], cmd["cmd"], "FROM");
-        // console.log(idArr);
-        for(let i=0;i<idArr.length;i++){
-          io.to(idArr[i]).emit('cmdFromServer', cmd);
-        }
-      } else {
-        exportComponent.roomEmit(io, 'cmdFromServer', cmd, statusList["cmd"]["target"]);
-      }
-      for(let key in statusList["cmd"]["stream"]){
-        if(cmd["cmd"] === key){
-          console.log("stream start");
-          statusList["streamStatus"]["streamFlag"][statusList["cmd"]["stream"][key]] = true;
-          setTimeout(() =>{
-            streamReq(cmd["cmd"], String(socket.id));
-            // wavReqFromClient(cmd["cmd"]);
-          },500);
-        }
-      }
-    }
-    if (isNaN(Number(strings)) === false && strings != "") {
-      let json = sineWave(strings);
-      exportComponent.roomEmit(io, 'cmdFromServer', json, statusList["cmd"]["target"]);
-    } else if( ~strings.indexOf("SEC") ) {
-      let secs = strings.slice(0,strings.indexOf("SEC"));
-      if(isNaN(Number(secs)) === false && secs != ""){
-        let rate = 44100;
-        if( ~strings.indexOf("_") ){
-          if(isNaN(Number(strings.split("_")[1])) === false && strings.split("_")[1] != ""){
-            rate = Number(strings.split("_")[1]);
-          }
-        }
-        exportComponent.roomEmit(io, 'cmdFromServer', {
-          "cmd":"SECBEFORE",
-          "property": Number(secs),
-          "rate": rate
-        },statusList["cmd"]["target"]);
-        statusList["cmd"]["now"]["SECBEFORE"] = secs;
-      }
-    } else if( ~strings.indexOf("_") ) {
-      joinUnderBar(strings);
-    } else if(strings === "RATE" || strings === "SAMPLERATE") {
+const enterFromClient = (keyCode, socket) =>{
+  exportComponent.roomEmit(io,'textFromServer', strings, statusList["cmd"]["target"]);
+  switch(strings){
+    case "START":
+      timelapseFlag = true;
+      break;
+    case "STOP":
+      stopFromServer();
+      break;
+    case "RATE":
+    case "SAMPLERATE":
       let rtnRate;
       let aveRate =0;
       let keys = 0;
@@ -466,9 +527,8 @@ const charFromClient = (keyCode, socket) =>{
         }
       }
       exportComponent.roomEmit(io, 'stringsFromServer', "sampling rate: " + rtnRate + "Hz", statusList["cmd"]["target"]);
-//      io.to("ctrl").emit('statusFromServer', statusList);
-    } else if(strings === "PREV"){
-      // console.log(statusList["cmd"]["past"]);
+      break;
+    case "PREV":
       exportComponent.roomEmit(io, 'cmdFromServer', {
         "cmd":"PREV",
         "property": statusList["cmd"]["past"]
@@ -481,10 +541,10 @@ const charFromClient = (keyCode, socket) =>{
         } else {
           statusList["cmd"]["now"][key1] = String(statusList["cmd"]["past"][key1]);
         }
-        for(let key2 in statusList["cmd"]["stream"]){
+        for(let key2 in statusList["streamStatus"]["streamCmd"]){
           if(statusList["cmd"]["past"][key1] && key1 === key2){
             // console.log(key1);
-            statusList["streamStatus"]["streamFlag"][statusList["cmd"]["stream"][key2]] = true;
+            statusList["streamStatus"]["streamFlag"][statusList["streamStatus"]["streamCmd"][key2]] = true;
             setTimeout(() =>{
               // console.log("chat start");
               // wavReqFromClient(key1);
@@ -493,14 +553,17 @@ const charFromClient = (keyCode, socket) =>{
           }
         }
       }
-    } else if(strings === "RANDOM" || strings === "BROADCAST"){
+      break;
+    case "RANDOM":
+    case "BROADCAST":
       if(statusList["streamStatus"]["emitMode"] === strings){
         statusList["streamStatus"]["emitMode"] = "NORMAL";
       } else {
         statusList["streamStatus"]["emitMode"] = strings;
       }
       console.log("emitMode: " + strings);
-    } else if(strings === "SWITCH"){
+      break;
+    case "SWITCH":
       if(board.isReady){
         let relay = new five.Led(13);
         if(boardSwitch) {
@@ -524,48 +587,85 @@ const charFromClient = (keyCode, socket) =>{
         })
         statusList["cmd"]["now"]["SWITCH"] = "can't use";
       }
-/*
-    for(let key in statusList["arduino"]["client"]){
-        let urlStrings = "http://" + statusList["arduino"]["network"] + statusList["arduino"]["client"][key]["host"];
-        if(statusList["arduino"]["client"][key]["flag"]){
-          urlStrings = urlStrings + "/off/";
-          statusList["arduino"]["client"][key]["flag"] = false;
-        } else {
-          urlStrings = urlStrings + "/on/";
-          statusList["arduino"]["client"][key]["flag"] = true;
-        }
-        console.log(urlStrings);
-        
-        request(urlStrings, function (error, response, body) {
-          if (!error && response.statusCode == 200) {
-            console.log(response);
-          } else {
-            console.log('error: '+ response);
-          }
-        })
-      }*/
-    } else if(strings === "STOP"){
-      stopFromServer();
-    } else if(strings === "START"){
-      timelapseFlag = true;
-    } else if(strings === "CTRL" || strings === "CONTROL"){
+      break;
+    case "CTRL":
+    case "CONTROL":
       socket.emit('cmdFromServer', {
         "cmd": "CTRL",
         "property": statusList
       });
-      /*
-      exportComponent.roomEmit(io, 'cmdFromServer', {
-        "cmd":"CTRL",
-        "property": statusList
-      },statusList["cmd"]["target"]);*/
-    }
-    statusList["cmd"]["prevCmd"] = strings;
-    let dt = new Date();
-    statusList["cmd"]["prevTime"] = dt.toFormat("HH24:MI:SS");
-//      prevCmd = strings;
-    strings = "";
-    //console.log(statusList);
-    io.to("ctrl").emit("statusFromServer", statusList);
+      console.log("control view");
+      break;
+    case "GLITCH":
+      if(statusList["streamStatus"]["glitch"]) {
+        statusList["streamStatus"]["glitch"] = false;
+      } else {
+        statusList["streamStatus"]["glitch"] = true;
+      }
+      break;
+    default:
+      let cmd = cmdSelect(strings);
+      if(cmd) {
+        console.log("cmd: " + cmd["cmd"]);
+        if(cmd["cmd"] === "RECORD"){
+          let idArr = [];
+          idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], cmd["cmd"], "FROM");
+          // console.log(idArr);
+          for(let i=0;i<idArr.length;i++){
+            io.to(idArr[i]).emit('cmdFromServer', cmd);
+          }
+        } else {
+          console.log(io.sockets.adapter.rooms);
+          exportComponent.roomEmit(io, 'cmdFromServer', cmd, statusList["cmd"]["target"]);
+        }
+        for(let key in statusList["streamStatus"]["streamCmd"]){
+          if(cmd["cmd"] === key){
+            console.log("stream start");
+            statusList["streamStatus"]["streamFlag"][statusList["streamStatus"]["streamCmd"][key]] = true;
+            setTimeout(() =>{
+              streamReq(statusList["streamStatus"]["streamCmd"][key], String(socket.id));
+              // wavReqFromClient(cmd["cmd"]);
+            },500);
+          }
+        }
+      }
+      if (isNaN(Number(strings)) === false && strings != "") {
+        let json = sineWave(strings);
+        exportComponent.roomEmit(io, 'cmdFromServer', json, statusList["cmd"]["target"]);
+      } 
+      if( ~strings.indexOf("SEC") ) {
+        let secs = strings.slice(0,strings.indexOf("SEC"));
+        if(isNaN(Number(secs)) === false && secs != ""){
+          let rate = 44100;
+          if( ~strings.indexOf("_") ){
+            if(isNaN(Number(strings.split("_")[1])) === false && strings.split("_")[1] != ""){
+              rate = Number(strings.split("_")[1]);
+            }
+          }
+          exportComponent.roomEmit(io, 'cmdFromServer', {
+            "cmd":"SECBEFORE",
+            "property": Number(secs),
+            "rate": rate
+          },statusList["cmd"]["target"]);
+          statusList["cmd"]["now"]["SECBEFORE"] = secs;
+        }
+      } else if( ~strings.indexOf("_") ) {
+        joinUnderBar(strings);
+      } 
+      break;
+  }
+  statusList["cmd"]["prevCmd"] = strings;
+  let dt = new Date();
+  statusList["cmd"]["prevTime"] = dt.toFormat("HH24:MI:SS");
+  strings = "";
+  io.to("ctrl").emit("statusFromServer", statusList);
+}
+
+const charFromClient = (keyCode, socket) =>{
+  let character = keycodeMap[String(keyCode)];
+  //      strings = exportComponent.char2Cmd(io, strings, character, cmdList, keyCode);
+  if(character === "enter") {
+    enterFromClient(keyCode, socket);
   } else if(character === "backspace" || character === "left_arrow" || character === "tab") {
     exportComponent.roomEmit(io, 'stringsFromServer', "", statusList["cmd"]["target"]);
     strings =  "";
@@ -593,7 +693,129 @@ const charFromClient = (keyCode, socket) =>{
 const joinUnderBar = (strings) => {
   let strArr = strings.split("_");
   // console.log(strArr);
-  let rtnRate = "";
+  switch(strArr[0]) {
+    case "VOL":
+    case "VOLUME":
+      console.log("VOLUME " + strArr[1]);
+      exportComponent.roomEmit(io, 'cmdFromServer', {
+        "cmd": "VOLUME",
+        "property": strArr[1]
+      }, statusList["cmd"]["target"]);
+      break;
+    case "UP":
+    case "DOWN":
+      if(isNaN(Number(strArr[1])) === false && strArr[1] != ""){
+        exportComponent.roomEmit(io, 'cmdFromServer', {
+          "cmd": "SINEWAVE_" + strArr[0],
+          "property": Number(strArr[1])
+        }, statusList["cmd"]["target"]);
+      }
+      break;
+    case "PORTAMENT":
+    case "PORT":
+      if(isNaN(Number(strArr[1])) === false && strArr[1] != ""){
+        exportComponent.roomEmit(io, 'cmdFromServer', {
+          "cmd": "PORTAMENT",
+          "property": Number(strArr[1])
+        }, statusList["cmd"]["target"]);
+      }
+      break;
+    case "UPLOAD":
+      let fname = "";
+      for(let i=0;i<strArr.length;i++){
+        fname = fname + strArr[i] + "_";
+      }
+      fname = fname.substr(7);
+      fname = fname.substr(0, fname.length-1);
+      //console.log(fname);
+      
+      if(fname === "TIMETABLE"){
+        console.log("TIMETABLE renew");
+        timeTable = timeTableRead();
+      } else {
+        fileImport(fname,libDir,statusImport);
+      }
+      //mp4にも対応したい
+      break;
+    case "LATENCY":
+      if(strArr[0] === "LATENCY" && strArr[1] in statusList["cmd"]["streamFlag"]) {
+        let latencyVal = 0;
+        if(strArr.length > 2){
+          if(isNaN(Number(strArr[2])) === false && strArr[2] != "") latencyVal = String(Number(strArr[2]) * 1000);
+        } else {
+          for(let id in statusList["clients"]){
+            console.log(statusList["clients"][id]["STREAMS"]);
+            if(latencyVal < Number(statusList["clients"][id]["STREAMS"][strArr[1]]["LATENCY"])) latencyVal = Number(statusList["clients"][id]["STREAMS"][strArr[1]]["LATENCY"]);
+          }
+          if(latencyVal + 500 > 10000) {
+            latencyVal = 0;
+          } else {
+            latencyVal = latencyVal + 500;
+          }
+          latencyVal = String(latencyVal);
+        }
+        for(let key in statusList["clients"]){
+          statusList["clients"][key]["STREAMS"][strArr[1]]["LATENCY"] = latencyVal;
+        }
+      }
+      break;
+    case "RATE":
+    case "SAMPLERATE":
+      let targetStream = statusList["streamStatus"]["streamCmd"][strArr[1]];
+      if(targetStream != undefined){
+      //console.log(strArr);
+        let rtnRate = "";
+        let targetStream = statusList["streamStatus"]["streamCmd"];
+        switch(statusList["sampleRate"][strArr[1]]){
+          case "22050":
+            rtnRate = "44100";
+            break;
+          case "44100":
+            rtnRate = "88200";
+            break;
+          case "88200":
+            rtnRate = "11025";
+            break;
+          default:
+            rtnRate = "22050";
+            break;
+        }
+        statusList["sampleRate"][strArr[1]] = rtnRate;
+        console.log(statusList["sampleRate"]);
+      //if(strArr[0] === "CHAT"){
+        for(let clientID in statusList["clients"]){
+          statusList["clients"][clientID]["STREAMS"]["CHAT"]["RATE"] = rtnRate;
+        }
+      //}
+        exportComponent.roomEmit(io, 'stringsFromServer', "sampling rate(" + strArr[0]+"):"+rtnRate + "Hz", statusList["cmd"]["target"]);
+      }
+      break;
+  }
+  Object.keys(io.sockets.adapter.rooms).forEach((value,index,arr)=>{
+    let targetRoom = strArr[0].toLowerCase();
+    console.log(value);
+    if(targetRoom === value/* && strArr.length > 0 && strArr[1] != ""*/){
+      let json = false;
+      let cmd = cmdSelect(strArr[1]);
+      if(cmd){
+        json = cmd;
+      } else if(isNaN(Number(strArr[1])) === false && strArr[1] != ""){
+        json = sineWave(strArr[1]);
+      }
+      if(json){
+        let flag = true;
+        for(let key in statusList["streamStatus"]["streamCmd"]){
+          if(cmd === key){
+            flag = false;
+          }
+        }
+        if(flag){
+          io.to(targetRoom).emit("cmdFromServer", json);
+          io.emit("statusViewFromServer");
+        }
+      }
+    }
+  });
   if(isNaN(Number(strArr[0])) === false && strArr[0] != ""){
     let json = false;
     let cmd = cmdSelect(strArr[1]);
@@ -605,7 +827,7 @@ const joinUnderBar = (strings) => {
     }
     if(json && Id){
       let flag = true;
-      for(let key in statusList["cmd"]["stream"]){
+      for(let key in statusList["streamStatus"]["streamCmd"]){
         if(cmd === key){
           flag = false;
         }
@@ -615,212 +837,276 @@ const joinUnderBar = (strings) => {
         io.emit("statusViewFromServer");
       }
     }
-  } else if(strArr[0] === "VOL" || strArr[0] === "VOLUME"){
-    console.log("VOLUME " + strArr[1]);
-    exportComponent.roomEmit(io, 'cmdFromServer', {
-      "cmd": "VOLUME",
-      "property": strArr[1]
-    }, statusList["cmd"]["target"]);
-  } else if((strArr[0] === "UP" || strArr[0] === "DOWN") && isNaN(Number(strArr[1])) === false && strArr[1] != "") {
-    exportComponent.roomEmit(io, 'cmdFromServer', {
-      "cmd": "SINEWAVE_" + strArr[0],
-      "property": Number(strArr[1])
-    }, statusList["cmd"]["target"]);
-  } else if((strArr[0] === "PORTAMENT" || strArr[0] === "PORT") && isNaN(Number(strArr[1])) === false && strArr[1] != ""){
-    exportComponent.roomEmit(io, 'cmdFromServer', {
-      "cmd": "PORTAMENT",
-      "property": Number(strArr[1])
-    }, statusList["cmd"]["target"]);
-  } else if(strArr[0] === "UPLOAD") {
-    let fname = "";
-      for(let i=0;i<strArr.length;i++){
-        fname = fname + strArr[i] + "_";
-    }
-    fname = fname.substr(7);
-    fname = fname.substr(0, fname.length-1);
-    console.log(fname);
-    //mp4にも対応したい
-    fileImport(fname,libDir,statusImport);
-  } else if(strArr[0] === "LATENCY" && strArr[1] in statusList["cmd"]["streamFlag"]) {
-      let latencyVal = 0;
-      if(strArr.length > 2){
-        if(isNaN(Number(strArr[2])) === false && strArr[2] != "") latencyVal = String(Number(strArr[2]) * 1000);
-      } else {
-        for(let id in statusList["clients"]){
-          console.log(statusList["clients"][id]["STREAMS"]);
-          if(latencyVal < Number(statusList["clients"][id]["STREAMS"][strArr[1]]["LATENCY"])) latencyVal = Number(statusList["clients"][id]["STREAMS"][strArr[1]]["LATENCY"]);
-        }
-        if(latencyVal + 500 > 10000) {
-          latencyVal = 0;
-        } else {
-          latencyVal = latencyVal + 500;
-        }
-        latencyVal = String(latencyVal);
-      }
-      for(let key in statusList["clients"]){
-        statusList["clients"][key]["STREAMS"][strArr[1]]["LATENCY"] = latencyVal;
-      }
-  } else if(strArr[1] === "OFF" || strArr[1] === "STOP"){
-    console.log("off");
-    for(let key in statusList["cmd"]["stream"]){
-      if(key === strArr[0]){
-        statusList["streamStatus"]["streamFlag"][statusList["cmd"]["stream"][key]] = false;
-        statusList["cmd"]["now"][key] = false;
-        statusList["streamStatus"]["streamFlag"][key] = false;
-        // console.log(statusList["streamStatus"]["streamFlag"]);
-      }
-    }
-  } else if(strArr[1] === "RATE" && statusList["sampleRate"][strArr[0]] != undefined){
-    switch(statusList["sampleRate"][strArr[0]]){
-      case "22050":
-      rtnRate = "44100";
-      break;
-      case "44100":
-      rtnRate = "88200";
-      break;
-      case "88200":
-      rtnRate = "11025";
-      break;
-      default:
-      rtnRate = "22050";
-      break;
-    }
-    statusList["sampleRate"][strArr[0]] = rtnRate;
-    //if(strArr[0] === "CHAT"){
-      for(let clientID in statusList["clients"]){
-        statusList["clients"][clientID]["STREAMS"]["CHAT"]["RATE"] = rtnRate;
-      }
-    //}
-    exportComponent.roomEmit(io, 'stringsFromServer', "sampling rate(" + strArr[0]+"):"+rtnRate + "Hz", statusList["cmd"]["target"]);
-  }
+  } 
 }
 
-const streamReq = (data, sockID) => {
-  //console.log("Stream Request in " + data)
-  if(statusList["streamStatus"]["streamFlag"][data]){
+let timeLapseLength = 0;
+
+const streamReq = (target, sockID) => {
+  //console.log("Stream Request in " + target)
+  if(statusList["streamStatus"]["streamFlag"][target]){
+    if(statusList["clients"][sockID] != undefined && statusList["clients"][sockID]["STREAMS"] != undefined && Number(statusList["clients"][sockID]["STREAMS"][target]["LATENCY"]) > 0) {
     setTimeout(()=>{
       let idArr = [];
-      switch(data){
+      switch(target){
         case "CHAT":
-          idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], data, "FROM");
+          idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], target, "FROM");
           if(idArr.length > 0){
             io.to(idArr[Math.floor(Math.random() * idArr.length)]).emit('streamReqFromServer', "CHAT");
           }
-        break;
-        default: //PLAYBACK,TIMELAPSE,DRUM,SILENCEも含む
-          idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], data, "TO");
+          break;
+        case "TIMELAPSE":
+          idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], target, "TO");
+          let json = {
+            "target": target,
+            "video": "",
+            "glitch": false
+          };
+          if(idArr.length > 0 && timeLapseLength <= audioBuff[target].length){
+            let targetID = idArr[Math.floor(Math.random() * idArr.length)];
+            json["sampleRate"] = Number(statusList["clients"][String(targetID)]["STREAMS"][target]["RATE"]);
+            json["audio"] = audioBuff[target].shift();
+            audioBuff[target].push(json["audio"]);
+            if(target in videoBuff && videoBuff[target].length > 0){
+              json["video"] = videoBuff[target].shift();
+              videoBuff[target].push(json["video"]);
+              if(statusList["streamStatus"]["glitch"]) json = exportComponent.glitchStream(json);
+            }
+            io.to(targetID).emit('chunkFromServer', json);
+            timeLapseLength++;
+          } else if(timeLapseLength > audioBuff[target].length){
+            timeLapseLength = 0;
+            io.emit('stringsFromServer', "");
+          } else {
+            console.log("no timelapse target");
+          } 
+          break;
+        default: //PLAYBACK,TIMELAPSE,DRUM,SILENCEも含む  //1008はTimelapseは含まず
+          idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], target, "TO");
    //       console.log(idArr);
+          //console.log(idArr);
           if(idArr.length > 0){
             let json = {
-              "target": data,
-              //"sampleRate": Number(statusList["sampleRate"][data]),
-              "video": ""
+              "target": target,
+              "video": "",
+              "glitch": false
             };
             let targetID = idArr[Math.floor(Math.random() * idArr.length)];
-            json["sampleRate"] = Number(statusList["clients"][String(targetID)]["STREAMS"][data]["RATE"]);
+            json["sampleRate"] = Number(statusList["clients"][String(targetID)]["STREAMS"][target]["RATE"]);
             if(statusList["streamStatus"]["emitMode"] === "RANDOM"){
-              json["audio"] = audioBuff[data][Math.floor(Math.random() * audioBuff[data].length)];
-              if(data in videoBuff && videoBuff[data].length > 0) json["video"] = videoBuff[data][Math.floor(Math.random() * videoBuff[data].length)];
+              json["audio"] = audioBuff[target][Math.floor(Math.random() * audioBuff[target].length)];
+              if(target in videoBuff && videoBuff[target].length > 0) {
+                json["video"] = videoBuff[target][Math.floor(Math.random() * videoBuff[target].length)];
+                if(statusList["streamStatus"]["glitch"]) json = exportComponent.glitchStream(json);
+              }
               //io.to(idArr[Math.floor(Math.random() * idArr.length)]).emit('chunkFromServer', json);
               io.to(targetID).emit('chunkFromServer', json);
             } else if(statusList["streamStatus"]["emitMode"] === "BROADCAST"){
-              let idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], data, "TO")
+              let idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], target, "TO")
               for(let i=0;i<idArr.lentgh;i++){
-                json["audio"] = audioBuff[statusList["clients"][String(idArr[i])][data]["arr"]];
-                if(data in videoBuff && videoBuff[data].length > 0) json["video"] = videoBuff[statusList["clients"][String(idArr[i])][data]["arr"]];
+                json["audio"] = audioBuff[statusList["clients"][String(idArr[i])][target]["arr"]];
+                if(target in videoBuff && videoBuff[target].length > 0) {
+                  json["video"] = videoBuff[statusList["clients"][String(idArr[i])][target]["arr"]];
+                  if(statusList["streamStatus"]["glitch"]) json = exportComponent.glitchStream(json);
+                }
                 io.to(idArr[i]).emit('chunkFromServer',json);
-                if(statusList["clients"][String(idArr[i])][data]["arr"] < audioBuff[data].length){
-                  statusList["clients"][String(idArr[i])][data]["arr"]++;
+                if(statusList["clients"][String(idArr[i])][target]["arr"] < audioBuff[target].length){
+                  statusList["clients"][String(idArr[i])][target]["arr"]++;
                 } else {
-                  statusList["clients"][String(idArr[i])][data]["arr"] = 0;
+                  statusList["clients"][String(idArr[i])][target]["arr"] = 0;
                 }
               }
             } else {
-              json["audio"] = audioBuff[data].shift();
-              audioBuff[data].push(json["audio"]);
-              if(data in videoBuff && videoBuff[data].length > 0){
-                json["video"] = videoBuff[data].shift();
-                videoBuff[data].push(json["video"]);
+              json["audio"] = audioBuff[target].shift();
+              audioBuff[target].push(json["audio"]);
+              if(target in videoBuff && videoBuff[target].length > 0){
+                json["video"] = videoBuff[target].shift();
+                videoBuff[target].push(json["video"]);
+                if(statusList["streamStatus"]["glitch"]) json = exportComponent.glitchStream(json);
               }
               io.to(targetID).emit('chunkFromServer', json);
             }
           } else {
-            json["audio"] = "";
-            json["video"] = "";
+            console.log("no target");
+            //json["audio"] = "";
+            //json["video"] = "";
             //json["sampleRate"] = 44100;
             //console.log(json);
-            io.to(idArr[Math.floor(Math.random() * idArr.length)]).emit('chunkFromServer', json);
+            //io.emit('chunkFromServer', json);
           }
         break;
       }
-    },Number(statusList["clients"][sockID]["STREAMS"][data]["LATENCY"] * Math.random()));
+    },Number(statusList["clients"][sockID]["STREAMS"][target]["LATENCY"] * Math.random()));
+    } else {
+      let idArr = [];
+      switch(target){
+        case "CHAT":
+          idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], target, "FROM");
+          if(idArr.length > 0){
+            io.to(idArr[Math.floor(Math.random() * idArr.length)]).emit('streamReqFromServer', "CHAT");
+          }
+          break;
+        case "TIMELAPSE":
+          idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], target, "TO");
+          let json = {
+            "target": target,
+            "video": "",
+            "glitch": false
+          };
+          if(idArr.length > 0 && timeLapseLength <= audioBuff[target].length){
+            let targetID = idArr[Math.floor(Math.random() * idArr.length)];
+            json["sampleRate"] = Number(statusList["clients"][String(targetID)]["STREAMS"][target]["RATE"]);
+            json["audio"] = audioBuff[target].shift();
+            audioBuff[target].push(json["audio"]);
+            if(target in videoBuff && videoBuff[target].length > 0){
+              json["video"] = videoBuff[target].shift();
+              videoBuff[target].push(json["video"]);
+              if(statusList["streamStatus"]["glitch"]) json = exportComponent.glitchStream(json);
+            }
+            io.to(targetID).emit('chunkFromServer', json);
+            timeLapseLength++;
+          } else if(timeLapseLength > audioBuff[target].length){
+            timeLapseLength = 0;
+            io.emit('stringsFromServer', "");
+          } else {
+            console.log("no timelapse target");
+          } 
+          break;
+        default: //PLAYBACK,TIMELAPSE,DRUM,SILENCEも含む  //1008はTimelapseは含まず
+          idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], target, "TO");
+   //       console.log(idArr);
+          //console.log(idArr);
+          if(idArr.length > 0){
+            let json = {
+              "target": target,
+              "video": "",
+              "glitch": false
+            };
+            let targetID = idArr[Math.floor(Math.random() * idArr.length)];
+            json["sampleRate"] = Number(statusList["clients"][String(targetID)]["STREAMS"][target]["RATE"]);
+            if(statusList["streamStatus"]["emitMode"] === "RANDOM"){
+              json["audio"] = audioBuff[target][Math.floor(Math.random() * audioBuff[target].length)];
+              if(target in videoBuff && videoBuff[target].length > 0) {
+                json["video"] = videoBuff[target][Math.floor(Math.random() * videoBuff[target].length)];
+                if(statusList["streamStatus"]["glitch"]) json = exportComponent.glitchStream(json);
+              }
+              //io.to(idArr[Math.floor(Math.random() * idArr.length)]).emit('chunkFromServer', json);
+              io.to(targetID).emit('chunkFromServer', json);
+            } else if(statusList["streamStatus"]["emitMode"] === "BROADCAST"){
+              let idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], target, "TO")
+              for(let i=0;i<idArr.lentgh;i++){
+                json["audio"] = audioBuff[statusList["clients"][String(idArr[i])][target]["arr"]];
+                if(target in videoBuff && videoBuff[target].length > 0) {
+                  json["video"] = videoBuff[statusList["clients"][String(idArr[i])][target]["arr"]];
+                  if(statusList["streamStatus"]["glitch"]) json = exportComponent.glitchStream(json);
+                }
+                io.to(idArr[i]).emit('chunkFromServer',json);
+                if(statusList["clients"][String(idArr[i])][target]["arr"] < audioBuff[target].length){
+                  statusList["clients"][String(idArr[i])][target]["arr"]++;
+                } else {
+                  statusList["clients"][String(idArr[i])][target]["arr"] = 0;
+                }
+              }
+            } else {
+              json["audio"] = audioBuff[target].shift();
+              audioBuff[target].push(json["audio"]);
+              if(target in videoBuff && videoBuff[target].length > 0){
+                json["video"] = videoBuff[target].shift();
+                videoBuff[target].push(json["video"]);
+                if(statusList["streamStatus"]["glitch"]) json = exportComponent.glitchStream(json);
+              }
+              io.to(targetID).emit('chunkFromServer', json);
+            }
+          } else {
+            console.log("no target");
+            //json["audio"] = "";
+            //json["video"] = "";
+            //json["sampleRate"] = 44100;
+            //console.log(json);
+            //io.emit('chunkFromServer', json);
+          }
+        break;
+      }
+    }
   }
 }
 
 const chunkFromClient = (data, sourceId) => {
+  let json = {
+    "glitch": false
+  };
+  //console.log(data);
   if(data["target"]){
     audioBuff[data["target"]].push(data["audio"]);
     videoBuff[data["target"]].push(data["video"]);
+  } else {
+  //  console.log(data);
+    if(audioBuff["CHAT"].length === 0) audioBuff["CHAT"].push("");
+    if(videoBuff["CHAT"].length === 0) videoBuff["CHAT"].push("");
+    console.log(audioBuff["CHAT"].length);
+    console.log(videoBuff["CHAT"].length);
+  }
     //console.log(data["target"] + " length: " + String(audioBuff[data["target"]].length));
     //console.log(statusList["clients"][sourceId]);
-    let sampleRate = String(statusList["clients"][sourceId]["STREAMS"]["CHAT"]["RATE"]);
-    if(data["target"] === "CHAT" && statusList["streamStatus"]["streamFlag"][data["target"]]){
-      let idArr = []
-      idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], data["target"], "TO")
-      if(idArr.length > 0){
-        let clientRate = false;
-        for(let i=0;i<idArr.length;i++){
-          if(statusList["clients"][String(idArr[i])]["STREAMS"]["CHAT"]["RATE"] != Number(statusList["sampleRate"][data["target"]])){
-            clienttRate = true;
-          }
+  let sampleRate = String(statusList["clients"][sourceId]["STREAMS"]["CHAT"]["RATE"]);
+  if(statusList["streamStatus"]["streamFlag"]["CHAT"]){
+    let idArr = []
+    idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], "CHAT", "TO")
+    //console.log(idArr);
+    if(idArr.length > 0){
+      let clientRate = false;
+      for(let i=0;i<idArr.length;i++){
+        if(statusList["clients"][String(idArr[i])]["STREAMS"]["CHAT"]["RATE"] != Number(statusList["sampleRate"]["CHAT"])){
+          clienttRate = true;
         }
-        let json = {
-          "target": data["target"],
-          //"sampleRate": Number(statusList["sampleRate"][data["target"]])
-          "sampleRate": sampleRate
-        };
-        if(statusList["streamStatus"]["emitMode"] != "BROADCAST"){
-          json["audio"] = audioBuff[data["target"]].shift();
-          json["video"] = videoBuff[data["target"]].shift();
-          let targetID = idArr[Math.floor(Math.random() * idArr.length)];
-          if(clientRate){
-            json["sampleRate"] = statusList["clients"][targetID]["STREAMS"]["CHAT"]["RATE"];
+      }
+      json["target"] = "CHAT";
+      json["sampleRate"] = sampleRate;
+/*        let json = {
+        "target": data["target"],
+        "sampleRate": sampleRate,
+        "glitch": false
+      };*/
+      if(statusList["streamStatus"]["emitMode"] != "BROADCAST"){
+        json["audio"] = audioBuff["CHAT"].shift();
+        json["video"] = videoBuff["CHAT"].shift();
+        if(statusList["streamStatus"]["glitch"]) json = exportComponent.glitchStream(json);
+        let targetID = idArr[Math.floor(Math.random() * idArr.length)];
+        if(clientRate){
+          json["sampleRate"] = statusList["clients"][targetID]["STREAMS"]["CHAT"]["RATE"];
+        }
+        io.to(targetID).emit('chunkFromServer', json);
+        statusList["clients"][String(targetID)]["STREAMS"]["CHAT"]["ACK"] = false;
+      } else {
+      let minItem;
+      //console.log(idArr.length);
+        for(let i=0;i<idArr.length;i++){
+          let arrVal = 0;
+          if(statusList["clients"][String(idArr[i])]["STREAMS"]["CHAT"]["arr"] < audioBuff[data["target"]].length){
+            arrVal = statusList["clients"][String(idArr[i])]["STREAMS"]["CHAT"]["arr"];
+            statusList["clients"][String(idArr[i])]["STREAMS"]["CHAT"]["arr"]++;
+          } else {
+            statusList["clients"][String(idArr[i])]["STREAMS"]["CHAT"]["arr"] = 0;
           }
-
-          io.to(targetID).emit('chunkFromServer', json);
-          statusList["clients"][String(targetID)]["STREAMS"]["CHAT"]["ACK"] = false;
-        } else {
-          let minItem;
-          //console.log(idArr.length);
-          for(let i=0;i<idArr.length;i++){
-            //console.log('debug');
-            let arrVal = 0;
-            if(statusList["clients"][String(idArr[i])]["STREAMS"][data["target"]]["arr"] < audioBuff[data["target"]].length){
-              arrVal = statusList["clients"][String(idArr[i])]["STREAMS"][data["target"]]["arr"];
-              statusList["clients"][String(idArr[i])]["STREAMS"][data["target"]]["arr"]++;
-            } else {
-              statusList["clients"][String(idArr[i])]["STREAMS"][data["target"]]["arr"] = 0;
-            }
-            json["audio"] = audioBuff[data["target"]][arrVal];
-            json["video"] = videoBuff[data["target"]][arrVal];
-            io.to(idArr[i]).emit('chunkFromServer',json);
-            statusList["clients"][String(idArr[i])]["STREAMS"]["CHAT"]["ACK"] = false;
-            if(minItem === undefined || minVal > audioBuff[statusList["clients"][String(idArr[i])]["STREAMS"][data["target"]]["arr"]]){
-              minItem = audioBuff[statusList["clients"][String(idArr[i])]["STREAMS"][data["target"]]["arr"]];
-            }
-          }
-          if(minItem != undefined && minItem > 0){
-            for(let i=0; i<idArr.length;i++){
-              statusList["clients"][String(idArr[i])]["STREAMS"][data["target"]]["arr"] = statusList["clients"][String(idArr[i])]["STREAMS"][data["target"]]["arr"] - minItem;
+          json["audio"] = audioBuff[data["CHAT"]][arrVal];
+          json["video"] = videoBuff[data["CHAT"]][arrVal];
+          if(statusList["streamStatus"]["glitch"]) json = exportComponent.glitchStream(json);
+          io.to(idArr[i]).emit('chunkFromServer',json);
+          statusList["clients"][String(idArr[i])]["STREAMS"]["CHAT"]["ACK"] = false;
+          if(minItem === undefined || minVal > audioBuff[statusList["clients"][String(idArr[i])]["STREAMS"]["CHAT"]["arr"]]) minItem = audioBuff[statusList["clients"][String(idArr[i])]["STREAMS"]["CHAT"]["arr"]];
+          
+        }
+        if(minItem != undefined && minItem > 0){
+          for(let i=0; i<idArr.length;i++){
+            statusList["clients"][String(idArr[i])]["STREAMS"]["CHAT"]["arr"] = statusList["clients"][String(idArr[i])]["STREAMS"]["CHAT"]["arr"] - minItem;
             }
             //audioBuff,videoBuffを先頭からminItem分の要素削除
             audioBuff[data["target"]].splice(0,minItem);
             videoBuff[data["target"]].splice(0,minItem);
-          }
         }
-      } else {
-        statusList["streamStatus"]["waitCHAT"] = true;
       }
+    } else {
+      statusList["streamStatus"]["waitCHAT"] = true;
     }
   }
 }
@@ -929,7 +1215,7 @@ const movImport = (data) =>{
       statusList["cmd"]["list"][data["file"]] = data["file"];
       statusList["cmd"]["stream"][data["file"]] = data["file"];
       statusList["cmd"]["streamFlag"][data["file"]] = false;
-      io.emit('streamStatusFromServer', statusList["cmd"]["streamFlag"]);
+      io.emit('streamListFromServer', statusList["streamStatus"]["streamCmd"]);
       audioConvert(data);
     }
     if (error !== null) {
@@ -1099,7 +1385,8 @@ const imgConvert = (filename, filetype, libDir) =>{
             fs.readFile(process.env.HOME + libDir + f, 'base64', (err,data) =>{
               if(err) throw err;
 //              rtnArr.push('data:image/webp;base64,' + data);
-              videoBuff[filename].push('data:image/webp;base64,' + data);
+              videoBuff[filename].push('data:image/jpeg;base64,' + data);
+              //videoBuff[filename].push('data:image/webp;base64,' + data);
               let rmExec = 'rm ' + process.env.HOME + libDir + f;
               console.log(videoBuff[filename].length);
               console.log(rmExec);
@@ -1161,13 +1448,14 @@ const statusImport = (filename) =>{
   //audioBuff[filename] = hsh["audio"];
   //videoBuff[filename] = hsh["video"];
   statusList["cmd"]["list"][filename] = filename;
-  statusList["cmd"]["stream"][filename] = filename;
+  statusList["streamStatus"]["streamCmd"][filename] = filename;
   statusList["cmd"]["streamFlag"][filename] = false;
+  statusList["streamStatus"]["streamFlag"][filename] = false;
   statusList["sampleRate"][filename] = "44100";
   for(let key in statusList["clients"]){
     statusList["clients"][key]["STREAMS"][filename] = {"TO": true, "arr": 0};
   }
-  io.emit('streamStatusFromServer', statusList["cmd"]["streamFlag"]);
+  io.emit('streamListFromServer', statusList["streamStatus"]["streamCmd"]);
   console.log(statusList);
   //console.log(testHsh["audio"].length);
 }
