@@ -101,11 +101,14 @@ chatGain.gain.value = 1;
 chatGain.connect(masterGain);
 
 let convolver = audioContext.createConvolver();
+//convolver.context.sampleRate = 44100;
 let revGain = audioContext.createGain();
-revGain.gain.value=1.0;
+revGain.gain.value=3.0;
+console.log(convolver.context.sampleRate);
 convolver.connect(revGain);
 revGain.connect(masterGain);
 convolver.connect(masterGain);
+let droneBuff = {};
 /*let streamGain = {
 "CHAT": 1,
 "PLAYBACK": 0.7,
@@ -137,7 +140,8 @@ const alertPlay = () => {
   src.start();
   // console.log("alert");
 }
-const click = () => {
+const click = (frequency) => {
+  clickOsc.frequency.value = frequency || 440
   modules.textPrint(ctx, canvas, "CLICK")
   let t0 = audioContext.currentTime;
 //  clickGain.gain.value = 0.7;
@@ -208,39 +212,80 @@ let image;
 let receive;
 let receive_ctx;
 const onAudioProcess = (e) => {
-  if(videoMode != "none"){
+  if(videoMode.mode != "none"){
+    //consol.log(videoMode);
     let bufferData = new Float32Array(bufferSize);
     e.inputBuffer.copyFromChannel(bufferData, 0);
-    switch(videoMode){
-      case "record":
-      modules.chunkEmit({"audio":bufferData, "video":funcToBase64(buffer, video), "target": "PLAYBACK"},socket);
-      break;
-      case "chat":
-      chatBuffer["audio"] = bufferData;
-      chatBuffer["video"] = funcToBase64(buffer, video);
-      chatBuffer["target"] = "CHAT";
-      break;
-      case "pastBuff":
-        streamBuffer.push({
-          "audio": bufferData,
-          "video": funcToBase64(buffer, video)
-        });
+    if(videoMode.option != "drone"){
+      switch(videoMode.mode){
+        case "record":
+        modules.chunkEmit({"audio":bufferData, "video":funcToBase64(buffer, video), "target": "PLAYBACK"},socket);
         break;
-      case "pastPlay":
-        let beforeChunk = {};
-        if(streamBuffer.length>0){
-          beforeChunk = streamBuffer.shift();
-        } else {
-          beforeChunk = {"audio": bufferData, "video": funcToBase64(buffer, video)};
-        }
-          playAudioStream(beforeChunk["audio"],bufferRate,gainVal["SECBEFORE"],false);
-          playVideo(beforeChunk["video"]);
-           console.log(streamBuffer.length);
+        case "chat":
+        chatBuffer["audio"] = bufferData;
+        chatBuffer["video"] = funcToBase64(buffer, video);
+        chatBuffer["target"] = "CHAT";
+        break;
+        case "pastBuff":
           streamBuffer.push({
             "audio": bufferData,
             "video": funcToBase64(buffer, video)
-          })
-        break;
+          });
+          break;
+        case "pastPlay":
+          let beforeChunk = {};
+          if(streamBuffer.length>0){
+            beforeChunk = streamBuffer.shift();
+          } else {
+            beforeChunk = {"audio": bufferData, "video": funcToBase64(buffer, video)};
+          }
+            playAudioStream(beforeChunk["audio"],bufferRate,gainVal["SECBEFORE"],false);
+            playVideo(beforeChunk["video"]);
+             console.log(streamBuffer.length);
+            streamBuffer.push({
+              "audio": bufferData,
+              "video": funcToBase64(buffer, video)
+            })
+          break;
+        /*
+        case "droneChat":
+          chatBuffer["audio"] = bufferData;
+          chatBuffer["video"] = modules.toBase64(buffer, video);
+          chatBuffer["target"] = "DRONECHAT";
+          //console.log(droneBuff);
+          //if(droneBuff != undefined || droneBuff != {}){
+          if("audio" in droneBuff){
+            //console.log(droneBuff.sampleRate);
+            //console.log(droneBuff.gain);
+            playAudioStream(droneBuff["audio"],droneBuff["sampleRate"],droneBuff["gain"],false);
+            playVideo(droneBuff["video"]);
+          } else {
+            //console.log("debug");
+            modules.textPrint(ctx, canvas, stringsClient);
+            //ssu?
+          }
+          break;
+          */
+      }
+    } else {
+    //if(videoMode.option === "drone"){
+      console.log(droneBuff)
+      if(droneBuff != undefined && droneBuff != {} && droneflag){
+        if("audio" in droneBuff) playAudioStream(droneBuff["audio"],droneBuff["sampleRate"],droneBuff["gain"],droneBuff.glitch);
+        if("video" in droneBuff){
+          playVideo(droneBuff["video"]);
+        } else {
+          modules.textPrint(ctx, canvas, stringsClient);
+        }
+        console.log("play");
+        if(droneBuff.target === "CHAT"){
+          chatBuffer["audio"] = bufferData;
+          chatBuffer["video"] = modules.toBase64(buffer, video);
+          chatBuffer["target"] = droneBuff.target;
+        } else {
+          socket.emit('wavReqFromClient', data["target"]);
+        }
+      }
     }
   }
   if(timelapseFlag){
@@ -252,22 +297,38 @@ const onAudioProcess = (e) => {
   }
 }
 const playAudioStream = (flo32arr, sampleRate, volume, glitch) => {
-  let audio_buf = audioContext.createBuffer(1, bufferSize, sampleRate),
-      audio_src = audioContext.createBufferSource();
-  let audioData = new Float32Array(bufferSize);
-  for(let i = 0; i < audioData.length; i++){
-    audioData[i] = flo32arr[i] * volume;
-  }
-  audio_buf.copyToChannel(audioData, 0);
-  // console.log(audio_buf);
-  audio_src.buffer = audio_buf;
-  audio_src.connect(masterGain);
-  /*if(glitch){
-    convolver.buffer = audio_buf;
-    audio_src.connect(convolver);
-  }*/
-  audio_src.start(0);
+  //if(!glitch){
+    let audio_src = audioContext.createBufferSource();
+    let audioData = new Float32Array(bufferSize);
+    for(let i = 0; i < audioData.length; i++){
+      audioData[i] = flo32arr[i] * volume;
+    }
+    if(!glitch){
+      console.log(sampleRate)
+      let audio_buf = audioContext.createBuffer(1, bufferSize, sampleRate)
+      audio_buf.copyToChannel(audioData, 0);
+      audio_src.buffer = audio_buf;
+      audio_src.connect(masterGain);
+    } else {
+      console.log("glitch")
+      let audio_buf = audioContext.createBuffer(1, bufferSize, convolver.context.sampleRate)
+      audio_buf.copyToChannel(audioData, 0);
+      // console.log(audio_buf);
+
+      audio_src.buffer = audio_buf;
+      convolver.buffer = audio_buf;
+      audio_src.connect(convolver);
+    }
+    //let timeOut = audio_src.buffer.duration * 1000;
+    audio_src.start(0);
+    /*
+    droneflag = false
+    setTimeout(()=>{
+      droneflag = true
+    },timeOut);*/
+  //}
 }
+droneflag = true;
 //video record/play ここまで
 
 const initialize = () =>{
@@ -339,6 +400,40 @@ const initialize = () =>{
   receive = document.getElementById("cnvs");
   receive_ctx = receive.getContext("2d");
 };
+
+//metronome
+let rhythmProperty = {
+  "bpm": 60,
+  "interval": 1000,
+  "score": [1,1,1,1],
+  "timbre": 440
+};
+let metronome;
+let metronomeCount = 0;
+const startRhythm = (interval) =>{
+  metronome = setInterval(()=>{
+    if(rhythmProperty.score[metronomeCount] === 1){
+      switch(rhythmProperty.timbre){
+        default:
+          click(rhythmProperty.timbre)
+          /*
+          clickOsc.frequency.value = rhythmProperty.timbre
+          clickGain.gain.setValueAtTime(gainVal["CLICK"], t0);
+          clickGain.gain.setTargetAtTime(0,t0,0.03);
+          */
+      }
+    }
+    if(metronomeCount+1 < rhythmProperty.score.length){
+      metronomeCount++
+    } else {
+      metronomeCount = 0
+    }
+  },interval); 
+}
+
+const stopRhythm = () => {
+  clearInterval(metronome);
+}
 
 //keyboard
 let stringsClient = "";
@@ -502,8 +597,10 @@ const renderStart=()=> {
 }
 
 /* socket */
-
 socket.emit('connectFromClient', client);
+socket.on('connectFromServer', (data) => {
+  rhythmProperty = data.rhythm
+})
 
 socket.on('stringsFromServer', (data) =>{
   modules.whitePrint(ctx, canvas);
@@ -555,6 +652,7 @@ socket.on('streamListFromServer', (data) =>{
 socket.on('streamReqFromServer', (data) => {
   switch(data){
     case "CHAT":
+    case "droneChat":
       //if(chatBuffer!= {}){
         socket.emit('chunkFromClient', chatBuffer);
       /*} else {
@@ -571,35 +669,61 @@ socket.on('streamReqFromServer', (data) => {
 socket.on('oscFromServer',(data) => {
   let uint8arr = osc.toBuffer(data);
 });
-
-
+/*
+const playGlitchedURL = (url) => {
+  if(~url.indexOf("data:image/jpeg;base64,")){
+    let audioURL = "data:audio/wav;base64," + url.split("data:image/jpeg;base64,")[1].slice(0,-2) + "gAA==";
+    console.log(audioURL);
+    let buff = Base64Binary.decodeArrayBuffer(audioURL);
+    audioContext.decodeAudioData(buff, (audioData)=>{
+      let audioSrc = audioContext.createBufferSource()
+      audioSrc.buffer = audioData
+      audioSrc.connect(masterGain);
+      audioSrc.start(0);
+    });
+  // 再生 たぶんdecodeaudiodataして再生
+  }
+}
+*/
 socket.on('chunkFromServer', (data) => {
-  //if(videoMode === "chat"){
-  if(videoMode != "record"){
-  if(videoMode != "chat") videoMode = "chat";
-  if(data["audio"] != undefined && data["audio"] != "") {
-    let chunkGain = 0.7;
-    if(data["target"] in gainVal){
-      chunkGain = gainVal[data["target"]];
-    }
-    if(data["sampleRate"] != undefined){
-      playAudioStream(data["audio"],data["sampleRate"],chunkGain,data["glitch"]);
+  //if(videoMode.mode === "chat"){
+  if(videoMode.mode != "record"){
+    if(videoMode.mode != "chat" && data.target === "CHAT") videoMode.mode = "chat";
+    //if(data.target === "DRONECHAT" && videoMode.mode === "droneChat"){
+    if(videoMode.option === "drone"){
+      droneBuff = data;
+      //socket.emit('wavReqFromClient', data["target"]);
+      console.log("wavReq");
+      socket.emit('chunkFromClient', chatBuffer);
     } else {
-      playAudioStream(data["audio"],44100,chunkGain,data["glitch"]);
+      if(data["audio"] != undefined && data["audio"] != "") {
+        let chunkGain = 0.7;
+        if(data["target"] in gainVal){
+          chunkGain = gainVal[data["target"]];
+        }
+        //let playsampleRate = 44100
+        //if(data.sampleRate != undefined) {
+          let playsampleRate = Number(data.sampleRate)
+        //}
+        console.log(playsampleRate);
+        //playAudioStream(data["audio"],Number(data["sampleRate"]),chunkGain,data["glitch"]);
+        playAudioStream(data["audio"],playsampleRate,chunkGain,data["glitch"]);
+        //if(data.glitch) playGlitchedURL(data.video);
+      }
+      if(data["video"] != undefined && data["video"] != "") {
+         playVideo(data["video"]);
+      } else if(data.target != "CHAT"){
+        modules.whitePrint(ctx, canvas);
+        modules.textPrint(ctx, canvas, data["target"]);
+      } else {
+        modules.whitePrint(ctx, canvas);
+      }
     }
-  }
-  if(data["video"] != undefined && data["video"] != "") {
-     playVideo(data["video"]);
-  } else {
-    modules.whitePrint(ctx, canvas);
-    modules.textPrint(ctx, canvas, data["target"]);
-  }
-  if(data["target"] === "CHAT"){
-    socket.emit('AckFromClient', "CHAT");
-   // console.log("ack");
-  } else {
-    socket.emit('wavReqFromClient', data["target"]);
-  }
+    if(data["target"] === "CHAT"){
+      socket.emit('AckFromClient', "CHAT");
+    } else {
+      socket.emit('wavReqFromClient', data["target"]);
+    }
   }
 });
 
@@ -792,12 +916,12 @@ const doCmd = (cmd) => {
     case "RECORD":
     case "REC":
       videoStop();
-      videoMode = "record";
+      videoMode.mode = "record";
       modules.whitePrint(ctx, canvas);
       modules.textPrint(ctx, canvas, "RECORD");
       setTimeout(() => {
-        if(videoMode === "record"){
-          videoMode = "none";
+        if(videoMode.mode === "record"){
+          videoMode.mode = "none";
           modules.whitePrint(ctx, canvas);
         }
       }, 5000); //時間は考え中
@@ -815,7 +939,7 @@ const doCmd = (cmd) => {
       streamBuffer = [];
       modules.whitePrint(ctx, canvas);
       modules.textPrint(ctx, canvas, String(cmd["property"]) + "SEC BEFORE");
-      videoMode = "pastBuff";
+      videoMode.mode = "pastBuff";
       if(cmd["rate"] != undefined){
         bufferRate = cmd["rate"];
       } else {
@@ -823,8 +947,47 @@ const doCmd = (cmd) => {
       }
       setTimeout(()=>{
         modules.whitePrint(ctx, canvas);
-        videoMode = "pastPlay";
+        videoMode.mode = "pastPlay";
       },cmd["property"] * 1000);
+      break;
+    case "DRONE":
+      if(cmd.property){
+      //if(videoMode.option != "drone"){
+        videoMode.option = "drone"
+        modules.whitePrint(ctx, canvas);
+        modules.textPrint(ctx, canvas, cmd["cmd"]);
+        setTimeout(()=>{
+          modules.whitePrint(ctx, canvas);
+        },500)
+      } else {
+        videoMode.option = "none"
+        modules.whitePrint(ctx, canvas);
+        modules.textPrint(ctx, canvas, "UNDRONE");
+        setTimeout(()=>{
+          modules.whitePrint(ctx, canvas);
+        },500)
+      }
+      break;
+    case "METRONOME":
+      //console.log(cmd.property);
+      //if(cmd.type === "param") {
+      if(cmd.property === "STOP"){
+        stopRhythm();
+      } else {
+        modules.whitePrint(ctx, canvas);
+        modules.textPrint(ctx, canvas, "BPM:" + String(Math.floor(cmd.property.bpm * 10)/10))
+          rhythmProperty = cmd.property;
+          console.log(rhythmProperty);
+          if(cmd.trig){
+            stopRhythm();
+            setTimeout(()=>{
+              modules.whitePrint(ctx, canvas);
+              startRhythm(rhythmProperty.interval);
+            },rhythmProperty.interval)
+          }
+      //}
+      //if(cmd.trig) startRhythm();
+      }
       break;
     case "PREV":
       pastPresent(cmd["property"]);
@@ -856,12 +1019,16 @@ const doCmd = (cmd) => {
         mode = "none"
       }, cmd["property"]["duration"]);
       break;
+    case "METRONOME":
+      modules.textPrint(ctx, canvas, "DUBUG");
+      break;
+      
     default:
       console.log(cmd["cmd"]);
       for(let key in streamList){
         if(key === cmd["cmd"]){
           // console.log(cmd["cmd"]);
-          videoMode = "chat";
+          videoMode.mode = "chat";
           modules.whitePrint(ctx, canvas);
           modules.textPrint(ctx, canvas, cmd["cmd"]);
           setTimeout(()=> {
@@ -912,16 +1079,17 @@ const stop = () => {
 //  modules.textPrint(ctx, canvas, "");
   mode = "none";
   modules.textPrint(ctx, canvas, "STOP");
+  stopRhythm();
 }
 
 const videoStop = () => {
-  switch (videoMode) {
+  switch (videoMode.mode) {
     case "chunkEmit":
       break;
     case "beforePlay":
     case "beforeBuff":
     default:
-      videoMode = "none";
+      videoMode.mode = "none";
       break;
   }
 }
@@ -933,7 +1101,7 @@ const pastPresent = (status) =>{
     if(key === "SINEWAVE" && status[key]){
       doCmd({"cmd":key, "property": Number(status[key])});
     } else if(key === "SECBEFORE" && status[key]){
-      videoMode = "pastPlay";
+      videoMode.mode = "pastPlay";
     } else if(status[key]){
       doCmd({"cmd":key});
     }
@@ -970,7 +1138,7 @@ const stopLapse = ()=>{
 /*
 const emitInterval = 120000;
 setInterval(() => {
-  // if(videoMode === "none"){
+  // if(videoMode.mode === "none"){
     // console.log("送信");
     timelapseFlag = true;
   // }

@@ -19,33 +19,53 @@ exports.chunkEmit = function chunkEmit(io, audiovisualChunk){
 exports.glitchStream = function glitchImage(data){
   //console.log(data);
   let rtnJson = data;
+  //let rtnJson = {};
   //rtnJson["audio"] = [];
   //rtnJson["video"] = "data:image/jpeg;base64,";
   //let rtnAudio = {};
-  let rtnVideo = "data:image/jpeg;base64,";
-  let baseImgString = data["video"].split("data:image/jpeg;base64,")[1];
-  //let str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  let str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  //console.log("body; " + String(baseString.length));
-  //console.log(baseString);
-  //rtnJson["video"] += baseImgString.replace(str[Math.floor(Math.random()*str.length)], str[Math.floor(Math.random()*str.length)]);
-  rtnVideo += baseImgString.replace(str[Math.floor(Math.random()*str.length)], str[Math.floor(Math.random()*str.length)]);
-   
-  rtnJson["video"] = rtnVideo.replace(String(Math.floor(Math.random() + 10)), String(Math.floor(Math.random() + 10)));
-  //data["audio"].forEach((value,index,arr)=>{
-  /*
-  for(let key in data["audio"]){
-    if(data["audio"][key] > 0){
-      rtnAudio[key] = data["audio"][key];
-    } else {
-      //rtnAudio[key] = 0;
-      rtnAudio[key] = data["audio"][key] * -1;
+  if("video" in data && ~data.video.indexOf("data:image/jpeg;base64,")){
+    let rtnVideo = "data:image/jpeg;base64,";
+    let baseImgString = data["video"].split("data:image/jpeg;base64,")[1];
+    //let str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    //console.log("body; " + String(baseString.length));
+    //console.log(baseString);
+    //rtnJson["video"] += baseImgString.replace(str[Math.floor(Math.random()*str.length)], str[Math.floor(Math.random()*str.length)]);
+    rtnVideo += baseImgString.replace(str[Math.floor(Math.random()*str.length)], str[Math.floor(Math.random()*str.length)]);
+     
+    rtnJson["video"] = rtnVideo.replace(String(Math.floor(Math.random() + 10)), String(Math.floor(Math.random() + 10)));
+    //data["audio"].forEach((value,index,arr)=>{
+    /*
+    for(let key in data["audio"]){
+      if(data["audio"][key] > 0){
+        rtnAudio[key] = data["audio"][key];
+      } else {
+        //rtnAudio[key] = 0;
+        rtnAudio[key] = data["audio"][key] * -1;
+      }
     }
+    //});
+    rtnJson["audio"] = rtnAudio;*/
+    //console.log(rtnJson);
+    //console.log(data.audio[String(1)]);
+    /*
+    if(data.audio != undefined){
+      rtnJson.audio = new Float32Array(8192);
+      //console.log(rtnJson.audio);
+      //console.log(data.audio.length)
+
+      for(let i=0;i<data.audio.length;i++){
+        //console.log(data.audio[i]);
+        rtnJson.audio[String(i)] = Math.round(data.audio[String(i)] * 10) /10;
+        //rtnJson.audio[i] = Math.random() * data.audio[i];
+      }
+    }
+    console.log(rtnJson.audio);*/
+    rtnJson["glitch"] = true;
+  } else {
+    rtnJson.video = data.video
+    rtnJson["glitch"] = false;
   }
-  //});
-  rtnJson["audio"] = rtnAudio;*/
-  //console.log(rtnJson);
-  rtnJson["glitch"] = true;
   return rtnJson;
 }
 

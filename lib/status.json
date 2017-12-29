@@ -195,7 +195,9 @@
       "PLAYBACK": "0",
       "TIMELAPSE": "0"
     },
-    "glitch": false
+    "glitch": false,
+    "drone": false,
+    "droneRoute": {}
   },
   "clients": {
     "dummy": {
@@ -210,6 +212,11 @@
         "DRUM": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"44100"},
         "SILENCE": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"44100"},
         "SECBEFORE": {"TO": true, "arr": 0, "RATE":"44100"}
+      },
+      "rhythm":{
+        "bpm":"60",
+        "interval":"1000",
+        "score":"1,1,1,1"
       }
     }
   }

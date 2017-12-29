@@ -7,6 +7,7 @@
 <body id="body">
   <script src="/javascripts/jquery-1.11.0.js"></script>
   <script src="/socket.io/socket.io.js"></script>
+  <script src="/javascripts/base64-binary.js"></script>
   <div id="wrapper">
   <video id="video" style="display:none;"></video>
   <canvas id="cnvs">
@@ -19,7 +20,7 @@
   var buffer = document.createElement('canvas');
   var client = "<%= title %>";
   var mode = "none"; //"osc" or "feedback" or "whitenoise"
-  var videoMode = "none"; //"record" or "playback"
+  var videoMode = {"mode": "none", "option": "none"}; //"record" or "playback"
   var timelapseMode = false;
   var strings = "";
   var serverFlag = false;
