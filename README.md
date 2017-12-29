@@ -1,7 +1,7 @@
 # 概要
 - node.js + socket.io + web audio apiを用いて接続したクライアントで音をだすやつです
 
-# 使い方(2017年10月9日時点)
+# 使い方(2017年12月25日時点)
 ## 基本の使用方法
 - 各機能のコマンドをキーボード入力し、ENTERを押下します。
 - キーボード入力内容は接続されたクライアントに表示されます（英数字のみ）
@@ -24,6 +24,7 @@ BASS | ベース音（音程はいくつかの選択肢からランダム）を�
 SAMPLE RATE | VIDEO CHATまたはDRUM、PLAYBACK、TIMELAPSEでの再生サンプリングレートを変更します（22050Hz→44100Hz→88200Hz→11025Hzの順に変更になります） | SAMPLERATE or RATE
 FILTER | VIDEO CHAT、FEEDBACKの再生にはローパスフィルタをかけており、その周波数値を変更します（200Hz→2000Hz→8000Hz→14000Hz→0Hzの順に変更になります | FILTER
 STOP | 音声・映像の再生を停止します | STOP or ESCキー（ESCはEnter不要）
+GLITCH | CHAT、PLAYBACK時の映像、音声をいじります | GLITCH
 CTRL | CTRL画面を呼び出します（再度入力すると基に戻ります | CTRL
 
 - 発生した音を止めるのはSTOPまたは発生時と同じコマンドを実行すれば止まります
