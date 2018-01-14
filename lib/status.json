@@ -1,5 +1,4 @@
-{
-  "osc":{
+{ "osc":{
     "mod":{
       "repeat":"0",
       "modList":{
@@ -55,10 +54,10 @@
     "ctrl":{}
   },
   "pc": {
-    "MacBookPro2013": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36",
+    "MacBookPro2013": "Mac OS X 10_11_6",
     "MacBook2008": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36",
     "MacBookPro2009": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2625.0 Safari/537.36",
-    "Lubuntu": "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/60.0.3112.78 Chrome/60.0.3112.78 Safari/537.36",
+    "Linux Lubuntu": "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/60.0.3112.78 Chrome/60.0.3112.78 Safari/537.36",
     "Windows": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.101 Safari/537.36"
   },
   "arduino": {
@@ -195,7 +194,13 @@
       "PLAYBACK": "0",
       "TIMELAPSE": "0"
     },
-    "glitch": false,
+    "glitch": {
+      "CHAT": false,
+      "DRUM": false,
+      "SILENCE": false,
+      "PLAYBACK": false,
+      "TIMELAPSE": false
+    },
     "drone": false,
     "droneRoute": {}
   },
@@ -203,6 +208,7 @@
     "dummy": {
       "room": "dummy",
       "No": 0,
+      "ipAddress": "0.0.0.0",
       "type": "dummy",
       "STREAMS": {
         "RECORD": {"FROM": true, "arr": 0, "LATENCY": "0", "RATE": "44100"},
