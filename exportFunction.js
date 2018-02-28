@@ -23,7 +23,8 @@ exports.glitchStream = function glitchImage(data){
   //rtnJson["audio"] = [];
   //rtnJson["video"] = "data:image/jpeg;base64,";
   //let rtnAudio = {};
-  if("video" in data && ~data.video.indexOf("data:image/jpeg;base64,")){
+  if("video" in data && (typeof data.video === 'string' || data.video instanceof String) && data.video.startsWith("data:image/jpeg;base64,")){
+  //if("video" in data && ~data.video.indexOf("data:image/jpeg;base64,")){
     let rtnVideo = "data:image/jpeg;base64,";
     let baseImgString = data["video"].split("data:image/jpeg;base64,")[1];
     //let str = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -197,4 +198,26 @@ exports.movImport = function movImport(filename, filetype, libDir){
     }
   });
   }
-}  
+} 
+/*
+exports.timeTableRead = function timeTableRead(unparsed){
+  let timeTable = {}
+  timeTable["unparsed"] = unparsed
+  timeTable["parsed"] = {}
+  for(let time in timeTable["unparsed"]) {
+    timeTable["parsed"][Date.parse(time.replace(" ","T") + ":00+09:00") - Date.now()] = timeTable["unparsed"][time];
+  };
+
+  for(let time in timeTable["parsed"]){
+    if(time > 0 && timeTable.parsed[time] != "server start"){
+      setTimeout(()=>{
+        console.log(timeTable["unparsed"][time]);
+        console.log(timeTable["parsed"][time]);
+        let room = Object.keys(timeTable["parsed"][time])[0];
+        strings = timeTable.parsed[time][room]
+        enterFromClient(32, {"id": "timeTable"});
+      },time);
+    }
+  }
+  return timeTable;
+}*/

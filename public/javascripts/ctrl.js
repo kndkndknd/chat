@@ -262,7 +262,13 @@ exports.ctrlView = function ctrlView(statusList) {
   // sampleRate list
   var sampleRateHTML = '<div id="sampleRate"> Sample Rate <ul id="sampleRateList">';
   for (var _key in statusList["sampleRate"]) {
-    sampleRateHTML = sampleRateHTML + '<li>' + _key + ': <label class="sampleRate" id="sampleRate' + _key + 'Label">' + String(statusList["sampleRate"][_key]) + '</label><input type="range" class="range" name="sampleRate" id="' + _key + '" min="11025" max="88200" step="11025" value="' + statusList["sampleRate"][_key] + '" /></li>';
+    sampleRateHTML = sampleRateHTML + '<li>' + _key + ': <label class="sampleRate" id="sampleRate' + _key + 'Label">' + String(statusList["sampleRate"][_key]) + '</label><input type="range" class="range" name="sampleRate" id="' + _key + '" min="11025" max="88200" step="11025" value="' + statusList["sampleRate"][_key] + '" />';
+    if (_key in statusList.streamStatus.glitch) {
+      sampleRateHTML = sampleRateHTML + ' glitch<input type="checkbox" id="' + _key + '" class="glitch" name="' + '_glitch"';
+      if (statusList.streamStatus.glitch[_key]) sampleRateHTML = sampleRateHTML + ' checked="checked"';
+      sampleRateHTML = sampleRateHTML + '>';
+    }
+    sampleRateHTML = sampleRateHTML + '</li>';
   }
   sampleRateHTML = sampleRateHTML + '</ul></div>';
 
@@ -272,8 +278,13 @@ exports.ctrlView = function ctrlView(statusList) {
     gainHTML = gainHTML + '<li>' + _key2.substr(0, _key2.length - 4).toUpperCase() + ': <input type="range" name="gain" class="range" id="' + _key2 + '" min="0" max="1" value="' + String(statusList["gain"][_key2]) + '" step="0.05" /> <label id="gain' + _key2 + 'Label" class="gainLabel">' + String(statusList["gain"][_key2]) + '</label></li>';
   }
   gainHTML = gainHTML + '</ul> </div>';
+  //fade portament list
+  var fadeHTML = '<div id="fadeCtrl"><ul id="fadeList">';
+  fadeHTML = fadeHTML + '<li>FADE IN: <input type="range" name="FADE" class="range" id="IN" min="0" max="5" value="' + String(statusList.cmd.FADE.IN) + '" step="0.05" /> <label id="FADEINLabel" class="FADELabel">' + String(statusList.cmd.FADE.IN) + '</label></li>';
+  fadeHTML = fadeHTML + '<li>FADE OUT: <input type="range" name="FADE" class="range" id="OUT" min="0" max="5" value="' + String(statusList.cmd.FADE.OUT) + '" step="0.05" /> <label id="FADEOUTLabel" class="FADELabel">' + String(statusList.cmd.FADE.OUT) + '</label></li>';
+  fadeHTML = fadeHTML + '<li>PORTAMENT: <input type="range" name="PORTAMENT" class="range" id="PORTAMENT" min="0" max="30" value="' + String(statusList.cmd.PORTAMENT) + '" step="0.05" /> <label id="PORTAMENTPORTAMENTLabel" class="PORTAMENTLabel">' + String(statusList.cmd.PORTAMENT) + '</label></li>';
 
-  HTML = tableHTML + rangeHTML + sampleRateHTML + gainHTML;
+  HTML = tableHTML + rangeHTML + sampleRateHTML + gainHTML + fadeHTML;
   return HTML;
 };
 

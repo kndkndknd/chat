@@ -19,7 +19,13 @@
   var video;
   var buffer = document.createElement('canvas');
   var client = "<%= title %>";
-  var mode = "none"; //"osc" or "feedback" or "whitenoise"
+  //var mode = "none"; //"osc" or "feedback" or "whitenoise"
+  var cmdMode = {
+    "sinewave": false,
+    "whitenoise": false,
+    "feedback": false,
+    "instruction": false
+  }
   var videoMode = {"mode": "none", "option": "none"}; //"record" or "playback"
   var timelapseMode = false;
   var strings = "";

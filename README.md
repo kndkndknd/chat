@@ -1,13 +1,13 @@
 # 概要
 - node.js + socket.io + web audio apiを用いて接続したクライアントで音をだすやつです
 
-# 使い方(2013年1月13日時点)
+# 使い方(2013年2月27日時点)
 ## 基本の使用方法
 - 各機能のコマンドをキーボード入力し、ENTERを押下します。
 - キーボード入力内容は接続されたクライアントに表示されます（英数字のみ）
 - stand aloneの場合以外は上記ですべての端末が機能発火します
 - timeTable.jsonに入れた予定も時刻になると機能発火します（RECORD、TIMELAPSE以外は表示するのみ）。時刻表記はYYYY-MM-DD HH:MM
-- 操作のログがテキストに吐き出されます（「logYYYYMMDDhhmmss.txt」）
+- 操作のログがjsonに吐き出されます。timeTable.jsonと同じ形式なので、予定時刻に発火します。ただし過去なので発火しませんが（「logYYYYMMDDhhmmss.json」）
 
 ## 発音の制御
  機能 | 概要 | 操作方法
@@ -21,6 +21,7 @@ RECORD | 映像、音声の情報を最大15秒分各クライアント側でデ
 PLAYBACK | RECORDにて保持した映像、音声を再生します | PLAYBACK or PLAY
 TIMELAPSE | 各クライアントは15秒に一度映像、音声の情報をサーバに送信しており、本コマンドにてその映像、音声を各クライアントに送信、クライアント側は再生します |
 DRUM | ドラム音をサーバよりランダムな宛先に送信、再生する | DRUM
+LOOP | CHAT,PLAYBACK,TIMELAPSE時に最小単位でループする | LOOP
 BASS | ベース音（音程はいくつかの選択肢からランダム）を再生します。 | ALT/CTRL（Enterなしで発音します）
 SAMPLE RATE | VIDEO CHATまたはDRUM、PLAYBACK、TIMELAPSEでの再生サンプリングレートを変更します（22050Hz→44100Hz→88200Hz→11025Hzの順に変更になります） | SAMPLERATE or RATE
 FILTER | VIDEO CHAT、FEEDBACKの再生にはローパスフィルタをかけており、その周波数値を変更します（200Hz→2000Hz→8000Hz→14000Hz→0Hzの順に変更になります | FILTER
