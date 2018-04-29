@@ -65,8 +65,10 @@ exports.keyDownFunc = function keyDownFunc(keyCode, stringsClient, socket){
   '121' : 'f10',
   '122' : 'f11',
   '123' : 'f12',
+  '186' : ":",
   '188' : 'comma',
   "190" : ".",
+  "187" : "~",
   "189" : "_",
   "226" : "_",
   "220" : "_"
@@ -74,10 +76,11 @@ exports.keyDownFunc = function keyDownFunc(keyCode, stringsClient, socket){
   let charCode = keyMap[keyCode];
   if(charCode === "left_arrow" || charCode === "backspace" || charCode === "escape"){
     stringsClient = "";
-  } else if(keyCode >= 48 && keyCode <= 90 || keyCode === 190 || keyCode === 189 || keyCode === 226 || keyCode === 32){
+  } else if(keyCode >= 48 && keyCode <= 90 || keyCode === 190 || keyCode === 189 || keyCode === 187 || keyCode === 186 || keyCode === 226 || keyCode === 32){
     stringsClient = stringsClient + charCode;
   }
   socket.emit('charFromClient', keyCode);
+  if(charCode === "enter") stringsClient = ""
   return stringsClient;
 }
 

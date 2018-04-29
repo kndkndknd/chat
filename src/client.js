@@ -180,10 +180,13 @@ const loadSample = (ctx, url) => {
 }
 loadSample(audioContext, "/files/alert.wav");
 
-const bassLine = [55,68.75,68.75,82.5,82.5,103.125,110];
+const bassLine = {
+  "LOW": [55,55,68.75,73.4,82.4,82.4],
+  "HIGH": [98,103.8,110,110]
+};
 let bassFlag = false;
 
-const bass = ()  => {
+const bass = (position)  => {
   let currentTime = audioContext.currentTime
   if(bassFlag){
     //bassGain.gain.value = 0;
@@ -194,7 +197,7 @@ const bass = ()  => {
     modules.whitePrint(ctx, canvas);
     // console.log("vass");
     modules.textPrint(ctx, canvas, "BASS");
-    bassOsc.frequency.setTargetAtTime(bassLine[Math.floor(bassLine.length * Math.random())],currentTime,0.01)
+    bassOsc.frequency.setTargetAtTime(bassLine[position][Math.floor(bassLine[position].length * Math.random())],currentTime,0.01)
     bassGain.gain.setTargetAtTime(gainVal.BASS,currentTime,0.02);
     bassFlag = true;
   }
@@ -229,7 +232,7 @@ let image;
 let receive;
 let receive_ctx;
 const onAudioProcess = (e) => {
-  if(videoMode.mode != "none"){
+  if(videoMode.mode != "none" && videoMode.mode != "wait"){
     //consol.log(videoMode);
     let bufferData = new Float32Array(bufferSize);
     e.inputBuffer.copyFromChannel(bufferData, 0);
@@ -240,10 +243,11 @@ const onAudioProcess = (e) => {
           playAudioStream(chatBuffer.audio,playsampleRate,1,false);
         }
         if("video" in chatBuffer){
-          modules.whitePrint(ctx, canvas);
+        //  modules.whitePrint(ctx, canvas);
           playVideo(chatBuffer["video"]);
           modules.textPrint(ctx, canvas, "LOOP");
         } else {
+          modules.whitePrint(ctx, canvas);
           modules.textPrint(ctx, canvas, stringsClient);
         }
     } else if(videoMode.option != "drone"){
@@ -549,11 +553,13 @@ $(() =>{
       stringsClient = modules.keyDownFunc(e.keyCode, stringsClient, socket);
       modules.whitePrint(ctx, canvas);
       modules.textPrint(ctx, canvas, stringsClient);
+      /*
       if(e.keyCode === 17 || e.keyCode === 0){
         bass();
         strings = "";
         stringsClient = "";
       }
+     */
       // if(e.keyCode != 16){
         if(e.keyCode === 13 && stringsClient === "VOICE"){
           if(voice){
@@ -576,7 +582,7 @@ $(() =>{
           }
 //          stringsClient = "";
         }
-      if(charCode === "enter" && voice && stringsClient === "STOP") speakVoice(stringsClient)
+      //if(charCode === "enter" && voice && stringsClient === "STOP") speakVoice(stringsClient)
       // }
       // if(charCode = "enter" && voice && stringsClient != "VOICE") {
         /*
@@ -656,6 +662,14 @@ socket.on('statusViewFromServer', ()=>{
   },500)
 });
 
+socket.on('statusFromServer', (data)=>{
+  if(videoMode.option === "loop"){
+    playsampleRate = Number(data.sampleRate[playTarget])
+  } else if(videoMode.mode === "pastPlay") {
+    bufferRate = Number(data.sampleRate.SECBEFORE)
+  }
+})
+
 socket.on('cmdFromServer', (data) => {
   if(standAlone === false){
     console.log(data);
@@ -663,12 +677,29 @@ socket.on('cmdFromServer', (data) => {
   }
 });
 socket.on('textFromServer', (data) => {
-  speakVoice(data)
+  if(data.alert) {
+    alertPlay()
+    if(videoMode.mode === "chat"){
+      videoMode.mode = "wait"
+      console.log(videoMode.mode)
+      setTimeout(()=>{
+        modules.whitePrint(ctx, canvas);
+        modules.textPrint(ctx, canvas, data.text);
+      },500)
+      setTimeout(()=>{
+        console.log(videoMode.mode)
+        videoMode.mode = "none"
+        console.log(videoMode.mode)
+      },5000)
+    }
+  }
   modules.whitePrint(ctx, canvas);
-  modules.textPrint(ctx, canvas, data);
+  modules.textPrint(ctx, canvas, data.text);
+  speakVoice(data.text)
+  /*
   setTimeout(()=>{
     modules.whitePrint(ctx, canvas);
-  },800)
+  },800)*/
   stringsClient = "";
 });
 
@@ -695,6 +726,7 @@ socket.on('streamReqFromServer', (data) => {
     case "CHAT":
     case "droneChat":
       //if(chatBuffer!= {}){
+      //console.log(chatBuffer)
         socket.emit('chunkFromClient', chatBuffer);
       /*} else {
         socket.emit('chunkFromClient', {
@@ -731,43 +763,46 @@ let playTarget = ""
 socket.on('chunkFromServer', (data) => {
   //if(videoMode.mode === "chat"){
   if(videoMode.mode != "record" && videoMode.option != "loop"){
-    if(videoMode.mode != "chat" && data.target === "CHAT") videoMode.mode = "chat";
-    //if(data.target === "DRONECHAT" && videoMode.mode === "droneChat"){
-    if(videoMode.option === "drone"){
-      droneBuff = data;
-      //socket.emit('wavReqFromClient', data["target"]);
-      //console.log("wavReq");
-      //socket.emit('chunkFromClient', chatBuffer);
-    } else {
-      playTarget = data.target
-      if(data["audio"] != undefined && data["audio"] != "") {
-        let chunkGain = 0.7;
-        if(data["target"] in gainVal){
-          chunkGain = gainVal[data["target"]];
-        }
-        //let playsampleRate = 44100
-        //if(data.sampleRate != undefined) {
-          playsampleRate = Number(data.sampleRate)
-          //let playsampleRate = Number(data.sampleRate)
-        //}
-        //console.log(playsampleRate);
-        //playAudioStream(data["audio"],Number(data["sampleRate"]),chunkGain,data["glitch"]);
-        playAudioStream(data["audio"],playsampleRate,chunkGain,data["glitch"]);
-        //if(data.glitch) playGlitchedURL(data.video);
-      }
-      if(data["video"] != undefined && data["video"] != "") {
-         playVideo(data["video"]);
-      } else if(data.target != "CHAT"){
-        modules.whitePrint(ctx, canvas);
-        modules.textPrint(ctx, canvas, data["target"]);
+    if(videoMode.mode != "chat" && data.target === "CHAT" && videoMode.mode != "wait") videoMode.mode = "chat";
+    
+    if(videoMode.mode != "wait"){
+      //if(data.target === "DRONECHAT" && videoMode.mode === "droneChat"){
+      if(videoMode.option === "drone"){
+        droneBuff = data;
+        //socket.emit('wavReqFromClient', data["target"]);
+        //console.log("wavReq");
+        //socket.emit('chunkFromClient', chatBuffer);
       } else {
-        modules.whitePrint(ctx, canvas);
+        playTarget = data.target
+        if(data["audio"] != undefined && data["audio"] != "") {
+          let chunkGain = 0.7;
+          if(data["target"] in gainVal){
+            chunkGain = gainVal[data["target"]];
+          }
+          //let playsampleRate = 44100
+          //if(data.sampleRate != undefined) {
+            playsampleRate = Number(data.sampleRate)
+            //let playsampleRate = Number(data.sampleRate)
+          //}
+          //console.log(playsampleRate);
+          //playAudioStream(data["audio"],Number(data["sampleRate"]),chunkGain,data["glitch"]);
+          playAudioStream(data["audio"],playsampleRate,chunkGain,data["glitch"]);
+          //if(data.glitch) playGlitchedURL(data.video);
+        }
+        if(data["video"] != undefined && data["video"] != "") {
+           playVideo(data["video"]);
+        } else if(data.target != "CHAT"){
+          modules.whitePrint(ctx, canvas);
+          modules.textPrint(ctx, canvas, data["target"]);
+        } else {
+          modules.whitePrint(ctx, canvas);
+        }
       }
-    }
-    if(data["target"] === "CHAT"){
-      socket.emit('AckFromClient', "CHAT");
-    } else {
-      socket.emit('wavReqFromClient', data["target"]);
+      if(data["target"] === "CHAT"){
+        socket.emit('AckFromClient', "CHAT");
+      } else {
+        socket.emit('wavReqFromClient', data["target"]);
+      }
     }
   }
 });
@@ -805,7 +840,7 @@ const doCmd = (cmd) => {
       speakVoice(cmd.cmd)
       break;
     case "BASS":
-      bass();
+      bass(cmd.property);
       //speakVoice(cmd.cmd)
       break;
     case "SINEWAVE":
@@ -878,6 +913,48 @@ const doCmd = (cmd) => {
         oscGain.gain.setTargetAtTime(gainVal.OSC,currentTime,fadeVal.IN + 0.01);
       }
       speakVoice(String(cmd.property)+ "Hz DOWN")
+      break;
+    case "TWICE":
+      modules.whitePrint(ctx, canvas);
+      freqVal = osc.frequency.value * 2
+      if(oscPortament === 0){
+        osc.frequency.setTargetAtTime(freqVal,currentTime,0.01);
+      } else {
+        osc.frequency.setTargetAtTime(freqVal,currentTime,oscPortament);
+      }
+      cmdMode.sinewave = true
+      chordChange = 0;
+      modules.textPrint(ctx, canvas, String(freqVal) + "Hz");
+      oscGain.gain.setTargetAtTime(gainVal.OSC,currentTime,fadeVal.IN + 0.01);
+      speakVoice(String(osc.frequency.value)+ "Hz DOWN")
+      break;
+    case "THRICE":
+      modules.whitePrint(ctx, canvas);
+      freqVal = osc.frequency.value * 3
+      if(oscPortament === 0){
+        osc.frequency.setTargetAtTime(freqVal,currentTime,0.01);
+      } else {
+        osc.frequency.setTargetAtTime(freqVal,currentTime,oscPortament);
+      }
+      cmdMode.sinewave = true
+      chordChange = 0;
+      modules.textPrint(ctx, canvas, String(freqVal) + "Hz");
+      oscGain.gain.setTargetAtTime(gainVal.OSC,currentTime,fadeVal.IN + 0.01);
+      speakVoice(String(osc.frequency.value)+ "Hz DOWN")
+      break;
+    case "HALF":
+      modules.whitePrint(ctx, canvas);
+      freqVal = osc.frequency.value / 2
+      if(oscPortament === 0){
+        osc.frequency.setTargetAtTime(freqVal,currentTime,0.01);
+      } else {
+        osc.frequency.setTargetAtTime(freqVal,currentTime,oscPortament);
+      }
+      cmdMode.sinewave = true
+      chordChange = 0;
+      modules.textPrint(ctx, canvas, String(freqVal) + "Hz");
+      oscGain.gain.setTargetAtTime(gainVal.OSC,currentTime,fadeVal.IN + 0.01);
+      speakVoice(String(osc.frequency.value)+ "Hz DOWN")
       break;
     case "PORTAMENT":
       modules.whitePrint(ctx, canvas);
@@ -1159,10 +1236,9 @@ const doCmd = (cmd) => {
       speakVoice(cmd.property.text)
       break;
     default:
-      console.log(cmd["cmd"]);
       for(let key in streamList){
         if(key === cmd["cmd"]){
-          // console.log(cmd["cmd"]);
+          console.log(cmd["cmd"]);
           videoMode.mode = "chat";
           modules.whitePrint(ctx, canvas);
           modules.textPrint(ctx, canvas, cmd["cmd"]);
