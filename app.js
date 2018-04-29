@@ -390,7 +390,7 @@ io.sockets.on('connection',(socket)=>{
         statusList["clients"][data["property"]["target"]]["STREAMS"][data["property"]["streamType"]][data["cmd"]] = String(data["property"]["val"]);
         break;
       case "GLITCH":
-        console.log("test")
+        //console.log("test")
         statusList.streamStatus.glitch[data.property.stream] = data.property.val
         console.log(statusList.streamStatus.glitch)
         break;
@@ -796,23 +796,9 @@ const charFromClient = (keyCode, socket) =>{
         }
       }
       io.to(idArr[Math.floor(idArr.length * Math.random())]).emit('cmdFromServer',{"cmd":"CLICK"})
+      statusList["cmd"]["prevCmd"] = strings;
       strings = ""
     } else if(strings === "BASS") {
-      socket.emit('cmdFromServer',{"cmd":"BASS"})
-      strings = "";
-    } else {
-      //enterFromClient(keyCode);
-      cmdFromServer(strings, false)
-      strings = ""
-    }
-    //enterFromClient(keyCode, socket);
-  } else if(character === "backspace" || character === "left_arrow" || character === "tab") {
-    exportComponent.roomEmit(io, 'stringsFromServer', "", statusList["cmd"]["target"]);
-    strings =  "";
-  } else if(character === "escape"){
-    stopFromServer();
-    io.to("ctrl").emit("statusFromServer", statusList);
-  } else if(keyCode === 226 || keyCode === 220 || keyCode === 189){
     exportComponent.roomEmit(io, 'cmdFromServer', {"cmd": "BASS","property": "LOW"}, statusList["cmd"]["target"]);
     if(statusList["cmd"]["now"]["BASS"]){
       statusList["cmd"]["now"]["BASS"] = false;
@@ -820,14 +806,34 @@ const charFromClient = (keyCode, socket) =>{
       statusList["cmd"]["now"]["BASS"] = true;
     }
     io.to("ctrl").emit("statusFromServer", statusList);
+      strings = "";
+    } else {
+      //enterFromClient(keyCode);
+      cmdFromServer(strings, false)
+      strings = ""
+    }
+    //enterFromClient(keyCode, socket);
+  } else if(character === "left_arrow" || character === "tab") {
+    exportComponent.roomEmit(io, 'stringsFromServer', "", statusList["cmd"]["target"]);
+    strings =  "";
+  } else if(character === "backspace") {
+    strings = strings.slice(0,-1)
+    exportComponent.roomEmit(io, 'stringsFromServer', strings, statusList["cmd"]["target"]);
+  } else if(character === "escape"){
+    stopFromServer();
+    io.to("ctrl").emit("statusFromServer", statusList);
+  } else if(keyCode === 226 || keyCode === 220 || keyCode === 189){
+    socket.emit('cmdFromServer',{"cmd":"BASS","property":"LOW"})
   } else if(keyCode === 187){
+    socket.emit('cmdFromServer',{"cmd":"BASS","property":"HIGH"})
+    /*
     exportComponent.roomEmit(io, 'cmdFromServer', {"cmd": "BASS","property": "HIGH"}, statusList["cmd"]["target"]);
     if(statusList["cmd"]["now"]["BASS"]){
       statusList["cmd"]["now"]["BASS"] = false;
     } else {
       statusList["cmd"]["now"]["BASS"] = true;
     }
-    io.to("ctrl").emit("statusFromServer", statusList);
+    io.to("ctrl").emit("statusFromServer", statusList);*/
   } else if(keyCode === 17){
     socket.emit('cmdFromServer', {
       "cmd": "CTRL",
@@ -950,6 +956,23 @@ const joinSpace = (strings, alertFlag) => {
           "cmd": "FADE",
           "property": {
             "type" : strArr[1],
+            "status": statusList.cmd.FADE
+          }
+        }, statusList.cmd.target)
+      } else if(strArr[1] === "OFF" || strArr[1] === "STOP") {
+        statusList.cmd.FADE.IN = "0"
+        statusList.cmd.FADE.OUT = "0"
+        exportComponent.roomEmit(io, 'cmdFromServer',{
+          "cmd": "FADE",
+          "property": {
+            "type" : "OUT",
+            "status": statusList.cmd.FADE
+          }
+        }, statusList.cmd.target)
+        exportComponent.roomEmit(io, 'cmdFromServer',{
+          "cmd": "FADE",
+          "property": {
+            "type" : "IN",
             "status": statusList.cmd.FADE
           }
         }, statusList.cmd.target)
@@ -1149,12 +1172,20 @@ const joinSpace = (strings, alertFlag) => {
       if(statusList.streamStatus.streamCmd[strArr[1]] != undefined){
         statusList.streamStatus.glitch[statusList.streamStatus.streamCmd[strArr[1]]] = !statusList.streamStatus.glitch[statusList.streamStatus.streamCmd[strArr[1]]]
         let str = statusList.streamStatus.streamCmd[strArr[1]] + ": "
-        if(!statusList.streamStatus.glitch[statusList.streamStatus.streamCmd[strArr[1]]]) str = str + "NOT "
+        if(!statusList.streamStatus.glitch[statusList.streamStatus.streamCmd[strArr[1]]]){
+          str = str + "NOT "
+          statusList.streamStatus.glitch[strArr[1]] = false
+        } else {
+          statusList.streamStatus.glitch[strArr[1]] = true
+        }
         str = str + "GLITCH"
+        console.log(str)
+        exportComponent.roomEmit(io, 'textFromServer', {"text":str, "alert":false}, statusList["cmd"]["target"]);
+        /*
         io.emit("textFromServer", {
-          text: str,
-               alert: false
-        });
+          "text": str,
+          "alert": false
+        });*/
       }
       break;
     case "GRID":

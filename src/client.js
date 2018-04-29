@@ -112,7 +112,7 @@ chatGain.connect(masterGain);
 let convolver = audioContext.createConvolver();
 //convolver.context.sampleRate = 44100;
 let revGain = audioContext.createGain();
-revGain.gain.setValueAtTime(3,0);
+revGain.gain.setValueAtTime(1.6,0);
 console.log(convolver.context.sampleRate);
 convolver.connect(revGain);
 revGain.connect(masterGain);
@@ -562,6 +562,7 @@ $(() =>{
      */
       // if(e.keyCode != 16){
         if(e.keyCode === 13 && stringsClient === "VOICE"){
+          console.log("debug")
           if(voice){
             voice = false;
             modules.whitePrint(ctx, canvas);
@@ -806,8 +807,9 @@ socket.on('chunkFromServer', (data) => {
     }
   }
 });
+
 const speakVoice = (data) =>{
-  if(voice && data != "VOICE"){
+  if(voice && data != "VOICE" && data != undefined){
     ssu.text = data;
     speechSynthesis.speak(ssu);
   }
@@ -1247,7 +1249,7 @@ const doCmd = (cmd) => {
           },800);
         }
       }
-      speakVoice(cmd.cmd)
+      if(cmd.cmd != "KICK" && cmd.cmd != "SNARE" && cmd.cmd != "HAT") speakVoice(cmd.cmd)
       break;
 
   }

@@ -80,7 +80,7 @@ exports.keyDownFunc = function keyDownFunc(keyCode, stringsClient, socket){
     stringsClient = stringsClient + charCode;
   }
   socket.emit('charFromClient', keyCode);
-  if(charCode === "enter") stringsClient = ""
+  if(charCode === "enter" && stringsClient != "VOICE") stringsClient = ""
   return stringsClient;
 }
 
@@ -103,17 +103,18 @@ exports.toBase64 = function toBase64(buffer, video){
 }
 
 exports.textPrint = function textPrint(ctx, canvas, text){
-  // console.log("text print");
-  ctx.fillStyle = "black";
-  if(text.length > 2) {
-    ctx.font = "bold " + String(Math.floor((canvas.width * 4 / 3) / text.length)) + "px 'Arial'";
-  } else {
-    ctx.font = "bold " + String(Math.floor((canvas.height * 5 / 4) / text.length)) + "px 'Arial'";
+  if(text != undefined){
+    ctx.fillStyle = "black";
+    if(text.length > 2) {
+      ctx.font = "bold " + String(Math.floor((canvas.width * 4 / 3) / text.length)) + "px 'Arial'";
+    } else {
+      ctx.font = "bold " + String(Math.floor((canvas.height * 5 / 4) / text.length)) + "px 'Arial'";
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+    ctx.restore();
   }
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
-  ctx.restore();
 }
 
 exports.whitePrint = function whitePrint(ctx, canvas) {
