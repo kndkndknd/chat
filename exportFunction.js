@@ -10,7 +10,6 @@ exports.instructionInterval = function instructionInterval(io, instructionArr, i
   */
 }
 exports.chunkEmit = function chunkEmit(io, audiovisualChunk){
-  //console.log('chunkEmit')
   if(audiovisualChunk.length > 0) {
     io.emit('chunkFromServer', audiovisualChunk.shift());
   }
@@ -70,19 +69,50 @@ exports.glitchStream = function glitchImage(data){
   return rtnJson;
 }
 
-exports.pickupTarget = function pickupTarget(room, list, target, order){
-  let idArr = [];
+exports.pickupTarget = function pickupTarget(room, list, target, order, sourceId){
+  let idArr = []
   for(let key in list){
     for(let id in room){
-      if(String(id) === key){
-        //console.log(list[key]);
-        if(list[key]["STREAMS"][target][order]){
-          idArr.push(id);
-        }
+      if(String(id) === key && list[key].STREAMS[target][order] ){
+        //console.log(key)
+        idArr.push(id);
       }
     }
   }
+  //console.log(idArr)
+  if(idArr.length === 2) { //need test
+    idArr.splice(idArr.indexOf(String(sourceId)), 1)
+    /*
+    idArr.some(function(value, i){
+      if (String(v) ==String(sourceId)) idArr.splice(i,1);    
+    });
+    */
+  }
+//  console.log(idArr)
   return idArr;
+}
+
+exports.pickCmdTarget = (idHsh, cmd) => {
+  let targetArr = {"id":[],"No":[],"cmd":[],"timestamp":[],"noneId":[],"targetId":"none","duplicate":"none"}
+  for(let strId in idHsh) {
+    //console.log(strId)
+    //console.log(idHsh[strId].cmd)
+    targetArr.id.push(strId)
+    targetArr.No.push(idHsh[strId].No)
+    targetArr.cmd.push(idHsh[strId].cmd.cmd)
+    targetArr.timestamp.push(Number(idHsh[strId].cmd.timestamp))
+    if(idHsh[strId].cmd.cmd === "none") targetArr.noneId.push(strId)
+    if(idHsh[strId].cmd.cmd === cmd.cmd || idHsh[strId].cmd.cmd === cmd.property) targetArr.duplicate = strId
+  }
+  if(targetArr.duplicate != "none"){
+    targetArr.targetId = targetArr.duplicate
+  } else if(targetArr.noneId.length > 0){
+    targetArr.targetId = targetArr.noneId[Math.floor(Math.random() * targetArr.noneId.length)]
+  } else {
+    //console.log(targetArr.timestamp)
+    targetArr.targetId = targetArr.id[targetArr.timestamp.indexOf(Math.min.apply(null, targetArr.timestamp))]
+  }
+  return targetArr.targetId
 }
 
 exports.roomEmit = function roomEmit(io, name, data, target){
@@ -221,3 +251,49 @@ exports.timeTableRead = function timeTableRead(unparsed){
   }
   return timeTable;
 }*/
+
+exports.pcm2arr = (lib, url) =>{
+  let tmpBuff = new Float32Array(8192);
+  let rtnBuff = [];
+  var i = 0;
+  lib.getPcmData(url, { stereo: true, sampleRate: 44100 },
+    function(sample, channel) {
+      tmpBuff[i] = sample;
+      i++;
+      if(i === 8192){
+        rtnBuff.push(tmpBuff);
+        //recordedBuff.push(tmpBuff);
+        tmpBuff = new Float32Array(8192);
+        i = 0;
+      }
+    },
+    function(err, output) {
+      if (err) {
+        console.log("err");
+        throw new Error(err);
+      }
+      console.log('wav loaded from ' + url);
+    }
+  );
+  return rtnBuff;
+}
+
+exports.getInternetArr = (request, requestOption) => {
+  let rtnHsh = {"audio":[],"video":[]}
+  request.get(requestOption, function (error, response, body) {
+    //console.log(response)
+    if (!error && response.statusCode == 200) {
+      body.audio.forEach((value) =>{
+        rtnHsh.audio = body.audio
+        rtnHsh.video = body.video
+        //Array.prototype.push.apply(audioBuff.INTERNET, body.audio);
+        //Array.prototype.push.apply(videoBuff.INTERNET, body.video);
+      })
+    } else if(response != undefined) {
+      console.log('internet connect error: '+ response.statusCode);
+    } else {
+      console.log('internet connect error');
+    }
+  })
+  return rtnHsh
+}

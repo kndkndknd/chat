@@ -1,4 +1,5 @@
-{ "osc":{
+{
+  "osc":{
     "mod":{
       "repeat":"0",
       "modList":{
@@ -30,12 +31,12 @@
   },
   "gain": {
     "masterGain": "0.7",
-    "oscGain": "0.5",
-    "feedbackGain": "1",
-    "noiseGain": "0.3",
-    "clickGain": "0.7",
+    "oscGain": "0.6",
+    "feedbackGain": "0.8",
+    "noiseGain": "0.5",
+    "clickGain": "0.8",
     "bassGain": "0.7",
-    "chatGain": "1",
+    "chatGain": "0.7",
     "playbackGain": "0.7",
     "timelapseGain": "0.7",
     "drumGain": "0.7",
@@ -46,7 +47,9 @@
     "CHAT": "44100",
     "TIMELAPSE": "44100",
     "PLAYBACK": "44100",
-    "DRUM": "44100",
+    "KICK": "44100",
+    "SNARE": "44100",
+    "HAT": "44100",
     "SECBEFORE": "44100"
   },
   "connected":{
@@ -115,6 +118,11 @@
       "pocke": false,
       "all": false
     },
+    "PORTAMENT" : 0,
+    "FADE": {
+      "IN": "0",
+      "OUT": "0"
+    },
     "target": {
       "inside": true,
       "outside": true,
@@ -127,25 +135,34 @@
       "FEED": "FEEDBACK",
       "WHITENOISE": "WHITENOISE",
       "NOISE": "WHITENOISE",
+      "CLICK": "CLICK",
+      "BASS": "BASS",
       "VIDEOCHAT": "CHAT",
       "CHAT": "CHAT",
-      "CLICK": "CLICK",
       "RECORD": "RECORD",
       "REC": "RECORD",
       "SAMPLERATE": "SAMPLERATE",
       "RATE": "SAMPLERATE",
       "DRUM": "DRUM",
+      "KICK": "KICK",
+      "SNARE": "SNARE",
+      "HAT": "HAT",
       "SILENCE": "SILENCE",
       "PLAY": "PLAYBACK",
       "PLAYBACK": "PLAYBACK",
+      "INTERNET": "INTERNET",
       "LAPSE": "TIMELAPSE",
       "TIMELAPSE": "TIMELAPSE",
       "FILTER": "FILTER",
       "VOICE": "VOICE",
       "MONITORING": "CHAT",
       "MONITOR": "CHAT",
-      "MUTE": "MUTE",
-      "SINEWAVE": "SINEWAVE"
+      "SINEWAVE": "SINEWAVE",
+      "TWICE": "TWICE",
+      "DOUBLE": "TWICE",
+      "THRICE": "THRICE",
+      "TRIPLE": "THRICE",
+      "HALF": "HALF"
     },
     "stream": {
       "VIDEOCHAT": "CHAT",
@@ -171,27 +188,35 @@
     "emitMode": "NORMAL",
     "streamFlag": {
       "CHAT": false,
-      "DRUM": false,
+      "KICK": false,
+      "SNARE": false,
+      "HAT": false,
       "SILENCE": false,
       "PLAYBACK": false,
+      "INTERNET": false,
       "TIMELAPSE": false
     },
     "streamCmd": {
       "VIDEOCHAT": "CHAT",
       "CHAT": "CHAT",
       "MONITORING": "CHAT",
-      "DRUM": "DRUM",
+      "KICK": "KICK",
+      "SNARE": "SNARE",
+      "HAT": "HAT",
       "SILENCE": "SILENCE",
       "PLAY": "PLAYBACK",
       "PLAYBACK": "PLAYBACK",
       "LAPSE": "TIMELAPSE",
-      "TIMELAPSE": "TIMELAPSE"
+      "TIMELAPSE": "TIMELAPSE",
+      "INTERNET": "INTERNET",
+      "NET": "INTERNET"
     },
     "latency":{
       "CHAT": "0",
       "DRUM": "0",
       "SILENCE": "0",
       "PLAYBACK": "0",
+      "INTERNET": "0",
       "TIMELAPSE": "0"
     },
     "glitch": {
@@ -199,8 +224,10 @@
       "DRUM": false,
       "SILENCE": false,
       "PLAYBACK": false,
+      "INTERNET": false,
       "TIMELAPSE": false
     },
+    "grid": false,
     "drone": false,
     "droneRoute": {}
   },
@@ -223,7 +250,12 @@
         "bpm":"60",
         "interval":"1000",
         "score":"1,1,1,1"
+      },
+      "cmd":{
+        "cmd":"none",
+        "timestamp":"0"
       }
     }
-  }
+  },
+  "interval":"60"
 }

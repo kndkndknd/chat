@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <link rel="stylesheet" type="text/css" href="/css/client.css" media="all">
+  <title><%= title %></title>
+</head>
+<body id="body">
+  <script src="/javascripts/jquery-1.11.0.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/javascripts/base64-binary.js"></script>
+  <div id="logs">
+  </div>
+  <script type="text/javascript">
+  var socket = io.connect();
+  var client = "<%= title %>";
+  </script>
+  <script src="/javascripts/log.js"></script>
+</body>
+</html>

@@ -13,3 +13,11 @@ body #wrapper{
   position: fixed;
 }
 
+body #cnvs{
+  position:absolute;
+  z-index:0;
+}
+body #strCnvs{
+  position:absolute;
+  z-index:1;
+}
