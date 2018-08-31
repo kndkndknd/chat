@@ -561,10 +561,16 @@ const cmdFromServer = (cmdStrings, alertFlag) =>{
           statusList["clients"][clientID]["STREAMS"][key]["RATE"] = String(rtnRate);
         }
       }
+      io.emit('cmdFromServer',{
+        cmd: "SAMPLERATE",
+        property: rtnRate
+      })
+      /*
       io.emit('textFromServer',{
         text: "SAMPLE RATE: " + rtnRate + "Hz",
         alert: false
       })
+      */
       break;
     case "GRID":
       console.log(statusList.streamStatus.grid)
@@ -593,13 +599,13 @@ const cmdFromServer = (cmdStrings, alertFlag) =>{
       }
       statusList.streamStatus.grid = !statusList.streamStatus.grid
       break
+      /*
     case "LOOP":
       io.emit("cmdFromServer",{"cmd": "LOOP"})
       break
+      */
     case "METRONOME":
-      console.log(io.sockets.adapter.rooms.client.sockets)
       for(let id in io.sockets.adapter.rooms.client.sockets){
-        console.log(id)
         io.to(id).emit('cmdFromServer',{
           "cmd": "METRONOME",
           "type": "param",
@@ -839,35 +845,29 @@ const charFromClient = (keyCode, charString, socketId) =>{
     if(~charString.indexOf(" ") ) {
       joinSpace(charString, false);
       charString = "";
-    //} else if(charString === "LOOP"){
-    //  io.emit('cmdFromServer', {"cmd": "LOOP"})
-    //  charString = ""
-      /*
-    } else if(charString === "CLICK"){
-      io.emit('textFromServer',"")
-      let idArr = [];
-      for(let idString in statusList.clients){
-        for(let id in io.sockets.adapter.rooms) {
-          if(String(id) === idString){
-            idArr.push(id);
-          }
-        }
-      }
-      io.to(idArr[Math.floor(idArr.length * Math.random())]).emit('cmdFromServer',{"cmd":"CLICK"})
-      statusList["cmd"]["prevCmd"] = charString;
+    } else if(charString === "LOOP") { //LOOP
+      exportComponent.roomEmit(io, 'stringsFromServer', "", statusList["cmd"]["target"]);
+      //if(!statusList.streamStatus.grid) {
+        io.to(socketId).emit("cmdFromServer",{
+          "cmd": "LOOP"
+        })
+      /*} else {
+        io.to(socketId).emit('cmdFromServer',{
+          "cmd": "METRONOME",
+          "type": "param",
+          "trig": true,
+          "property": statusList.clients[String(socketId)].rhythm
+        });
+      }*/
+    
       charString = ""
-     */
-      /*
-    } else if(charString === "BASS") {
-      exportComponent.roomEmit(io, 'cmdFromServer', {"cmd": "BASS","property": "LOW"}, statusList["cmd"]["target"]);
-      if(statusList["cmd"]["now"]["BASS"]){
-        statusList["cmd"]["now"]["BASS"] = false;
-      } else {
-        statusList["cmd"]["now"]["BASS"] = true;
-      }
-      io.to("ctrl").emit("statusFromServer", statusList);
-      charString = "";
-      */
+    /*} else if(charString === "LOOP") { //LOOP
+      exportComponent.roomEmit(io, 'stringsFromServer', "", statusList["cmd"]["target"]);
+      console.log(statusList.clients[String(socketId)])
+      io.to(socketId).emit("cmdFromServer",{
+        "cmd": "LOOP",
+        "property": statusList.clients[String(socketId)].rhythm.bpm
+      })*/
     } else {
       cmdFromServer(charString, false)
       charString = ""
@@ -926,7 +926,7 @@ switch(metronomeArr.length){
       "trig": true,
       "property": statusList.clients[String(sourceId)].rhythm
     });
-    recordCmd(logFilePath, String(socketId), "METRONOME_" + String(statusList.clients[String(sourceId)].rhythm))
+    recordCmd(logFilePath, String(sourceId), "METRONOME_" + String(statusList.clients[String(sourceId)].rhythm))
     metronomeArr = [];
     break;
   default:
@@ -975,6 +975,16 @@ const joinSpace = (strings, alertFlag) => {
     case "GAIN":
       for(let id in statusList.clients){
         if(statusList.clients[id].server) postHTTP(strArr[0], strArr[1], statusList.clients[id].ipAddress)
+      }
+      break;
+    case "INPUT":
+    case "MIC":
+    case "OUTPUT":
+    case "SPEAKER":
+      if(isNaN(Number(strArr[1])) === false && strArr[1] != ""){
+        for(let id in statusList.clients){
+          if(statusList.clients[id].server) postHTTP(strArr[0], strArr[1], statusList.clients[id].ipAddress)
+        }
       }
       break;
     case "UP":
@@ -1141,10 +1151,15 @@ const joinSpace = (strings, alertFlag) => {
           }
         }
         io.emit('statusFromServer', statusList)
+        io.emit('cmdFromServer',{
+          cmd: "SAMPLERATE",
+          property: rtnRate
+        })
+        /*
         io.emit('textFromServer',{
           text: "SAMPLE RATE(" + String(statusList.streamStatus.streamCmd[strArr[1]])+"):"+String(rtnRate) + "Hz",
           alert: false
-        })
+        })*/
       } else if(strArr[1] === "DRUM") {
         let rtnRate = "";
         let targetStream = statusList["streamStatus"]["streamCmd"];
@@ -1414,6 +1429,16 @@ const joinSpace = (strings, alertFlag) => {
    //           console.log("debug")
             },800)
           //}
+        } else if(strArr[1] === "INPUT" || strArr[1] === "MIC" || strArr[1] === "OUTPUT" || strArr[1] === "SPEAKER" && (isNaN(Number(strArr[2])) === false && strArr[2] != "")){
+          let targetAddress = "0.0.0.0"
+          for(let id in statusList.clients){
+            if(Number(strArr[0]) === statusList.clients[id].No) {
+              targetAddress = statusList.clients[id].ipAddress
+              if(targetAddress != "0.0.0.0"){
+                if(statusList.clients[id].server) postHTTP(strArr[1], Number(strArr[2]), targetAddress)
+              }
+            }
+          }
         }
       } else {
         if(~strArr[0].indexOf(":")) {
