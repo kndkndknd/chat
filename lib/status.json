@@ -44,13 +44,14 @@
     "silenceGain": "0"
   },
   "sampleRate":{
-    "CHAT": "44100",
-    "TIMELAPSE": "44100",
-    "PLAYBACK": "44100",
-    "KICK": "44100",
-    "SNARE": "44100",
-    "HAT": "44100",
-    "SECBEFORE": "44100"
+    "CHAT": "48000",
+    "TIMELAPSE": "48000",
+    "PLAYBACK": "48000",
+    "KICK": "48000",
+    "SNARE": "48000",
+    "HAT": "48000",
+    "INTERNET": "48000",
+    "SECBEFORE": "48000"
   },
   "connected":{
     "client":{},
@@ -82,6 +83,7 @@
     "GO OUT": "GO OUT",
     "LOOK": "LOOK"
   },
+  "faceDetect": false,
   "cmd":{
     "now": {
       "SINEWAVE": false,
@@ -91,6 +93,7 @@
       "CHAT": false,
       "PLAYBACK": false,
       "TIMELAPSE": false,
+      "INTERNET": false,
       "FILE": false,
       "DRUM": false,
       "SILENCE": false,
@@ -106,6 +109,7 @@
       "CHAT": false,
       "PLAYBACK": false,
       "TIMELAPSE": false,
+      "INTERNET": false,
       "FILE": false,
       "DRUM": false,
       "SILENCE": false,
@@ -151,6 +155,7 @@
       "PLAY": "PLAYBACK",
       "PLAYBACK": "PLAYBACK",
       "INTERNET": "INTERNET",
+      "NET": "INTERNET",
       "LAPSE": "TIMELAPSE",
       "TIMELAPSE": "TIMELAPSE",
       "FILTER": "FILTER",
@@ -168,6 +173,8 @@
       "VIDEOCHAT": "CHAT",
       "CHAT": "CHAT",
       "MONITORING": "CHAT",
+      "INTERNET": "INTERNET",
+      "NET": "INTERNET",
       "DRUM": "DRUM",
       "SILENCE": "SILENCE",
       "PLAY": "PLAYBACK",
@@ -180,7 +187,8 @@
       "DRUM": false,
       "SILENCE": false,
       "PLAYBACK": false,
-      "TIMELAPSE": false
+      "TIMELAPSE": false,
+      "INTERNET": false
     }
   },
   "streamStatus": {
@@ -194,7 +202,8 @@
       "SILENCE": false,
       "PLAYBACK": false,
       "INTERNET": false,
-      "TIMELAPSE": false
+      "TIMELAPSE": false,
+      "INTERNET": false
     },
     "streamCmd": {
       "VIDEOCHAT": "CHAT",
@@ -238,13 +247,14 @@
       "ipAddress": "0.0.0.0",
       "type": "dummy",
       "STREAMS": {
-        "RECORD": {"FROM": true, "arr": 0, "LATENCY": "0", "RATE": "44100"},
-        "CHAT":{"FROM": true, "TO": true, "ACK": true, "arr": 0, "LATENCY": "0", "RATE":"44100"},
-        "PLAYBACK": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"44100"},
-        "TIMELAPSE": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"44100"},
-        "DRUM": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"44100"},
-        "SILENCE": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"44100"},
-        "SECBEFORE": {"TO": true, "arr": 0, "RATE":"44100"}
+        "RECORD": {"FROM": true, "arr": 0, "LATENCY": "0", "RATE": "48000"},
+        "CHAT":{"FROM": true, "TO": true, "ACK": true, "arr": 0, "LATENCY": "0", "RATE":"48000"},
+        "PLAYBACK": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"48000"},
+        "TIMELAPSE": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"48000"},
+        "DRUM": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"48000"},
+        "SILENCE": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"48000"},
+        "INTERNET": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"48000"},
+        "SECBEFORE": {"TO": true, "arr": 0, "RATE":"48000"}
       },
       "rhythm":{
         "bpm":"60",

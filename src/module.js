@@ -31,22 +31,59 @@ exports.toBase64 = function toBase64(buffer, video){
 
 exports.textPrint = function textPrint(ctx, canvas, text){
   if(text != undefined){
-    ctx.globalAlpha = 1
-    ctx.fillStyle = "black";
-    if(text.length > 2) {
-      ctx.font = "bold " + String(Math.floor((canvas.width * 4 / 3) / text.length)) + "px 'Arial'";
+    /*
+    if(mode != "none") {
+      textprint(ctx, canvas, text ,"white")
     } else {
-      ctx.font = "bold " + String(Math.floor((canvas.height * 5 / 4) / text.length)) + "px 'Arial'";
-    }
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
-    ctx.restore();
+    */
+      textprint(ctx, canvas, text ,"black")
+    //}
   }
 }
 
+const textprint = (ctx,canvas,text, color) => {
+  ctx.globalAlpha = 1
+  ctx.fillStyle = color
+  textArr = [text]
+  let fontSize = 20
+  if(text.length > 20) {
+    fontSize = Math.floor((canvas.width * 4 / 3) / 17)
+    textArr = [""]
+    let lineNo = 0
+    Array.prototype.forEach.call(text, (element,index) =>{
+      if(index % 16 > 0 || index === 0) {
+        textArr[lineNo] += element
+        //console.log(textArr[lineNo])
+      } else {
+        textArr.push(element)
+        lineNo += 1
+        //console.log(textArr[lineNo])
+      }
+    });
+  } else if(text.length > 2) {
+    fontSize = Math.floor((canvas.width * 4 / 3) / text.length)
+  } else {
+    fontSize = Math.floor((canvas.height * 5 / 4) / text.length)
+  }
+  ctx.font = "bold " + String(fontSize) + "px 'Arial'";
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.strokeStyle = "white"
+  if(textArr.length === 1) {
+    ctx.strokeText(text, canvas.width / 2, canvas.height / 2);
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+  } else {
+    textArr.forEach((element,index) => {
+      //console.log("line" + String(index))
+      ctx.strokeText(element, canvas.width / 2, canvas.height / 2 + (fontSize * (index - Math.round(textArr.length / 2))));
+      ctx.fillText(element, canvas.width / 2, canvas.height / 2 + (fontSize * (index - Math.round(textArr.length / 2))));
+    })
+  }
+  ctx.restore();
+}
+
 exports.whitePrint = function whitePrint(ctx, canvas) {
-  ctx.fillStyle = "white";
+ctx.fillStyle = "white";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
@@ -128,10 +165,6 @@ exports.ctrlView = function ctrlView(statusList){
   }
   rangeHTML = rangeHTML + '</table>';
 
-
-// rangeTable
-  //let rangeTable = '<table border="1" id="clientRangeList"><tr id="tr"><th>client</th> <th>id</th> <th>CHAT_RATE</th> <th>masterGain</th> <th>chatGain</th> <th>playbackGain</th> <th>timelapseGain</th> <th>drumGain</th> <th>oscGain</th> <th>noiseGain</th> <th>bassGain</th>';
-
 // sampleRate list
   let sampleRateHTML = '<div id="sampleRate"> Sample Rate <ul id="sampleRateList">';
   for(let key in statusList["sampleRate"]){
@@ -189,7 +222,7 @@ exports.statusPrint = function statusPrint(oscGainValue, freqVal, feedbackGainVa
   }
   return statusText;
 }
-/*
-exports.keycodeMap = function keycodeMap(keycode){
-  return keyMap[keycode];
-}*/
+exports.previousStatus = function previousStatus(audioContext, videoMode){
+  let rtnHsh = {}
+  return rtnHsh
+}

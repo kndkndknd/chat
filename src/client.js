@@ -5,8 +5,27 @@ navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia 
 window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
 window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.msAudioContext;
 
-let audioContext = new AudioContext();
-let masterGain = audioContext.createGain();
+let audioContext
+let masterGain
+let lpFilter
+let feedbackGain
+let filter
+let javascriptnode
+let osc
+let oscGain
+let bassOsc
+let bassGain
+let clickOsc
+let clickGain
+let whitenoise
+let whitenoiseNode
+let noiseGain
+let buf0
+let buf1
+
+let chatGain
+let convolver
+let revGain
 
 let gainVal = {
   "master": 0.7,
@@ -27,107 +46,23 @@ let fadeVal = {
   "OUT": 0
 }
 
-
-masterGain.gain.setValueAtTime(gainVal["master"],0)
-//masterGain.gain.setTargetAtTime(gainVal["master"],0,0)
 let prevGain = 0.7;
-masterGain.connect(audioContext.destination);
 
-// feedback
-let feedbackGain = audioContext.createGain();
-feedbackGain.gain.setValueAtTime(0,0);
-let filter = audioContext.createBiquadFilter();
-filter.type = "highpass";
-filter.frequency.setValueAtTime(200,0);
-//record/play
-let javascriptnode = audioContext.createScriptProcessor(8192, 1, 1);
+let oscPortament = 0;
 let streamBuffer = [];
 let lookBackBuffer = [];
+let loopBuffer = {}
 let bufferSize = 8192;
-let bufferRate = 44100;
-// sinewave
-let osc = audioContext.createOscillator();
-let oscGain = audioContext.createGain();
-let oscPortament = 0;
-osc.connect(oscGain);
-//oscGain.connect(audioContext.destination);
-osc.frequency.setValueAtTime(440, 0);
-oscGain.gain.setValueAtTime(0,0);
-oscGain.connect(masterGain);
-//osc.frequency.setTargetAtTime(440,audioContext.currentTime,audioContext.currentTime);
-//oscGain.gain.setTargetAtTime(0,audioContext.currentTime,audioContext.currentTime);
-//osc.frequency.setValueAtTime(440,audioContext.currentTime);
-//oscGain.gain.setValueAtTime(0,audioContext.currentTime);
-osc.start(0);
-let bassOsc = audioContext.createOscillator();
-let bassGain = audioContext.createGain();
-bassOsc.connect(bassGain);
-bassGain.connect(masterGain);
-bassOsc.frequency.setValueAtTime(20,0)
-bassGain.gain.setValueAtTime(0,0);
-bassOsc.start(0);
-
-let clickOsc = audioContext.createOscillator();
-let clickGain = audioContext.createGain();
-clickOsc.connect(clickGain);
-clickGain.connect(masterGain);
-clickOsc.frequency.setValueAtTime(440,0)
-clickGain.gain.setValueAtTime(0,0);
-clickOsc.start(0);
-
-//whitenoise
-let whitenoise = audioContext.createOscillator();
-let whitenoiseNode = audioContext.createScriptProcessor(1024);
-let noiseGain = audioContext.createGain();
-noiseGain.gain.setValueAtTime(0,0);
-whitenoiseNode.onaudioprocess = (ev) => {
-  let buf0 = ev.outputBuffer.getChannelData(0);
-  let buf1 = ev.outputBuffer.getChannelData(1);
-  for(let i=0;i<1024;++i) {
-    buf0[i] = buf1[i] = (Math.random()-0.5);
-  }
-}
-whitenoise.connect(whitenoiseNode);
-whitenoiseNode.connect(noiseGain);
-noiseGain.connect(masterGain);
-//whitenoiseNode.connect(audioContext.destination);
-whitenoise.start(0);
-
-//munou no unmei
-/*
-let munouOsc = audioContext.createOscillator();
-let munouGain = audioContext.createGain();
-munouOsc.connect(munouGain);
-//oscGain.connect(audioContext.destination);
-munouGain.connect(masterGain);
-munouOsc.frequency.value = 110;
-munouGain.gain.value = 0;
-munouOsc.start(0);
-*/
-// chat
+let bufferRate = 48000;
 let chatBuffer = {};
-let chatGain = audioContext.createGain();
-chatGain.gain.setValueAtTime(1,0);
-chatGain.connect(masterGain);
 
-let convolver = audioContext.createConvolver();
-//convolver.context.sampleRate = 44100;
-let revGain = audioContext.createGain();
-revGain.gain.setValueAtTime(1.6,0);
-console.log(convolver.context.sampleRate);
-convolver.connect(revGain);
-revGain.connect(masterGain);
-convolver.connect(masterGain);
 let droneBuff = {};
-/*let streamGain = {
-"CHAT": 1,
-"PLAYBACK": 0.7,
-"TIMELAPSE": 0.7,
-"DRUM": 0.7,
-"SECBEFORE": 0.7,
-"SILENCE": 0
-};*/
 let timelapseFlag = false;
+let playsampleRate = 48000
+let playTarget = ""
+let localSampleRate = 0
+
+let tileFlag = false
 
 // voice
 const ssu = new SpeechSynthesisUtterance();
@@ -143,6 +78,9 @@ let freqVal;
 // alert sound
 let alertBuffer = null;
 
+//face detect
+let ctracker = new clm.tracker();
+let ctrackerMode = false
 const alertPlay = () => {
   let src = audioContext.createBufferSource();
   src.buffer = alertBuffer;
@@ -179,7 +117,6 @@ const loadSample = (ctx, url) => {
   }
   req.send();
 }
-loadSample(audioContext, "/files/alert.wav");
 
 const bassLine = {
   "LOW": [55,55,68.75,73.4,82.4,82.4],
@@ -204,31 +141,27 @@ const bass = (position)  => {
   }
 }
 
-const filterChange = () => {
+const filterChange = () => { //LPF
   let returnValue = 0;
   let currentTime = audioContext.currentTime
-  switch(filter.frequency.value){
-    case 200:
-      returnValue = 2000;
+  switch(lpFilter.frequency.value){
+    case 20000:
+      returnValue = 220;
       break;
-    case 2000:
-      returnValue = 8000;
-      break;
-    case 8000:
-      returnValue = 14000;
-      break;
-    case 14000:
-      returnValue = 0;
+    case 220:
+      returnValue = 1760;
       break;
     default:
-      returnValue = 200;
+      returnValue = 20000;
       break;
   }
-  filter.frequency.setTargetAtTime(returnValue,currentTime,0)
+  lpFilter.frequency.setTargetAtTime(returnValue,currentTime,0)
   return returnValue;
 }
 
 //video record/play ここから
+
+
 let image;
 let receive;
 let receive_ctx;
@@ -244,16 +177,28 @@ const onAudioProcess = (e) => {
         socket.emit('chunkFromClient', {"audio":bufferData, "video":funcToBase64(buffer, video), "target": videoMode.option})
       }
     } else if(videoMode.option === "loop" && videoMode.mode === "chat"){
+        //console.log(loopBuffer)
         if("audio" in chatBuffer) {
           playAudioStream(chatBuffer.audio,bufferRate,1,false);
+        //if("audio" in loopBuffer) {
+          //playAudioStream(loopBuffer.audio,bufferRate,1,false);
         }
         if("video" in chatBuffer){
           playVideo(chatBuffer["video"]);
+        //if("video" in loopBuffer){
+          playVideo(loopBuffer["video"]); //たぶんここ修正要
           modules.textPrint(stx, strCnvs, "LOOP");
         } else {
           modules.erasePrint(ctx, canvas);
           modules.textPrint(ctx, canvas, stringsClient);
         }
+      socket.emit('AckFromClient', "CHAT")
+      /*
+      socket.emit('chunkFromClient', {
+        audio :"",
+        video :"",
+        target:"CHAT"
+      });*/
       /*
         chatBuffer["audio"] = bufferData;
         chatBuffer["video"] = funcToBase64(buffer, video);
@@ -327,6 +272,23 @@ const onAudioProcess = (e) => {
     timelapseFlag = false;
   }
 }
+const debugPlay = (flo32arr, sampleRate, volume, glitch) => {
+  let audio_buf = audioContext.createBuffer(1, bufferSize, sampleRate),
+      audio_src = audioContext.createBufferSource();
+
+  let audioData = audio_buf.getChannelData(0);
+  for(let i = 0; i < audioData.length; i++){
+    audioData[i] = flo32arr[i];
+  }
+  console.log("debug")
+  console.log(flo32arr)
+
+  audio_src.buffer = audio_buf;
+  audio_src.connect(masterGain);
+
+  audio_src.start(0);
+
+}
 const playAudioStream = (flo32arr, sampleRate, volume, glitch) => {
   //if(!glitch){
     let audio_src = audioContext.createBufferSource();
@@ -335,7 +297,6 @@ const playAudioStream = (flo32arr, sampleRate, volume, glitch) => {
       audioData[i] = flo32arr[i] * volume;
     }
     if(!glitch){
-      //console.log(sampleRate)
       let audio_buf = audioContext.createBuffer(1, bufferSize, sampleRate)
       audio_buf.copyToChannel(audioData, 0);
       audio_src.buffer = audio_buf;
@@ -352,19 +313,94 @@ const playAudioStream = (flo32arr, sampleRate, volume, glitch) => {
     }
     //let timeOut = audio_src.buffer.duration * 1000;
     audio_src.start(0);
-    /*
-    droneflag = false
-    setTimeout(()=>{
-      droneflag = true
-    },timeOut);*/
   //}
 }
 droneflag = true;
 //video record/play ここまで
 
 //let micLevel = 0.5
+//
 
 const initialize = () =>{
+  modules.erasePrint(stx, strCnvs);
+  socket.emit("startFromClient")
+
+  //audioContext
+  audioContext = new AudioContext();
+  masterGain = audioContext.createGain();
+  masterGain.gain.setValueAtTime(gainVal["master"],0)
+  masterGain.connect(audioContext.destination);
+  // LPF
+  lpFilter = audioContext.createBiquadFilter();
+  lpFilter.type = "lowpass";
+  lpFilter.frequency.setValueAtTime(20000,0);
+  // feedback
+  feedbackGain = audioContext.createGain();
+  feedbackGain.gain.setValueAtTime(0,0);
+  filter = audioContext.createBiquadFilter();
+  filter.type = "highpass";
+  filter.frequency.setValueAtTime(0,0);
+  //record/play
+  javascriptnode = audioContext.createScriptProcessor(8192, 1, 1);
+  // sinewave
+  osc = audioContext.createOscillator();
+  oscGain = audioContext.createGain();
+  osc.connect(oscGain);
+  osc.frequency.setValueAtTime(440, 0);
+  oscGain.gain.setValueAtTime(0,0);
+  oscGain.connect(masterGain);
+  osc.start(0);
+  bassOsc = audioContext.createOscillator();
+  bassGain = audioContext.createGain();
+  bassOsc.connect(bassGain);
+  bassGain.connect(masterGain);
+  bassOsc.frequency.setValueAtTime(20,0)
+  bassGain.gain.setValueAtTime(0,0);
+  bassOsc.start(0);
+  clickOsc = audioContext.createOscillator();
+  clickGain = audioContext.createGain();
+  clickOsc.connect(clickGain);
+  clickGain.connect(masterGain);
+  clickOsc.frequency.setValueAtTime(440,0)
+  clickGain.gain.setValueAtTime(0,0);
+  clickOsc.start(0);
+  //whitenoise
+  whitenoise = audioContext.createOscillator();
+  whitenoiseNode = audioContext.createScriptProcessor(1024);
+  noiseGain = audioContext.createGain();
+  noiseGain.gain.setValueAtTime(0,0);
+  whitenoiseNode.onaudioprocess = (ev) => {
+    buf0 = ev.outputBuffer.getChannelData(0);
+    buf1 = ev.outputBuffer.getChannelData(1);
+    for(let i=0;i<1024;++i) {
+      buf0[i] = buf1[i] = (Math.random()-0.5);
+    }
+  }
+  whitenoise.connect(whitenoiseNode);
+  whitenoiseNode.connect(noiseGain);
+  noiseGain.connect(masterGain);
+  whitenoise.start(0);
+  // chat
+  chatGain = audioContext.createGain();
+  chatGain.gain.setValueAtTime(1,0);
+  chatGain.connect(masterGain);
+
+  convolver = audioContext.createConvolver();
+  revGain = audioContext.createGain();
+  revGain.gain.setValueAtTime(1.6,0);
+  //console.log(convolver.context.sampleRate);
+  convolver.connect(revGain);
+  revGain.connect(masterGain);
+  convolver.connect(masterGain);
+  loadSample(audioContext, "/files/alert.wav");
+
+  //face detect
+  video = document.getElementById('video');
+  video.width  = 640;
+  video.height = 480
+  let video_track = null
+  video.play();
+
   if(navigator.mediaDevices.getUserMedia){
     navigator.mediaDevices.getUserMedia({
       video: true, audio: /*true*/{
@@ -378,26 +414,17 @@ const initialize = () =>{
         "optional": []
       } 
     }).then((stream) =>{
-    //}, (stream) =>{
       let mediastreamsource = void 0;
       mediastreamsource = audioContext.createMediaStreamSource(stream);
       mediastreamsource.connect(filter);
-      filter.connect(javascriptnode);
+      filter.connect(lpFilter)
+      lpFilter.connect(javascriptnode); //LPF
       filter.connect(feedbackGain);
-      //      selfGain.connect(analyser);
-  //    feedbackGain.connect(audioContext.destination);
       feedbackGain.connect(masterGain);
-      //video
-      video = document.getElementById('video');
-      //video.src = window.URL.createObjectURL(stream);
-      //video.src = window.URL.createObjectURL(stream);
-      //video.srcObject = stream
-      if(video.srcObject != undefined){
-        video.srcObject = stream
-      } else {
-        video.src = window.URL.createObjectURL(stream);
-      }
-      video.play();
+
+      //face detect
+      video_track = stream.getVideoTracks()[0];
+      video.srcObject = stream
       video.volume = 0;
       renderStart();
     },  (e) =>{
@@ -420,19 +447,10 @@ const initialize = () =>{
       mediastreamsource.connect(filter);
       filter.connect(javascriptnode);
       filter.connect(feedbackGain);
-      //      selfGain.connect(analyser);
-  //    feedbackGain.connect(audioContext.destination);
       feedbackGain.connect(masterGain);
-      //video
-      video = document.getElementById('video');
+      //face detect 
+      video_track = stream.getVideoTracks()[0];
       video.src = window.URL.createObjectURL(stream);
-      /*
-      if(video.srcObject != undefined){
-        video.srcObject = stream
-      } else {
-        video.src = window.URL.createObjectURL(stream);
-      }*/
-      video.play();
       video.volume = 0;
       renderStart();
     },  (e) =>{
@@ -447,6 +465,78 @@ const initialize = () =>{
   image = document.createElement("img");
   receive = document.getElementById("cnvs");
   receive_ctx = receive.getContext("2d");
+
+  let tracking_started = false;
+  video.addEventListener('playing', function(){
+    if (tracking_started === true) {
+        return;
+    }
+    ctracker.init();
+    ctracker.start(video);
+    detectLoop()
+    //console.log("debug3")
+
+    video.onresize = function() {
+        ctracker.stop();
+        ctracker.reset();
+        ctracker.start(video);
+    }
+
+    tracking_started = true;
+  });
+
+  const detectLoop = () =>{
+    requestAnimationFrame(detectLoop);
+    if(ctrackerMode){
+      modules.textPrint(stx,strCnvs,"FACE")
+      setTimeout(()=>{
+        modules.erasePrint(stx, strCnvs);
+      },500)
+      if(ctracker.getCurrentPosition()){
+        //modules.textPrint(stx, strCnvs, "FACE DETECT");
+        if(Math.random() < 0.1) {
+          ctrackerMode = false
+          let cmdArr = ["STOP"]
+          for(let cmd in cmdMode){
+            if(!cmdMode[cmd] || cmd != "instruction") cmdArr.push(cmd)
+          }
+          let targetCmd = {"cmd": cmdArr[Math.floor(Math.random() * cmdArr.length)].toUpperCase(), "stopOther":false}
+          if(targetCmd.cmd === "SINEWAVE") {
+            targetCmd.property = 40 + (Math.random() * 1000)
+          }
+          doCmd(targetCmd)
+          setTimeout(()=>{
+            ctrackerMode = true
+          },10000)
+        } else if(videoMode.mode != "none" && videoMode.mode != "record"){
+          ctrackerMode = false
+          localSampleRate = 3000 + Math.random() * 93000
+          setTimeout(()=>{
+            ctrackerMode = true
+          },10000)
+        } else if (oscGain.gain.value > 0){
+          modules.erasePrint(stx, strCnvs);
+          modules.erasePrint(ctx, cnvs);
+          let freqVal = osc.frequency.value * (0.5 + Math.random())
+          modules.textPrint(stx, strCnvs, String(freqVal) + "Hz");
+          ctrackerMode = false
+          let currentTime = audioContext.currentTime;
+          oscPortament = Math.random() * 20
+          osc.frequency.setTargetAtTime(freqVal,currentTime,oscPortament);
+          setTimeout(()=>{
+            ctrackerMode = true
+          },10000)
+        } else {
+          click()
+        }
+        //console.log(ctracker.getCurrentPosition())
+      } else {
+    //    modules.erasePrint(stx, strCnvs);
+        //console.log(ctracker.getCurrentPosition())
+        //console.log("not detect")
+      }
+    }
+  }
 };
 
 //metronome
@@ -477,11 +567,6 @@ const startRhythm = (interval,timbre) =>{
           modules.erasePrint(ctx, canvas);
           modules.textPrint(ctx, canvas, stringsClient);
         }
-          /*
-          clickOsc.frequency.value = rhythmProperty.timbre
-          clickGain.gain.setValueAtTime(gainVal["CLICK"], t0);
-          clickGain.gain.setTargetAtTime(0,t0,0.03);
-          */
       }
     }
     if(metronomeCount+1 < rhythmProperty.score.length){
@@ -500,15 +585,11 @@ const stopRhythm = () => {
 //keyboard
 let stringsClient = "";
 
-/*
-$(() =>{
-  $(document).on("keydown", (e)=> {
-  */
 const keyDown = (e) => {
   console.log(e.keyCode);
   let charCode = keyMap[e.keyCode]
   if(!standAlone) {
-    if(charCode === "enter" && (stringsClient === "LOCAL" || stringsClient === "STANDALONE")){
+    if(charCode === "enter" && (stringsClient === "LOCAL" || stringsClient === "STANDALONE" || stringsClient === "NETWORK" || stringsClient === "CONNECT")){
       standAlone = true;
       modules.erasePrint(stx, strCnvs);
       modules.textPrint(stx, strCnvs, "stand alone");
@@ -544,9 +625,9 @@ const keyDown = (e) => {
         }
       }
     }
-  } else {
+  } else { //STANDALONE
     if(charCode === "enter"){
-      if(stringsClient === "NETWORK" || stringsClient === "CONNECT"){
+      if(stringsClient === "LOCAL" || stringsClient === "STANDALONE" || stringsClient === "NETWORK" || stringsClient === "CONNECT"){
         standAlone = false;
         modules.erasePrint(stx, strCnvs);
         modules.textPrint(stx, strCnvs, "network connect");
@@ -606,7 +687,9 @@ const keyDown = (e) => {
   }
 }
 
-window.addEventListener("load", initialize, false);
+//window.addEventListener("load", initialize, false);
+let eListener = document.getElementById("wrapper")
+eListener.addEventListener("click", initialize, false);
 window.addEventListener('resize', (e) =>{
   console.log('resizing')
   sizing()
@@ -628,25 +711,11 @@ let stx = strCnvs.getContext('2d');
 let buffer;
 let bufferContext;
 
-/*
-$(() => {
-//  draw();
-  $(window).resize(() =>{
-    sizing();
-  });
-});
-*/
 const sizing=() =>{
   document.getElementById("cnvs").setAttribute("height", String(window.innerHeight) + "px")
   document.getElementById("cnvs").setAttribute("width", String(window.innerWidth) + "px")
   document.getElementById("strCnvs").setAttribute("height", String(window.innerHeight) + "px")
   document.getElementById("strCnvs").setAttribute("width", String(window.innerWidth) + "px")
-  /*
-  $("#cnvs").attr({ height: $(window).height() });
-  $("#cnvs").attr({ width: $(window).width() });
-  $("#strCnvs").attr({ height: $(window).height() });
-  $("#strCnvs").attr({ width: $(window).width() });
-  */
 }
 
 sizing();
@@ -668,7 +737,7 @@ const renderStart=()=> {
   render();
 }
 
-/* socket */
+// socket
 socket.emit('connectFromClient', client);
 socket.on('connectFromServer', (data) => {
   rhythmProperty = data.rhythm
@@ -721,23 +790,17 @@ socket.on('cmdFromServer', (data) => {
 });
 socket.on('textFromServer', (data) => {
   if(data.alert) {
-    alertPlay()
-    /*
-    if(videoMode.mode === "chat"){
-      videoMode.mode = "wait"
-      console.log(videoMode.mode)
-      setTimeout(()=>{
-        //modules.erasePrint(stx, strCnvs);
-        //modules.textPrint(stx, strCnvs, data.text);
-        modules.erasePrint(stx, strCnvs)
-        modules.textPrint(stx,strCnvs, data.text)
-      },500)
-      setTimeout(()=>{
-        console.log(videoMode.mode)
-        videoMode.mode = "none"
-        console.log(videoMode.mode)
-      },5000)
-    }*/
+    const previousStatus = {masterGain: masterGain.gain.value, videoMode: videoMode.mode, videoOption: videoMode.option}
+    masterGain.gain.setValueAtTime(0,0)
+    videoStop()
+    setTimeout(()=>{
+      alertPlay()
+    },100)
+    setTimeout(() => {
+      masterGain.gain.setValueAtTime(previousStatus.masterGain,0)
+      videoMode.mode = previousStatus.videoMode
+      videoMode.option = previousStatus.videoOption
+    }, 10000)
   }
   console.log("textFromServer")
   console.log(data.text)
@@ -746,10 +809,6 @@ socket.on('textFromServer', (data) => {
   modules.erasePrint(stx, strCnvs)
   modules.textPrint(stx,strCnvs, data.text)
   speakVoice(data.text)
-  /*
-  setTimeout(()=>{
-    modules.erasePrint(stx, strCnvs);
-  },800)*/
   stringsClient = "";
 });
 
@@ -772,12 +831,13 @@ socket.on('streamListFromServer', (data) =>{
 });
 
 socket.on('streamReqFromServer', (data) => {
+  console.log(data)
   switch(data){
     case "CHAT":
     case "droneChat":
       //if(chatBuffer!= {}){
       //console.log(chatBuffer)
-      if(chatBuffer!= {}) socket.emit('chunkFromClient', chatBuffer);
+      if(chatBuffer!= {} && videoMode.option != "loop") socket.emit('chunkFromClient', chatBuffer);
       /*} else {
         socket.emit('chunkFromClient', {
           "audio" : "",
@@ -792,28 +852,12 @@ socket.on('streamReqFromServer', (data) => {
 socket.on('oscFromServer',(data) => {
   let uint8arr = osc.toBuffer(data);
 });
-/*
-const playGlitchedURL = (url) => {
-  if(~url.indexOf("data:image/jpeg;base64,")){
-    let audioURL = "data:audio/wav;base64," + url.split("data:image/jpeg;base64,")[1].slice(0,-2) + "gAA==";
-    console.log(audioURL);
-    let buff = Base64Binary.decodeArrayBuffer(audioURL);
-    audioContext.decodeAudioData(buff, (audioData)=>{
-      let audioSrc = audioContext.createBufferSource()
-      audioSrc.buffer = audioData
-      audioSrc.connect(masterGain);
-      audioSrc.start(0);
-    });
-  // 再生 たぶんdecodeaudiodataして再生
-  }
-}
-*/
-let playsampleRate = 44100
-let playTarget = ""
 socket.on('chunkFromServer', (data) => {
+  console.log(Object.keys(data))
   //if(videoMode.mode === "chat"){
   if(videoMode.mode != "record" && videoMode.option != "loop"){
   //if(videoMode.mode != "record" && videoMode.option != "loop"){
+    //console.log(videoMode.option)
     if(videoMode.mode != "chat" && data.target === "CHAT" && videoMode.mode != "wait") videoMode.mode = "chat"
     
     if(videoMode.mode != "wait"){
@@ -830,18 +874,31 @@ socket.on('chunkFromServer', (data) => {
           if(data["target"] in gainVal){
             chunkGain = gainVal[data["target"]];
           }
-          //let playsampleRate = 44100
-          //if(data.sampleRate != undefined) {
+          //let playsampleRate = 48000
+          //console.log(data.audio)
+          if(data.sampleRate != undefined){
+          if(localSampleRate === 0) {
             playsampleRate = Number(data.sampleRate)
+          } else {
+            playsampleRate = localSampleRate
+          }
+          }
             //let playsampleRate = Number(data.sampleRate)
           //}
           //console.log(playsampleRate);
           //playAudioStream(data["audio"],Number(data["sampleRate"]),chunkGain,data["glitch"]);
-          playAudioStream(data["audio"],playsampleRate,chunkGain,data["glitch"]);
+          //console.log(playsampleRate)
+          if(data.target === "INTERNET"){
+            debugPlay(data["audio"],playsampleRate,chunkGain,data["glitch"]);
+          }else {
+            console.log("debug audio")
+            playAudioStream(data["audio"],playsampleRate,chunkGain,data["glitch"]);
+          }
           //if(data.glitch) playGlitchedURL(data.video);
         }
         if(data["video"] != undefined && data["video"] != "") {
-           playVideo(data["video"]);
+            console.log("debug video")
+           playVideo(data.video, data.source);
         } else if(data.target != "CHAT"){
           modules.erasePrint(stx, strCnvs);
           modules.textPrint(stx, strCnvs, data["target"]);
@@ -866,18 +923,20 @@ const speakVoice = (data) =>{
 }
 
 const doCmd = (cmd) => {
-  // console.log("do cmd" + cmd["cmd"]);
+  //console.log("do cmd" + cmd["cmd"]);
   let currentTime = audioContext.currentTime;
   switch(cmd["cmd"]){
     case "WHITENOISE":
     case "NOISE":
 //      stop();
-      oscGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
-      cmdMode.sinewave = false
-      feedbackGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
-      cmdMode.feedback = false
-      bassGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
-      bassFlag = false;
+      if(cmd.overlay === undefined || cmd.stopOther){
+        oscGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
+        cmdMode.sinewave = false
+        feedbackGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
+        cmdMode.feedback = false
+      }
+      //bassGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
+      //bassFlag = false;
       if(cmdMode.whitenoise){
       //if(noiseGain.gain.value > 0){
         cmdMode.whitenoise = false
@@ -890,38 +949,35 @@ const doCmd = (cmd) => {
         //mode = "whitenoise";
         noiseGain.gain.setTargetAtTime(gainVal.NOISE,currentTime,fadeVal.IN + 0.01);
         modules.erasePrint(stx, strCnvs);
+        modules.erasePrint(ctx, cnvs);
         modules.textPrint(stx, strCnvs, "WHITENOISE");
       }
       speakVoice("NOISE")
       break;
     case "CLICK":
+      modules.erasePrint(ctx, cnvs);
       click();
       speakVoice(cmd.cmd)
       break;
     case "BASS":
+      modules.erasePrint(ctx, cnvs);
       if(cmd.property) {
         bass(cmd.property);
       } else {
         bass("LOW");
       }
-      oscGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
-      cmdMode.sinewave = false
-      feedbackGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
-      cmdMode.feedback = false
-      noiseGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
-      cmdMode.whitenoise = false
-      //bassGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
-      //bassFlag = false;
-      //speakVoice(cmd.cmd)
       break;
     case "SINEWAVE":
       //oscGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
-      feedbackGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
-      cmdMode.feedback = false
-      noiseGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
-      cmdMode.whitenoise = false
-      bassGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
-      bassFlag = false;
+      if(cmd.overlay === undefined || cmd.stopOther){
+        feedbackGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
+        cmdMode.feedback = false
+        noiseGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
+        cmdMode.whitenoise = false
+      }
+      //bassGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
+      //bassFlag = false;
+      modules.erasePrint(ctx, cnvs);
       modules.erasePrint(stx, strCnvs);
       if(cmdMode.sinewave && freqVal === cmd["property"]) {
         cmdMode.sinewave = false
@@ -952,6 +1008,7 @@ const doCmd = (cmd) => {
         osc.frequency.setTargetAtTime(freqVal,currentTime,oscPortament);
       }
       modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
       //mode = "sinewave";
       cmdMode.sinewave = true
       chordChange = 0;
@@ -961,6 +1018,7 @@ const doCmd = (cmd) => {
       break;
     case "SINEWAVE_DOWN":
       modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
       freqVal = osc.frequency.value - cmd["property"];
       if(freqVal >= 0){
         if(oscPortament === 0){
@@ -977,7 +1035,10 @@ const doCmd = (cmd) => {
       speakVoice(String(cmd.property)+ "Hz DOWN")
       break;
     case "TWICE":
+      console.log("debug" + cmd.cmd)
+      console.log(cmd.cmd)
       modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
       freqVal = osc.frequency.value * 2
       if(oscPortament === 0){
         osc.frequency.setTargetAtTime(freqVal,currentTime,0.01);
@@ -991,7 +1052,10 @@ const doCmd = (cmd) => {
       speakVoice(String(osc.frequency.value)+ "Hz DOWN")
       break;
     case "THRICE":
+      console.log("debug" + cmd.cmd)
+      console.log(cmd.cmd)
       modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
       freqVal = osc.frequency.value * 3
       if(oscPortament === 0){
         osc.frequency.setTargetAtTime(freqVal,currentTime,0.01);
@@ -1006,6 +1070,7 @@ const doCmd = (cmd) => {
       break;
     case "HALF":
       modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
       freqVal = osc.frequency.value / 2
       if(oscPortament === 0){
         osc.frequency.setTargetAtTime(freqVal,currentTime,0.01);
@@ -1020,18 +1085,21 @@ const doCmd = (cmd) => {
       break;
     case "PORTAMENT":
       modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
       modules.textPrint(stx, strCnvs, "PORTAMENT: " + String(cmd["property"]) + "SEC");
       oscPortament = cmd["property"];
       break;
     case "FEEDBACK":
     case "FEED":
-      oscGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
-      cmdMode.sinewave = false
-      //feedbackGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
-      noiseGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
-      cmdMode.whitenoise = false
-      bassGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
-      bassFlag = false;
+      if(cmd.overlay === undefined || cmd.stopOther){
+        oscGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
+        cmdMode.sinewave = false
+        //feedbackGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
+        noiseGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
+        cmdMode.whitenoise = false
+      }
+      //bassGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
+      //bassFlag = false;
       //if(feedbackGain.gain.value > 0) {
       if(cmdMode.feedback) {
         cmdMode.feedback = false
@@ -1042,6 +1110,7 @@ const doCmd = (cmd) => {
         // console.log("feedback")
         feedbackGain.gain.setTargetAtTime(gainVal.FEEDBACK,currentTime,fadeVal.IN + 0.01);
         modules.erasePrint(stx, strCnvs);
+        modules.erasePrint(ctx, cnvs);
         modules.textPrint(stx, strCnvs, "FEEDBACK");
       }
       speakVoice(cmd.cmd)
@@ -1049,6 +1118,7 @@ const doCmd = (cmd) => {
     case "FILTER":
       let printText = filterChange();
       modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
       modules.textPrint(stx, strCnvs, "FILTER: " + String(printText) + "Hz");
       setTimeout(() => {
         modules.erasePrint(stx, strCnvs);
@@ -1059,6 +1129,8 @@ const doCmd = (cmd) => {
       //console.log("TEST");
       //console.log(cmd.property)
       //console.log(masterGain)
+      modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
       modules.textPrint(stx, strCnvs, cmd["property"]["target"] + ": " + String(cmd["property"]["val"]));
       gainVal[cmd["property"]["target"].substr(0,cmd["property"]["target"].length - 4).toUpperCase()] = Number(cmd["property"]["val"]);
       if(eval(cmd["property"]["target"]) != undefined){ //debug later
@@ -1082,6 +1154,7 @@ const doCmd = (cmd) => {
     case "VOLUME":
       if(cmd["property"] === "UP"){
         modules.erasePrint(stx, strCnvs);
+        modules.erasePrint(ctx, cnvs);
         if(masterGain.gain.value >= 1){
           modules.textPrint(stx, strCnvs, "VOLUME IS FULL");
           setTimeout(()=>{
@@ -1097,6 +1170,7 @@ const doCmd = (cmd) => {
         console.log("debug")
       } else if(cmd["property"] === "DOWN"){
         modules.erasePrint(stx, strCnvs);
+        modules.erasePrint(ctx, cnvs);
         if(masterGain.gain.value === 0){
           modules.textPrint(stx, strCnvs, "MUTED");
           setTimeout(()=>{
@@ -1115,6 +1189,8 @@ const doCmd = (cmd) => {
         if(isNaN(Number(cmd["property"])) === false && cmd["property"] != ""){
           masterGain.gain.setTargetAtTime(Number(cmd["property"]),currentTime,0.01)
         }
+        modules.erasePrint(stx, strCnvs);
+        modules.erasePrint(ctx, cnvs);
         modules.textPrint(stx, strCnvs, "VOLUME " + cmd["property"]);
         setTimeout(()=>{
           modules.erasePrint(stx, strCnvs);
@@ -1128,6 +1204,7 @@ const doCmd = (cmd) => {
       if(masterGain.gain.value > 0){
         prevGain = masterGain.gain.value;
         masterGain.gain.setValueAtTime(0,0)
+        modules.erasePrint(ctx, cnvs);
         modules.erasePrint(stx, strCnvs);
         modules.textPrint(stx, strCnvs, "MUTE");
         setTimeout(()=>{modules.erasePrint(stx, strCnvs);},500);
@@ -1142,6 +1219,7 @@ const doCmd = (cmd) => {
     case "FADE":
       console.log(cmd.property.type)
       console.log(cmd.property.status)
+      modules.erasePrint(ctx, cnvs);
       if(cmd.property.type != "val") {
         fadeVal[cmd.property.type] = Number(cmd.property.status[cmd.property.type])
         console.log(fadeVal);
@@ -1158,6 +1236,7 @@ const doCmd = (cmd) => {
       break;
     case "SWITCH ON":
     case "SWITCH OFF":
+      modules.erasePrint(ctx, cnvs);
       modules.erasePrint(stx, strCnvs);
       modules.textPrint(stx, strCnvs, cmd["cmd"]);
       setTimeout(()=>{
@@ -1172,6 +1251,7 @@ const doCmd = (cmd) => {
       let prevVidMode = videoMode.mode
       videoMode.mode = "record";
       if(cmd.property != undefined) videoMode.option = cmd.property
+        modules.erasePrint(ctx, cnvs);
       modules.erasePrint(stx, strCnvs);
       modules.textPrint(stx, strCnvs, "RECORD");
       setTimeout(() => {
@@ -1196,16 +1276,18 @@ const doCmd = (cmd) => {
       break;
     case "SECBEFORE":
       streamBuffer = [];
+        modules.erasePrint(ctx, cnvs);
       modules.erasePrint(stx, strCnvs);
       modules.textPrint(stx, strCnvs, String(cmd["property"]) + "SEC BEFORE");
       videoMode.mode = "pastBuff";
       if(cmd["rate"] != undefined){
         bufferRate = cmd["rate"];
       } else {
-        bufferRate = 44100;
+        bufferRate = 48000;
       }
       setTimeout(()=>{
         modules.erasePrint(stx, strCnvs);
+        modules.erasePrint(ctx, cnvs);
         videoMode.mode = "pastPlay";
       },cmd["property"] * 1000);
       speakVoice(String(cmd.property) + "SECOND BEFORE")
@@ -1215,6 +1297,7 @@ const doCmd = (cmd) => {
       //if(videoMode.option != "drone"){
         videoMode.option = "drone"
         modules.erasePrint(stx, strCnvs);
+        modules.erasePrint(ctx, cnvs);
         modules.textPrint(stx, strCnvs, cmd["cmd"]);
         setTimeout(()=>{
           modules.erasePrint(stx, strCnvs);
@@ -1234,14 +1317,14 @@ const doCmd = (cmd) => {
         if(videoMode.option != "loop" && videoMode.option != "drone"){
           //if(cmd.property === 0){
             videoMode.option = "loop"
-          /*} else {
-            startRhythm(Math.round(60000/cmd.property),"STREAM")
-            videoMode.option = "metronome"
-          }*/
+          //if(chatBuffer.audio != undefined && chatBuffer.video != undefined){
+          //  loopBuffer = chatBuffer
+          //}
         } else if(videoMode.option === "loop"){
           videoMode.option = "none"
           console.log(chatBuffer.target)
           console.log(playTarget)
+          //loopBuffer = {}
           //if(chatBuffer["target"] === "CHAT"){
           if(playTarget === "CHAT"){
             socket.emit('AckFromClient', "CHAT");
@@ -1276,28 +1359,23 @@ const doCmd = (cmd) => {
         rhythmProperty = cmd.property;
         //if(videoMode.mode != "chat"){
           modules.erasePrint(stx, strCnvs);
+          modules.erasePrint(ctx, cnvs);
           modules.textPrint(stx, strCnvs, "BPM:" + String(Math.floor(cmd.property.bpm * 10)/10))
           //console.log(rhythmProperty);
           if(cmd.trig){
             stopRhythm();
             setTimeout(()=>{
               modules.erasePrint(stx, strCnvs);
+              modules.erasePrint(ctx, cnvs);
               startRhythm(rhythmProperty.interval,"CLICK");
             },rhythmProperty.interval)
           }
-        /*} else {
-          if(cmd.trig){
-            modules.erasePrint(stx, strCnvs);
-            stopRhythm();
-            startRhythm(rhythmProperty.interval,"STREAM")
-            videoMode.option = "metronome"
-          }
-        }*/
       }
       break;
     case "RATE":
     case "SAMPLERATE":
       bufferRate = cmd.property
+      modules.erasePrint(ctx, cnvs);
       modules.erasePrint(stx, strCnvs);
       modules.textPrint(stx, strCnvs, "SAMPLERATE: " + String(cmd.property) + "Hz")
       setTimeout(() => {
@@ -1306,6 +1384,7 @@ const doCmd = (cmd) => {
       break;
     case "GLITCH":
       modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
       modules.textPrint(stx,strCnvs,cmd.property);
       setTimeout(()=>{
         modules.erasePrint(stx, strCnvs);
@@ -1322,6 +1401,7 @@ const doCmd = (cmd) => {
       stop()
       videoStop()
       modules.textPrint(stx, strCnvs, "STOP")
+      modules.erasePrint(ctx, cnvs);
       setTimeout(()=>{
         modules.erasePrint(stx, strCnvs)
         modules.whitePrint(ctx, canvas)
@@ -1330,6 +1410,7 @@ const doCmd = (cmd) => {
       break;
     case "NUMBER":
       modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
       modules.textPrint(stx, strCnvs, cmd["property"]);
       setTimeout(()=>{
         modules.erasePrint(stx, strCnvs);
@@ -1375,6 +1456,7 @@ const doCmd = (cmd) => {
     case "INSTRUCTION":
       videoStop();
       modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
       modules.textPrint(stx, strCnvs, cmd["property"]["text"]);
       if(client != "inside") alertPlay();
       cmdMode.instruction = false
@@ -1384,6 +1466,22 @@ const doCmd = (cmd) => {
       }, cmd["property"]["duration"]);
       speakVoice(cmd.property.text)
       break;
+    case "FACEDETECT":
+      modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
+      if(cmd.property){
+        modules.textPrint(stx, strCnvs, "FACE DETECT");
+      } else {
+        modules.textPrint(stx, strCnvs, "NOT FACE DETECT");
+      }
+      setTimeout(()=>{
+        modules.erasePrint(stx, strCnvs);
+      }, 500);
+      ctrackerMode = cmd.property
+      speakVoice("FACE DETECT")
+      break;
+    case "TILE":
+      tileFlag = cmd.property
     default:
       for(let key in streamList){
         if(key === cmd["cmd"]){
@@ -1391,6 +1489,7 @@ const doCmd = (cmd) => {
           videoMode.mode = "chat";
           videoMode.option = "none";
           modules.erasePrint(stx, strCnvs);
+          modules.erasePrint(ctx, cnvs);
           modules.textPrint(stx, strCnvs, cmd["cmd"]);
           setTimeout(()=> {
             modules.erasePrint(stx, strCnvs);
@@ -1454,14 +1553,63 @@ const pastPresent = (status) =>{
   }
 }
 
-const playVideo = (video) => {
+let tileHsh = {}
+
+const playVideo = (video, source) => {
   image = new Image();
   image.src = video;
-  const wdth = window.innerWidth
-  const hght = (wdth * 3) / 4
+  //  console.log("image width:" + String(image.width) + ", image height:" + String(image.height))
+  //console.log("window width:" + String(window.innerWidth) + ", window height:" + String(window.innerHeight))
+  //console.log("width:" + String(wdth) + ",height:" + String(hght))
+  /*
+  if(image.width > (image.height * 4) / 3) {
+    wdth = window.innerWidth
+    //const hght = (wdth * 3) / 4
+    hght = wdth * (image.height / image.width)
+  } else {
+    hght = window.innerHeight
+    wdth = hght * (image.width / image.height)
+  }
+  */
 
   image.onload = function(){
-    receive_ctx.drawImage(image, 0, 0, wdth, hght);
+    let wdth
+    let hght
+    let x = 0
+    let y = 0
+    console.log("debug videoPlay")
+    if(tileFlag && source && source != socket.id){
+      if(source in tileHsh) {
+      } else {
+        let area = Object.keys(tileHsh).length % 4
+        let ratio = Math.random()/2 + 0.4
+        tileHsh[source] = {
+          x: (area % 2) * (window.innerWidth / 2) + Math.floor(Math.random() * (window.innerWidth / 2 - image.width * ratio)),
+          y: (Math.floor(area / 2)) * (window.innerHeight / 2) + Math.floor(Math.random() * (window.innerHeight / 2 - image.height * ratio)),
+          w: image.width * ratio,
+          h: image.height * ratio
+        }
+      }
+      x = tileHsh[source].x
+      y = tileHsh[source].y
+      wdth = tileHsh[source].w
+      hght = tileHsh[source].h
+    } else {
+      console.log("debug not tile")
+        let aspect = image.width / image.height
+        console.log(aspect)
+        if(aspect > (window.innerWidth / window.innerHeight)) {
+          wdth = window.innerWidth
+          hght = wdth / aspect
+        } else {
+          hght = window.innerHeight
+          wdth = hght * aspect
+        }
+    }
+  //  console.log("image width:" + String(image.width) + ", image height:" + String(image.height))
+  //console.log("window width:" + String(window.innerWidth) + ", window height:" + String(window.innerHeight))
+    console.log("width:" + String(wdth) + ",height:" + String(hght) + ", x:"+ x + ", y:"+ y)
+    receive_ctx.drawImage(image, x, y, wdth, hght);
   }
 }
 
@@ -1478,15 +1626,6 @@ const stopLapse = ()=>{
   clearInterval(setLapse);
 }
 
-/*
-const emitInterval = 120000;
-setInterval(() => {
-  // if(videoMode.mode === "none"){
-    // console.log("送信");
-    timelapseFlag = true;
-  // }
-}, emitInterval);
-*/
 
 //ctrlView ctrl
 const rangeChange = (e)=>{
@@ -1634,9 +1773,11 @@ const keyMap = {
 '121' : 'f10',
 '122' : 'f11',
 '123' : 'f12',
-'188' : 'comma',
+'188' : ',',
 "190" : ".",
 "189" : "_",
 "226" : "_",
 "220" : "_"
 };
+
+modules.textPrint(stx, strCnvs, "click screen")
