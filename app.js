@@ -17,34 +17,13 @@ const requestOption = {
   url: 'https://knd.space/getBufferData/',
   json: true
 };
-/*
-const twitter = require('twitter')
-const client = new twitter(JSON.parse(fs.readFileSync('./lib/twitter.json','utf-8')))
-let tweetArr = ["ライブをライブ配信します","ライブをライブ配信するライブをしています","ライブをライブ配信されたひとが参加するライブをしています","ライブをライブ配信されたひとによるライブを配信しています","ライブをしています","ライブを配信しています","ライブ","配信","やってます"]
-let tweetFlag = false
-setInterval(function() {
-  if(tweetFlag) tweet(tweetArr.shift())
-}, 300000)
-
-const tweet = (text) => {
-  client.post('statuses/update', {status: text + ' https://knd.space/chat'},(err,twt,res) =>{
-    if(!err) {
-      console.log(twt)
-    } else {
-      console.log(err)
-    }
-  })
-}
-*/
 
 
 const exportComponent = require('./exportFunction.js');
 const keycodeMap = require ('./lib/keyCode.json');
 let statusList = require ('./lib/status.json');
 let dt = new Date();
-//const logFilePath = process.env.HOME + "/Dropbox/log/" + dt.toFormat("YYYYMMDDHH24MMSS") + ".json"
 const logFilePath = "./log" + dt.toFormat("YYYYMMDDHH24MMSS") + ".json"
-//const logFilePath = "/Volumes/FDD/doc/share/local/" + dt.toFormat("YYYYMMDDHH24MMSS") + ".json"
 
 //getUserMediaのためのHTTPS化
 const https = require('https');
@@ -54,13 +33,7 @@ const http = require('http');
 const options = {
   key: fs.readFileSync(process.env.HTTPSKEY_PATH + 'privkey.pem'),
   cert: fs.readFileSync(process.env.HTTPSKEY_PATH + 'cert.pem')
-//  key: fs.readFileSync('./httpsKeys/' + 'privkey.pem'),
-//  cert: fs.readFileSync('./httpsKeys/' + 'cert.pem')
 }
-
-//const MongoClient = require('mongodb').MongoClient;
-//const mdUrl = "mongodb://160.16.92.160:27017/nodejs";
-//const mdUrl = "mongodb://localhost:27017/nodejs";
 
 const app = express();
 app.set('views', path.join(__dirname, 'views'));
@@ -627,14 +600,6 @@ const postToInternet = (chunk) =>{
 
 const cmdFromServer = (cmdStrings, alertFlag) =>{
   switch(cmdStrings){
-    case "TWEET":
-      if(tweetFlag){
-        tweetFlag = false
-      } else {
-        tweetFlag = true
-        //tweet(tweetArr.shift())
-      }
-      break;
     case "START":
       timelapseFlag = true;
       io.emit('textFromServer',{
