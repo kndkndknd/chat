@@ -1,15 +1,32 @@
 const modules = require('./module.js');
+/*
+let cmdMode = {
+  "sinewave": false,
+  "whitenoise": false,
+  "feedback": false,
+  "instruction": false
+}
+*/
+let videoMode = {"mode": "none", "option": "none"}; //"record" or "playback"
+let timelapseMode = false;
+let strings = "";
+let serverFlag = false;
+let standAlone = false;
+let streamList;
+
 console.log(socket)
 
 navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
 window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.msAudioContext;
 
+let start = false
 let audioContext
 let masterGain
 let lpFilter
 let feedbackGain
 let filter
+let solFilter
 let javascriptnode
 let osc
 let oscGain
@@ -26,6 +43,13 @@ let buf1
 let chatGain
 let convolver
 let revGain
+//analyser
+let analyser
+let bgn
+let bgnGain
+//accelerate
+let accOsc
+let accGain
 
 let gainVal = {
   "master": 0.7,
@@ -33,7 +57,7 @@ let gainVal = {
   "OSC": 1,
   "BASS": 0.7,
   "CLICK": 0.7,
-  "NOISE": 0.3,
+  "NOISE": 0.5,
   "CHAT": 1,
   "PLAYBACK": 0.7,
   "TIMELAPSE": 0.7,
@@ -45,13 +69,36 @@ let fadeVal = {
   "IN": 0,
   "OUT": 0
 }
+let cmdMode = {
+  "sinewave": false,
+  "whitenoise": false,
+  "feedback": false,
+  "instruction": false,
+  "FACEDETECT":{
+    "FLAG": false
+  },
+  "CHAT": {
+    "BGN": false
+  },
+  "FLASH": false,
+  "BPM": 60
+}
+const userAgent = window.navigator.userAgent.toLowerCase()
+if(userAgent.indexOf('iphone') != -1 || userAgent.indexOf('android') != -1) {
+  cmdMode.mobile = true
+} else {
+  cmdMode.mobile = false
+}
+
+console.log(window.navigator.userAgent)
 
 let prevGain = 0.7;
 
 let oscPortament = 0;
 let streamBuffer = [];
 let lookBackBuffer = [];
-let loopBuffer = {}
+let localBuffer = []
+let quantizeBuffer = {}
 let bufferSize = 8192;
 let bufferRate = 48000;
 let chatBuffer = {};
@@ -63,20 +110,24 @@ let playTarget = ""
 let localSampleRate = 0
 
 let tileFlag = false
+let quantizeInterval = null
 
 // voice
-const ssu = new SpeechSynthesisUtterance();
+let ssu = new SpeechSynthesisUtterance();
 ssu.lang = 'en-EN';
+ssu.rate = 1
 let voice =false;
+let text2No = 0
+let textPrintProtect = false
 
-const modList= [0.5, 0.5, 1, 18];
-const chordList = [1, 4/3, 9/4, 15/8, 17/8, 7/3, 11/3];
-let chordChange = 0;
-let modChange = 0;
 let freqVal;
 
 // alert sound
 let alertBuffer = null;
+
+//camera flash
+let imageCapture
+let video_track
 
 //face detect
 let ctracker = new clm.tracker();
@@ -88,6 +139,17 @@ const alertPlay = () => {
   src.start();
   // console.log("alert");
 }
+//for 20190608
+const samplePlay = (b) => {
+  let src = audioContext.createBufferSource();
+  src.buffer = b;
+  src.connect(audioContext.destination);
+  src.start();
+  // console.log("alert");
+}
+
+
+
 const click = (frequency) => {
   let currentTime = audioContext.currentTime
   if(frequency){
@@ -165,45 +227,76 @@ const filterChange = () => { //LPF
 let image;
 let receive;
 let receive_ctx;
+let loopFlag = true
+let loopCount = Math.random() * 10
 const onAudioProcess = (e) => {
   if(videoMode.mode != "none" && videoMode.mode != "wait"){
     //consol.log(videoMode);
     let bufferData = new Float32Array(bufferSize);
     e.inputBuffer.copyFromChannel(bufferData, 0);
     if(videoMode.mode === "record"){
+      console.log("debug record mode")
       if(videoMode.option === "none") {
         socket.emit('chunkFromClient', {"audio":bufferData, "video":funcToBase64(buffer, video), "target": "PLAYBACK"})
+      } else if(videoMode.option === "local") {
+        streamBuffer.push({
+          "audio": bufferData,
+          "video": funcToBase64(buffer, video)
+        });
+        console.log("streamBuffer: " + String(streamBuffer.length))
       } else {
         socket.emit('chunkFromClient', {"audio":bufferData, "video":funcToBase64(buffer, video), "target": videoMode.option})
+        console.log(videoMode.option)
       }
     } else if(videoMode.option === "loop" && videoMode.mode === "chat"){
-        //console.log(loopBuffer)
-        if("audio" in chatBuffer) {
+      //if(loopFlag) {
+      if(streamBuffer.length > loopCount) {
+        shiftBuff = streamBuffer.shift()
+        /*
+        let shiftNo = streamBuffer.length * Math.floor(Math.random())
+        let shiftBuff = streamBuffer[shiftNo]
+        */
+        console.log(shiftBuff.video)
+        console.log(streamBuffer.length)
+        console.log(shiftBuff.debug)
+        //console.log(shiftNo)
+        playAudioStream(shiftBuff.audio, bufferRate, 1, false)
+        playVideo(shiftBuff.video)
+        streamBuffer.push(shiftBuff)
+      } else {
+        if("audio" in chatBuffer && "video" in chatBuffer) {
+          streamBuffer.push({"audio": bufferData, "video": funcToBase64(buffer, video)})
+          //streamBuffer.push(chatBuffer)
+          console.log(streamBuffer.length)
+          streamBuffer[streamBuffer.length - 1].debug = streamBuffer.length
+          playAudioStream(bufferData,bufferRate,1,false);
+          playVideo(funcToBase64(buffer, video))
+          //playAudioStream(chatBuffer.audio,bufferRate,1,false);
+          //playVideo(chatBuffer.video);
+        }
+        /*if("audio" in chatBuffer){
+
           playAudioStream(chatBuffer.audio,bufferRate,1,false);
-        //if("audio" in loopBuffer) {
-          //playAudioStream(loopBuffer.audio,bufferRate,1,false);
         }
         if("video" in chatBuffer){
           playVideo(chatBuffer["video"]);
-        //if("video" in loopBuffer){
-          playVideo(loopBuffer["video"]); //たぶんここ修正要
-          modules.textPrint(stx, strCnvs, "LOOP");
+          //modules.textPrint(stx, strCnvs, "LOOP");
+          setTimeout(()=>{
+            //modules.erasePrint(ctx, canvas);
+          },300)
         } else {
           modules.erasePrint(ctx, canvas);
           modules.textPrint(ctx, canvas, stringsClient);
         }
-      socket.emit('AckFromClient', "CHAT")
-      /*
-      socket.emit('chunkFromClient', {
-        audio :"",
-        video :"",
-        target:"CHAT"
-      });*/
-      /*
-        chatBuffer["audio"] = bufferData;
-        chatBuffer["video"] = funcToBase64(buffer, video);
-        chatBuffer["target"] = "CHAT";
+        loopFlag = false
+      } else {
+        setTimeout(()=> {
+          modules.erasePrint(ctx, canvas);
+          loopFlag = true
+        },(1000*8192)/playsampleRate)
         */
+      }
+      socket.emit('AckFromClient', "CHAT")
     } else if(videoMode.option === "metronome" && videoMode.mode === "chat"){
     } else if(videoMode.option != "drone"){
       switch(videoMode.mode){
@@ -211,6 +304,7 @@ const onAudioProcess = (e) => {
           chatBuffer["audio"] = bufferData;
           chatBuffer["video"] = funcToBase64(buffer, video);
           chatBuffer["target"] = "CHAT";
+          //if(videoMode.option === "loop") loopBuffer = chatBuffer
         break;
         case "pastBuff":
           streamBuffer.push({
@@ -235,9 +329,9 @@ const onAudioProcess = (e) => {
             })
           break;
         case "playback":
-          console.log("debug")
           let playChunk = {};
           if(streamBuffer.length>0){
+            console.log(playChunk.audio)
             playChunk = streamBuffer.shift();
             playAudioStream(playChunk.audio,bufferRate,gainVal.PLAYBACK,false);
             playVideo(playChunk.video);
@@ -271,6 +365,23 @@ const onAudioProcess = (e) => {
     socket.emit('chunkFromClient', sendChunk)
     timelapseFlag = false;
   }
+  if(cmdMode.CHAT.BGN){
+    let freqData = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(freqData);
+    console.log(freqData.length)
+    let freq = {freq:0,val:0}
+    for (let i = 0, len = freqData.length; i < len; i++) {
+      //if(freq.val < freqData[i]) freq = {freq:(i*20000/2048), val:freqData[i]/256}
+      if(freq.val < freqData[i]) freq = {freq:(i*22050/analyser.fftSize), val:freqData[i]/256}
+    }
+    //let currentTime = audioContext.currentTime
+    freq.val = freq.val * 1 //later
+    if(freq.val > 1) freq.val = 1
+    console.log(freq)
+    let currentTime = audioContext.currentTime;
+    bgnGain.gain.setTargetAtTime(freq.val,currentTime,0.05)
+    bgn.frequency.setTargetAtTime(freq.freq,currentTime,0.05)
+  }
 }
 const debugPlay = (flo32arr, sampleRate, volume, glitch) => {
   let audio_buf = audioContext.createBuffer(1, bufferSize, sampleRate),
@@ -280,7 +391,6 @@ const debugPlay = (flo32arr, sampleRate, volume, glitch) => {
   for(let i = 0; i < audioData.length; i++){
     audioData[i] = flo32arr[i];
   }
-  console.log("debug")
   console.log(flo32arr)
 
   audio_src.buffer = audio_buf;
@@ -324,7 +434,8 @@ droneflag = true;
 const initialize = () =>{
   modules.erasePrint(stx, strCnvs);
   socket.emit("startFromClient")
-
+  start = true
+  console.log("start")
   //audioContext
   audioContext = new AudioContext();
   masterGain = audioContext.createGain();
@@ -334,6 +445,11 @@ const initialize = () =>{
   lpFilter = audioContext.createBiquadFilter();
   lpFilter.type = "lowpass";
   lpFilter.frequency.setValueAtTime(20000,0);
+  // solfage LPF
+  solFilter = audioContext.createBiquadFilter();
+  solFilter.type = "lowpass";
+  solFilter.frequency.setValueAtTime(1000,0);
+  //solFilter = new BiquadFilterNode(audioContext) 
   // feedback
   feedbackGain = audioContext.createGain();
   feedbackGain.gain.setValueAtTime(0,0);
@@ -380,6 +496,22 @@ const initialize = () =>{
   whitenoiseNode.connect(noiseGain);
   noiseGain.connect(masterGain);
   whitenoise.start(0);
+    // bgn
+    bgn = audioContext.createOscillator();
+    bgnGain = audioContext.createGain();
+    bgn.connect(bgnGain);
+    bgn.frequency.setValueAtTime(440, 0);
+    bgnGain.gain.setValueAtTime(0,0);
+    bgnGain.connect(masterGain);
+    bgn.start(0);
+  //accelerate
+    accOsc = audioContext.createOscillator();
+    accGain = audioContext.createGain();
+    accOsc.connect(accGain);
+    accOsc.frequency.setValueAtTime(0, 0);
+    accGain.gain.setValueAtTime(0,0);
+    accGain.connect(masterGain);
+    accOsc.start(0);
   // chat
   chatGain = audioContext.createGain();
   chatGain.gain.setValueAtTime(1,0);
@@ -387,50 +519,66 @@ const initialize = () =>{
 
   convolver = audioContext.createConvolver();
   revGain = audioContext.createGain();
-  revGain.gain.setValueAtTime(1.6,0);
+  revGain.gain.setValueAtTime(1,0);
+  //revGain.gain.setValueAtTime(1.6,0);
   //console.log(convolver.context.sampleRate);
   convolver.connect(revGain);
   revGain.connect(masterGain);
   convolver.connect(masterGain);
-  loadSample(audioContext, "/files/alert.wav");
+  loadSample(audioContext, "/files/alert.wav")
 
   //face detect
   video = document.getElementById('video');
   video.width  = 640;
   video.height = 480
-  let video_track = null
+  video_track = null
   video.play();
+  const SUPPORTS_MEDIA_DEVICES = 'mediaDevices' in navigator;
+  //if(cmdMode.mobile) {
+    if (SUPPORTS_MEDIA_DEVICES && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.enumerateDevices().then((devices) => {
+        const cameras = devices.filter((device) => device.kind === 'videoinput');
+        if (cameras.length === 0) {
+          throw 'No camera found on this device.';
+        }
+        //const camera = cameras[cameras.length - 1];
+        const camera = cameras[1];
+        navigator.mediaDevices.getUserMedia({
+          video: {
+            //facingMode: 'environment'
+            deviceId: camera.deviceId,
+            facingMode: ['user', 'environment'],
+            height: {ideal: 1080},
+            width: {ideal: 1920}
+          },audio : true 
+        }).then((stream) =>{
+          let mediastreamsource = void 0;
+          mediastreamsource = audioContext.createMediaStreamSource(stream);
+          mediastreamsource.connect(filter);
+          filter.connect(lpFilter)
+          lpFilter.connect(javascriptnode); //LPF
+          filter.connect(feedbackGain);
+          feedbackGain.connect(masterGain);
+          //analyser
+          analyser = audioContext.createAnalyser();
+          mediastreamsource.connect(solFilter);
+          solFilter.connect(analyser);
+          //
 
-  if(navigator.mediaDevices.getUserMedia){
-    navigator.mediaDevices.getUserMedia({
-      video: true, audio: /*true*/{
-        "mandatory": {
-          "googEchoCancellation": false,
-          "googAutoGainControl": false,
-          "googNoiseSuppression": false,
-          "googHighpassFilter": false
-        },
-        //"volume": micLevel,
-        "optional": []
-      } 
-    }).then((stream) =>{
-      let mediastreamsource = void 0;
-      mediastreamsource = audioContext.createMediaStreamSource(stream);
-      mediastreamsource.connect(filter);
-      filter.connect(lpFilter)
-      lpFilter.connect(javascriptnode); //LPF
-      filter.connect(feedbackGain);
-      feedbackGain.connect(masterGain);
-
-      //face detect
-      video_track = stream.getVideoTracks()[0];
-      video.srcObject = stream
-      video.volume = 0;
-      renderStart();
-    },  (e) =>{
-      return console.log(e);
-    });
-  } else {
+          //face detect
+          video_track = stream.getVideoTracks()[0];
+          video.srcObject = stream
+          video.volume = 0;
+          renderStart();
+          // camera flash
+          imageCapture = new ImageCapture(video_track)
+          //modules.textPrint(stx,strCnvs,String(imageCapture))
+        },  (e) =>{
+          return console.log(e)
+        })
+      })
+    //}
+  } else { //chromium 50.0.2625.0
     navigator.getUserMedia({
       video: true, audio: {
         "mandatory": {
@@ -448,6 +596,12 @@ const initialize = () =>{
       filter.connect(javascriptnode);
       filter.connect(feedbackGain);
       feedbackGain.connect(masterGain);
+      //analyser
+      analyser = audioContext.createAnalyser();
+      //analyser = audioContext.createAnalyser();
+      mediastreamsource.connect(solFilter);
+      solFilter.connect(analyser);
+      //mediastreamsource.connect(analyser);
       //face detect 
       video_track = stream.getVideoTracks()[0];
       video.src = window.URL.createObjectURL(stream);
@@ -465,7 +619,7 @@ const initialize = () =>{
   image = document.createElement("img");
   receive = document.getElementById("cnvs");
   receive_ctx = receive.getContext("2d");
-
+  //face detect
   let tracking_started = false;
   video.addEventListener('playing', function(){
     if (tracking_started === true) {
@@ -474,7 +628,6 @@ const initialize = () =>{
     ctracker.init();
     ctracker.start(video);
     detectLoop()
-    //console.log("debug3")
 
     video.onresize = function() {
         ctracker.stop();
@@ -485,60 +638,67 @@ const initialize = () =>{
     tracking_started = true;
   });
 
-  const detectLoop = () =>{
+  const detectLoop = () => {
     requestAnimationFrame(detectLoop);
-    if(ctrackerMode){
-      modules.textPrint(stx,strCnvs,"FACE")
-      setTimeout(()=>{
-        modules.erasePrint(stx, strCnvs);
-      },500)
-      if(ctracker.getCurrentPosition()){
-        //modules.textPrint(stx, strCnvs, "FACE DETECT");
-        if(Math.random() < 0.1) {
-          ctrackerMode = false
-          let cmdArr = ["STOP"]
-          for(let cmd in cmdMode){
-            if(!cmdMode[cmd] || cmd != "instruction") cmdArr.push(cmd)
+    if(cmdMode.FACEDETECT.FLAG) {
+      if(ctrackerMode){
+        if(ctracker.getCurrentPosition()){
+          if(videoMode.mode != "none" && videoMode.mode != "record"){
+            ctrackerMode = false
+            if(videMode.option === "loop") {
+              doCmd({cmd:"LOOP"})
+            } else {
+              if(Math.random() < 0.8) {
+                localSampleRate = 3000 + Math.random() * 93000
+              } else {
+                doCmd({cmd:"LOOP"})
+              }
+              modules.textPrint(stx,strCnvs,"FACE DETECT")
+              socket.emit("textFromClient", "FACE DETECT")
+              setTimeout(()=>{
+                modules.erasePrint(stx, strCnvs);
+              },500)
+              setTimeout(()=>{
+                ctrackerMode = true
+              },10000)
+            }
+          } else {
+            ctrackerMode = false
+            let currentTime = audioContext.currentTime
+            clickOsc.frequency.setValueAtTime(440,0)
+            clickGain.gain.setValueAtTime(gainVal["CLICK"], currentTime);
+            clickGain.gain.setTargetAtTime(0,currentTime,0.03);
+            modules.erasePrint(stx, strCnvs);
+            modules.erasePrint(ctx, cnvs);
+            modules.textPrint(stx,strCnvs,"FACE DETECT")
+            setTimeout(()=>{
+              modules.erasePrint(stx, strCnvs);
+              modules.erasePrint(ctx, cnvs);
+            },500)
+            setTimeout(()=>{
+              ctrackerMode = true
+            },1000)
           }
-          let targetCmd = {"cmd": cmdArr[Math.floor(Math.random() * cmdArr.length)].toUpperCase(), "stopOther":false}
-          if(targetCmd.cmd === "SINEWAVE") {
-            targetCmd.property = 40 + (Math.random() * 1000)
-          }
-          doCmd(targetCmd)
-          setTimeout(()=>{
-            ctrackerMode = true
-          },10000)
-        } else if(videoMode.mode != "none" && videoMode.mode != "record"){
-          ctrackerMode = false
-          localSampleRate = 3000 + Math.random() * 93000
-          setTimeout(()=>{
-            ctrackerMode = true
-          },10000)
-        } else if (oscGain.gain.value > 0){
-          modules.erasePrint(stx, strCnvs);
-          modules.erasePrint(ctx, cnvs);
-          let freqVal = osc.frequency.value * (0.5 + Math.random())
-          modules.textPrint(stx, strCnvs, String(freqVal) + "Hz");
-          ctrackerMode = false
-          let currentTime = audioContext.currentTime;
-          oscPortament = Math.random() * 20
-          osc.frequency.setTargetAtTime(freqVal,currentTime,oscPortament);
-          setTimeout(()=>{
-            ctrackerMode = true
-          },10000)
         } else {
-          click()
+          modules.erasePrint(stx, strCnvs);
+          console.log(ctracker.getCurrentPosition())
+          console.log("not detect")
         }
-        //console.log(ctracker.getCurrentPosition())
-      } else {
-    //    modules.erasePrint(stx, strCnvs);
-        //console.log(ctracker.getCurrentPosition())
-        //console.log("not detect")
       }
     }
   }
+  if(streamFlag) videoMode.mode = "chat" 
 };
-
+//accelerate
+let accelerateInterval
+const startAccelerate = (interval) => {
+  accelerateInterval = setInterval(() => {
+    let currentTime = audioContext.currentTime;
+    modules.textPrint(stx, strCnvs, String(accFreq))
+    accOsc.frequency.setTargetAtTime(accFreq, currentTime, 0.01);
+    //accOsc.frequency.setTargetAtTime(freq.freq,currentTime,0.05)
+  },interval)
+}
 //metronome
 let rhythmProperty = {
   "bpm": 60,
@@ -588,6 +748,7 @@ let stringsClient = "";
 const keyDown = (e) => {
   console.log(e.keyCode);
   let charCode = keyMap[e.keyCode]
+  if(charCode === "enter" && !start) initialize()
   if(!standAlone) {
     if(charCode === "enter" && (stringsClient === "LOCAL" || stringsClient === "STANDALONE" || stringsClient === "NETWORK" || stringsClient === "CONNECT")){
       standAlone = true;
@@ -603,6 +764,7 @@ const keyDown = (e) => {
       modules.erasePrint(stx, strCnvs);
       modules.textPrint(stx, strCnvs, stringsClient);
       if(e.keyCode === 13 && stringsClient === "VOICE"){
+        textPrintProtect = true
         if(voice){
           voice = false;
           modules.erasePrint(stx, strCnvs);
@@ -623,6 +785,10 @@ const keyDown = (e) => {
             //modules.charEmit(37, socket);
           },500);
         }
+        socket.emit("voiceCtrlFromClient", voice)
+        setTimeout(() => {
+          textPrintProtect = false
+        },1000)
       }
     }
   } else { //STANDALONE
@@ -689,7 +855,9 @@ const keyDown = (e) => {
 
 //window.addEventListener("load", initialize, false);
 let eListener = document.getElementById("wrapper")
-eListener.addEventListener("click", initialize, false);
+eListener.addEventListener("click", (()=>{
+  if(!start) initialize()
+}), false);
 window.addEventListener('resize', (e) =>{
   console.log('resizing')
   sizing()
@@ -711,7 +879,7 @@ let stx = strCnvs.getContext('2d');
 let buffer;
 let bufferContext;
 
-const sizing=() =>{
+const sizing =() =>{
   document.getElementById("cnvs").setAttribute("height", String(window.innerHeight) + "px")
   document.getElementById("cnvs").setAttribute("width", String(window.innerWidth) + "px")
   document.getElementById("strCnvs").setAttribute("height", String(window.innerHeight) + "px")
@@ -736,18 +904,24 @@ const renderStart=()=> {
   }
   render();
 }
-
+let streamFlag = false
 // socket
-socket.emit('connectFromClient', client);
+socket.emit('connectFromClient', "client");
+//socket.emit('connectFromClient', client);
 socket.on('connectFromServer', (data) => {
-  rhythmProperty = data.rhythm
+  rhythmProperty = data.clientStatus.rhythm
+  for(let key in data.streamFlag) {
+    if(data.streamFlag[key]) streamFlag = true
+  }
 })
 socket.on('stringsFromServer', (data) =>{
   //modules.erasePrint(stx, strCnvs)
-  stx.clearRect(0, 0, strCnvs.width, strCnvs.height);
-  console.log(data)
-  stringsClient = data
-  modules.textPrint(stx,strCnvs, stringsClient)
+  if(!textPrintProtect) {
+    stx.clearRect(0, 0, strCnvs.width, strCnvs.height);
+    console.log(data)
+    stringsClient = data
+    modules.textPrint(stx,strCnvs, stringsClient)
+  }
 });
 socket.on('erasePrintFromServer',() =>{
   //stx.clearRect(0, 0, strCnvs.width, strCnvs.height);
@@ -773,12 +947,15 @@ socket.on('statusFromServer', (data)=>{
     bufferRate = Number(data.sampleRate.SECBEFORE)
   }
 })
-
 socket.on('cmdFromServer', (data) => {
   if(standAlone === false){
     //console.log(data);
     if(data.target === undefined || data.target === String(socket.id)){
       doCmd(data);
+      textPrintProtect = true
+      setTimeout(()=>{
+        textPrintProtect = false
+      },1000)
     } else {
       modules.erasePrint(stx, strCnvs);
       modules.textPrint(stx, strCnvs, data.cmd);
@@ -802,14 +979,19 @@ socket.on('textFromServer', (data) => {
       videoMode.option = previousStatus.videoOption
     }, 10000)
   }
-  console.log("textFromServer")
-  console.log(data.text)
   //modules.erasePrint(stx, strCnvs);
   //modules.textPrint(stx, strCnvs, data.text);
-  modules.erasePrint(stx, strCnvs)
-  modules.textPrint(stx,strCnvs, data.text)
-  speakVoice(data.text)
-  stringsClient = "";
+  if(!textPrintProtect) {
+    modules.erasePrint(stx, strCnvs)
+    modules.textPrint(stx,strCnvs, data.text)
+    speakVoice(data.text)
+    stringsClient = "";
+    
+    if(data.timeout === undefined || (data.timeout != undefined && data.timeout)) {
+      setTimeout(()=>{modules.erasePrint(stx,strCnvs)},500)
+    }
+  //console.log(data.text)
+  }
 });
 
 socket.on('instructionFromServer', (data) => {
@@ -832,12 +1014,18 @@ socket.on('streamListFromServer', (data) =>{
 
 socket.on('streamReqFromServer', (data) => {
   console.log(data)
+  //modules.textPrint(stx, strCnvs, "streamreq")
   switch(data){
     case "CHAT":
     case "droneChat":
       //if(chatBuffer!= {}){
       //console.log(chatBuffer)
-      if(chatBuffer!= {} && videoMode.option != "loop") socket.emit('chunkFromClient', chatBuffer);
+      //if(chatBuffer!= {}) socket.emit('chunkFromClient', chatBuffer);
+      if(chatBuffer!= {} && videoMode.option != "loop") {
+        socket.emit('chunkFromClient', chatBuffer);
+      } else if(chatBuffer === {} ){
+        socket.emit('AckFromClient', "CHAT")
+      }
       /*} else {
         socket.emit('chunkFromClient', {
           "audio" : "",
@@ -853,9 +1041,10 @@ socket.on('oscFromServer',(data) => {
   let uint8arr = osc.toBuffer(data);
 });
 socket.on('chunkFromServer', (data) => {
-  console.log(Object.keys(data))
+  //modules.textPrint(stx, strCnvs, "chunk")
+  //console.log(Object.keys(data))
   //if(videoMode.mode === "chat"){
-  if(videoMode.mode != "record" && videoMode.option != "loop"){
+  if(videoMode.mode != "record"){
   //if(videoMode.mode != "record" && videoMode.option != "loop"){
     //console.log(videoMode.option)
     if(videoMode.mode != "chat" && data.target === "CHAT" && videoMode.mode != "wait") videoMode.mode = "chat"
@@ -878,27 +1067,37 @@ socket.on('chunkFromServer', (data) => {
           //console.log(data.audio)
           if(data.sampleRate != undefined){
           if(localSampleRate === 0) {
-            playsampleRate = Number(data.sampleRate)
-          } else {
-            playsampleRate = localSampleRate
+              playsampleRate = Number(data.sampleRate)
+            } else {
+              playsampleRate = localSampleRate
+            }
           }
-          }
+          console.log("rate:"+ String(playsampleRate))
+          console.log("serverrate:"+ String(data.sampleRate))
             //let playsampleRate = Number(data.sampleRate)
           //}
           //console.log(playsampleRate);
           //playAudioStream(data["audio"],Number(data["sampleRate"]),chunkGain,data["glitch"]);
           //console.log(playsampleRate)
-          if(data.target === "INTERNET"){
-            debugPlay(data["audio"],playsampleRate,chunkGain,data["glitch"]);
-          }else {
-            console.log("debug audio")
-            playAudioStream(data["audio"],playsampleRate,chunkGain,data["glitch"]);
+          if(videoMode.option != "quantize"){ 
+            if(data.target === "INTERNET"){
+              debugPlay(data["audio"],playsampleRate,chunkGain,data["glitch"]);
+            }else {
+              playAudioStream(data["audio"],playsampleRate,chunkGain,data["glitch"]);
+            }
+          } else {
+            quantizeBuffer.audio = data.audio
           }
           //if(data.glitch) playGlitchedURL(data.video);
         }
         if(data["video"] != undefined && data["video"] != "") {
-            console.log("debug video")
-           playVideo(data.video, data.source);
+          if(videoMode.option != "quantize") {
+            //console.log(data.video)
+            //console.log("debug")
+            playVideo(data.video, data.source);
+          } else {
+            quantizeBuffer.video = data.video
+          }
         } else if(data.target != "CHAT"){
           modules.erasePrint(stx, strCnvs);
           modules.textPrint(stx, strCnvs, data["target"]);
@@ -910,6 +1109,7 @@ socket.on('chunkFromServer', (data) => {
   }
   if(data["target"] === "CHAT"){
     socket.emit('AckFromClient', "CHAT");
+    //modules.textPrint(stx, strCnvs, "Ack")
   } else {
     socket.emit('wavReqFromClient', data["target"]);
   }
@@ -923,11 +1123,12 @@ const speakVoice = (data) =>{
 }
 
 const doCmd = (cmd) => {
-  //console.log("do cmd" + cmd["cmd"]);
+  console.log("do cmd" + cmd["cmd"]);
   let currentTime = audioContext.currentTime;
   switch(cmd["cmd"]){
     case "WHITENOISE":
     case "NOISE":
+      console.log("debug cmd")
 //      stop();
       if(cmd.overlay === undefined || cmd.stopOther){
         oscGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
@@ -984,7 +1185,6 @@ const doCmd = (cmd) => {
         oscGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
       } else {
         cmdMode.sinewave = true
-        chordChange = 0;
         modules.textPrint(stx, strCnvs, String(cmd["property"]) + "Hz");
         if(freqVal != cmd.property){
           freqVal = cmd.property
@@ -1011,7 +1211,6 @@ const doCmd = (cmd) => {
       modules.erasePrint(ctx, cnvs);
       //mode = "sinewave";
       cmdMode.sinewave = true
-      chordChange = 0;
       modules.textPrint(stx, strCnvs, String(freqVal) + "Hz");
       oscGain.gain.setTargetAtTime(gainVal.OSC,currentTime,fadeVal.IN + 0.01);
       speakVoice(String(cmd.property)+ "Hz UP")
@@ -1028,14 +1227,12 @@ const doCmd = (cmd) => {
         }
         //mode = "sinewave";
         cmdMode.sinewave = true
-        chordChange = 0;
         modules.textPrint(stx, strCnvs, String(freqVal) + "Hz");
         oscGain.gain.setTargetAtTime(gainVal.OSC,currentTime,fadeVal.IN + 0.01);
       }
       speakVoice(String(cmd.property)+ "Hz DOWN")
       break;
     case "TWICE":
-      console.log("debug" + cmd.cmd)
       console.log(cmd.cmd)
       modules.erasePrint(stx, strCnvs);
       modules.erasePrint(ctx, cnvs);
@@ -1046,13 +1243,11 @@ const doCmd = (cmd) => {
         osc.frequency.setTargetAtTime(freqVal,currentTime,oscPortament);
       }
       cmdMode.sinewave = true
-      chordChange = 0;
       modules.textPrint(stx, strCnvs, String(freqVal) + "Hz");
       oscGain.gain.setTargetAtTime(gainVal.OSC,currentTime,fadeVal.IN + 0.01);
       speakVoice(String(osc.frequency.value)+ "Hz DOWN")
       break;
     case "THRICE":
-      console.log("debug" + cmd.cmd)
       console.log(cmd.cmd)
       modules.erasePrint(stx, strCnvs);
       modules.erasePrint(ctx, cnvs);
@@ -1063,7 +1258,6 @@ const doCmd = (cmd) => {
         osc.frequency.setTargetAtTime(freqVal,currentTime,oscPortament);
       }
       cmdMode.sinewave = true
-      chordChange = 0;
       modules.textPrint(stx, strCnvs, String(freqVal) + "Hz");
       oscGain.gain.setTargetAtTime(gainVal.OSC,currentTime,fadeVal.IN + 0.01);
       speakVoice(String(osc.frequency.value)+ "Hz DOWN")
@@ -1078,7 +1272,6 @@ const doCmd = (cmd) => {
         osc.frequency.setTargetAtTime(freqVal,currentTime,oscPortament);
       }
       cmdMode.sinewave = true
-      chordChange = 0;
       modules.textPrint(stx, strCnvs, String(freqVal) + "Hz");
       oscGain.gain.setTargetAtTime(gainVal.OSC,currentTime,fadeVal.IN + 0.01);
       speakVoice(String(osc.frequency.value)+ "Hz DOWN")
@@ -1167,7 +1360,6 @@ const doCmd = (cmd) => {
             modules.erasePrint(stx, strCnvs);
           }, 500);
         }
-        console.log("debug")
       } else if(cmd["property"] === "DOWN"){
         modules.erasePrint(stx, strCnvs);
         modules.erasePrint(ctx, cnvs);
@@ -1183,7 +1375,6 @@ const doCmd = (cmd) => {
             modules.erasePrint(stx, strCnvs);
           }, 500);
         }
-        console.log("debug")
         micLevel = 0.1 //later
       } else {
         if(isNaN(Number(cmd["property"])) === false && cmd["property"] != ""){
@@ -1228,7 +1419,6 @@ const doCmd = (cmd) => {
         }
         console.log(fadeVal)
       } else {
-        console.log("debug")
         fadeVal.IN = cmd.property.status
         fadeVal.OUT = cmd.property.status
         console.log(fadeVal)
@@ -1250,7 +1440,9 @@ const doCmd = (cmd) => {
       videoStop();
       let prevVidMode = videoMode.mode
       videoMode.mode = "record";
+      console.log("debug video mode:" + videoMode.mode)
       if(cmd.property != undefined) videoMode.option = cmd.property
+      streamBuffer = [] //for local rec
         modules.erasePrint(ctx, cnvs);
       modules.erasePrint(stx, strCnvs);
       modules.textPrint(stx, strCnvs, "RECORD");
@@ -1260,6 +1452,7 @@ const doCmd = (cmd) => {
           videoMode.mode = prevVidMode
           videoMode.option = "none"
           modules.erasePrint(stx, strCnvs);
+          console.log("debug video mode:" + videoMode.mode)
         }
       }, 5000); //時間は考え中
       speakVoice(cmd.cmd)
@@ -1312,20 +1505,31 @@ const doCmd = (cmd) => {
         speakVoice("NOT " + String(cmd.cmd))
       }
       break;
+    case "QUANTIZE":
+      if(videoMode.mode === "chat"){
+        if(videoMode.option != "quantize") {
+          videoMode.option = "quantize"
+          modules.erasePrint(ctx, canvas);
+          //setTimeout(() => {
+            quantizePlay()
+          //},500)
+        } else {
+          videoMode.option = "none"
+          clearInterval(quantizeInterval)
+          socket.emit('AckFromClient', "CHAT")
+        }
+      }
+      break;
     case "LOOP":
       if(videoMode.mode === "chat"){
         if(videoMode.option != "loop" && videoMode.option != "drone"){
-          //if(cmd.property === 0){
-            videoMode.option = "loop"
-          //if(chatBuffer.audio != undefined && chatBuffer.video != undefined){
-          //  loopBuffer = chatBuffer
-          //}
+          if(videoMode.option === "quantize") clearInterval(quantizeInterval)
+          streamBuffer = [] //for local rec
+          videoMode.option = "loop"
         } else if(videoMode.option === "loop"){
           videoMode.option = "none"
           console.log(chatBuffer.target)
           console.log(playTarget)
-          //loopBuffer = {}
-          //if(chatBuffer["target"] === "CHAT"){
           if(playTarget === "CHAT"){
             socket.emit('AckFromClient', "CHAT");
           } else {
@@ -1348,6 +1552,7 @@ const doCmd = (cmd) => {
       }
       break;
     case "METRONOME":
+      //あとで作り直し、2020/02/02
       console.log(videoMode.mode)
       //console.log(cmd.property);
       //if(cmd.type === "param") {
@@ -1372,15 +1577,50 @@ const doCmd = (cmd) => {
           }
       }
       break;
+    case "BPM":
+      cmdMode.BPM = cmd.property
+      if(videoMode.mode === "chat" && videoMode.option === "quantize") {
+        clearInterval(quantizeInterval)
+        modules.erasePrint(ctx, canvas);
+        /*
+        loopInterval = setInterval(()=> {
+          if("audio" in chatBuffer) {
+            playAudioStream(chatBuffer.audio,playsampleRate,1,false);
+          }
+          if("video" in chatBuffer){
+            playVideo(chatBuffer["video"]);
+            //modules.textPrint(stx, strCnvs, "LOOP");
+          } else {
+            modules.erasePrint(ctx, canvas);
+            modules.textPrint(ctx, canvas, stringsClient);
+          }
+          setTimeout(()=>{
+            modules.erasePrint(ctx, canvas);
+            modules.erasePrint(stx, strCnvs);
+          },(1000*8192)/playsampleRate)
+        },1000 * (15*Math.round(16*Math.random()))/cmdMode.BPM)
+        */
+        quantizePlay()
+      }
+      break;
     case "RATE":
     case "SAMPLERATE":
-      bufferRate = cmd.property
-      modules.erasePrint(ctx, cnvs);
-      modules.erasePrint(stx, strCnvs);
-      modules.textPrint(stx, strCnvs, "SAMPLERATE: " + String(cmd.property) + "Hz")
-      setTimeout(() => {
-        modules.erasePrint(stx, strCnvs)
-      }, 500)
+      //if(localSampleRate === 0 ) {
+        localSampleRate = Number(cmd.property)
+      /*
+      } else {
+        localSampleRate = 0
+      }
+      */
+      if(Number(cmd.property) > 0) {
+        bufferRate = cmd.property
+        modules.erasePrint(ctx, cnvs);
+        modules.erasePrint(stx, strCnvs);
+        modules.textPrint(stx, strCnvs, "SAMPLERATE: " + String(cmd.property) + "Hz")
+        setTimeout(() => {
+          modules.erasePrint(stx, strCnvs)
+        }, 500)
+      }
       break;
     case "GLITCH":
       modules.erasePrint(stx, strCnvs);
@@ -1392,7 +1632,7 @@ const doCmd = (cmd) => {
       speakVoice(cmd.cmd)
       break;
     case "BROWSER":
-      window.open('https://instagram.com', '_blank', 'width=800,height=600');
+      window.open('https://' + cmd.property, '_blank', 'width=' + String(window.innerWidth / 3) + ',height=' + String(window.innerHeight / 3) + ',top=' + String(window.innerWidth * Math.floor(Math.random() * 3)/3) + ',left=' + String(window.innerHeight * Math.floor(Math.random() * 3)/3));
       speakVoice(cmd.cmd)
     case "PREV":
       pastPresent(cmd["property"]);
@@ -1453,19 +1693,6 @@ const doCmd = (cmd) => {
       }
       speakVoice("CONTROL")
       break;
-    case "INSTRUCTION":
-      videoStop();
-      modules.erasePrint(stx, strCnvs);
-      modules.erasePrint(ctx, cnvs);
-      modules.textPrint(stx, strCnvs, cmd["property"]["text"]);
-      if(client != "inside") alertPlay();
-      cmdMode.instruction = false
-      setTimeout(()=>{
-        modules.erasePrint(stx, strCnvs);
-        cmdMode.instruction = false
-      }, cmd["property"]["duration"]);
-      speakVoice(cmd.property.text)
-      break;
     case "FACEDETECT":
       modules.erasePrint(stx, strCnvs);
       modules.erasePrint(ctx, cnvs);
@@ -1478,16 +1705,152 @@ const doCmd = (cmd) => {
         modules.erasePrint(stx, strCnvs);
       }, 500);
       ctrackerMode = cmd.property
+      cmdMode.FACEDETECT.FLAG = cmd.property
       speakVoice("FACE DETECT")
+      break;
+    case "SOLFAGE":
+      if(!cmdMode.CHAT.BGN) {
+        modules.textPrint(stx, strCnvs, "SOLFAGE");
+        setTimeout(()=>{
+          modules.erasePrint(stx, strCnvs);
+        }, 500);
+       /*analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2048
+        filter.connect(analyser);*/
+        cmdMode.CHAT.BGN = true
+        if(videoMode.mode != "chat" && videoMode.mode != "record") {
+          //javascriptnode.onaudioprocess = onChatProcess
+          //javascriptnode.connect(chatGain)
+        }
+      } else {
+        cmdMode.CHAT.BGN = false
+        let currentTime = audioContext.currentTime
+        bgnGain.gain.setTargetAtTime(0,currentTime,0.05)
+        if(videoMode.mode != "chat" && videoMode.mode != "record") {
+          //javascriptnode.disconnect(masterGain);
+        }
+      }
+      break;
+      /*
+    case "ACCELERATE":
+      if(!cmdMode.ACCELERATE) {
+      //modules.textPrint(stx, strCnvs, "test")
+        accGain.gain.setValueAtTime(1,0);
+        window.addEventListener("devicemotion", acceleration)
+        startAccelerate(80)
+      } else {
+        accGain.gain.setValueAtTime(0,0);
+        window.removeEventListener("devicemotion", acceleration)
+        clearInterval(accelerateInterval)
+      }
+      cmdMode.ACCELERATE = !cmdMode.ACCELERATE
+      break;
+      */
+    case "INSTRUCTION":
+      console.log("debug: " + cmd.cmd + " " + cmd.property)
+      //speakVoice(cmd.property)
+      ssu.text = cmd.property;
+      speechSynthesis.speak(ssu);
+      modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
+      modules.textPrint(stx, strCnvs, cmd.property);
       break;
     case "TILE":
       tileFlag = cmd.property
+      break;
+    case "FLASH":
+      //camera flash
+      //modules.textPrint(stx,strCnvs,String(cmdMode.mobile))
+      if(cmdMode.mobile) {
+        //alert(cmdMode.FLASH)
+        if(!cmdMode.FLASH) {
+          //  alert(String(imageCapture))
+          const photoCapabilities = imageCapture.getPhotoCapabilities().then(() => {
+          //  alert("test")
+            //const settings = imageCapture.track.getSettings();
+            const setting = video_track.getCapabilities()
+            //console.log(setting)
+            if(setting.torch){
+              //modules.textPrint(stx,strCnvs,"android")
+              video_track.applyConstraints({
+                advanced: [{torch: true}]
+              })
+            //} else {
+              setTimeout(()=>{
+                modules.erasePrint(stx, strCnvs);
+              },500)
+            } else {
+              modules.erasePrint(stx, strCnvs);
+            }
+          })
+        } else {
+          const photoCapabilities = imageCapture.getPhotoCapabilities().then(() => {
+            const setting = video_track.getCapabilities()
+            if(setting.torch){
+            //alert("test")
+              modules.textPrint(stx,strCnvs,"pc")
+              video_track.applyConstraints({
+                advanced: [{torch: false}]
+              })
+              modules.textPrint(stx,strCnvs,"FLASH OFF")
+              setTimeout(()=>{
+                modules.erasePrint(stx, strCnvs);
+              },500)
+            } else {
+              modules.erasePrint(stx, strCnvs);
+            }
+          })
+        }
+        cmdMode.FLASH = !cmdMode.FLASH
+      }
+      break;
+    case "PLAYBACK": 
+      if(cmd.property != undefined && cmd.property === "local") {
+        videoStop();
+        videoMode.mode = "playback"
+        console.log("test text")
+      }
+      break;
+    case "VOICE":
+      console.log(cmd)
+      modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
+      switch(cmd.property) {
+        case undefined:
+          voice = !voice
+          modules.textPrint(stx, strCnvs, cmd.cmd + " " +String(voice));
+          break;
+        case true:
+        case false:
+          voice = cmd.property
+          modules.textPrint(stx, strCnvs, cmd.cmd + " " +String(voice));
+          break;
+        case "en-US":
+        case "ja-JP":
+          voice = !voice
+          ssu.lang = cmd.property
+          modules.textPrint(stx, strCnvs, cmd.cmd + " " + cmd.property);
+          voice = !voice
+          break;
+      }
+      /*
+      if(cmd.property !== undefined) {
+        voice = cmd.property
+      } else {
+        voice = !voice
+      }
+      }*/
+      setTimeout(() =>{
+        modules.erasePrint(stx, strCnvs);
+        modules.erasePrint(ctx, cnvs);
+      },500)
+      break;
     default:
       for(let key in streamList){
-        if(key === cmd["cmd"]){
+        if(key === cmd["cmd"] && cmd.property != "local"){
           console.log(cmd["cmd"]);
           videoMode.mode = "chat";
-          videoMode.option = "none";
+          if(videoMode.option != "quantize") videoMode.option = "none";
           modules.erasePrint(stx, strCnvs);
           modules.erasePrint(ctx, cnvs);
           modules.textPrint(stx, strCnvs, cmd["cmd"]);
@@ -1505,25 +1868,38 @@ const doCmd = (cmd) => {
 }
 
 const stop = () => {
+  speakVoice("stop")
   let currentTime = audioContext.currentTime
   oscGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
   feedbackGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
   noiseGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
   bassGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
   //munouGain.gain.value = 0;
+  //
   bassFlag = false;
+  cmdMode.sinewave = false
+  cmdMode.whitenoise = false
+  cmdMode.feedback = false
+  bgnGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
+  cmdMode.CHAT.BGN = false
   modules.whitePrint(ctx, canvas);
   modules.erasePrint(stx, strCnvs);
   modules.erasePrint(ctx, canvas);
 //  modules.textPrint(stx, strCnvs, "");
-  cmdMode = {
-    "sinewave": false,
-    "whitenoise": false,
-    "feedback": false,
-    "instruction": false
-  }
   //modules.textPrint(stx, strCnvs, "STOP");
   stopRhythm();
+  accGain.gain.setValueAtTime(0,0);
+  window.removeEventListener("devicemotion", acceleration)
+  clearInterval(accelerateInterval)
+
+  //face detect
+  if(ctrackerMode) {
+    modules.textPrint(stx, strCnvs, "debug")
+    socket.emit("cmdFromCtrl",{"cmd":"FACE DETECT"})
+  }
+  /*
+  ctrackerMode = false
+  cmdMode.FACEDETECT.FLAG = false*/
 }
 
 const videoStop = () => {
@@ -1536,6 +1912,7 @@ const videoStop = () => {
       videoMode.mode = "none";
       break;
   }
+  if(videoMode.option === "quantize") clearInterval(quantizeInterval)
   videoMode.option = "none"
 }
 
@@ -1558,6 +1935,7 @@ let tileHsh = {}
 const playVideo = (video, source) => {
   image = new Image();
   image.src = video;
+  //console.log(video)
   //  console.log("image width:" + String(image.width) + ", image height:" + String(image.height))
   //console.log("window width:" + String(window.innerWidth) + ", window height:" + String(window.innerHeight))
   //console.log("width:" + String(wdth) + ",height:" + String(hght))
@@ -1571,13 +1949,13 @@ const playVideo = (video, source) => {
     wdth = hght * (image.width / image.height)
   }
   */
-
+  console.log(video.length)
   image.onload = function(){
     let wdth
     let hght
     let x = 0
     let y = 0
-    console.log("debug videoPlay")
+    //console.log("test")
     if(tileFlag && source && source != socket.id){
       if(source in tileHsh) {
       } else {
@@ -1595,7 +1973,7 @@ const playVideo = (video, source) => {
       wdth = tileHsh[source].w
       hght = tileHsh[source].h
     } else {
-      console.log("debug not tile")
+    //  console.log("debug not tile")
         let aspect = image.width / image.height
         console.log(aspect)
         if(aspect > (window.innerWidth / window.innerHeight)) {
@@ -1606,8 +1984,6 @@ const playVideo = (video, source) => {
           wdth = hght * aspect
         }
     }
-  //  console.log("image width:" + String(image.width) + ", image height:" + String(image.height))
-  //console.log("window width:" + String(window.innerWidth) + ", window height:" + String(window.innerHeight))
     console.log("width:" + String(wdth) + ",height:" + String(hght) + ", x:"+ x + ", y:"+ y)
     receive_ctx.drawImage(image, x, y, wdth, hght);
   }
@@ -1780,4 +2156,44 @@ const keyMap = {
 "220" : "_"
 };
 
+let x=0,y=0,z=0,accFreq=0
+const acceleration = (evt) => {
+  //let acc = evt.accelerationIncludingGravity
+  let acc = evt.acceleration
+  x = Number(acc.x)
+  y = Number(acc.y)
+  z = Number(acc.z)
+  accFreq = Math.sqrt(Number(acc.x)**2+Number(acc.y)**2+Number(acc.z)**2)
+  //modules.textPrint(stx, strCnvs, "x:"+String(x)+ ", y:"+String(y) + ", z:" + String(z))
+  //modules.textPrint(stx, strCnvs, String(x + y + z))
+  //modules.textPrint(stx, strCnvs, String(accFreq))
+  //accOsc.frequency.setValueAtTime(accFreq*100, 0.01);
+}
+
+const quantizePlay = () => {
+  quantizeInterval = setInterval(()=> {
+    console.log(quantizeBuffer)
+    if("audio" in quantizeBuffer) {
+      playAudioStream(quantizeBuffer.audio,playsampleRate,1,false);
+    }
+    if("video" in quantizeBuffer){
+      playVideo(quantizeBuffer["video"]);
+      //modules.textPrint(stx, strCnvs, "LOOP");
+    } else {
+      modules.erasePrint(ctx, canvas);
+      modules.textPrint(ctx, canvas, stringsClient);
+    }
+    setTimeout(()=>{
+      modules.erasePrint(ctx, canvas);
+      modules.erasePrint(stx, strCnvs);
+    },(1000*8192)/playsampleRate)
+  },1000 * (15*Math.round(16*Math.random()))/cmdMode.BPM)
+}
+
 modules.textPrint(stx, strCnvs, "click screen")
+//modules.erasePrint(stx, strCnvs);
+  //window.addEventListener("devicemotion", acceleration = (e) =>{
+//    modules.textPrint(stx, strCnvs, "test")
+
+    //modules.erasePrint(stx, strCnvs);
+  //})

@@ -73,14 +73,15 @@ exports.pickupTarget = function pickupTarget(room, list, target, order, sourceId
   let idArr = []
   for(let key in list){
     for(let id in room){
-      if(String(id) === key && list[key].STREAMS[target][order] ){
+      if(list[key] != undefined && String(id) === key && list[key].STREAMS[target][order] ){
         //console.log(key)
         idArr.push(id);
       }
     }
   }
   //console.log(idArr)
-  if(idArr.length === 2) { //need test
+  //if(idArr.length === 2 && sourceId != "dummyID") { //need test
+  if(sourceId in idArr) {
     idArr.splice(idArr.indexOf(String(sourceId)), 1)
     /*
     idArr.some(function(value, i){
@@ -94,15 +95,19 @@ exports.pickupTarget = function pickupTarget(room, list, target, order, sourceId
 
 exports.pickCmdTarget = (idHsh, cmd) => {
   let targetArr = {"id":[],"No":[],"cmd":[],"timestamp":[],"noneId":[],"targetId":"none","duplicate":"none"}
+  console.log("debug")
+  console.log(cmd)
   for(let strId in idHsh) {
     //console.log(strId)
     //console.log(idHsh[strId].cmd)
     targetArr.id.push(strId)
     targetArr.No.push(idHsh[strId].No)
-    targetArr.cmd.push(idHsh[strId].cmd.cmd)
-    targetArr.timestamp.push(Number(idHsh[strId].cmd.timestamp))
-    if(idHsh[strId].cmd.cmd === "none") targetArr.noneId.push(strId)
-    if(idHsh[strId].cmd.cmd === cmd.cmd || idHsh[strId].cmd.cmd === cmd.property) targetArr.duplicate = strId
+    if(cmd != undefined){
+      targetArr.cmd.push(idHsh[strId].cmd.cmd)
+      targetArr.timestamp.push(Number(idHsh[strId].cmd.timestamp))
+      if(idHsh[strId].cmd.cmd === "none") targetArr.noneId.push(strId)
+      if(idHsh[strId].cmd.cmd === cmd.cmd || idHsh[strId].cmd.cmd === cmd.property) targetArr.duplicate = strId
+    }
   }
   if(targetArr.duplicate != "none"){
     targetArr.targetId = targetArr.duplicate
@@ -277,23 +282,90 @@ exports.pcm2arr = (lib, url) =>{
   );
   return rtnBuff;
 }
+exports.postInternetArr = (chunk, request, target) => {
+  request.get({url: target + 'ckeckPostBuffer/',json:true}, function (error, response, body) {
+    if (!error && response.statusCode == 200) {
+      if(response.body === "ok") {
+        request.post({
+          uri: target + "postBuffer/",
+          headers:{"Content-type":"application/json"},
+          json: chunk
+        },(error, response, body) =>{
+          console.log(error)
+          console.log(response)
+          console.log(body)
+        })
+      } else {
+        console.log("busy")
+      }
+    } else {
+      console.log(error)
+      console.log(response)
+    } 
+  })
+}
 
-exports.getInternetArr = (request, requestOption) => {
-  let rtnHsh = {"audio":[],"video":[]}
-  request.get(requestOption, function (error, response, body) {
+exports.getInternetLength = (request, target) => {
+  let rtn = 0;
+  request.get({url: target + 'ckeckGetBuffer/',json:true}, (error, response, body) => {
+    //console.log(response)
+    //console.log(body)
+    if (response.statusCode == 200) {
+      //console.log(body)
+      console.log(body.value)
+      //rtn = body.value
+      return body.value
+    } else if(response != undefined) {
+      console.log('internet connect error: '+ response.statusCode);
+      return rtn
+    } else {
+      console.log('internet connect error');
+      console.log(error)
+      return rtn
+    }
+  })
+  //console.log("return " + String(rtn))
+}
+
+exports.getInternetArr = (request, target) => {
+  let rtnHsh = {"target":"INTERNET"}
+  //let rtnHsh = {"target":"INTERNET", "audio":[], "video":[]}
+  console.log(target)
+  request.get({url: target + 'ckeckGetBuffer/',json:true}, function (error, response, body) {
     //console.log(response)
     if (!error && response.statusCode == 200) {
-      body.audio.forEach((value) =>{
-        rtnHsh.audio = body.audio
-        rtnHsh.video = body.video
-        //Array.prototype.push.apply(audioBuff.INTERNET, body.audio);
-        //Array.prototype.push.apply(videoBuff.INTERNET, body.video);
-      })
+      console.log(response.body)
+      console.log(response.body.value)
+      if(response.body.value > 0) {
+        let flag = true
+          request.get({url: target + 'getBuffer/',json:true}, (error, response, body) =>{
+            console.log("buffer")
+        //      console.log(Object.keys(body))
+            if (!error && response.statusCode == 200 && body.value != "no") {
+              console.log("get")
+              //console.log(body)
+              /*body.forEach((value) =>{
+                rtnHsh.audio = value.audio
+                rtnHsh.video = value.video
+              })*/
+              if(body.audio != undefined) rtnHsh.audio = body.audio
+              if(body.video != undefined) rtnHsh.video = body.video
+              console.log(rtnHsh)
+              return rtnHsh
+         //     console.log(rtnHsh.audio.length)
+            } else if(value in body && body.value === "no"){
+              console.log("end")
+            }
+          })
+        //}
+      } else {
+        console.log("0 no buffer")
+      } 
     } else if(response != undefined) {
       console.log('internet connect error: '+ response.statusCode);
     } else {
       console.log('internet connect error');
+      console.log(error)
     }
   })
-  return rtnHsh
 }

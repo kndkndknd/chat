@@ -46,8 +46,17 @@ const textprint = (ctx,canvas,text, color) => {
   ctx.fillStyle = color
   textArr = [text]
   let fontSize = 20
-  if(text.length > 20) {
-    fontSize = Math.floor((canvas.width * 4 / 3) / 17)
+  let textLength = 0
+  Array.prototype.forEach.call(text, (s,i)=> {
+    let chr = text.charCodeAt(i)
+    if((chr >= 0x00 && chr < 0x81) || (chr === 0xf8f0) || (chr >= 0xff61 && chr < 0xffa0) || (chr >= 0xf8f1 && chr < 0xf8f4)){
+      textLength += 1;
+    }else{
+      textLength += 2;
+    }
+  })
+  if(textLength > 20) {
+    fontSize = Math.floor((canvas.width * 4 / 3) / 20)
     textArr = [""]
     let lineNo = 0
     Array.prototype.forEach.call(text, (element,index) =>{
@@ -60,10 +69,10 @@ const textprint = (ctx,canvas,text, color) => {
         //console.log(textArr[lineNo])
       }
     });
-  } else if(text.length > 2) {
-    fontSize = Math.floor((canvas.width * 4 / 3) / text.length)
+  } else if(textLength > 2) {
+    fontSize = Math.floor((canvas.width * 4 / 3) / textLength)
   } else {
-    fontSize = Math.floor((canvas.height * 5 / 4) / text.length)
+    fontSize = Math.floor((canvas.height * 5 / 4) / textLength)
   }
   ctx.font = "bold " + String(fontSize) + "px 'Arial'";
   ctx.textAlign = 'center';
