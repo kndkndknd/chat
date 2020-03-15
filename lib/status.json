@@ -1,26 +1,9 @@
 {
   "osc":{
-    "mod":{
-      "repeat":"0",
-      "modList":{
-        "0": "0.5",
-        "1": "0.5",
-        "2": "1",
-        "3": "18"
-      }
-    },
-    "chord": {
-      "repeat": "0",
-      "chordList":{
-        "0" : "1",
-        "1" : "4/3",
-        "2" : "9/4",
-        "3" : "15/8",
-        "4" : "17/8",
-        "5" : "7/3",
-        "6" : "11/3"
-      }
-    },
+    "stream": false,
+    "rate": false
+  },
+  "sinewave":{
     "portament" : {
       "0" : "0",
       "1" : "50",
@@ -30,17 +13,17 @@
     }
   },
   "gain": {
-    "masterGain": "0.7",
-    "oscGain": "0.6",
+    "masterGain": "0.4",
+    "oscGain": "0.55",
     "feedbackGain": "0.8",
-    "noiseGain": "0.5",
+    "noiseGain": "0.6",
     "clickGain": "0.8",
     "bassGain": "0.7",
-    "chatGain": "0.7",
+    "chatGain": "0.6",
     "playbackGain": "0.7",
     "timelapseGain": "0.7",
-    "drumGain": "0.7",
-    "secbeforeGain": "0.7",
+    "drumGain": "0.8",
+    "secbeforeGain": "0.6",
     "silenceGain": "0"
   },
   "sampleRate":{
@@ -53,6 +36,7 @@
     "INTERNET": "48000",
     "SECBEFORE": "48000"
   },
+  "speech":false,
   "connected":{
     "client":{},
     "ctrl":{}
@@ -118,8 +102,6 @@
       "SWITCH": false
     },
     "mute": {
-      "okappachan": false,
-      "pocke": false,
       "all": false
     },
     "PORTAMENT" : 0,
@@ -128,8 +110,6 @@
       "OUT": "0"
     },
     "target": {
-      "inside": true,
-      "outside": true,
       "client": true
     },
     "prevCmd": "",
@@ -159,7 +139,6 @@
       "LAPSE": "TIMELAPSE",
       "TIMELAPSE": "TIMELAPSE",
       "FILTER": "FILTER",
-      "VOICE": "VOICE",
       "MONITORING": "CHAT",
       "MONITOR": "CHAT",
       "SINEWAVE": "SINEWAVE",
@@ -167,7 +146,86 @@
       "DOUBLE": "TWICE",
       "THRICE": "THRICE",
       "TRIPLE": "THRICE",
-      "HALF": "HALF"
+      "HALF": "HALF",
+      "BACKGROUNDNOISE": "SOLFAGE",
+      "BGN": "SOLFAGE",
+      "SOLFAGE":"SOLFAGE",
+      "ACC":"ACCELERATE",
+      "ACCELERATE":"ACCELERATE"
+    },
+    "speech": {
+      "フィードバック": "FEEDBACK",
+      "FEEDBACK": "FEEDBACK",
+      "feedback": "FEEDBACK",
+      "ノイズ": "WHITENOISE",
+      "雑音": "WHITENOISE",
+      "NOISE": "WHITENOISE",
+      "noise": "WHITENOISE",
+      "クリック": "CLICK",
+      "CLICK": "CLICK",
+      "click": "CLICK",
+      "拍": "CLICK",
+      "点": "CLICK",
+      "ベース": "BASS",
+      "BASS": "BASS",
+      "bass": "BASS",
+      "低音": "BASS",
+      "低域": "BASS",
+      "チャット": "CHAT",
+      "会話": "CHAT",
+      "CHAT": "CHAT",
+      "chat": "CHAT",
+      "drum": "DRUM",
+      "ドラム": "DRUM",
+      "ビート": "DRUM",
+      "レコード": "RECORD",
+      "録音": "RECORD",
+      "RECORD": "RECORD",
+      "rec": "RECORD",
+      "REC": "RECORD",
+      "プレイバック":"PLAYBACK",
+      "再生":"PLAYBACK",
+      "PLAYBACK": "PLAYBACK",
+      "play": "PLAYBACK",
+      "タイムラプス":"TIMELAPSE",
+      "観測":"TIMELAPSE",
+      "TIMELAPSE": "TIMELAPSE",
+      "timelapse": "TIMELAPSE",
+      "サンプルレート":"SAMPLERATE",
+      "サンプリングレート":"SAMPLERATE",
+      "サンプル周波数":"SAMPLERATE",
+      "サンプリング周波数":"SAMPLERATE",
+      "SAMPLERATE": "SAMPLERATE",
+      "RATE": "SAMPLERATE",
+      "rate": "SAMPLERATE",
+      "ボイス":"VOICE",
+      "発話":"VOICE",
+      "声":"VOICE",
+      "VOICE": "VOICE",
+      "voice": "VOICE",
+      "グリッチ":"GLITCH",
+      "破壊":"GLITCH",
+      "壊す":"GLITCH",
+      "GLITCH":"GLITCH",
+      "glitch":"GLITCH",
+      "ランダム": "RANDOM",
+      "乱数": "RANDOM",
+      "RANDOM": "RANDOM",
+      "random": "RANDOM",
+      "半分":"HALF",
+      "HALF":"HALF",
+      "half":"HALF",
+      "2倍":"TWICE",
+      "TWICE":"TWICE",
+      "顔認識":"FACEDETECT",
+      "FACE DETECT":"FACEDETECT",
+      "face":"FACEDETECT",
+      "停止":"STOP",
+      "ストップ":"STOP",
+      "止めた":"STOP",
+      "止める":"STOP",
+      "stop":"STOP",
+      "STOP":"STOP"
     },
     "stream": {
       "VIDEOCHAT": "CHAT",
@@ -220,6 +278,17 @@
       "INTERNET": "INTERNET",
       "NET": "INTERNET"
     },
+    "timer": {
+      "CHAT": false,
+      "KICK": false,
+      "SNARE": false,
+      "HAT": false,
+      "SILENCE": false,
+      "PLAYBACK": false,
+      "INTERNET": false,
+      "TIMELAPSE": false,
+      "INTERNET": false
+    },
     "latency":{
       "CHAT": "0",
       "DRUM": "0",
@@ -238,6 +307,7 @@
     },
     "grid": false,
     "drone": false,
+    "chatSequence": false,
     "droneRoute": {}
   },
   "clients": {
@@ -264,7 +334,8 @@
       "cmd":{
         "cmd":"none",
         "timestamp":"0"
-      }
+      },
+      "voice":false
     }
   },
   "interval":"60"

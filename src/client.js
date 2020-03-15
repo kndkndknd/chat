@@ -52,13 +52,13 @@ let accOsc
 let accGain
 
 let gainVal = {
-  "master": 0.7,
+  "master": 0.5,
   "FEEDBACK": 1,
-  "OSC": 1,
+  "OSC": 0.8,
   "BASS": 0.7,
-  "CLICK": 0.7,
-  "NOISE": 0.5,
-  "CHAT": 1,
+  "CLICK": 0.8,
+  "NOISE": 0.6,
+  "CHAT": 0.8,
   "PLAYBACK": 0.7,
   "TIMELAPSE": 0.7,
   "DRUM": 0.7,
@@ -81,7 +81,8 @@ let cmdMode = {
     "BGN": false
   },
   "FLASH": false,
-  "BPM": 60
+  "BPM": 60,
+  "metronome": false
 }
 const userAgent = window.navigator.userAgent.toLowerCase()
 if(userAgent.indexOf('iphone') != -1 || userAgent.indexOf('android') != -1) {
@@ -410,7 +411,8 @@ const playAudioStream = (flo32arr, sampleRate, volume, glitch) => {
       let audio_buf = audioContext.createBuffer(1, bufferSize, sampleRate)
       audio_buf.copyToChannel(audioData, 0);
       audio_src.buffer = audio_buf;
-      audio_src.connect(masterGain);
+      //audio_src.connect(masterGain);
+      audio_src.connect(chatGain);
     } else {
       //console.log("glitch")
       let audio_buf = audioContext.createBuffer(1, bufferSize, convolver.context.sampleRate)
@@ -514,12 +516,13 @@ const initialize = () =>{
     accOsc.start(0);
   // chat
   chatGain = audioContext.createGain();
-  chatGain.gain.setValueAtTime(1,0);
+  chatGain.gain.setValueAtTime(0.6,0);
   chatGain.connect(masterGain);
 
   convolver = audioContext.createConvolver();
   revGain = audioContext.createGain();
-  revGain.gain.setValueAtTime(1,0);
+  revGain.gain.setValueAtTime(0.5,0);
+  
   //revGain.gain.setValueAtTime(1.6,0);
   //console.log(convolver.context.sampleRate);
   convolver.connect(revGain);
@@ -541,8 +544,8 @@ const initialize = () =>{
         if (cameras.length === 0) {
           throw 'No camera found on this device.';
         }
-        //const camera = cameras[cameras.length - 1];
-        const camera = cameras[1];
+        const camera = cameras[cameras.length - 1];
+        //const camera = cameras[1];
         navigator.mediaDevices.getUserMedia({
           video: {
             //facingMode: 'environment'
@@ -585,7 +588,9 @@ const initialize = () =>{
           "googEchoCancellation": false,
           "googAutoGainControl": false,
           "googNoiseSuppression": false,
-          "googHighpassFilter": false
+          "googHighpassFilter": false,
+          "echoCancellation" : false, 
+          "googEchoCancellation": false
         },"optional": []
       } 
     }, (stream) =>{
@@ -709,6 +714,7 @@ let rhythmProperty = {
 let metronome;
 let metronomeCount = 0;
 const startRhythm = (interval,timbre) =>{
+  cmdMode.metronome = true
   metronome = setInterval(()=>{
     if(rhythmProperty.score[metronomeCount] === 1){
       //switch(rhythmProperty.timbre){
@@ -738,6 +744,7 @@ const startRhythm = (interval,timbre) =>{
 }
 
 const stopRhythm = () => {
+  cmdMode.metronome = false
   clearInterval(metronome);
   if(videoMode.option === "metronome") videoMode.option = "none"
 }
@@ -1038,7 +1045,13 @@ socket.on('streamReqFromServer', (data) => {
 });
 
 socket.on('oscFromServer',(data) => {
-  let uint8arr = osc.toBuffer(data);
+  //let uint8arr = osc.toBuffer(data);
+  if(data[0] === "/hitx" || data[0] === "/hity"){
+    x = Math.round(window.innerWidth * data[1] / 1680)
+    y = Math.round(window.innerHeight * data[2] / 1050)
+    wdth = window.innerWidth - (x * 2)
+    hght = wdth * 3 / 4
+  }
 });
 socket.on('chunkFromServer', (data) => {
   //modules.textPrint(stx, strCnvs, "chunk")
@@ -1056,6 +1069,7 @@ socket.on('chunkFromServer', (data) => {
         //socket.emit('wavReqFromClient', data["target"]);
         //console.log("wavReq");
         //socket.emit('chunkFromClient', chatBuffer);
+      } else if(videoMode.option === "loop") {
       } else {
         playTarget = data.target
         if(data["audio"] != undefined && data["audio"] != "") {
@@ -1579,6 +1593,8 @@ const doCmd = (cmd) => {
       break;
     case "BPM":
       cmdMode.BPM = cmd.property
+      rhythmProperty.bpm = cmd.property
+      rhythmProperty.interval = 60 * 1000 / rhythmProperty.bpm
       if(videoMode.mode === "chat" && videoMode.option === "quantize") {
         clearInterval(quantizeInterval)
         modules.erasePrint(ctx, canvas);
@@ -1602,6 +1618,18 @@ const doCmd = (cmd) => {
         */
         quantizePlay()
       }
+      if(cmdMode.metronome) {
+        stopRhythm();
+        setTimeout(()=>{
+          modules.erasePrint(stx, strCnvs);
+          modules.erasePrint(ctx, cnvs);
+          startRhythm(rhythmProperty.interval,"CLICK");
+        },rhythmProperty.interval)
+      }
+      modules.textPrint(stx, strCnvs, "BPM:" + String(cmdMode.BPM))
+      setTimeout(()=>{
+        modules.erasePrint(stx, strCnvs);
+      },500)
       break;
     case "RATE":
     case "SAMPLERATE":
@@ -1845,6 +1873,16 @@ const doCmd = (cmd) => {
         modules.erasePrint(ctx, cnvs);
       },500)
       break;
+    case "QRCODE":
+      qrFlag = !qrFlag
+      modules.erasePrint(stx, strCnvs);
+      modules.erasePrint(ctx, cnvs);
+      modules.textPrint(stx, strCnvs, cmd.cmd + " " +String(qrFlag));
+      setTimeout(() =>{
+        modules.erasePrint(stx, strCnvs);
+        modules.erasePrint(ctx, cnvs);
+      },500)
+      break;
     default:
       for(let key in streamList){
         if(key === cmd["cmd"] && cmd.property != "local"){
@@ -1888,9 +1926,11 @@ const stop = () => {
 //  modules.textPrint(stx, strCnvs, "");
   //modules.textPrint(stx, strCnvs, "STOP");
   stopRhythm();
+  /*
   accGain.gain.setValueAtTime(0,0);
   window.removeEventListener("devicemotion", acceleration)
   clearInterval(accelerateInterval)
+  */
 
   //face detect
   if(ctrackerMode) {
@@ -1931,6 +1971,10 @@ const pastPresent = (status) =>{
 }
 
 let tileHsh = {}
+let x = 0
+let y = 0
+let wdth
+let hght
 
 const playVideo = (video, source) => {
   image = new Image();
@@ -1951,10 +1995,8 @@ const playVideo = (video, source) => {
   */
   console.log(video.length)
   image.onload = function(){
-    let wdth
-    let hght
-    let x = 0
-    let y = 0
+    //let x = 0
+    //let y = 0
     //console.log("test")
     if(tileFlag && source && source != socket.id){
       if(source in tileHsh) {
@@ -2074,14 +2116,52 @@ const glitchChange = (e) =>{
     "property": property
   });
 }
+
+function decodeImageFromBase64(data, callback){
+  qrcode.callback = callback;
+  qrcode.decode(data)
+}
+let dtnFlag = true
+let qrFlag = false
 const funcToBase64 = () =>{
   //console.log(buffer);
   let bufferContext = buffer.getContext('2d');
   buffer.width = video.videoWidth;
   buffer.height = video.videoHeight;
   bufferContext.drawImage(video, 0, 0);
+  /*
+  let imgData = bufferContext.createImageData(buffer.width, buffer.height)
+  console.log(imgData)
   //return buffer.toDataURL("image/webp");
-  return buffer.toDataURL("image/jpeg");
+  const code = jsQR(imgData.data, buffer.width, buffer.height);
+
+  if (code) {
+  //  console.log("Found QR code", code);
+    alert(code)
+  }
+  */
+  let base64URL = buffer.toDataURL("image/jpeg")
+  if(qrFlag && dtnFlag) {
+  //if(dtnFlag) {
+    decodeImageFromBase64(base64URL, function(decodedInformation){
+  //    alert(decodedInformation);
+      if(decodedInformation != "error decoding QR Code" && decodedInformation != "Failed to load the image") {
+        if(dtnFlag){
+          let qrStr = decodedInformation.replace('caption','')
+          console.log(qrStr)
+          ssu.text = qrStr
+          speechSynthesis.speak(ssu);
+          socket.emit('micFromClient',qrStr)
+          dtnFlag = false
+          setTimeout(()=>{
+            dtnFlag = true
+          },20000)
+        }
+      }
+    });
+  }
+  //return buffer.toDataURL("image/jpeg");
+  return base64URL
 }
 
 const keyMap = {
@@ -2155,7 +2235,7 @@ const keyMap = {
 "226" : "_",
 "220" : "_"
 };
-
+/*
 let x=0,y=0,z=0,accFreq=0
 const acceleration = (evt) => {
   //let acc = evt.accelerationIncludingGravity
@@ -2169,25 +2249,37 @@ const acceleration = (evt) => {
   //modules.textPrint(stx, strCnvs, String(accFreq))
   //accOsc.frequency.setValueAtTime(accFreq*100, 0.01);
 }
-
+*/
 const quantizePlay = () => {
   quantizeInterval = setInterval(()=> {
-    console.log(quantizeBuffer)
-    if("audio" in quantizeBuffer) {
-      playAudioStream(quantizeBuffer.audio,playsampleRate,1,false);
+    let beat = Math.random()
+    if(beat < 0.125) {
+      console.log(quantizeBuffer)
+      if("audio" in quantizeBuffer) {
+        playAudioStream(quantizeBuffer.audio,playsampleRate,1,false);
+      }
+      if("video" in quantizeBuffer){
+        playVideo(quantizeBuffer["video"]);
+        //modules.textPrint(stx, strCnvs, "LOOP");
+      } else {
+        modules.erasePrint(ctx, canvas);
+        modules.textPrint(ctx, canvas, stringsClient);
+      }
+      setTimeout(()=>{
+        modules.erasePrint(ctx, canvas);
+        modules.erasePrint(stx, strCnvs);
+      },(1000*8192)/playsampleRate)
     }
-    if("video" in quantizeBuffer){
-      playVideo(quantizeBuffer["video"]);
-      //modules.textPrint(stx, strCnvs, "LOOP");
-    } else {
-      modules.erasePrint(ctx, canvas);
-      modules.textPrint(ctx, canvas, stringsClient);
-    }
-    setTimeout(()=>{
-      modules.erasePrint(ctx, canvas);
-      modules.erasePrint(stx, strCnvs);
-    },(1000*8192)/playsampleRate)
-  },1000 * (15*Math.round(16*Math.random()))/cmdMode.BPM)
+  },1000 * 15 / cmdMode.BPM)
+}
+
+const qrWrite = (canvas, data) => {
+  return new Promise((res, rej)=>{
+    QRCode.toCanvas(canvas, data, {
+      margin: 2,
+      scale: 2
+    }, (err, tg) => !err ? res(tg) : rej(err));
+  });
 }
 
 modules.textPrint(stx, strCnvs, "click screen")
