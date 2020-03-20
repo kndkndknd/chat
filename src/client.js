@@ -1,4 +1,19 @@
 const modules = require('./module.js');
+let gainVal = {
+  "master": 0.95,
+  "FEEDBACK": 0.35,
+  "OSC": 0.15,
+  "BASS": 0.15,
+  "CLICK": 0.4,
+  "NOISE": 0.15,
+  "CHAT": 0.45,
+  "PLAYBACK": 0.45,
+  "TIMELAPSE": 0.45,
+  "DRUM": 0.6,
+  "SECBEFORE": 0.45,
+  "SILENCE": 0,
+  "GLITCH": 1
+}
 /*
 let cmdMode = {
   "sinewave": false,
@@ -42,7 +57,7 @@ let buf1
 
 let chatGain
 let convolver
-let revGain
+let glitchGain
 //analyser
 let analyser
 let bgn
@@ -51,20 +66,6 @@ let bgnGain
 let accOsc
 let accGain
 
-let gainVal = {
-  "master": 0.5,
-  "FEEDBACK": 1,
-  "OSC": 0.8,
-  "BASS": 0.7,
-  "CLICK": 0.8,
-  "NOISE": 0.6,
-  "CHAT": 0.8,
-  "PLAYBACK": 0.7,
-  "TIMELAPSE": 0.7,
-  "DRUM": 0.7,
-  "SECBEFORE": 0.7,
-  "SILENCE": 0
-}
 let fadeVal = {
   "IN": 0,
   "OUT": 0
@@ -422,6 +423,7 @@ const playAudioStream = (flo32arr, sampleRate, volume, glitch) => {
       audio_src.buffer = audio_buf;
       convolver.buffer = audio_buf;
       audio_src.connect(convolver);
+      //audio_src.connect(glitchGain);
     }
     //let timeOut = audio_src.buffer.duration * 1000;
     audio_src.start(0);
@@ -516,18 +518,20 @@ const initialize = () =>{
     accOsc.start(0);
   // chat
   chatGain = audioContext.createGain();
-  chatGain.gain.setValueAtTime(0.6,0);
+  //chatGain.gain.setValueAtTime(0.1,0);
+  chatGain.gain.setValueAtTime(gainVal.CHAT,0);
   chatGain.connect(masterGain);
 
   convolver = audioContext.createConvolver();
-  revGain = audioContext.createGain();
-  revGain.gain.setValueAtTime(0.5,0);
+  glitchGain = audioContext.createGain();
+  glitchGain.gain.setValueAtTime(0.1,0);
+  //revGain.gain.setValueAtTime(gainVal.GLITCH,0);
   
   //revGain.gain.setValueAtTime(1.6,0);
   //console.log(convolver.context.sampleRate);
-  convolver.connect(revGain);
-  revGain.connect(masterGain);
-  convolver.connect(masterGain);
+  convolver.connect(glitchGain);
+  glitchGain.connect(masterGain);
+  //convolver.connect(masterGain);
   loadSample(audioContext, "/files/alert.wav")
 
   //face detect
@@ -751,10 +755,12 @@ const stopRhythm = () => {
 
 //keyboard
 let stringsClient = "";
-
 const keyDown = (e) => {
   console.log(e.keyCode);
+  //console.log(e.code);
+  console.log(e.shiftKey);
   let charCode = keyMap[e.keyCode]
+  if(e.shiftKey && e.keyCode !== 16) charCode = shiftKeyMap[e.keyCode]
   if(charCode === "enter" && !start) initialize()
   if(!standAlone) {
     if(charCode === "enter" && (stringsClient === "LOCAL" || stringsClient === "STANDALONE" || stringsClient === "NETWORK" || stringsClient === "CONNECT")){
@@ -767,7 +773,14 @@ const keyDown = (e) => {
         modules.erasePrint(stx, strCnvs);
       },300);
     } else {
-      stringsClient = modules.keyDownFunc(e.keyCode, charCode, stringsClient, socket);
+      //stringsClient = modules.keyDownFunc(e.keyCode, charCode, stringsClient, socket);
+      if(e.keyCode >= 48 && e.keyCode <= 90 || e.keyCode >= 186 && e.keyCode <= 191 || e.keyCode >= 219 && e.keyCode <= 221 || e.keyCode === 226 || e.keyCode === 32){
+        stringsClient = stringsClient + charCode;
+      }
+      //socket.emit('charFromClient', e.keyCode);
+      console.log(charCode)
+      socket.emit('charFromClient', charCode);
+      if(charCode === "enter" && stringsClient != "VOICE") stringsClient = ""
       modules.erasePrint(stx, strCnvs);
       modules.textPrint(stx, strCnvs, stringsClient);
       if(e.keyCode === 13 && stringsClient === "VOICE"){
@@ -2166,74 +2179,153 @@ const funcToBase64 = () =>{
 
 const keyMap = {
 // const keycodeMap = {
-'48' : '0',
-'49' : '1',
-'50' : '2',
-'51' : '3',
-'52' : '4',
-'53' : '5',
-'54' : '6',
-'55' : '7',
-'56' : '8',
-'57' : '9',
-'65' : 'A',
-'66' : 'B',
-'67' : 'C',
-'68' : 'D',
-'69' : 'E',
-'70' : 'F',
-'71' : 'G',
-'72' : 'H',
-'73' : 'I',
-'74' : 'J',
-'75' : 'K',
-'76' : 'L',
-'77' : 'M',
-'78' : 'N',
-'79' : 'O',
-'80' : 'P',
-'81' : 'Q',
-'82' : 'R',
-'83' : 'S',
-'84' : 'T',
-'85' : 'U',
-'86' : 'V',
-'87' : 'W',
-'88' : 'X',
-'89' : 'Y',
-'90' : 'Z',
-'8'  : 'backspace',
-'13' : 'enter',
-'16' : 'shift',
-'17' : 'ctrl',
-'36' : 'home',
-'18' : 'alt',
-'9' : 'tab',
-'32' : ' ',
-'107' : 'add',
-'20' : 'caps_lock',
-'27' : 'escape',
-'37' : 'left_arrow',
-'38' : 'up_arrow',
-'39' : 'right_arrow',
-'40' : 'down_arrow',
-'112' : 'f1' ,
-'113' : 'f2' ,
-'114' : 'f3' ,
-'115' : 'f4' ,
-'116' : 'f5' ,
-'117' : 'f6' ,
-'118' : 'f7' ,
-'119' : 'f8' ,
-'120' : 'f9' ,
-'121' : 'f10',
-'122' : 'f11',
-'123' : 'f12',
-'188' : ',',
-"190" : ".",
-"189" : "_",
-"226" : "_",
-"220" : "_"
+  '48' : '0',
+  '49' : '1',
+  '50' : '2',
+  '51' : '3',
+  '52' : '4',
+  '53' : '5',
+  '54' : '6',
+  '55' : '7',
+  '56' : '8',
+  '57' : '9',
+  '65' : 'A',
+  '66' : 'B',
+  '67' : 'C',
+  '68' : 'D',
+  '69' : 'E',
+  '70' : 'F',
+  '71' : 'G',
+  '72' : 'H',
+  '73' : 'I',
+  '74' : 'J',
+  '75' : 'K',
+  '76' : 'L',
+  '77' : 'M',
+  '78' : 'N',
+  '79' : 'O',
+  '80' : 'P',
+  '81' : 'Q',
+  '82' : 'R',
+  '83' : 'S',
+  '84' : 'T',
+  '85' : 'U',
+  '86' : 'V',
+  '87' : 'W',
+  '88' : 'X',
+  '89' : 'Y',
+  '90' : 'Z',
+  '8'  : 'backspace',
+  '13' : 'enter',
+  //'16' : 'shift',
+  '17' : 'ctrl',
+  '36' : 'home',
+  '18' : 'alt',
+  '9' : 'tab',
+  '32' : ' ',
+  '107' : 'add',
+  '20' : 'caps_lock',
+  '27' : 'escape',
+  '37' : 'left_arrow',
+  '38' : 'up_arrow',
+  '39' : 'right_arrow',
+  '40' : 'down_arrow',
+  '112' : 'f1' ,
+  '113' : 'f2' ,
+  '114' : 'f3' ,
+  '115' : 'f4' ,
+  '116' : 'f5' ,
+  '117' : 'f6' ,
+  '118' : 'f7' ,
+  '119' : 'f8' ,
+  '120' : 'f9' ,
+  '121' : 'f10',
+  '122' : 'f11',
+  '123' : 'f12',
+  '188' : ',',
+  '186' : ':',
+  "190" : ".",
+  "189" : "BASS",
+  "226" : "BASS",
+  "220" : "BASS",
+  "191" : "/",
+  "219" : "[",
+  "221" : "]",
+  "222" : "'",
+  "187" : "BAAAASS"
+};
+const shiftKeyMap = {
+// const keycodeMap = {
+  '49' : '!',
+  '50' : '"',
+  '51' : '#',
+  '52' : '$',
+  '53' : '%',
+  '54' : '&',
+  '55' : "'",
+  '56' : '(',
+  '57' : ')',
+  '188' : '<',
+  "190" : ">",
+  "189" : "=",
+  "226" : "_",
+  "220" : "_",
+  "191" : "?",
+  "219" : "{",
+  "221" : "}",
+  "222" : "'",
+  "187" : "~",
+  '65' : 'A',
+  '66' : 'B',
+  '67' : 'C',
+  '68' : 'D',
+  '69' : 'E',
+  '70' : 'F',
+  '71' : 'G',
+  '72' : 'H',
+  '73' : 'I',
+  '74' : 'J',
+  '75' : 'K',
+  '76' : 'L',
+  '77' : 'M',
+  '78' : 'N',
+  '79' : 'O',
+  '80' : 'P',
+  '81' : 'Q',
+  '82' : 'R',
+  '83' : 'S',
+  '84' : 'T',
+  '85' : 'U',
+  '86' : 'V',
+  '87' : 'W',
+  '88' : 'X',
+  '89' : 'Y',
+  '90' : 'Z',
+  '13' : 'enter',
+  '17' : 'ctrl',
+  '36' : 'home',
+  '18' : 'alt',
+  '9' : 'tab',
+  '32' : ' ',
+  '107' : 'add',
+  '20' : 'caps_lock',
+  '27' : 'escape',
+  '37' : 'left_arrow',
+  '38' : 'up_arrow',
+  '39' : 'right_arrow',
+  '40' : 'down_arrow',
+  '112' : 'f1' ,
+  '113' : 'f2' ,
+  '114' : 'f3' ,
+  '115' : 'f4' ,
+  '116' : 'f5' ,
+  '117' : 'f6' ,
+  '118' : 'f7' ,
+  '119' : 'f8' ,
+  '120' : 'f9' ,
+  '121' : 'f10',
+  '122' : 'f11',
+  '123' : 'f12'
 };
 /*
 let x=0,y=0,z=0,accFreq=0
@@ -2273,19 +2365,5 @@ const quantizePlay = () => {
   },1000 * 15 / cmdMode.BPM)
 }
 
-const qrWrite = (canvas, data) => {
-  return new Promise((res, rej)=>{
-    QRCode.toCanvas(canvas, data, {
-      margin: 2,
-      scale: 2
-    }, (err, tg) => !err ? res(tg) : rej(err));
-  });
-}
 
 modules.textPrint(stx, strCnvs, "click screen")
-//modules.erasePrint(stx, strCnvs);
-  //window.addEventListener("devicemotion", acceleration = (e) =>{
-//    modules.textPrint(stx, strCnvs, "test")
-
-    //modules.erasePrint(stx, strCnvs);
-  //})

@@ -95,8 +95,7 @@ exports.pickupTarget = function pickupTarget(room, list, target, order, sourceId
 
 exports.pickCmdTarget = (idHsh, cmd) => {
   let targetArr = {"id":[],"No":[],"cmd":[],"timestamp":[],"noneId":[],"targetId":"none","duplicate":"none"}
-  console.log("debug")
-  console.log(cmd)
+  //console.log(cmd)
   for(let strId in idHsh) {
     //console.log(strId)
     //console.log(idHsh[strId].cmd)
@@ -151,12 +150,12 @@ exports.shutterReq = function shutterReq(io, data){
 }
 
 exports.movImport = function movImport(filename, filetype, libDir){
-  console.log("import begin");
+  //console.log("import begin");
   const fs = require('fs');
   const pcm = require ('pcm');
   const exec = require('child_process').exec;
   let sndConvert = 'ffmpeg -i ' + process.env.HOME + libDir + filename + '.' + filetype + ' -vn -acodec copy ' + process.env.HOME + libDir + filename + '.aac';
-  console.log(sndConvert);
+  //console.log(sndConvert);
   let rtnHsh = {"video": [],"audio":[]};
   exec(sndConvert,(error, stderr, stdout) =>{
     if(stdout){

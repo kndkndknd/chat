@@ -18,6 +18,7 @@ module.exports = {
     client: './src/client.js',
     mobile: './src/mobile.js',
     mic: './src/mic.js',
+    ch2: './src/ch2.js',
     log: './src/log.js'
   } ,
   // entry: scripts,

@@ -1,9 +1,6 @@
 
 exports.keyDownFunc = function keyDownFunc(keyCode, charCode, stringsClient, socket){
-  //let charCode = keyMap[keyCode];
-  /*if(charCode === "left_arrow" || charCode === "backspace" || charCode === "escape"){
-    stringsClient = "";
-  } else*/ if(keyCode >= 48 && keyCode <= 90 || keyCode === 190 || keyCode === 189 || keyCode === 187 || keyCode === 186 || keyCode === 226 || keyCode === 32){
+  if(keyCode >= 48 && keyCode <= 90 || keyCode >= 186 && keyCode <= 191 || keyCode >= 219 && keyCode <= 221 || keyCode === 226 || keyCode === 32){
     stringsClient = stringsClient + charCode;
   }
   socket.emit('charFromClient', keyCode);
