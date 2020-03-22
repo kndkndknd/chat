@@ -1231,10 +1231,6 @@ const charFromClient = (character, charString, socketId, alertFlag) =>{
       }
       */
       charString = ""
-    } else if(charString === "QR" || charString === "QRCODE") {
-      io.to(socketId).emit("cmdFromServer", {
-        cmd: "QRCODE"
-      })
     } else {
       cmdFromServer(charString, alertFlag)
       charString = ""
@@ -1970,11 +1966,11 @@ const splitSpace = (strings, alertFlag) => {
                 } else if(strArr.length > 2){
                   cmdString = strArr.slice(1).join(" ")
                 //  console.log(cmdString)
-                  charFromClient(13,cmdString,randomId, true) //enterを送ったのと同義にしている
+                  charFromClient("enter",cmdString,randomId, true) //enterを送ったのと同義にしている
                 } else {
                   cmdString = strArr[1]
                 //  console.log(cmdString)
-                  charFromClient(13,cmdString,randomId, true) //enterを送ったのと同義にしている
+                  charFromClient("enter",cmdString,randomId, true) //enterを送ったのと同義にしている
                 }
               },timerVal)
             }
