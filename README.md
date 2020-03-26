@@ -1,5 +1,6 @@
 # about
   - live setting by node.js + socket.io + web audio api
+  - recording example [soundcloud](https://soundcloud.com/knd/20180923a)
 # usage(in 2018/6/13)
 ## basic function
   - type command and push enter, then sound by strings
