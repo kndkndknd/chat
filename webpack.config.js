@@ -16,9 +16,7 @@ module.exports = {
   // メインとなるJavaScriptファイル（エントリーポイント）
   entry: {
     client: './src/client.js',
-    mobile: './src/mobile.js',
-    mic: './src/mic.js',
-    ch2: './src/ch2.js',
+    module: './src/module.js',
     log: './src/log.js'
   } ,
   // entry: scripts,

@@ -3,7 +3,7 @@
   - recording example
     - [soundcloud](https://soundcloud.com/knd/20180923a)
     - [vimdeo](https://vimeo.com/398803929)
-# usage(in 2018/6/13)
+# usage(in 2021/2/13)
 ## basic function
   - type command and push enter, then sound by strings
   - The keyboard input contents are displayed on the connected client
@@ -26,6 +26,12 @@ SAMPLE RATE | change sampling rate in CHAT, DRUM, PLAYBACK | SAMPLERATE or RATE
 STOP        | stop all audio and video                                 | STOP or ESC key
 GLITCH      | glitch audio and video in CHAT, PLAYBACK                     | GLITCH                            
 NO          | view client number                                         | NO                                
+TWICE          | twice time frequency value when sinewave sounds           | TWICE
+HALF          | half time frequency value when sinewave sounds           | HALF
+FADE OUT          | fade out           | FADE OUT
+FADE IN          | fade in           | FADE IN
+QUANTIZE          | play audio and video in specific BPM grid           | QUANTIZE
+BPM          | set BPM for DRUM and quantized sound           | BPM (number)
 - stop sounds when input same command
 
 ## VOICE MODE

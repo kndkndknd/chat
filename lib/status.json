@@ -33,8 +33,7 @@
     "KICK": "48000",
     "SNARE": "48000",
     "HAT": "48000",
-    "INTERNET": "48000",
-    "SECBEFORE": "48000"
+    "INTERNET": "48000"
   },
   "speech":false,
   "connected":{
@@ -68,6 +67,7 @@
     "LOOK": "LOOK"
   },
   "faceDetect": false,
+  "dark": false,
   "cmd":{
     "now": {
       "SINEWAVE": false,
@@ -81,9 +81,12 @@
       "FILE": false,
       "DRUM": false,
       "SILENCE": false,
-      "SECBEFORE": false,
       "RECORD": false,
-      "SWITCH": false
+      "SWITCH": false,
+      "KICK": false,
+      "SNARE": false,
+      "HAT": false,
+      "FAN": false
     },
     "past": {
       "SINEWAVE": false,
@@ -97,8 +100,10 @@
       "FILE": false,
       "DRUM": false,
       "SILENCE": false,
-      "SECBEFORE": false,
       "RECORD": false,
+      "KICK": false,
+      "SNARE": false,
+      "HAT": false,
       "SWITCH": false
     },
     "mute": {
@@ -151,7 +156,11 @@
       "BGN": "SOLFAGE",
       "SOLFAGE":"SOLFAGE",
       "ACC":"ACCELERATE",
-      "ACCELERATE":"ACCELERATE"
+      "ACCELERATE":"ACCELERATE",
+      "KICK": "KICK",
+      "SNARE": "SNARE",
+      "HAT": "HAT",
+      "3D":"3D"
     },
     "speech": {
       "フィードバック": "FEEDBACK",
@@ -252,6 +261,7 @@
   "streamStatus": {
     "waitCHAT": false,
     "emitMode": "NORMAL",
+    "cutup": false,
     "streamFlag": {
       "CHAT": false,
       "KICK": false,
@@ -306,9 +316,8 @@
       "TIMELAPSE": false
     },
     "grid": false,
-    "drone": false,
     "chatSequence": false,
-    "droneRoute": {}
+    "quantize": false
   },
   "clients": {
     "dummy": {
@@ -323,8 +332,7 @@
         "TIMELAPSE": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"48000"},
         "DRUM": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"48000"},
         "SILENCE": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"48000"},
-        "INTERNET": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"48000"},
-        "SECBEFORE": {"TO": true, "arr": 0, "RATE":"48000"}
+        "INTERNET": {"TO": true, "arr": 0, "LATENCY": "0", "RATE":"48000"}
       },
       "rhythm":{
         "bpm":"60",

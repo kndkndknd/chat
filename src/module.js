@@ -26,14 +26,18 @@ exports.toBase64 = function toBase64(buffer, video){
   return buffer.toDataURL("image/jpeg");
 }
 
-exports.textPrint = function textPrint(ctx, canvas, text){
+exports.textPrint = function textPrint(ctx, canvas, text, dark){
   if(text != undefined){
     /*
     if(mode != "none") {
       textprint(ctx, canvas, text ,"white")
     } else {
     */
+    if(dark === undefined || !dark) {
       textprint(ctx, canvas, text ,"black")
+    } else {
+      textprint(ctx, canvas, text ,"white")
+    }
     //}
   }
 }
@@ -89,12 +93,14 @@ const textprint = (ctx,canvas,text, color) => {
 }
 
 exports.whitePrint = function whitePrint(ctx, canvas) {
-ctx.fillStyle = "white";
+  ctx.fillStyle = "white";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 exports.erasePrint = function whitePrint(ctx, canvas) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  //ctx.fillStyle = "rgba(" + [0, 0, 0, 0] + ")";
+  //ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
 exports.ctrlView = function ctrlView(statusList){
