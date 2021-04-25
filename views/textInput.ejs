@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <title><%= title %></title>
+  <!-- <LINK rel="stylesheet" type="text/css" href="/css/client.css"> -->
+</head>
+<body id="body">
+  <script src="/socket.io/socket.io.js"></script>
+  <div id="wrapper">
+  <canvas id="cnvs">
+    canvas not applied.
+  </canvas>
+  <textarea name="text" id="text" rows="10" cols="60" style="font-size:30px;"></textarea>
+  <script>
+    var socket = io.connect();
+    var video;
+    var buffer = document.createElement('canvas');
+    var client = "<%= title %>";
+    var videoMode = {"mode": "none", "option": "none"}; //"record" or "playback"
+    var strings = "";
+    var streamList;
+  </script>
+  <script src="/javascripts/textInput.js"></script>
+</body>
+</html>

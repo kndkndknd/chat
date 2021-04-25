@@ -1,23 +1,24 @@
-const glob = require("glob");
+// const glob = require("glob");
 const path = require("path");
-const webpack = require("webpack");
+// const webpack = require("webpack");
 
-const srcDir = "./src/";
-let scriptFiles = glob.sync("./src/*.js");
+// const srcDir = "./src/";
+// let scriptFiles = glob.sync("./src/*.js");
+/*
 let scripts = {};
 
 for (let i in scriptFiles){
   var script = scriptFiles[i];
   scripts[script.slice(srcDir.length,-3)] = script;
 }
+*/
 
 
 module.exports = {
   // メインとなるJavaScriptファイル（エントリーポイント）
   entry: {
     client: './src/client.js',
-    module: './src/module.js',
-    log: './src/log.js'
+    textInput: './src/textInput.js'
   } ,
   // entry: scripts,
   // ファイルの出力設定
@@ -49,7 +50,7 @@ module.exports = {
           }
         ],
         // node_modulesは除外する
-        exclude: /node_modules/,
+        exclude: /node_modules/
       }
     ]
   },

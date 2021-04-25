@@ -41,10 +41,11 @@ const exportComponent = require('./exportFunction.js');
 let statusList = require ('./lib/status.json');
 let pathList = require('./lib/path.json')
 let dt = new Date();
-const logFilePath = "./log" + dt.toFormat("YYYYMMDDHH24MMSS") + ".json"
+const logFilePath = "./log/log" + dt.toFormat("YYYYMMDDHH24MMSS") + ".json"
 
 const https = require('https');
 const http = require('http');
+const { isObjectLiteralElement } = require('typescript');
 
 //https鍵読み込み
 const options = {
@@ -67,6 +68,16 @@ app.use(favicon(path.join(__dirname, 'lib/favicon.ico')));
 app.get('/', function(req, res, next) {
   res.render('client', {
     title: 'client'
+   });
+});
+app.get('/hls', function(req, res, next) {
+  res.render('hls', {
+    title: 'hls test'
+   });
+});
+app.get('/text', function(req, res, next) {
+  res.render('textInput', {
+    title: 'text input'
    });
 });
 
@@ -124,19 +135,23 @@ const pcm2arr = (url) => {
 }
 const movBuff = {
   "KICK": {
-    "audio": exportComponent.pcm2arr(pcm, "./public/files/KICK.wav"),
+    // "audio": exportComponent.pcm2arr(pcm, "./public/files/KICK.wav"),
+    "audio": [],
     "index": 0
   },
   "SNARE": {
-    "audio": exportComponent.pcm2arr(pcm, "./public/files/SNARE.wav"),
+    // "audio": exportComponent.pcm2arr(pcm, "./public/files/SNARE.wav"),
+    "audio": [],
     "index": 0
   },
   "HAT": {
-    "audio": exportComponent.pcm2arr(pcm, "./public/files/HAT.wav"),
+    // "audio": exportComponent.pcm2arr(pcm, "./public/files/HAT.wav"),
+    "audio": [],
     "index": 0
   },
   "SILENCE": {
-    "audio": exportComponent.pcm2arr(pcm, "./public/files/SILENCE.wav"),
+    // "audio": exportComponent.pcm2arr(pcm, "./public/files/SILENCE.wav"),
+    "audio": [],
     "index": 0
   },
   "PLAYBACK": {
@@ -159,7 +174,8 @@ const movBuff = {
 
 let strings = "";
 const homeDir = pathList.home
-const libDir = process.env.HOME + pathList.upload
+//const libDir = process.env.HOME + pathList.upload
+const libDir = "./upload/"
 let timelapseFlag = false;
 let tile = false
 let cmd
@@ -371,6 +387,7 @@ io.sockets.on('connection',(socket)=>{
   socket.on("startFromClient", () => {
     timelapseFlag = true;
     //getInternet()
+    if(statusList.clients[String(socket.id)] !== undefined){
     statusList.clients[String(socket.id)].STREAMS.RECORD = {"FROM": true, "arr": 0}
     for(let key in statusList.streamStatus.streamFlag){
       switch(key){
@@ -387,20 +404,25 @@ io.sockets.on('connection',(socket)=>{
       }
     }
     socket.emit('streamFlagFromServer', statusList.streamStatus.streamFlag)
+  }
   })
   socket.on("routingFromCtrl", (data) =>{
     //console.log(data);
   });
 
   socket.on('chunkFromClient', (data)=>{
-    //console.log(data);
+    // console.log(data); //20210421_2
+    console.log("debug chunkFromClient data.target:" + data.target) //20210421
     chunkFromClient(data, String(socket.id));
     //if(Math.random()<0.1) postToInternet({"audio":data.audio, "video": data.video, "target":"CHAT"})
   });
 
   socket.on('AckFromClient', (data)=>{
     let id = String(socket.id)
+    //console.log(data)
+    console.log("debug AckFromClient data:" + data)
     if(statusList.streamStatus.streamFlag && id in statusList.clients) {
+      console.log("debug streamFlag in AckFromClient data:" + data)
       statusList.clients[id].STREAMS[data].ACK = true;
       streamReq(data, id);
     }
@@ -448,6 +470,64 @@ io.sockets.on('connection',(socket)=>{
     } ,500)
   })
   socket.on("textFromClient",(data) =>{
+    if(data !== ""){
+      for(let key in statusList.cmd.textList) {
+        if(data.includes(key) && !statusList.cmd.textState[statusList.cmd.textList[key]]) {
+          // コマンドの処理
+          const cmd = statusList.cmd.textList[key]
+          cmdFromServer(cmd, false)
+          console.log(key)
+          /*
+          if(cmd === "440" || cmd === "10000" || cmd === "80"){
+            statusList.cmd.textState.SINEWAVE = true
+          } else {
+            */
+            statusList.cmd.textState[cmd] = true
+          // }
+        }
+      }
+    } else { // テキスト欄削除またはEnterキー入力の動作
+      console.log("stop textInput")
+      //停止の処理
+      //RANDOMとGLITCHとタイルの強制解除
+      for(let key in statusList.cmd.textState){
+        if(statusList.cmd.textState[key]) {
+          //停止の処理
+          switch(key) {
+            case "SINEWAVE":
+              console.log("sinewave")
+            case "WHITENOISE":
+            case "FEEDBACK":
+            case "BASS":
+            case "CHAT":
+            case "PLAYBACK":
+            case "DRUM":
+            case "TIMELAPSE":
+              splitSpace("STOP " + key, false, "dummy");
+              break;
+            case "GRID":
+              statusList.streamStatus.grid = false
+              break;
+            case "QUANTIZE":
+              statusList.streamStatus.quantize = false
+              io.emit("cmdFromServer",{
+                "cmd": "QUANTIZE",
+                "quantize": statusList.streamStatus.quantize
+              })
+              break;
+            case "RANDOM":
+              statusList.streamStatus.emitMode = "NORMAL"
+              break;
+            case "GLITCH":
+              for(let stream in statusList.streamStatus.glitch) {
+                statusList.streamStatus.glitch[stream] = false
+              }
+              break;
+          }
+        }
+        statusList.cmd.textState[key] = false
+      }
+    }
     io.emit("textFromServer", {
       "text": data,
       "alert": false,
@@ -457,6 +537,58 @@ io.sockets.on('connection',(socket)=>{
   socket.on("voiceCtrlFromClient", (data) => {
     statusList.clients[String(socket.id)].voice = data
   })
+  /*
+  socket.on("recordFinishFromCLient", () => {
+    statusList.streamStatus.record = false
+    for(let stream in statusList.streamStatus.streamFlag) {
+      if(statusList.streamStatus.streamFlag[stream]){
+        let json = {}
+        if(movBuff.CHAT.length > 1){ // 20210420試し
+          if(!statusList.streamStatus.chatSequence){
+            json = movBuff.CHAT.shift()
+            console.log("debug length")
+            console.log(movBuff.CHAT.length)
+          } else {
+            movBuff.CHAT.some((element, index)=>{
+              if(element.id === sourceId){
+                json = element
+                movBuff.splice(index,1)
+                return true
+              }
+            })
+          }
+        } else if(movBuff.CHAT.length > 0) { //20210420試し
+          json = movBuff.CHAT[0]
+        }
+
+        if( json !== {}){
+          let idArr = []
+          idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], "CHAT", "TO", sourceId)
+          if(idArr.length > 0){
+            let clientRate = false;
+            idArr.forEach((element, index) => {
+              if(String(element) in statusList.clients && statusList.clients[String(element)].STREAMS.CHAT.RATE != Number(statusList.sampleRate.CHAT)) clientRate = true
+            })
+            json.target = "CHAT";
+            json.glitch = false
+            json.sampleRate = sampleRate;
+            if(statusList.streamStatus.glitch.CHAT) json = exportComponent.glitchStream(json);
+            let targetID = idArr[Math.floor(Math.random() * idArr.length)];
+            if(clientRate){
+              if(statusList.clients[targetID] != undefined) json.sampleRate = statusList.clients[targetID].STREAMS.CHAT.RATE
+              if(json.sampleRate === "RANDOM") json.sampleRate = String(Math.ceil(Math.random() * 8) * 12000)
+            }
+            io.to(targetID).emit('chunkFromServer', json);
+            console.log("for debug; io.to(" + targetID + ").emit('chunkFromServer', " + json + ")")
+            if(statusList.clients[String(targetID)] != undefined) statusList["clients"][String(targetID)]["STREAMS"]["CHAT"]["ACK"] = false;
+          } else {
+            statusList["streamStatus"]["waitCHAT"] = true;
+          }
+        }
+      }
+    }
+  })
+  */
   socket.on("disconnect", () =>{
     console.log('disconnect: ' + String(socket.id));
     //recordCmd(logFilePath, String(socket.id) ,"disconnect")
@@ -609,101 +741,6 @@ const cmdFromServer = (cmdStrings, alertFlag) =>{
         property: rtnRate
       })
       break;
-      /*
-    case "I":
-      let rtnRate1 = 44100
-      for (let key in statusList["sampleRate"]){
-        statusList["sampleRate"][key] = rtnRate1;
-        if(Object.keys(statusList.clients).length > 0 && Object.keys(statusList.clients)[0] != "dummy") {
-          for(let clientID in statusList["clients"]){
-            statusList.clients[clientID].STREAMS[key].RATE = String(rtnRate1);
-          }
-        }
-      }
-      io.emit('cmdFromServer',{
-        cmd: "SAMPLERATE",
-        property: rtnRate1
-      })
-      break;
-    case "II":
-      let rtnRate2 = 44100 * 9 / 8
-      for (let key in statusList["sampleRate"]){
-        statusList["sampleRate"][key] = rtnRate2;
-        for(let clientID in statusList["clients"]){
-          statusList["clients"][clientID]["STREAMS"][key]["RATE"] = String(rtnRate2);
-        }
-      }
-      io.emit('cmdFromServer',{
-        cmd: "SAMPLERATE",
-        property: rtnRate2
-      })
-      break;
-    case "III":
-      let rtnRate3 = 44100 * 5 / 4
-      for (let key in statusList["sampleRate"]){
-        statusList["sampleRate"][key] = rtnRate3;
-        for(let clientID in statusList["clients"]){
-          statusList["clients"][clientID]["STREAMS"][key]["RATE"] = String(rtnRate3);
-        }
-      }
-      io.emit('cmdFromServer',{
-        cmd: "SAMPLERATE",
-        property: rtnRate3
-      })
-      break;
-    case "IV":
-      let rtnRate4 = 44100 * 4 / 3
-      for (let key in statusList["sampleRate"]){
-        statusList["sampleRate"][key] = rtnRate4;
-        for(let clientID in statusList["clients"]){
-          statusList["clients"][clientID]["STREAMS"][key]["RATE"] = String(rtnRate4);
-        }
-      }
-      io.emit('cmdFromServer',{
-        cmd: "SAMPLERATE",
-        property: rtnRate4
-      })
-      break;
-    case "V":
-      let rtnRate5 = 44100 * 3 / 2
-      for (let key in statusList["sampleRate"]){
-        statusList["sampleRate"][key] = rtnRate5;
-        for(let clientID in statusList["clients"]){
-          statusList["clients"][clientID]["STREAMS"][key]["RATE"] = String(rtnRate5);
-        }
-      }
-      io.emit('cmdFromServer',{
-        cmd: "SAMPLERATE",
-        property: rtnRate5
-      })
-      break;
-    case "VI":
-      let rtnRate6 = 44100 * 5 / 3
-      for (let key in statusList["sampleRate"]){
-        statusList["sampleRate"][key] = rtnRate6
-        for(let clientID in statusList["clients"]){
-          statusList["clients"][clientID]["STREAMS"][key]["RATE"] = String(rtnRate6);
-        }
-      }
-      io.emit('cmdFromServer',{
-        cmd: "SAMPLERATE",
-        property: rtnRate6
-      })
-      break;
-    case "VII":
-      let rtnRate7 = 44100 * 15 / 8
-      for (let key in statusList["sampleRate"]){
-        statusList["sampleRate"][key] = rtnRate7;
-        for(let clientID in statusList["clients"]){
-          statusList["clients"][clientID]["STREAMS"][key]["RATE"] = String(rtnRate7);
-        }
-      }
-      io.emit('cmdFromServer',{
-        cmd: "SAMPLERATE",
-        property: rtnRate7
-      })
-      break;
-      */
     case "GRID":
       console.log('STREAM note on in GRID: ' + String(!statusList.streamStatus.grid))
       if(!statusList.streamStatus.grid){
@@ -951,6 +988,7 @@ const cmdFromServer = (cmdStrings, alertFlag) =>{
         tile = false
       } else {
         tile = true
+        console.log("tile")
       }
       io.emit('cmdFromServer',{"cmd":"TILE", "property":tile})
       break;
@@ -962,6 +1000,8 @@ const cmdFromServer = (cmdStrings, alertFlag) =>{
       if(cmd) {
         //console.log("cmd: " + cmd["cmd"]);
         if(cmd["cmd"] === "RECORD"){
+          // statusList.streamStatus.record = true
+          console.log("debug RECORD start")
           let idArr = [];
           idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList.clients, cmd["cmd"], "FROM", "dummyID")
           for(let i=0;i<idArr.length;i++){
@@ -1005,6 +1045,7 @@ const cmdFromServer = (cmdStrings, alertFlag) =>{
         }
         for(let key in statusList.streamStatus.streamCmd){
           if(cmd.cmd === key){
+            console.log(key)
             //console.log(key + " stream start");
             statusList.streamStatus.streamFlag[statusList.streamStatus.streamCmd[key]] = true;
             setTimeout(() =>{
@@ -1014,6 +1055,7 @@ const cmdFromServer = (cmdStrings, alertFlag) =>{
                   if(statusList.clients[String(id)] != undefined && statusList.clients[String(id)].STREAMS[statusList.streamStatus.streamCmd[key]].FROM) io.to(id).emit('streamReqFromServer',"CHAT")
                 }
               } else {
+                console.log("20210423 debug")
                 streamReq(statusList.streamStatus.streamCmd[key], idArr[Math.floor(Math.random() * idArr.length)])
               }
               //streamReq(statusList.streamStatus.streamCmd[key], idArr[Math.floor(Math.random() * idArr.length)])
@@ -1256,10 +1298,76 @@ const micToCmd = (micStrings, socketId) => {
   }
 }
 
+let cinemaNum = 0
+let hlsNum = 0
+
+function splitPlus(cmdArr) {
+  cmdArr.forEach((cmd) => {
+    cmdFromServer(cmd, false)
+  })
+}
+
 const charFromClient = (character, charString, socketId, alertFlag) =>{
   if(character === "enter") {
     recordCmd(logFilePath, String(socketId), strings)
-    if(~charString.indexOf(" ") ) {
+    if(charString.includes("+") ) {
+      splitPlus(charString.split("+"));
+      charString = "";
+    } else if(charString === "->CHAT" || charString === "-> CHAT") {
+      cmdFromServer("CHAT", false)
+      charString = "";
+      setTimeout(() => {
+        io.emit("cmdFromServer", {cmd: "HLS", property: "stop"})
+      },1500)
+    } else if((charString === "FTARRI" && hlsNum === 0) || (charString === "MILKBOTTLE" && hlsNum <= 1)) {
+      io.to(socketId).emit("cmdFromServer", {cmd: "HLS", property: hlsNum})
+      charString = "";
+      console.log(hlsNum)
+      hlsNum++
+      charString = "";
+    } else if(charString === "CINEMA" && cinemaNum === 0) {
+      console.log("stop tile && valid quantize")
+      tile = false
+      io.emit('cmdFromServer',{"cmd":"TILE", "property":tile})
+      //quantize
+      statusList.streamStatus.quantize = true // 20210424 のみの処理、QUANTIZEを止めると同時に有効にする
+      io.emit("cmdFromServer",{
+        "cmd": "QUANTIZE",
+        "quantize": statusList.streamStatus.quantize
+      })
+      console.log("stop stream")
+      for(let stream in statusList.streamStatus.streamFlag) {
+        if(statusList.streamStatus.streamFlag[stream]){
+          console.log(stream)
+          statusList.streamStatus.streamFlag[stream] = false
+          io.emit('cmdFromServer',{
+            "cmd": "STOP",
+            "property": stream
+          });
+        }
+      }
+      console.log("cinema hls")
+      io.to(socketId).emit("cmdFromServer", {cmd: "CINEMA", property: cinemaNum})
+      cinemaNum++
+      charString = "";
+    } else if((charString === "FTARRI" && hlsNum > 0) || (charString === "MILKBOTTLE" && hlsNum > 1 ) || (charString === "CINEMA" && cinemaNum > 0)) {
+      cmdFromServer(charString, false)
+      charString = "";
+      console.log(cinemaNum)
+      /*
+    } else if(charString === "HLS") {
+      // io.to(socketId).emit("HLSfromServer", "START")
+      io.to(socketId).emit("cmdFromServer", {cmd: "HLS", property: "play"})
+      charString = "";
+    } else if(charString === "HLSSTOP") {
+      // io.to(socketId).emit("HLSfromServer", "START")
+      io.to(socketId).emit("cmdFromServer", {cmd: "HLS", property: "stop"})
+      charString = "";
+    } else if(charString === "HLSCHANGE") {
+      // io.to(socketId).emit("HLSfromServer", "LOAD")
+      charString = "";
+      */
+    } else if(~charString.indexOf(" ") ) {
       splitSpace(charString, false, socketId);
       charString = "";
     } else if(charString === "VOICE") {
@@ -1809,6 +1917,98 @@ const splitSpace = (strings, alertFlag, socketId) => {
         break
       case "STOP":
       case "OFF":
+        if(Object.keys(statusList.cmd.list).includes(strArr[1])){
+          if(Object.keys(statusList.streamStatus.streamCmd).includes(strArr[1])) {
+            statusList.streamStatus.streamFlag[statusList.streamStatus.streamCmd[strArr[1]]] = false
+          }
+            // 全端末の該当コマンドを停止する
+            // stopにPropertyをつけて送信する
+            io.emit('cmdFromServer',{
+              "cmd": "STOP",
+              "property": statusList.cmd.list[strArr[1]]
+            });
+        } else {
+          switch(strArr[1]) {
+            case "DRUM":
+              statusList.streamStatus.streamFlag.KICK = false
+              statusList.streamStatus.streamFlag.SNARE = false
+              statusList.streamStatus.streamFlag.HAT = false
+            io.emit('cmdFromServer',{
+              "cmd": "STOP",
+              "property": statusList.cmd.list[strArr[1]]
+            });
+              break;
+            case "CLICK":
+            case "METRONOME":
+              io.emit('cmdFromServer',{
+                "cmd": "METRONOME",
+                "property": "STOP"
+              });
+              break;
+            case "STREAM":
+              console.log("stop tile && valid quantize")
+              tile = false
+              io.emit('cmdFromServer',{"cmd":"TILE", "property":tile})
+              //quantize
+              statusList.streamStatus.quantize = true // 20210424 のみの処理、QUANTIZEを止めると同時に有効にする
+              io.emit("cmdFromServer",{
+                "cmd": "QUANTIZE",
+                "quantize": statusList.streamStatus.quantize
+              })
+              console.log("stop stream")
+              for(let stream in statusList.streamStatus.streamFlag) {
+                if(statusList.streamStatus.streamFlag[stream]){
+                  console.log(stream)
+                  statusList.streamStatus.streamFlag[stream] = false
+                  io.emit('cmdFromServer',{
+                    "cmd": "STOP",
+                    "property": stream
+                  });
+                }
+              }
+              break;
+            case "CINEMA":
+            case "HLS":
+              io.emit('cmdFromServer', {
+                cmd: "HLS",
+                property: "stop"
+              })
+              break;
+            default:
+              if(Object.keys(statusList.cmd.list).includes(strArr[1])) {
+                io.emit('cmdFromServer', {
+                  cmd: "STOP",
+                  property: statusList.cmd.list[strArr[1]]
+                })
+              }
+              break;
+          }
+          /*
+          if(strArr[1] === "DRUM") {
+          } else if(strArr[1] === "CLICK" || strArr[1] === "METRONOME") {
+            io.emit('cmdFromServer',{
+              "cmd": "METRONOME",
+              "property": "STOP"
+            });
+            console.log("io.emit('cmdFromSever',{cmd:'METRONOME', property:'STOP'})")
+          } else if(strArr[1] === "STREAM") {
+            for(let stream in statusList.streamStatus.streamCmd) {
+              io.emit('cmdFromServer', {
+                cmd: "STOP",
+                property: stream
+              })
+            }
+          } else {
+            if(Object.keys(statusList.cmd.list).includes(strArr[1])) {
+              io.emit('cmdFromServer', {
+                cmd: "STOP",
+                property: statusList.cmd.list[strArr[1]]
+              })
+            }
+          }
+          */
+        }
+        /*
         for(let key in statusList["streamStatus"]["streamCmd"]){
           if(strArr[1] === key){
             statusList.streamStatus.streamFlag[statusList.streamStatus.streamCmd[key]] = false
@@ -1826,6 +2026,7 @@ const splitSpace = (strings, alertFlag, socketId) => {
           });
           console.log("io.emit('cmdFromSever',{cmd:'METRONOME', property:'STOP'})")
         }
+        */
         break;
       case "FACE":
         if(strArr[1] === "DETECT") {
@@ -1879,12 +2080,12 @@ const splitSpace = (strings, alertFlag, socketId) => {
               "cmd": "VOICE",
               "property": lang
             })
-            console.log("io.to(" + sockID + ").emit('cmdFromSever',{cmd:'VOICE', property:"+lang+"})")
+//            console.log("io.to(" + sockID + ").emit('cmdFromSever',{cmd:'VOICE', property:"+lang+"})")
             break;
           case "EN":
           case "ENGLISH":
             lang = 'en-US'
-            console.log("io.to(" + sockID + ").emit('cmdFromSever',{cmd:'VOICE', property:"+lang+"})")
+//            console.log("io.to(" + sockID + ").emit('cmdFromSever',{cmd:'VOICE', property:"+lang+"})")
             io.emit('cmdFromServer', {
               "cmd": "VOICE",
               "property": lang
@@ -2207,9 +2408,9 @@ const streamReq = (target, sockID) => {
     }
     if(statusList["streamStatus"]["streamFlag"][target]){
       if(sockID in statusList.clients){
-        console.log(sockID);
-        console.log(target);
-        console.log(statusList.clients[sockID].STREAMS[target].LATENCY);
+        // console.log(sockID);
+        // console.log(target);
+        // console.log(statusList.clients[sockID].STREAMS[target].LATENCY);
         setTimeout(()=>{
           let idArr = [];
           let targetID = ""
@@ -2226,18 +2427,18 @@ const streamReq = (target, sockID) => {
                 if(idArr.length > 0){
                   let json = {}
                   if(statusList.streamStatus.emitMode != "RANDOM"){
-                    //json.audio = movBuff[target].audio.shift()
-                    //movBuff[target].audio.push(json.audio)
-                    json.audio = movBuff[target].audio[movBuff[target].index]
-                    let buffEnd = movBuff[target].audio.length
+                    json.audio = movBuff[target].audio.shift()
+                    movBuff[target].audio.push(json.audio)
+                    // json.audio = movBuff[target].audio[movBuff[target].index]
+                    // let buffEnd = movBuff[target].audio.length
                     if(movBuff[target].video != undefined) {
-                      json.video = movBuff[target].video[movBuff[target].index]
-                      // json.video = movBuff[target].video.shift()
+                      // json.video = movBuff[target].video[movBuff[target].index]
+                      // if(movBuff[target].video.length < buffEnd) buffEnd = movBuff[target].video.length
+                      json.video = movBuff[target].video.shift()
                       movBuff[target].video.push(json.video)
-                      if(movBuff[target].video.length < buffEnd) buffEnd = movBuff[target].video.length
                     }
-                    movBuff[target].index++
-                    if(movBuff[target].index >= buffEnd) movBuff[target].index = 0
+                    // movBuff[target].index++
+                    // if(movBuff[target].index >= buffEnd) movBuff[target].index = 0
                   } else {
                     let randomNum = Math.floor(Math.random() * movBuff[target].audio.length)
                     json.audio = movBuff[target].audio[randomNum]
@@ -2265,8 +2466,9 @@ const streamReq = (target, sockID) => {
                   } else {
                     json.source = target
                   }
+                  console.log("debug chunkFromServer to " + targetID + ": " + json.source)
                   io.to(targetID).emit('chunkFromServer', json);
-                  console.log("io.to(" + targetID + ").emit('chunkFromServer', " + json + ")")
+                  //console.log("io.to(" + targetID + ").emit('chunkFromServer', " + json + ")")
                 }
           }
           setTimeout(() => {
@@ -2290,6 +2492,9 @@ const chunkFromClient = (data, sourceId) => {
     if(data.target && data.audio != "" && data.video != ""){
       movBuff[data.target].audio.push(data.audio)
       movBuff[data.target].video.push(data.video)
+      movBuff[data.target].index = movBuff[data.target].audio.length
+      console.log(data.target + "length: " + String(movBuff[data.target].index))
+      // console.log(data.target + "length: " + String(movBuff[data.target].video.length))
     }
   }
   let sampleRate = "44100"
@@ -2298,41 +2503,51 @@ const chunkFromClient = (data, sourceId) => {
     sampleRate = String(Math.ceil(Math.random() * 8) * 12000)
   }
   if(statusList.streamStatus.streamFlag.CHAT){
-    let idArr = []
-    idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], "CHAT", "TO", sourceId)
-    if(idArr.length > 0){
-      let clientRate = false;
-      idArr.forEach((element, index) => {
-        if(String(element) in statusList.clients && statusList.clients[String(element)].STREAMS.CHAT.RATE != Number(statusList.sampleRate.CHAT)) clientRate = true
-      })
-      let json = {}
-      if(movBuff.CHAT.length > 0){
-        if(!statusList.streamStatus.chatSequence){
-          json = movBuff.CHAT.shift()
-        } else {
-          movBuff.CHAT.some((element, index)=>{
-            if(element.id === sourceId){
-              json = element
-              movBuff.splice(index,1)
-              return true
-            }
-          })
+  // if(!statusList.streamStatus.record && statusList.streamStatus.streamFlag.CHAT){
+    let json = {}
+    if(movBuff.CHAT.length > 1){ // 20210420試し
+      if(!statusList.streamStatus.chatSequence){
+        json = movBuff.CHAT.shift()
+        console.log("debug length")
+        console.log(movBuff.CHAT.length)
+      } else {
+        movBuff.CHAT.some((element, index)=>{
+          if(element.id === sourceId){
+            json = element
+            movBuff.splice(index,1)
+            return true
+          }
+        })
+      }
+    } else if(movBuff.CHAT.length > 0) { //20210420試し
+      json = movBuff.CHAT[0]
+    }
+    if(json !== {}){
+      let idArr = []
+      idArr = exportComponent.pickupTarget(io.sockets.adapter.rooms, statusList["clients"], "CHAT", "TO", sourceId)
+      if(idArr.length > 0){
+        let clientRate = false;
+        idArr.forEach((element, index) => {
+          if(String(element) in statusList.clients && statusList.clients[String(element)].STREAMS.CHAT.RATE != Number(statusList.sampleRate.CHAT)) clientRate = true
+        })
+        json.target = "CHAT";
+        json.glitch = false
+        json.sampleRate = sampleRate;
+        json.source = sourceId
+        if(statusList.streamStatus.glitch.CHAT) json = exportComponent.glitchStream(json);
+        let targetID = idArr[Math.floor(Math.random() * idArr.length)];
+        if(clientRate){
+          if(statusList.clients[targetID] != undefined) json.sampleRate = statusList.clients[targetID].STREAMS.CHAT.RATE
+          if(json.sampleRate === "RANDOM") json.sampleRate = String(Math.ceil(Math.random() * 8) * 12000)
         }
+        io.to(targetID).emit('chunkFromServer', json);
+        console.log("for debug; io.to(" + targetID + ").emit('chunkFromServer', " + json + ")")
+        if(statusList.clients[String(targetID)] != undefined) statusList["clients"][String(targetID)]["STREAMS"]["CHAT"]["ACK"] = false;
+      } else {
+        statusList["streamStatus"]["waitCHAT"] = true;
       }
-      json.target = "CHAT";
-      json.glitch = false
-      json.sampleRate = sampleRate;
-      if(statusList.streamStatus.glitch.CHAT) json = exportComponent.glitchStream(json);
-      let targetID = idArr[Math.floor(Math.random() * idArr.length)];
-      if(clientRate){
-        if(statusList.clients[targetID] != undefined) json.sampleRate = statusList.clients[targetID].STREAMS.CHAT.RATE
-        if(json.sampleRate === "RANDOM") json.sampleRate = String(Math.ceil(Math.random() * 8) * 12000)
-      }
-      io.to(targetID).emit('chunkFromServer', json);
-      console.log("io.to(" + targetID + ").emit('chunkFromServer', " + json + ")")
-      if(statusList.clients[String(targetID)] != undefined) statusList["clients"][String(targetID)]["STREAMS"]["CHAT"]["ACK"] = false;
     } else {
-      statusList["streamStatus"]["waitCHAT"] = true;
+      console.log("test")
     }
   }
 }
@@ -2733,6 +2948,7 @@ const recordCmd = (file,id,data) => {
 }
 
 const doScenario = () => {
+  console.log("scenario")
   let flag = false;
   try {
     fs.statSync(scenarioPath)
@@ -2749,7 +2965,12 @@ const doScenario = () => {
     let scenarioTime = new Date("1970/01/01 09:" + key)
     let Latency = scenarioTime.getTime()
     setTimeout(()=>{
+      io.emit('cmdFromServer', {
+        cmd: "INSTRUCTION",
+        property: scenario[key]
+      })
       //strings = scenario[key]
+      /*
       let idArr = Object.keys(statusList.clients)
       console.log(idArr)
       if(idArr.length === 1 && idArr[0] === "dummy") {
@@ -2768,6 +2989,7 @@ const doScenario = () => {
           }
         }
       }
+      */
       //let idArr = Object.keys(io.sockets.adapter.rooms)
     },Latency)
     /*
@@ -2815,18 +3037,29 @@ async function mediaImport(file,mediaDir,ss,t) {
         if(!(fSplit[0] in movBuff)) {
           movBuff[fSplit[0]] = {"audio":[],"video":[],"index":0}
         }
+        let tmpBuff = new Float32Array(8192);
+        let rtnBuff = [];
+        let i = 0;
         switch(fSplit[1]) {
           case "mov":
           case "MOV":
           case "mp4":
           case "MP4":
-            let sndConvert = 'ffmpeg -i ' + mediaDir + f + ' -ss ' + ss + ' -t ' + t + ' -vn -acodec aac ' + mediaDir + fSplit[0] + '.aac';
-            let imgConvert = 'ffmpeg -i ' + mediaDir + f + ' -ss ' + ss + ' -t ' + t + ' -r 5.4 -f image2 "' + mediaDir + fSplit[0] + '%06d.jpg"';
+            let sndConvert = ""
+            let imgConvert = ""
+            sndConvert = 'ffmpeg -i ' + mediaDir + f + ' -vn -acodec aac ' + mediaDir + fSplit[0] + '.aac';
+            imgConvert = 'ffmpeg -i ' + mediaDir + f + ' -r 5.4 -f image2 "' + mediaDir + fSplit[0] + '%06d.jpg"';
+            if(ss !== "FULL" && t !== "FULL") {
+              sndConvert = sndConvert + ' -ss ' + ss + ' -t ' + t;
+              imgConvert = imgConvert + ' -ss ' + ss + ' -t ' + t;
+              /*
+            } else {
+              sndConvert = 'ffmpeg -i ' + mediaDir + f + ' -vn -acodec aac ' + mediaDir + fSplit[0] + '.aac';
+              imgConvert = 'ffmpeg -i ' + mediaDir + f + ' -r 5.4 -f image2 "' + mediaDir + fSplit[0] + '%06d.jpg"';
+              */
+            }
             await execPromise(sndConvert)
             await execPromise(imgConvert)
-            let tmpBuff = new Float32Array(8192);
-            let rtnBuff = [];
-            let i = 0;
             await pcm.getPcmData(mediaDir + fSplit[0] + ".aac", { stereo: true, sampleRate: 22050 },
               function(sample, channel) {
                 tmpBuff[i] = sample;
@@ -2893,7 +3126,8 @@ async function mediaImport(file,mediaDir,ss,t) {
                   console.log("err");
                   throw new Error(err);
                 }
-                movBuff[f].audio = rtnBuff
+                //movBuff[f].audio = rtnBuff
+                movBuff[fSplit[0]].audio = rtnBuff
                 console.log('pcm.getPcmData(' + f+ ', { stereo: true, sampleRate: 44100 })')
                 io.emit('textFromServer',{
                   "text": "UPLOADED",

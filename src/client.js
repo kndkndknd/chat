@@ -1,4 +1,27 @@
+//const { container } = require('webpack');
 const modules = require('./module.js');
+// import {textPrint, erasePrint} from './imageEvent.js'
+import {textPrint, erasePrint, toBase64, playHLS} from './imageEvent.js'
+let cmdMode = {
+  "sinewave": false,
+  "whitenoise": false,
+  "feedback": false,
+  "instruction": false,
+  "FACEDETECT":{
+    "FLAG": false
+  },
+  "CHUNK": {
+    "previousChunk": "",
+    "previousVideoMode": "none"
+  },
+  "BPM": 60,
+  "metronome": false,
+  "BEAT": false,
+  "THREE": false,
+  "DARK": false,
+  "BGN": false,
+  "HLS": false
+}
 let gainVal = {
   "master": 0.95,
   "FEEDBACK": 0.35,
@@ -56,29 +79,13 @@ let analyser
 let approximatelyOsc
 let approximatelyGain
 let fftSize = 2048
+let bufferLength
 
 let beatGain
 
 let fadeVal = {
   "IN": 0,
   "OUT": 0
-}
-let cmdMode = {
-  "sinewave": false,
-  "whitenoise": false,
-  "feedback": false,
-  "instruction": false,
-  "FACEDETECT":{
-    "FLAG": false
-  },
-  "CHAT": {
-    "BGN": false
-  },
-  "BPM": 60,
-  "metronome": false,
-  "BEAT": false,
-  "THREE": false,
-  "DARK": false
 }
 const userAgent = window.navigator.userAgent.toLowerCase()
 if(userAgent.indexOf('iphone') != -1 || userAgent.indexOf('android') != -1) {
@@ -128,11 +135,11 @@ const click = (frequency) => {
   } else {
     clickOsc.frequency.setValueAtTime(440,0)
   }
-  modules.textPrint(stx, strCnvs, "CLICK", cmdMode.DARK)
+  textPrint(stx, strCnvs, "CLICK", cmdMode.DARK)
   clickGain.gain.setValueAtTime(gainVal["CLICK"], currentTime);
   clickGain.gain.setTargetAtTime(0,currentTime,0.03);
   setTimeout(()=>{
-    modules.erasePrint(stx, strCnvs);
+    erasePrint(stx, strCnvs);
   },300);
 }
 
@@ -147,10 +154,10 @@ const bass = (position)  => {
   if(bassFlag){
     bassGain.gain.setTargetAtTime(0,currentTime,0.02);
     bassFlag = false;
-    modules.erasePrint(stx, strCnvs);
+    erasePrint(stx, strCnvs);
   } else {
-    modules.erasePrint(stx, strCnvs);
-    modules.textPrint(stx, strCnvs, "BASS", cmdMode.DARK);
+    erasePrint(stx, strCnvs);
+    textPrint(stx, strCnvs, "BASS", cmdMode.DARK);
     bassOsc.frequency.setTargetAtTime(bassLine[position][Math.floor(bassLine[position].length * Math.random())],currentTime,0.01)
     bassGain.gain.setTargetAtTime(gainVal.BASS,currentTime,0.02);
     bassFlag = true;
@@ -181,13 +188,15 @@ let receive;
 let receive_ctx;
 let loopCount = Math.random() * 10
 const onAudioProcess = (e) => {
-  if(videoMode.mode != "none" && videoMode.mode != "wait"){
+  if(videoMode.mode != "none"){
     let bufferData = new Float32Array(bufferSize);
     e.inputBuffer.copyFromChannel(bufferData, 0);
     if(videoMode.mode === "record"){
-      console.log("debug record mode")
+      console.log("debug record mode option: " + videoMode.option)
       if(videoMode.option === "none") {
         socket.emit('chunkFromClient', {"audio":bufferData, "video":toBase64(buffer, video), "target": "PLAYBACK"})
+        console.log("debbbbbb")
+        // socket.emit('chunkFromClient', {"audio":"debug", "video":"debug", "target": "PLAYBACK"})
       } else if(videoMode.option === "local") {
         streamBuffer.push({
           "audio": bufferData,
@@ -196,7 +205,6 @@ const onAudioProcess = (e) => {
         console.log("streamBuffer: " + String(streamBuffer.length))
       } else {
         socket.emit('chunkFromClient', {"audio":bufferData, "video":toBase64(buffer, video), "target": videoMode.option})
-        console.log(videoMode.option)
       }
     } else if(videoMode.option === "loop" && videoMode.mode === "chat"){
       if(streamBuffer.length > loopCount) {
@@ -216,7 +224,7 @@ const onAudioProcess = (e) => {
           playVideo(toBase64(buffer, video))
         }
       }
-      socket.emit('AckFromClient', "CHAT")
+      // socket.emit('AckFromClient', "CHAT")
     //} else if(videoMode.option === "metronome" && videoMode.mode === "chat"){
     } else {
       switch(videoMode.mode){
@@ -268,7 +276,7 @@ const onAudioProcess = (e) => {
     socket.emit('chunkFromClient', sendChunk)
     timelapseFlag = false;
   }
-  if(cmdMode.CHAT.BGN){
+  if(cmdMode.BGN){
     let freqData = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(freqData);
     console.log(freqData.length)
@@ -280,7 +288,7 @@ const onAudioProcess = (e) => {
     if(freq.val > 1) freq.val = 1
     console.log(freq)
     let currentTime = audioContext.currentTime;
-    approximatelyOsc.frequency.setTargetAtTime(freq.freq,currentTime,0.05)
+    approximatelyOsc.frequency.setTargetAtTime(freq.freq,currentTime,50)
   }
 }
 const debugPlay = (flo32arr, sampleRate, volume, glitch) => {
@@ -324,7 +332,8 @@ const playAudioStream = (flo32arr, sampleRate, volume, glitch) => {
 
 
 const initialize = () =>{
-  modules.erasePrint(stx, strCnvs);
+  //thr()
+  erasePrint(stx, strCnvs);
   socket.emit("startFromClient")
   start = true
   console.log("start")
@@ -447,7 +456,11 @@ const initialize = () =>{
             facingMode: ['user', 'environment'],
             height: {ideal: 1080},
             width: {ideal: 1920}
-          },audio : true 
+          },audio : {
+            audioGainControl: false,
+            echoCancellation: false,
+            noiseSuppression: false
+          }
         }).then((stream) =>{
           let mediastreamsource = void 0;
           mediastreamsource = audioContext.createMediaStreamSource(stream);
@@ -463,8 +476,8 @@ const initialize = () =>{
           //face detect
           video.srcObject = stream
           video.volume = 0;
-          renderStart();
-          //modules.textPrint(stx,strCnvs,String(imageCapture))
+          // renderStart();
+          //textPrint(stx,strCnvs,String(imageCapture))
         },  (e) =>{
           return console.log(e)
         })
@@ -538,10 +551,10 @@ const startRhythm = (interval,timbre) =>{
         }
         if("video" in chatBuffer){
           playVideo(chatBuffer["video"]);
-          modules.textPrint(stx, strCnvs, "LOOP", cmdMode.DARK);
+          textPrint(stx, strCnvs, "LOOP", cmdMode.DARK);
         } else {
-          modules.erasePrint(ctx, canvas);
-          modules.textPrint(ctx, canvas, stringsClient, cmdMode.DARK);
+          erasePrint(ctx, canvas);
+          textPrint(ctx, canvas, stringsClient, cmdMode.DARK);
         }
       }
     }
@@ -562,20 +575,21 @@ const stopRhythm = () => {
 //keyboard
 let stringsClient = "";
 const keyDown = (e) => {
-  //console.log(e.keyCode);
+  console.log(e.keyCode);
   //console.log(e.shiftKey);
   let charCode = keyMap[e.keyCode]
-  if(e.shiftKey && e.keyCode !== 16) charCode = shiftKeyMap[e.keyCode]
+  //if(e.shiftKey && e.keyCode !== 16) charCode = shiftKeyMap[e.keyCode]
+  if(e.shiftKey) charCode = shiftKeyMap[e.keyCode]
   if(charCode === "enter" && !start) initialize()
   if(!standAlone) {
     if(charCode === "enter" && (stringsClient === "LOCAL" || stringsClient === "STANDALONE" || stringsClient === "NETWORK" || stringsClient === "CONNECT")){
       standAlone = true;
-      modules.erasePrint(stx, strCnvs);
-      modules.textPrint(stx, strCnvs, "stand alone", cmdMode.DARK);
+      erasePrint(stx, strCnvs);
+      textPrint(stx, strCnvs, "stand alone", cmdMode.DARK);
       socket.emit('charFromClient', 40)
       stringsClient = ""
       setTimeout(()=>{
-        modules.erasePrint(stx, strCnvs);
+        erasePrint(stx, strCnvs);
       },300);
     } else {  //Normal mode
       if(e.keyCode >= 48 && e.keyCode <= 90 || e.keyCode >= 186 && e.keyCode <= 191 || e.keyCode >= 219 && e.keyCode <= 221 || e.keyCode === 226 || e.keyCode === 32){
@@ -586,16 +600,16 @@ const keyDown = (e) => {
     }
 
       if(charCode === "enter" && stringsClient != "VOICE") stringsClient = ""
-      modules.erasePrint(stx, strCnvs);
-      modules.textPrint(stx, strCnvs, stringsClient, cmdMode.DARK);
+      erasePrint(stx, strCnvs);
+      textPrint(stx, strCnvs, stringsClient, cmdMode.DARK);
   } else { //STANDALONE
     if(charCode === "enter"){
       if(stringsClient === "LOCAL" || stringsClient === "STANDALONE" || stringsClient === "NETWORK" || stringsClient === "CONNECT"){
         standAlone = false;
-        modules.erasePrint(stx, strCnvs);
-        modules.textPrint(stx, strCnvs, "network connect", cmdMode.DARK);
+        erasePrint(stx, strCnvs);
+        textPrint(stx, strCnvs, "network connect", cmdMode.DARK);
         setTimeout(()=>{
-          modules.erasePrint(stx, strCnvs);
+          erasePrint(stx, strCnvs);
         },300);
       } else {
         if (isNaN(Number(stringsClient)) === false && stringsClient != "") {
@@ -605,22 +619,25 @@ const keyDown = (e) => {
           });
 //          console.log("sinewave stand alone")
         } else if(stringsClient === "RECORD" || stringsClient === "REC") {
-          const prevVidMode = videoMode.mode
+          cmdMode.CHUNK.previousVideoMode = videoMode.mode
+          // const prevVidMode = videoMode.mode
           videoMode.mode = "pastBuff"
-          modules.erasePrint(stx, strCnvs);
-          modules.textPrint(stx, strCnvs, "RECORD", cmdMode.DARK);
+          erasePrint(stx, strCnvs);
+          textPrint(stx, strCnvs, "RECORD", cmdMode.DARK);
           console.log(videoMode.mode)
           stringsClient = ""
           setTimeout(()=>{
             videoMode.mode = prevVidMode
-            modules.erasePrint(stx, strCnvs)
-          },20000)
+            erasePrint(stx, strCnvs)
+            console.log("debug record end")
+            socket.emit('AckFromClient', "CHAT")
+          },10000)
         } else if(stringsClient === "PLAYBACK" || stringsClient === "PLAY") {
-          modules.erasePrint(stx, strCnvs);
-          modules.textPrint(stx, strCnvs, "PLAYBACK", cmdMode.DARK);
+          erasePrint(stx, strCnvs);
+          textPrint(stx, strCnvs, "PLAYBACK", cmdMode.DARK);
           setTimeout(()=>{
             videoMode.mode = "playback"
-            modules.erasePrint(stx, strCnvs);
+            erasePrint(stx, strCnvs);
           },300);
           stringsClient = ""
         } else {
@@ -637,15 +654,15 @@ const keyDown = (e) => {
       stringsClient = "";
     } else if(charCode === "down_arrow"){
       stringsClient = "";
-      modules.erasePrint(stx, strCnvs);
+      erasePrint(stx, strCnvs);
     } else if(charCode === "left_arrow"){
       stringsClient = stringsClient.slice(0,-1)
-      modules.erasePrint(stx, strCnvs);
-      modules.textPrint(stx, strCnvs, stringsClient, cmdMode.DARK);
+      erasePrint(stx, strCnvs);
+      textPrint(stx, strCnvs, stringsClient, cmdMode.DARK);
     } else if(e.keyCode >= 48 && e.keyCode <= 90 || e.keyCode === 190 || e.keyCode === 189 || e.keyCode === 32 || e.keyCode === 16){
       stringsClient = stringsClient + charCode
-      modules.erasePrint(stx, strCnvs);
-      modules.textPrint(stx, strCnvs, stringsClient, cmdMode.DARK);
+      erasePrint(stx, strCnvs);
+      textPrint(stx, strCnvs, stringsClient, cmdMode.DARK);
     }
   }
 }
@@ -672,15 +689,15 @@ let stx = strCnvs.getContext('2d');
 let bckCnvs = document.getElementById('bckCnvs');
 let btx = bckCnvs.getContext('2d');
 //let buffer;
-let bufferContext;
+// let bufferContext;
 
 const sizing =() =>{
   document.getElementById("cnvs").setAttribute("height", String(window.innerHeight) + "px")
   document.getElementById("cnvs").setAttribute("width", String(window.innerWidth) + "px")
   document.getElementById("strCnvs").setAttribute("height", String(window.innerHeight) + "px")
   document.getElementById("strCnvs").setAttribute("width", String(window.innerWidth) + "px")
-  document.getElementById("bckCnvs").setAttribute("height", String(window.innerHeight) + "px")
-  document.getElementById("bckCnvs").setAttribute("width", String(window.innerWidth) + "px")
+  //document.getElementById("bckCnvs").setAttribute("height", String(window.innerHeight) + "px")
+  // document.getElementById("bckCnvs").setAttribute("width", String(window.innerWidth) + "px")
 }
 
 sizing();
@@ -714,9 +731,11 @@ socket.on('connectFromServer', (data) => {
 socket.on('stringsFromServer', (data) =>{
   if(!textPrintProtect) {
     stx.clearRect(0, 0, strCnvs.width, strCnvs.height);
+    erasePrint(stx, strCnvs);
+    erasePrint(ctx, canvas);
     console.log(data)
     stringsClient = data
-    modules.textPrint(stx,strCnvs, stringsClient, cmdMode.DARK)
+    textPrint(stx,strCnvs, stringsClient, cmdMode.DARK)
   }
 });
 socket.on('erasePrintFromServer',() =>{
@@ -726,12 +745,12 @@ socket.on('erasePrintFromServer',() =>{
 
 socket.on('statusViewFromServer', ()=>{
   let statusText = modules.statusPrint(oscGain.gain.value, freqVal, feedbackGain.gain.value, noiseGain.gain.value, bassFlag);
-  strings = "";
+  // strings = "";
   stringsClient = "";
-  modules.erasePrint(stx, strCnvs);
-  modules.textPrint(stx, strCnvs, statusText, cmdMode.DARK);
+  erasePrint(stx, strCnvs);
+  textPrint(stx, strCnvs, statusText, cmdMode.DARK);
   setTimeout(()=>{
-    modules.erasePrint(stx, strCnvs);
+    erasePrint(stx, strCnvs);
   },500)
 });
 
@@ -745,55 +764,38 @@ socket.on('statusFromServer', (data)=>{
 socket.on('cmdFromServer', (data) => {
   if(standAlone === false){
     if(data.target === undefined || data.target === String(socket.id)){
+      erasePrint(ctx, canvas);
       doCmd(data);
       textPrintProtect = true
       setTimeout(()=>{
         textPrintProtect = false
       },1000)
     } else {
-      modules.erasePrint(stx, strCnvs);
-      modules.textPrint(stx, strCnvs, data.cmd, cmdMode.DARK);
+      erasePrint(ctx, canvas);
+      erasePrint(stx, strCnvs);
+      textPrint(stx, strCnvs, data.cmd, cmdMode.DARK);
       setTimeout(() =>{
-        modules.erasePrint(stx, strCnvs);
+        erasePrint(stx, strCnvs);
       },1000)
     }
   }
 });
 socket.on('textFromServer', (data) => {
-  if(data.alert) {
-    const previousStatus = {masterGain: masterGain.gain.value, videoMode: videoMode.mode, videoOption: videoMode.option}
-    masterGain.gain.setValueAtTime(0,0)
-    videoStop()
-    setTimeout(()=>{
-      alertPlay()
-    },100)
-    setTimeout(() => {
-      masterGain.gain.setValueAtTime(previousStatus.masterGain,0)
-      videoMode.mode = previousStatus.videoMode
-      videoMode.option = previousStatus.videoOption
-    }, 10000)
-  }
   if(!textPrintProtect) {
-    modules.erasePrint(stx, strCnvs)
-    modules.textPrint(stx,strCnvs, data.text, cmdMode.DARK)
-    speakVoice(data.text)
-    stringsClient = "";
-    
-    if(data.timeout === undefined || (data.timeout != undefined && data.timeout)) {
-      setTimeout(()=>{modules.erasePrint(stx,strCnvs)},500)
-    }
+    erasePrint(stx, strCnvs)
+    textPrint(stx,strCnvs, data.text, cmdMode.DARK)
   }
 });
 
 socket.on('instructionFromServer', (data) => {
   videoStop();
-  modules.erasePrint(stx, strCnvs);
-  modules.textPrint(stx, strCnvs, data["text"], cmdMode.DARK);
+  erasePrint(stx, strCnvs);
+  textPrint(stx, strCnvs, data["text"], cmdMode.DARK);
   //alertPlay();
   speakVoice(data)
   cmdMode.instruction = true
   setTimeout(()=>{
-    modules.erasePrint(stx, strCnvs);
+    erasePrint(stx, strCnvs);
     cmdMode.instruction = false
   }, data["duration"]);
 });
@@ -804,7 +806,8 @@ socket.on('streamListFromServer', (data) =>{
 });
 
 socket.on('streamReqFromServer', (data) => {
-  console.log(data)
+  console.log("streamReq debug 20210423")
+  // console.log(data)
   if(chatBuffer!= {} && videoMode.option != "loop") {
     socket.emit('chunkFromClient', chatBuffer);
   } else if(chatBuffer === {} ){
@@ -821,70 +824,78 @@ socket.on('oscFromServer',(data) => {
   }
 });
 socket.on('chunkFromServer', (data) => {
-  console.log(data)
+  console.log("debug chunk from server")
+  cmdMode.CHUNK.previousChunk = data.target
+  // console.log(data)
   if(videoMode.mode != "record"){
-    if(videoMode.mode != "chat" && data.target === "CHAT" && videoMode.mode != "wait") videoMode.mode = "chat"
+    if(videoMode.mode != "chat" && data.target === "CHAT") videoMode.mode = "chat"
     
-    if(videoMode.mode != "wait"){
-      if(videoMode.option !== "loop") {
-        playTarget = data.target
-        if(data["audio"] != undefined && data["audio"] != "") {
-          let chunkGain = 0.7;
-          if(data["target"] in gainVal){
-            chunkGain = gainVal[data["target"]];
-          }
-          if(data.sampleRate != undefined){
-          if(localSampleRate === 0) {
-              playsampleRate = Number(data.sampleRate)
-            } else {
-              playsampleRate = localSampleRate
-            }
-          }
-          console.log("rate:"+ String(playsampleRate))
-          console.log("serverrate:"+ String(data.sampleRate))
-          let drumRate = playsampleRate / 44100
-          if(videoMode.option != "quantize"){ 
-            if(data.target === "INTERNET"){
-              debugPlay(data["audio"],playsampleRate,chunkGain,data["glitch"]);
-            } else if (data.target === "DRUM") {
-              console.log(data.target)
-            } else if (data.target === "KICK") {
-              kickPlay(drumRate)
-              console.log(data.target)
-            } else if (data.target === "SNARE") {
-              snarePlay(drumRate)
-              console.log(data.target)
-            } else if (data.target === "HAT") {
-              hatPlay(drumRate)
-              console.log(data.target)
-            } else {
-              playAudioStream(data["audio"],playsampleRate,chunkGain,data["glitch"]);
-            }
+    if(videoMode.option !== "loop") {
+      playTarget = data.target
+      if(data["audio"] != undefined && data["audio"] != "") {
+        let chunkGain = 0.7;
+        if(data["target"] in gainVal){
+          chunkGain = gainVal[data["target"]];
+        }
+        if(data.sampleRate != undefined){
+        if(localSampleRate === 0) {
+            playsampleRate = Number(data.sampleRate)
           } else {
-            quantizeBuffer.audio = data.audio
+            playsampleRate = localSampleRate
           }
         }
-        if(data["video"] != undefined && data["video"] != "") {
-          if(videoMode.option != "quantize") {
-            playVideo(data.video, data.source);
+        console.log("rate:"+ String(playsampleRate))
+        console.log("serverrate:"+ String(data.sampleRate))
+        let drumRate = playsampleRate / 44100
+        if(videoMode.option != "quantize"){ 
+          if(data.target === "INTERNET"){
+            debugPlay(data["audio"],playsampleRate,chunkGain,data["glitch"]);
+          } else if (data.target === "DRUM") {
+            console.log(data.target)
+          } else if (data.target === "KICK") {
+            kickPlay(drumRate)
+            console.log(data.target)
+          } else if (data.target === "SNARE") {
+            snarePlay(drumRate)
+            console.log(data.target)
+          } else if (data.target === "HAT") {
+            hatPlay(drumRate)
+            console.log(data.target)
           } else {
-            quantizeBuffer.video = data.video
+            playAudioStream(data["audio"],playsampleRate,chunkGain,data["glitch"]);
           }
-        } else if(data.target != "CHAT"){
-          console.log(data.video)
-          modules.erasePrint(stx, strCnvs);
-          modules.textPrint(stx, strCnvs, data["target"], cmdMode.DARK);
         } else {
-          modules.erasePrint(stx, strCnvs);
+          quantizeBuffer.audio = data.audio
         }
       }
+      if(data["video"] != undefined && data["video"] != "") {
+        if(videoMode.option != "quantize") {
+          playVideo(data.video, data.source);
+        } else {
+          quantizeBuffer.video = data.video
+        }
+      } else if(data.target != "CHAT"){
+        console.log(data.video)
+        erasePrint(stx, strCnvs);
+        textPrint(stx, strCnvs, data["target"], cmdMode.DARK);
+      } else {
+        erasePrint(stx, strCnvs);
+      }
+    }
+    if(data["target"] === "CHAT"){
+      socket.emit('AckFromClient', "CHAT");
+    } else {
+      socket.emit('wavReqFromClient', data["target"]);
+      console.log("debug 20210423 wavRecFromClient for " + data.target)
     }
   }
+  /*
   if(data["target"] === "CHAT"){
     socket.emit('AckFromClient', "CHAT");
   } else {
     socket.emit('wavReqFromClient', data["target"]);
   }
+  */
 });
 
 const speakVoice = (data) =>{
@@ -899,6 +910,66 @@ const doCmd = (cmd) => {
   console.log("do cmd" + cmd["cmd"]);
   let currentTime = audioContext.currentTime;
   switch(cmd["cmd"]){
+    /* 
+    case "3D":
+
+      cmdMode.THREE = !cmdMode.THREE;
+      console.log("3D");
+      if(cmdMode.THREE) {
+        erasePrint(stx, strCnvs);
+        erasePrint(ctx, cnvs);
+        thr();
+      }
+      break;
+      */
+    case "CINEMA": //play CINEMA
+      playHLS(cinemaVideo)
+      cmdMode.HLS = true
+      setTimeout(()=> {
+        cinemaVideo.pause()
+        cmdMode.HLS = false
+      },90000)
+      break;
+    case "HLS": // for 20210424
+      switch(cmd.property) {
+        case 0: // play FTARRI
+          playHLS(ftarriVideo)
+          cmdMode.HLS = true
+          setTimeout(() => {
+            ftarriVideo.pause()
+            cmdMode.HLS = false
+          }, 60000)
+          break;
+        case 1: // play MILKBOTTLE
+          playHLS(milkbottleVideo)
+          cmdMode.HLS = true
+          setTimeout(()=> {
+            milkbottleVideo.pause()
+            cmdMode.HLS = false
+          }, 140000)
+          break;
+        default:
+          console.log("cinemaNum > 1")
+          break
+      }
+      break;
+      /*
+    case "HLS": 
+      switch(cmd.property) {
+        case "play":
+          playHLS(hlsvideo)
+          cmdMode.HLS = true
+          break;
+        case "stop":
+          hlsvideo.pause()
+          cmdMode.HLS = false
+          setTimeout(()=>{
+            erasePrint(btx, bckCnvs)
+          },500)
+          break;
+      }
+      break;
+      */
     case "KICK":
       kickPlay(1);
       break;
@@ -915,12 +986,12 @@ const doCmd = (cmd) => {
       if(cmdMode.DARK) {
         btx.fillStyle = "rgb(0, 0, 0)";
         btx.fillRect(0,0,window.innerWidth,window.innerHeight);
-        modules.erasePrint(stx, strCnvs);
-        modules.textPrint(stx, strCnvs, "DARK MODE", cmdMode.DARK);
+        erasePrint(stx, strCnvs);
+        textPrint(stx, strCnvs, "DARK MODE", cmdMode.DARK);
       } else {
-        modules.erasePrint(btx, bckCnvs);
-        modules.erasePrint(stx, strCnvs);
-        modules.textPrint(stx, strCnvs, "LIGHT MODE", cmdMode.DARK);
+        erasePrint(btx, bckCnvs);
+        erasePrint(stx, strCnvs);
+        textPrint(stx, strCnvs, "LIGHT MODE", cmdMode.DARK);
       }
       break;
     case "WHITENOISE":
@@ -935,24 +1006,24 @@ const doCmd = (cmd) => {
       if(cmdMode.whitenoise){
         cmdMode.whitenoise = false
         noiseGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
-        modules.erasePrint(stx, strCnvs)
+        erasePrint(stx, strCnvs)
       } else {
         cmdMode.whitenoise = true
         noiseGain.gain.setTargetAtTime(gainVal.NOISE,currentTime,fadeVal.IN + 0.01);
-        modules.erasePrint(stx, strCnvs);
-        modules.erasePrint(ctx, cnvs);
-        modules.textPrint(stx, strCnvs, "WHITENOISE", cmdMode.DARK);
+        erasePrint(stx, strCnvs);
+        erasePrint(ctx, cnvs);
+        textPrint(stx, strCnvs, "WHITENOISE", cmdMode.DARK);
       }
       speakVoice("NOISE")
       break;
     case "CLICK":
-      modules.erasePrint(ctx, cnvs);
+      erasePrint(ctx, cnvs);
       console.log("debug")
       click();
       speakVoice(cmd.cmd)
       break;
     case "BASS":
-      modules.erasePrint(ctx, cnvs);
+      erasePrint(ctx, cnvs);
       if(cmd.property) {
         bass(cmd.property);
       } else {
@@ -966,14 +1037,14 @@ const doCmd = (cmd) => {
         noiseGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
         cmdMode.whitenoise = false
       }
-      modules.erasePrint(ctx, cnvs);
-      modules.erasePrint(stx, strCnvs);
+      erasePrint(ctx, cnvs);
+      erasePrint(stx, strCnvs);
       if(cmdMode.sinewave && freqVal === cmd["property"]) {
         cmdMode.sinewave = false
         oscGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
       } else {
         cmdMode.sinewave = true
-        modules.textPrint(stx, strCnvs, String(cmd["property"]) + "Hz", cmdMode.DARK);
+        textPrint(stx, strCnvs, String(cmd["property"]) + "Hz", cmdMode.DARK);
         if(freqVal != cmd.property){
           freqVal = cmd.property
           osc.frequency.setTargetAtTime(freqVal,currentTime,oscPortament + 0.01);
@@ -995,17 +1066,17 @@ const doCmd = (cmd) => {
       } else {
         osc.frequency.setTargetAtTime(freqVal,currentTime,oscPortament);
       }
-      modules.erasePrint(stx, strCnvs);
-      modules.erasePrint(ctx, cnvs);
+      erasePrint(stx, strCnvs);
+      erasePrint(ctx, cnvs);
       //mode = "sinewave";
       cmdMode.sinewave = true
-      modules.textPrint(stx, strCnvs, String(freqVal) + "Hz", cmdMode.DARK);
+      textPrint(stx, strCnvs, String(freqVal) + "Hz", cmdMode.DARK);
       oscGain.gain.setTargetAtTime(gainVal.OSC,currentTime,fadeVal.IN + 0.01);
       speakVoice(String(cmd.property)+ "Hz UP")
       break;
     case "SINEWAVE_DOWN":
-      modules.erasePrint(stx, strCnvs);
-      modules.erasePrint(ctx, cnvs);
+      erasePrint(stx, strCnvs);
+      erasePrint(ctx, cnvs);
       freqVal = osc.frequency.value - cmd["property"];
       if(freqVal >= 0){
         if(oscPortament === 0){
@@ -1015,15 +1086,15 @@ const doCmd = (cmd) => {
         }
         //mode = "sinewave";
         cmdMode.sinewave = true
-        modules.textPrint(stx, strCnvs, String(freqVal) + "Hz", cmdMode.DARK);
+        textPrint(stx, strCnvs, String(freqVal) + "Hz", cmdMode.DARK);
         oscGain.gain.setTargetAtTime(gainVal.OSC,currentTime,fadeVal.IN + 0.01);
       }
       speakVoice(String(cmd.property)+ "Hz DOWN")
       break;
     case "TWICE":
       console.log(cmd.cmd)
-      modules.erasePrint(stx, strCnvs);
-      modules.erasePrint(ctx, cnvs);
+      erasePrint(stx, strCnvs);
+      erasePrint(ctx, cnvs);
       freqVal = osc.frequency.value * 2
       if(oscPortament === 0){
         osc.frequency.setTargetAtTime(freqVal,currentTime,0.01);
@@ -1031,13 +1102,13 @@ const doCmd = (cmd) => {
         osc.frequency.setTargetAtTime(freqVal,currentTime,oscPortament);
       }
       cmdMode.sinewave = true
-      modules.textPrint(stx, strCnvs, String(freqVal) + "Hz", cmdMode.DARK);
+      textPrint(stx, strCnvs, String(freqVal) + "Hz", cmdMode.DARK);
       oscGain.gain.setTargetAtTime(gainVal.OSC,currentTime,fadeVal.IN + 0.01);
       speakVoice(String(osc.frequency.value)+ "Hz DOWN")
       break;
     case "HALF":
-      modules.erasePrint(stx, strCnvs);
-      modules.erasePrint(ctx, cnvs);
+      erasePrint(stx, strCnvs);
+      erasePrint(ctx, cnvs);
       freqVal = osc.frequency.value / 2
       if(oscPortament === 0){
         osc.frequency.setTargetAtTime(freqVal,currentTime,0.01);
@@ -1045,14 +1116,14 @@ const doCmd = (cmd) => {
         osc.frequency.setTargetAtTime(freqVal,currentTime,oscPortament);
       }
       cmdMode.sinewave = true
-      modules.textPrint(stx, strCnvs, String(freqVal) + "Hz", cmdMode.DARK);
+      textPrint(stx, strCnvs, String(freqVal) + "Hz", cmdMode.DARK);
       oscGain.gain.setTargetAtTime(gainVal.OSC,currentTime,fadeVal.IN + 0.01);
       speakVoice(String(osc.frequency.value)+ "Hz DOWN")
       break;
     case "PORTAMENT":
-      modules.erasePrint(stx, strCnvs);
-      modules.erasePrint(ctx, cnvs);
-      modules.textPrint(stx, strCnvs, "PORTAMENT: " + String(cmd["property"]) + "SEC", cmdMode.DARK);
+      erasePrint(stx, strCnvs);
+      erasePrint(ctx, cnvs);
+      textPrint(stx, strCnvs, "PORTAMENT: " + String(cmd["property"]) + "SEC", cmdMode.DARK);
       oscPortament = cmd["property"];
       break;
     case "FEEDBACK":
@@ -1066,29 +1137,29 @@ const doCmd = (cmd) => {
       if(cmdMode.feedback) {
         cmdMode.feedback = false
         feedbackGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
-        modules.erasePrint(stx, strCnvs);
+        erasePrint(stx, strCnvs);
       } else {
         cmdMode.feedback = true
         feedbackGain.gain.setTargetAtTime(gainVal.FEEDBACK,currentTime,fadeVal.IN + 0.01);
-        modules.erasePrint(stx, strCnvs);
-        modules.erasePrint(ctx, cnvs);
-        modules.textPrint(stx, strCnvs, "FEEDBACK", cmdMode.DARK);
+        erasePrint(stx, strCnvs);
+        erasePrint(ctx, cnvs);
+        textPrint(stx, strCnvs, "FEEDBACK", cmdMode.DARK);
       }
       speakVoice(cmd.cmd)
       break;
     case "FILTER":
       let printText = filterChange();
-      modules.erasePrint(stx, strCnvs);
-      modules.erasePrint(ctx, cnvs);
-      modules.textPrint(stx, strCnvs, "FILTER: " + String(printText) + "Hz", cmdMode.DARK);
+      erasePrint(stx, strCnvs);
+      erasePrint(ctx, cnvs);
+      textPrint(stx, strCnvs, "FILTER: " + String(printText) + "Hz", cmdMode.DARK);
       setTimeout(() => {
-        modules.erasePrint(stx, strCnvs);
+        erasePrint(stx, strCnvs);
       },800);
       break;
     case "GAIN":
-      modules.erasePrint(stx, strCnvs);
-      modules.erasePrint(ctx, cnvs);
-      modules.textPrint(stx, strCnvs, cmd["property"]["target"] + ": " + String(cmd["property"]["val"]), cmdMode.DARK);
+      erasePrint(stx, strCnvs);
+      erasePrint(ctx, cnvs);
+      textPrint(stx, strCnvs, cmd["property"]["target"] + ": " + String(cmd["property"]["val"]), cmdMode.DARK);
       gainVal[cmd["property"]["target"].substr(0,cmd["property"]["target"].length - 4).toUpperCase()] = Number(cmd["property"]["val"]);
       if(eval(cmd["property"]["target"]) != undefined){ //debug later
         if(cmd.property.target != "clickGain" && (cmd.property.target === "masterGain" || eval(cmd.property.target).gain.value > 0)){
@@ -1100,38 +1171,38 @@ const doCmd = (cmd) => {
         masterGain.gain.setTargetAtTime(Number(cmd["property"]["val"]),currentTime,0.01)
       }
       setTimeout(()=>{
-        modules.erasePrint(stx, strCnvs);
+        erasePrint(stx, strCnvs);
       }, 500)
       break;
     case "VOLUME":
       if(cmd["property"] === "UP"){
-        modules.erasePrint(stx, strCnvs);
-        modules.erasePrint(ctx, cnvs);
+        erasePrint(stx, strCnvs);
+        erasePrint(ctx, cnvs);
         if(masterGain.gain.value >= 1){
-          modules.textPrint(stx, strCnvs, "VOLUME IS FULL", cmdMode.DARK);
+          textPrint(stx, strCnvs, "VOLUME IS FULL", cmdMode.DARK);
           setTimeout(()=>{
-            modules.erasePrint(stx, strCnvs);
+            erasePrint(stx, strCnvs);
           }, 500);
         } else {
           masterGain.gain.setTargetAtTime(masterGain.gain.value + 0.1,currentTime,0.01)
-          modules.textPrint(stx, strCnvs, "VOLUME " + cmd["property"], cmdMode.DARK);
+          textPrint(stx, strCnvs, "VOLUME " + cmd["property"], cmdMode.DARK);
           setTimeout(()=>{
-            modules.erasePrint(stx, strCnvs);
+            erasePrint(stx, strCnvs);
           }, 500);
         }
       } else if(cmd["property"] === "DOWN"){
-        modules.erasePrint(stx, strCnvs);
-        modules.erasePrint(ctx, cnvs);
+        erasePrint(stx, strCnvs);
+        erasePrint(ctx, cnvs);
         if(masterGain.gain.value === 0){
-          modules.textPrint(stx, strCnvs, "MUTED", cmdMode.DARK);
+          textPrint(stx, strCnvs, "MUTED", cmdMode.DARK);
           setTimeout(()=>{
-            modules.erasePrint(stx, strCnvs);
+            erasePrint(stx, strCnvs);
           }, 500);
         } else {
           masterGain.gain.setTargetAtTime(masterGain.gain.value - 0.1,currentTime,0.01)
-          modules.textPrint(stx, strCnvs, "VOLUME " + cmd["property"], cmdMode.DARK);
+          textPrint(stx, strCnvs, "VOLUME " + cmd["property"], cmdMode.DARK);
           setTimeout(()=>{
-            modules.erasePrint(stx, strCnvs);
+            erasePrint(stx, strCnvs);
           }, 500);
         }
         micLevel = 0.1 //later
@@ -1139,11 +1210,11 @@ const doCmd = (cmd) => {
         if(isNaN(Number(cmd["property"])) === false && cmd["property"] != ""){
           masterGain.gain.setTargetAtTime(Number(cmd["property"]),currentTime,0.01)
         }
-        modules.erasePrint(stx, strCnvs);
-        modules.erasePrint(ctx, cnvs);
-        modules.textPrint(stx, strCnvs, "VOLUME " + cmd["property"], cmdMode.DARK);
+        erasePrint(stx, strCnvs);
+        erasePrint(ctx, cnvs);
+        textPrint(stx, strCnvs, "VOLUME " + cmd["property"], cmdMode.DARK);
         setTimeout(()=>{
-          modules.erasePrint(stx, strCnvs);
+          erasePrint(stx, strCnvs);
         }, 500);
       }
       prevGain = masterGain.gain.value;
@@ -1153,22 +1224,22 @@ const doCmd = (cmd) => {
       if(masterGain.gain.value > 0){
         prevGain = masterGain.gain.value;
         masterGain.gain.setValueAtTime(0,0)
-        modules.erasePrint(ctx, cnvs);
-        modules.erasePrint(stx, strCnvs);
-        modules.textPrint(stx, strCnvs, "MUTE", cmdMode.DARK);
-        setTimeout(()=>{modules.erasePrint(stx, strCnvs);},500);
+        erasePrint(ctx, cnvs);
+        erasePrint(stx, strCnvs);
+        textPrint(stx, strCnvs, "MUTE", cmdMode.DARK);
+        setTimeout(()=>{erasePrint(stx, strCnvs);},500);
       } else {
         masterGain.gain.setValueAtTime(prevGain,0)
-        modules.erasePrint(stx, strCnvs);
-        modules.textPrint(stx, strCnvs, "UNMUTE", cmdMode.DARK);
-        setTimeout(()=>{modules.erasePrint(stx, strCnvs);},500);
+        erasePrint(stx, strCnvs);
+        textPrint(stx, strCnvs, "UNMUTE", cmdMode.DARK);
+        setTimeout(()=>{erasePrint(stx, strCnvs);},500);
       }
       speakVoice(cmd.cmd)
       break;
     case "FADE":
       console.log(cmd.property.type)
       console.log(cmd.property.status)
-      modules.erasePrint(ctx, cnvs);
+      erasePrint(ctx, cnvs);
       if(cmd.property.type != "val") {
         fadeVal[cmd.property.type] = Number(cmd.property.status[cmd.property.type])
         console.log(fadeVal);
@@ -1184,34 +1255,43 @@ const doCmd = (cmd) => {
       break;
     case "SWITCH ON":
     case "SWITCH OFF":
-      modules.erasePrint(ctx, cnvs);
-      modules.erasePrint(stx, strCnvs);
-      modules.textPrint(stx, strCnvs, cmd["cmd"], cmdMode.DARK);
+      erasePrint(ctx, cnvs);
+      erasePrint(stx, strCnvs);
+      textPrint(stx, strCnvs, cmd["cmd"], cmdMode.DARK);
       setTimeout(()=>{
-        modules.erasePrint(stx, strCnvs);
+        erasePrint(stx, strCnvs);
       }, 1500);
       speakVoice(cmd.cmd)
       break;
     case "RECORD":
     case "REC":
       console.log("REC");
+      // let prevVidMode = videoMode.mode
+      cmdMode.CHUNK.previousVideoMode = videoMode.mode
+      console.log("debug video mode:" + cmdMode.CHUNK.previousVideoMode)
       videoStop();
-      let prevVidMode = videoMode.mode
+      // const prevVidMode = String(videoMode.mode)
       videoMode.mode = "record";
-      console.log("debug video mode:" + videoMode.mode)
       if(cmd.property != undefined) videoMode.option = cmd.property
       streamBuffer = [] //for local rec
-        modules.erasePrint(ctx, cnvs);
-      modules.erasePrint(stx, strCnvs);
-      modules.textPrint(stx, strCnvs, "RECORD", cmdMode.DARK);
+      erasePrint(stx, strCnvs);
+      textPrint(stx, strCnvs, "RECORD", cmdMode.DARK);
+      erasePrint(ctx, cnvs);
       setTimeout(() => {
         if(videoMode.mode === "record"){
           //videoMode.mode = "none";
-          videoMode.mode = prevVidMode
+          videoMode.mode = cmdMode.CHUNK.previousVideoMode
           videoMode.option = "none"
-          modules.erasePrint(stx, strCnvs);
+          erasePrint(stx, strCnvs);
           console.log("debug video mode:" + videoMode.mode)
+          if(videoMode.mode === "chat") {
+            socket.emit('AckFromClient', "CHAT");
+          }
+          if(cmdMode.CHUNK.previousChunk !== "" && cmdMode.CHUNK.previousChunk !== "CHAT") {
+            socket.emit('wavReqFromClient', cmdMode.CHUNK.previousChunk);
+          }
         }
+        // socket.emit("recordFinishFromClient")
       }, 5000); //時間は考え中
       speakVoice(cmd.cmd)
       break;
@@ -1229,7 +1309,7 @@ const doCmd = (cmd) => {
       if(cmd.quantize){
         videoMode.option = "quantize"
         if(videoMode.mode === "chat") {
-          modules.erasePrint(ctx, canvas);
+          erasePrint(ctx, canvas);
           quantizePlay();
         }
       } else {
@@ -1255,10 +1335,10 @@ const doCmd = (cmd) => {
           } else {
             socket.emit('wavReqFromClient', playTarget);
           }
-          modules.erasePrint(stx, strCnvs);
-          modules.textPrint(stx, strCnvs, "UNLOOP", cmdMode.DARK);
+          erasePrint(stx, strCnvs);
+          textPrint(stx, strCnvs, "UNLOOP", cmdMode.DARK);
           setTimeout(()=>{
-            modules.erasePrint(stx, strCnvs);
+            erasePrint(stx, strCnvs);
           },500)
         } else if(videoMode.option === "metronome"){
           stopRhythm()
@@ -1278,14 +1358,14 @@ const doCmd = (cmd) => {
         stopRhythm();
       } else {
         rhythmProperty = cmd.property;
-        modules.erasePrint(stx, strCnvs);
-        modules.erasePrint(ctx, cnvs);
-        modules.textPrint(stx, strCnvs, "BPM:" + String(Math.floor(cmd.property.bpm * 10)/10), cmdMode.DARK)
+        erasePrint(stx, strCnvs);
+        erasePrint(ctx, cnvs);
+        textPrint(stx, strCnvs, "BPM:" + String(Math.floor(cmd.property.bpm * 10)/10), cmdMode.DARK)
         if(cmd.trig){
           stopRhythm();
           setTimeout(()=>{
-            modules.erasePrint(stx, strCnvs);
-            modules.erasePrint(ctx, cnvs);
+            erasePrint(stx, strCnvs);
+            erasePrint(ctx, cnvs);
             startRhythm(rhythmProperty.interval,"CLICK");
           },rhythmProperty.interval)
         }
@@ -1297,14 +1377,14 @@ const doCmd = (cmd) => {
       rhythmProperty.interval = 60 * 1000 / rhythmProperty.bpm
       if(videoMode.mode === "chat" && videoMode.option === "quantize") {
         clearInterval(quantizeInterval)
-        modules.erasePrint(ctx, canvas);
+        erasePrint(ctx, canvas);
         quantizePlay()
       }
       if(cmdMode.metronome) {
         stopRhythm();
         setTimeout(()=>{
-          modules.erasePrint(stx, strCnvs);
-          modules.erasePrint(ctx, cnvs);
+          erasePrint(stx, strCnvs);
+          erasePrint(ctx, cnvs);
           startRhythm(rhythmProperty.interval,"CLICK");
         },rhythmProperty.interval)
       }
@@ -1312,9 +1392,9 @@ const doCmd = (cmd) => {
         clearInterval(beatInterval);
         setInterval(rhythmPattern,4*60*1000/cmdMode.BPM);
       }
-      modules.textPrint(stx, strCnvs, "BPM:" + String(cmdMode.BPM), cmdMode.DARK)
+      textPrint(stx, strCnvs, "BPM:" + String(cmdMode.BPM), cmdMode.DARK)
       setTimeout(()=>{
-        modules.erasePrint(stx, strCnvs);
+        erasePrint(stx, strCnvs);
       },500)
       break;
     case "RATE":
@@ -1322,20 +1402,20 @@ const doCmd = (cmd) => {
       localSampleRate = Number(cmd.property)
       if(Number(cmd.property) > 0) {
         bufferRate = cmd.property
-        modules.erasePrint(ctx, cnvs);
-        modules.erasePrint(stx, strCnvs);
-        modules.textPrint(stx, strCnvs, "SAMPLERATE: " + String(cmd.property) + "Hz", cmdMode.DARK)
+        erasePrint(ctx, cnvs);
+        erasePrint(stx, strCnvs);
+        textPrint(stx, strCnvs, "SAMPLERATE: " + String(cmd.property) + "Hz", cmdMode.DARK)
         setTimeout(() => {
-          modules.erasePrint(stx, strCnvs)
+          erasePrint(stx, strCnvs)
         }, 500)
       }
       break;
     case "GLITCH":
-      modules.erasePrint(stx, strCnvs);
-      modules.erasePrint(ctx, cnvs);
-      modules.textPrint(stx,strCnvs,cmd.property, cmdMode.DARK);
+      erasePrint(stx, strCnvs);
+      erasePrint(ctx, cnvs);
+      textPrint(stx,strCnvs,cmd.property, cmdMode.DARK);
       setTimeout(()=>{
-        modules.erasePrint(stx, strCnvs);
+        erasePrint(stx, strCnvs);
       },1000)
       speakVoice(cmd.cmd)
       break;
@@ -1346,40 +1426,69 @@ const doCmd = (cmd) => {
       pastPresent(cmd["property"]);
       break;
     case "STOP":
-      stop()
-      videoStop()
-      modules.textPrint(stx, strCnvs, "STOP", cmdMode.DARK)
-      modules.erasePrint(ctx, cnvs);
-      setTimeout(()=>{
-        modules.erasePrint(stx, strCnvs)
-        modules.erasePrint(ctx, canvas)
-      }, 500);
-      //speakVoice(cmd.cmd)
+      if(cmd.property === undefined) {
+        stop()
+        videoStop()
+        textPrint(stx, strCnvs, "STOP", cmdMode.DARK)
+        erasePrint(ctx, cnvs);
+        setTimeout(()=>{
+          erasePrint(stx, strCnvs)
+          erasePrint(ctx, canvas)
+        }, 500);
+        //speakVoice(cmd.cmd)
+      } else {
+        switch(cmd.property) {
+          case "FEEDBACK":
+            cmdMode.feedback = false
+            feedbackGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
+            break;
+          case "WHITENOISE":
+            cmdMode.whitenoise = false
+            noiseGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
+            break;
+          case "SINEWAVE":
+            cmdMode.sinewave = false
+            oscGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01);
+            break;
+          case "BASS":
+            bassGain.gain.setTargetAtTime(0,currentTime,0.02);
+            bassFlag = false;
+            break;
+          case "MANEKKO":
+            cmdMode.BGN = false
+            approximatelyGain.gain.setTargetAtTime(0,currentTime,0.05)
+            break;
+          default:
+            cmdMode.CHUNK.previousChunk = ""
+        }
+        erasePrint(stx, strCnvs);
+      }
       break;
     case "NUMBER":
-      modules.erasePrint(stx, strCnvs);
-      modules.erasePrint(ctx, cnvs);
-      modules.textPrint(stx, strCnvs, cmd["property"], cmdMode.DARK);
+      erasePrint(stx, strCnvs);
+      erasePrint(ctx, cnvs);
+      textPrint(stx, strCnvs, cmd["property"], cmdMode.DARK);
       setTimeout(()=>{
-        modules.erasePrint(stx, strCnvs);
+        erasePrint(stx, strCnvs);
       }, 1000);
       break;
-    case "SOLFAGE":
-      if(!cmdMode.CHAT.BGN) {
-        modules.textPrint(stx, strCnvs, "SOLFAGE", cmdMode.DARK);
+    case "MANEKKO":
+      if(!cmdMode.BGN) {
+        textPrint(stx, strCnvs, "真似っこ", cmdMode.DARK);
         setTimeout(()=>{
-          modules.erasePrint(stx, strCnvs);
+          erasePrint(stx, strCnvs);
         }, 500);
        /*analyser = audioContext.createAnalyser();
         analyser.fftSize = 2048
         filter.connect(analyser);*/
-        cmdMode.CHAT.BGN = true
+        cmdMode.BGN = true
+        approximatelyGain.gain.setTargetAtTime(1,currentTime,0.05)
         if(videoMode.mode != "chat" && videoMode.mode != "record") {
           //javascriptnode.onaudioprocess = onChatProcess
           //javascriptnode.connect(chatGain)
         }
       } else {
-        cmdMode.CHAT.BGN = false
+        cmdMode.BGN = false
         let currentTime = audioContext.currentTime
         approximatelyGain.gain.setTargetAtTime(0,currentTime,0.05)
         if(videoMode.mode != "chat" && videoMode.mode != "record") {
@@ -1390,14 +1499,15 @@ const doCmd = (cmd) => {
     case "INSTRUCTION":
       console.log("debug: " + cmd.cmd + " " + cmd.property)
       //speakVoice(cmd.property)
-      ssu.text = cmd.property;
-      speechSynthesis.speak(ssu);
-      modules.erasePrint(stx, strCnvs);
-      modules.erasePrint(ctx, cnvs);
-      modules.textPrint(stx, strCnvs, cmd.property, cmdMode.DARK);
+      // ssu.text = cmd.property;
+      // speechSynthesis.speak(ssu);
+      erasePrint(stx, strCnvs);
+      erasePrint(ctx, cnvs);
+      textPrint(stx, strCnvs, cmd.property, cmdMode.DARK);
       break;
     case "TILE":
       tileFlag = cmd.property
+      if(tileFlag) tileHsh = {}
       break;
     case "PLAYBACK": 
       if(cmd.property != undefined && cmd.property === "local") {
@@ -1409,29 +1519,29 @@ const doCmd = (cmd) => {
       break;
     case "VOICE":
       console.log(cmd)
-      modules.erasePrint(stx, strCnvs);
-      modules.erasePrint(ctx, cnvs);
+      erasePrint(stx, strCnvs);
+      erasePrint(ctx, cnvs);
       switch(cmd.property) {
         case undefined:
           voice = !voice
-          modules.textPrint(stx, strCnvs, cmd.cmd + " : " +String(voice), cmdMode.DARK);
+          textPrint(stx, strCnvs, cmd.cmd + " : " +String(voice), cmdMode.DARK);
           break;
         case true:
         case false:
           voice = cmd.property
-          modules.textPrint(stx, strCnvs, cmd.cmd + " : " +String(voice), cmdMode.DARK);
+          textPrint(stx, strCnvs, cmd.cmd + " : " +String(voice), cmdMode.DARK);
           break;
         case "en-US":
         case "ja-JP":
           voice = !voice
           ssu.lang = cmd.property
-          modules.textPrint(stx, strCnvs, cmd.cmd + " : " + cmd.property, cmdMode.DARK);
+          textPrint(stx, strCnvs, cmd.cmd + " : " + cmd.property, cmdMode.DARK);
           voice = !voice
           break;
       }
       setTimeout(() =>{
-        modules.erasePrint(stx, strCnvs);
-        modules.erasePrint(ctx, cnvs);
+        erasePrint(stx, strCnvs);
+        erasePrint(ctx, cnvs);
       },500)
       break;
     case "PAN":
@@ -1460,11 +1570,11 @@ const doCmd = (cmd) => {
             console.log("debuging")
             quantizePlay();
           }
-          modules.erasePrint(stx, strCnvs);
-          modules.erasePrint(ctx, cnvs);
-          modules.textPrint(stx, strCnvs, cmd["cmd"], cmdMode.DARK);
+          erasePrint(stx, strCnvs);
+          erasePrint(ctx, cnvs);
+          textPrint(stx, strCnvs, cmd["cmd"], cmdMode.DARK);
           setTimeout(()=> {
-            modules.erasePrint(stx, strCnvs);
+            erasePrint(stx, strCnvs);
           },800);
         }
       }
@@ -1473,7 +1583,7 @@ const doCmd = (cmd) => {
       break;
 
   }
-  strings = "";
+  // strings = "";
   stringsClient = "";
 }
   // doCmd end
@@ -1486,19 +1596,30 @@ const stop = () => {
   feedbackGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
   noiseGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
   bassGain.gain.setTargetAtTime(0,currentTime,fadeVal.OUT + 0.01)
+  approximatelyGain.gain.setTargetAtTime(0,currentTime,0.05)
   bassFlag = false;
   cmdMode.sinewave = false
   cmdMode.whitenoise = false
   cmdMode.feedback = false
-  cmdMode.CHAT.BGN = false
-  modules.erasePrint(ctx, canvas);
-  modules.erasePrint(stx, strCnvs);
-  modules.erasePrint(ctx, canvas);
+  cmdMode.BGN = false
+  erasePrint(ctx, canvas);
+  erasePrint(stx, strCnvs);
   stopRhythm();
   if(cmdMode.BEAT) {
     clearInterval(beatInterval)
     cmdMode.BEAT = false
   }
+  if(cmdMode.THREE) {
+    cancelAnimationFrame(tick)
+  }
+   if(cmdMode.HLS) {
+    cmdMode.HLS = false
+    console.log(cmdMode.HLS)
+    cinemaVideo.pause()
+    ftarriVideo.pause()
+    milkbottleVideo.pause()
+   }
+  erasePrint(btx, bckCnvs);
 }
 
 const videoStop = () => {
@@ -1513,9 +1634,12 @@ const videoStop = () => {
   }
   if(videoMode.option === "quantize") {
     clearInterval(quantizeInterval)
+    videoMode.option = "none"
   } else {
     videoMode.option = "none"
   }
+  cmdMode.CHUNK.previousChunk = ""
+  erasePrint(btx, bckCnvs);
 }
 
 
@@ -1541,24 +1665,69 @@ const playVideo = (video, source) => {
   if(!cmdMode.THREE) {
     image = new Image();
     image.src = video;
-    console.log(video.length)
+    //console.log(video.length)
+    console.log(source)
     image.onload = function(){
-      if(tileFlag && source && source != socket.id){
-        if(source in tileHsh) {
-        } else {
-          let area = Object.keys(tileHsh).length % 4
-          let ratio = Math.random()/2 + 0.4
+      //if(tileFlag && source && source != socket.id){
+      if(tileFlag && source){
+        if(!(source in tileHsh)) {
+          /*
+          let area = Object.keys(tileHsh).length % 4 //areaはtileHshのオブジェクト数/4の余り（最初は0、0~3）
+          let ratio = Math.random()/2 + 0.4 //ratioはランダム/2=0~0.5 + 0.4 = 0.4~0.9
           tileHsh[source] = {
+            // xはエリアの2余り（0～1） * (windowWidth/2) + ランダム*(窓幅/2 - STREAM幅*ratio)
+            // yはエリア/2 * (窓高さ/2) + おなじ理屈（たぶん振り幅をつけてるだけ）
+            // wはビデオの幅×比率（これだとほぼ原寸になってしまうケースあるね。。
             x: (area % 2) * (window.innerWidth / 2) + Math.floor(Math.random() * (window.innerWidth / 2 - image.width * ratio)),
             y: (Math.floor(area / 2)) * (window.innerHeight / 2) + Math.floor(Math.random() * (window.innerHeight / 2 - image.height * ratio)),
             w: image.width * ratio,
             h: image.height * ratio
+          }*/
+          switch(Object.keys(tileHsh).length){
+            case 0:
+              tileHsh[source] = {}
+              tileHsh[source].w = window.innerWidth * (1 / 5 + 2 * Math.random() / 5),
+              tileHsh[source].h = tileHsh[source].w * image.height / image.width
+              tileHsh[source].x = window.innerWidth * (Math.random() / 5)
+              tileHsh[source].y = window.innerHeight * (Math.random() / 5)
+              break;
+            case 1:
+              tileHsh[source] = {}
+              tileHsh[source].w = window.innerWidth * (1 / 8 + Math.random() / 8)
+              tileHsh[source].h = tileHsh[source].w * image.height / image.width
+              tileHsh[source].x = window.innerWidth - tileHsh[source].w + Math.random() * (window.innerWidth / 2 - tileHsh[source].w)
+              tileHsh[source].y = Math.random() * (window.innerHeight / 2 - tileHsh[source].h)
+              break;
+            case 2:
+              tileHsh[source] = {}
+              tileHsh[source].w = window.innerWidth * (1 / 8 + Math.random() * 3 / 40)
+              tileHsh[source].h = tileHsh[source].w * image.height / image.width
+              tileHsh[source].x = window.innerWidth / 6 + Math.random() * (window.innerWidth * 5 / 6 - tileHsh[source].w)
+              tileHsh[source].y = window.innerHeight / 7 + Math.random() * (window.innerHeight * 3 / 28)
+              break;
+            case 3:
+              tileHsh[source] = {}
+              tileHsh[source].w = window.innerWidth * (1 / 8 + Math.random() * 3 / 40)
+              tileHsh[source].h = tileHsh[source].w * image.height / image.width
+              tileHsh[source].x = window.innerWidth / 3 + Math.random() * (window.innerWidth / 6)
+              tileHsh[source].y = window.innerHeight / 3 + Math.random() * (window.innerHeight / 6)
+              break;
+            case 4:
+              tileHsh[source] = {}
+              tileHsh[source].w = window.innerWidth * (1 / 8 + Math.random() * 3 / 40)
+              tileHsh[source].h = tileHsh[source].w * image.height / image.width
+              tileHsh[source].x = window.innerWidth / 6 + Math.random() * (window.innerWidth * 7 / 30)
+              tileHsh[source].y = window.innerHeight - tileHsh[source].h
+              break;
+            default:
+              break;
           }
         }
         x = tileHsh[source].x
         y = tileHsh[source].y
         wdth = tileHsh[source].w
         hght = tileHsh[source].h
+        console.log(tileHsh[source])
       } else {
           let aspect = image.width / image.height
           console.log(aspect)
@@ -1590,16 +1759,6 @@ const timeLapse = ()=>{
 
 const stopLapse = ()=>{
   clearInterval(setLapse);
-}
-
-
-const toBase64 = () =>{
-  let bufferContext = buffer.getContext('2d');
-  buffer.width = video.videoWidth;
-  buffer.height = video.videoHeight;
-  bufferContext.drawImage(video, 0, 0);
-  let base64URL = buffer.toDataURL("image/jpeg")
-  return base64URL
 }
 
 const keyMap = {
@@ -1675,7 +1834,7 @@ const keyMap = {
   "219" : "[",
   "221" : "]",
   "222" : "'",
-  "187" : "BASS"
+  "187" : ";"
 };
 const shiftKeyMap = {
   '49' : '!',
@@ -1696,7 +1855,8 @@ const shiftKeyMap = {
   "219" : "{",
   "221" : "}",
   "222" : "'",
-  "187" : "BASSS",
+  "187" : "+",
+  "186" : "+",
   "192" : "BASSS",
   '65' : 'A',
   '66' : 'B',
@@ -1762,12 +1922,12 @@ const quantizePlay = () => {
       if("video" in quantizeBuffer){
         playVideo(quantizeBuffer["video"]);
       } else {
-        modules.erasePrint(ctx, canvas);
-        modules.textPrint(ctx, canvas, stringsClient, cmdMode.DARK);
+        erasePrint(ctx, canvas);
+        textPrint(ctx, canvas, stringsClient, cmdMode.DARK);
       }
       setTimeout(()=>{
-        modules.erasePrint(ctx, canvas);
-        modules.erasePrint(stx, strCnvs);
+        erasePrint(ctx, canvas);
+        erasePrint(stx, strCnvs);
       },(1000*8192)/playsampleRate)
     }
   },1000 * 15 / cmdMode.BPM)
@@ -1835,4 +1995,32 @@ const loadHat = (ctx, url) => {
   req.send();
 }
 
-modules.textPrint(stx, strCnvs, "click screen");
+//textPrint(stx, strCnvs, "click screen");
+textPrint(stx, strCnvs, "CLICK SCREEN", false)
+
+
+// hls
+const cinemaVideo = document.getElementById('cinemavideo');
+let cinemaSrc = '/hls/TEXASCHAINSAWMASSACRE.m3u8';
+let cinema
+const milkbottleVideo = document.getElementById('milkbottlevideo');
+let milkbottleSrc = '/hls/MILKBOTTLE.m3u8';
+let milkbottle
+const ftarriVideo = document.getElementById('ftarrivideo');
+let ftarriSrc = '/hls/FTARRI.m3u8';
+let ftarri
+if (Hls.isSupported()) {
+  cinema = new Hls();
+  cinema.loadSource(cinemaSrc);
+  cinema.attachMedia(cinemaVideo);
+  milkbottle = new Hls();
+  milkbottle.loadSource(milkbottleSrc);
+  milkbottle.attachMedia(milkbottleVideo);
+  ftarri = new Hls();
+  ftarri.loadSource(ftarriSrc);
+  ftarri.attachMedia(ftarriVideo);
+} else if (hlsvideo.canPlayType('application/vnd.apple.mpegurl')) {
+  cinemaVideo.src = cinemaSrc;
+  milkbottleVideo.src = milkbottleSrc;
+  ftarriVideo.src = ftarriSrc;
+}

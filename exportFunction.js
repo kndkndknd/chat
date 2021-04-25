@@ -170,7 +170,7 @@ exports.movImport = function movImport(filename, filetype, libDir){
     if (error !== null) {
       console.log('Exec error: ' + error);
     } else {
-      console.log("test");
+      //console.log("test");
     }
   });
 
