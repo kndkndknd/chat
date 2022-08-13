@@ -1,36 +1,70 @@
-{
-  "gain": {
-    "masterGain": 1.0,
-    "oscGain": 0.7,
-    "feedbackGain": 0.8,
-    "noiseGain": 0.7,
-    "clickGain": 0.9,
-    "bassGain": 0.9,
-    "chatGain": 0.8,
-    "glitchGain": 1,
-    "manekkoGain": 1
+type clientStatusType = {
+  No: {
+    [key: number]: string
   },
+  voice: {
+    [key: string]: boolean
+  }
+  // インデックスシグネチャ・・string型のキーにstring | number型の値
+  // ただし、keyが数値の場合もstringにキャストされる
+  // keyの型はstring or numberのみ
+}
+
+export let statusClient = {  
+}
+
+/*
+type UserAddProperty = {
+  // インデックスシグネチャ・・string型のキーにstring | number型の値
+  // ただし、keyが数値の場合もstringにキャストされる
+  // keyの型はstring or numberのみ
+  [key: string]: string | number // string or number型の値が入る
+}
+
+const userB: UserAddProperty = {
+  name: 'ひろ', // これが無いとコンパイルエラー
+  type: 'おたく', // 定義してないプロパティを追加出来る
+  tall: 178, // 定義してないプロパティを追加出来る
+  11: 192 // 定義してないプロパティを追加出来る
+}
+*/
+export let statusList = {
+  "ipAddress": "",
   "osc":{
     "stream": false,
     "rate": false
   },
   "sinewave":{
     "portament" : {
-      "0" : 0,
-      "1" : 50,
-      "2" : 500,
-      "3" : 5000,
-      "4" : 50000
+      "0" : "0",
+      "1" : "50",
+      "2" : "500",
+      "3" : "5000",
+      "4" : "50000"
     }
   },
+  "gain": {
+    "masterGain": "0.4",
+    "oscGain": "0.55",
+    "feedbackGain": "0.8",
+    "noiseGain": "0.6",
+    "clickGain": "0.8",
+    "bassGain": "0.7",
+    "chatGain": "0.6",
+    "playbackGain": "0.7",
+    "timelapseGain": "0.7",
+    "drumGain": "0.8",
+    "secbeforeGain": "0.6",
+    "silenceGain": "0"
+  },
   "sampleRate":{
-    "CHAT": 48000,
-    "TIMELAPSE": 48000,
-    "PLAYBACK": 48000,
-    "KICK": 48000,
-    "SNARE": 48000,
-    "HAT": 48000,
-    "INTERNET": 48000
+    "CHAT": "48000",
+    "TIMELAPSE": "48000",
+    "PLAYBACK": "48000",
+    "KICK": "48000",
+    "SNARE": "48000",
+    "HAT": "48000",
+    "INTERNET": "48000"
   },
   "speech":false,
   "connected":{
@@ -112,7 +146,7 @@
       "OUT": "0"
     },
     "target": {
-      "all": true
+      "client": true
     },
     "prevCmd": "",
     "prevTime": "",
@@ -301,17 +335,6 @@
       "TIMELAPSE": false,
       "INTERNET": false
     },
-    "randomFlag": {
-      "CHAT": false,
-      "KICK": false,
-      "SNARE": false,
-      "HAT": false,
-      "SILENCE": false,
-      "PLAYBACK": false,
-      "TIMELAPSE": false,
-      "INTERNET": false
-    },
-    "hlsFlag": false,
     "streamCmd": {
       "VIDEOCHAT": "CHAT",
       "CHAT": "CHAT",
@@ -337,21 +360,13 @@
       "TIMELAPSE": false,
       "INTERNET": false
     },
-    "LATENCY":{
-      "CHAT": 1000,
-      "DRUM": 1000,
-      "SILENCE": 1000,
-      "PLAYBACK": 1000,
-      "INTERNET": 1000,
-      "TIMELAPSE": 1000
-    },
-    "BPM":{
-      "CHAT": 60,
-      "DRUM": 60,
-      "SILENCE": 60,
-      "PLAYBACK": 60,
-      "INTERNET": 60,
-      "TIMELAPSE": 60
+    "latency":{
+      "CHAT": "0",
+      "DRUM": "0",
+      "SILENCE": "0",
+      "PLAYBACK": "0",
+      "INTERNET": "0",
+      "TIMELAPSE": "0"
     },
     "glitch": {
       "CHAT": false,
@@ -361,29 +376,10 @@
       "INTERNET": false,
       "TIMELAPSE": false
     },
-    "grid": {
-      "flag": {
-        "CHAT": false,
-        "DRUM": false,
-        "SILENCE": false,
-        "PLAYBACK": false,
-        "INTERNET": false,
-        "TIMELAPSE": false
-      },
-      "BPM": 60,
-      "LATENCY": 1000,
-      "probability": {
-        "WholeNote": 0.06, 
-        "HalfNote": 0.27,
-        "QuarterNote": 0.56,
-        "EighthNote": 0.89,
-        "SixteenthNote": 1
-      }
-    },
+    "grid": false,
     "chatSequence": false,
     "quantize": false,
-    "record": false,
-    "bufferSize": 16384
+    "record": false
   },
   "clients": {
     "dummy": {
@@ -413,4 +409,21 @@
     }
   },
   "interval":"60"
+}
+
+interface Connected {
+  [index: string]: [string];
+  client: [string];
+  ctrl: [string];
+}
+
+export let connected: Connected = {
+  client: ["dummy"],
+  ctrl: ["dummy"]
+}
+
+export const pathList = {
+  "httpskey": "/Users/knd/keys/",
+  "home":"/Users/knd/",
+  "upload": "/Downloads/MUSIC/"
 }

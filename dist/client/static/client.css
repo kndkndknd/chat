@@ -21,6 +21,10 @@ body #strCnvs{
   position:absolute;
   z-index:2;
 }
+body #instructionCnvs{
+  position:absolute;
+  z-index:3;
+}
 body #bckCnvs{
   position:absolute;
   z-index:0;

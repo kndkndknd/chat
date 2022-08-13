@@ -1,63 +1,37 @@
-// const glob = require("glob");
 const path = require("path");
-// const webpack = require("webpack");
 
-// const srcDir = "./src/";
-// let scriptFiles = glob.sync("./src/*.js");
-/*
-let scripts = {};
-
-for (let i in scriptFiles){
-  var script = scriptFiles[i];
-  scripts[script.slice(srcDir.length,-3)] = script;
-}
-*/
-
-
-module.exports = {
-  // メインとなるJavaScriptファイル（エントリーポイント）
+const clientConfig = {
   entry: {
-    client: './src/client.js',
-    textInput: './src/textInput.js'
+    client: './src/client/client.ts',
   } ,
-  // entry: scripts,
-  // ファイルの出力設定
   output: {
-    //  出力ファイルのディレクトリ名
-    path: `${__dirname}/public/javascripts`,
-    // 出力ファイル名
-    filename: '[name].js'
+    path: `${__dirname}/dist/client`,
+    filename: '[name].js',
+    globalObject: 'this'
   },
   module: {
     rules: [
       {
-        // 拡張子 .js の場合
-        test: /\.js$/,
-        use: [
-          {
-            // Babel を利用する
-            loader: 'babel-loader',
-            // Babel のオプションを指定する
-            options: {
-              presets: [
-                // env を指定することで、ES2017 を ES5 に変換。
-                // {modules: false}にしないと import 文が Babel によって CommonJS に変換され、
-                // webpack の Tree Shaking 機能が使えない
- //               ['env', {'modules': false}]
-                ['@babel/preset-env', {'modules': false}]
-              ]
-            }
-          }
-        ],
-        // node_modulesは除外する
-        exclude: /node_modules/
+        test: /\.(ts|tsx)?$/,
+        use: 'ts-loader'
       }
     ]
   },
-  // ソースマップを有効にする
+  resolve: {
+    modules: [
+    "node_modules",
+    ],
+    extensions: [
+    '.ts',
+    '.js'
+    ]
+  },
+
   devtool: 'source-map',
   devServer: {
-    contentBase: 'public/javascripts',
+    contentBase: 'dist/client',
     port: 4321
   }
 };
+
+module.exports = [clientConfig]
