@@ -87,9 +87,12 @@ export type cmdStateType = {
     latency: {
       [key: string]: number
     },
+    randomrate: {
+      [key: string]: boolean
+    }
     quantize: boolean,
     loop: boolean,
-    timelapse: boolean  
+    timelapse: boolean,
   },
   web: {
     flag: boolean,

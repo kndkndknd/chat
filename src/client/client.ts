@@ -190,7 +190,7 @@ socket.on('streamFromServer', (data: {
 }) => {
   console.log(data.audio)
   // console.log(data.video)
-  erasePrint(ctx, cnvs)
+  // erasePrint(ctx, cnvs)
   playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize)
   console.log(data.video)
   if(data.video) {

@@ -7,14 +7,25 @@ export const streamEmit = (source: string, io: SocketIO.Server, state: cmdStateT
   if(streams[source].length > 0) {
     console.log(state.client)
     const targetId = state.client[Math.floor(Math.random() * state.client.length)]
-    const buff = streams[source].shift()
-    streams[source].push(buff)
+    let buff: buffStateType
+    if(!state.stream.random[source]) {
+      buff = streams[source].shift()
+      streams[source].push(buff)
+    } else {
+      // RANDOM
+      buff = streams[source][Math.floor(Math.random() * streams[source].length)]
+    }
     const stream = {
       source: source,
       sampleRate: (state.stream.glitch[source] ? state.stream.glitchSampleRate : state.stream.sampleRate[source]), // glicthがtrueならサンプルレートを切替
       glitch: state.stream.glitch[source],
       ...buff
     }
+    
+    if(state.stream.randomrate[source]) {
+      stream.sampleRate = 11025 + Math.floor(Math.random() * 10) * 11025
+    }
+    
     if(!stream.video) console.log("not video")
     if(!state.stream.grid[source]) {
       io.to(targetId).emit('streamFromServer', stream)  
@@ -38,6 +49,9 @@ export const chatReceive = (buffer:buffStateType, io: SocketIO.Server) => {
           sampleRate: states.stream.sampleRate.CHAT,
           glitch: states.stream.glitch.CHAT,
           ...streams.CHAT.shift()
+        }
+        if(states.stream.randomrate.CHAT) {
+          chunk.sampleRate = 11025 + Math.floor(Math.random() * 10) * 11025
         }
         if(states.stream.glitch[buffer.target] && chunk.video) {
           chunk.video = glitchStream(chunk.video)
