@@ -118,7 +118,7 @@ const onAudioProcess = (e: AudioProcessingEvent) => {
   if(flag.chat) {
     let bufferData = {target: 'CHAT', video:toBase64(), audio: new Float32Array(bufferSize), bufferSize: bufferSize, duration: e.inputBuffer.duration}
     e.inputBuffer.copyFromChannel(bufferData.audio, 0);
-    console.log(bufferData.audio)
+    // console.log(bufferData.audio)
     socket.emit('chatFromClient', bufferData)
     flag.chat = false
   }
@@ -131,6 +131,7 @@ const onAudioProcess = (e: AudioProcessingEvent) => {
 }
 
 export const playAudioStream = (bufferArray: Float32Array, sampleRate: number, glitch: boolean, bufferSize: number) => {
+  console.log(sampleRate)
   let audio_src = audioContext.createBufferSource();
   const flo32arr = new Float32Array(bufferArray)
   let audioData = new Float32Array(bufferSize);
@@ -141,8 +142,8 @@ export const playAudioStream = (bufferArray: Float32Array, sampleRate: number, g
       audioData[i] = 0.0
     }
   }
-  console.log(bufferSize) 
-  console.log(audioData)
+  // console.log(bufferSize) 
+  // console.log(audioData)
   if(!glitch){
     let audio_buf = audioContext.createBuffer(1, bufferSize, sampleRate)
     audio_buf.copyToChannel(audioData, 0);

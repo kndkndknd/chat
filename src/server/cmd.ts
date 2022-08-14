@@ -17,6 +17,7 @@ export function charProcess(character:string, strings: string, id: string, io: S
     io.emit('stringsFromServer',{strings: strings, timeout: false})
   } else if(character === 'Escape'){
     stopEmit(io, state);
+    strings =  '';
   } else if(character === 'BASS' || character === 'BASS'){
     console.log('io.to(' + id + ').emit("cmdFromSever",{"cmd":"BASS","property":"LOW"})')
     io.to(id).emit('cmdFromServer',{'cmd':'BASS','property':'LOW'})
@@ -57,6 +58,8 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
     } else {
       state.current.RECORD = false
     }
+  } else if(strings.includes(' ') && strings.split(' ').length < 4) {
+    splitSpace(strings.split(' '), io, state)
   } else if(streamList.includes(strings)) {
     console.log('in stream')
     state.current.stream[strings] = true
@@ -74,15 +77,12 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
   } else if (strings === 'STOP') {
     stopEmit(io, state);
   } else if(Object.keys(parameterList).includes(strings)) {
-//    console.log(parameterList[strings])
-    parameterChange(parameterList[strings], io, state)
+    parameterChange(parameterList[strings], io, state, {source: id})
   } else if(strings === 'NO' || strings === 'NUMBER') {
     state.client.forEach((id, index) => {
       console.log(id)
       io.to(id).emit('stringsFromServer',{strings: String(index), timeout: true})
     })
-  } else if(strings.includes(' ') && strings.split(' ').length < 4) {
-    splitSpace(strings.split(' '), io, state);
   }
 
 }
@@ -379,8 +379,8 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
           state.stream.latency[arg.property] = latency
           io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value)  + '(' + arg.property + ')', timeout: true})
         } else {
-          for(let source in state.stream.latency) {
-            state.stream.latency[source] = latency
+          for(let target in state.stream.latency) {
+            state.stream.latency[target] = latency
           }
           io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value), timeout: true})
         }
@@ -395,8 +395,8 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
         if(Object.values(states.stream.random).includes(false)) {
           flag = true
         }
-        for(let source in state.stream.random) {
-          state.stream.random[source] = flag
+        for(let target in state.stream.random) {
+          state.stream.random[target] = flag
         }
         io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random.CHAT), timeout: true})
       }
@@ -428,8 +428,8 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
       return 'other'
     }
   })
-  console.log(arrTypeArr)
-  console.log(stringArr)
+  // console.log(arrTypeArr)
+  // console.log(stringArr)
 
   if(arrTypeArr[0] === 'number' && stringArr.length === 2) {
     // 送信先を指定したコマンド/SINEWAVE
@@ -441,19 +441,34 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
       sinewaveEmit(stringArr[1], io, state, target)
     }
   } else if(Object.keys(parameterList).includes(stringArr[0])) {
-    let argVal: number
-    let argProp: string
-    if(stringArr.length === 2 && arrTypeArr[1] === 'number') {
-      argVal = Number(stringArr[1])
-    } else if (stringArr.length === 2 && arrTypeArr[1] === 'string'){
-      argProp = stringArr[1]
-    } else if (stringArr.length === 3 && arrTypeArr[1] === 'string' && arrTypeArr[2] === 'number') {
-      argProp = stringArr[1]
-      argVal = Number(stringArr[2])
+    // RANDOMのみRATEとSTREAMがあるので個別処理
+    if(stringArr[0] === 'RANDOM') {
+      if(stringArr[1] === 'RATE') {
+        // SAMPLERATEのランダマイズ
+        console.log('random rate')
+        if(stringArr.length === 2) {
+          for(let key in state.stream.randomrate) {
+            state.stream.randomrate[key] = !state.stream.randomrate[key]
+          }
+          io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM: ' + String(state.stream.randomrate.CHAT), timeout: true})
+        } else if(stringArr.length === 3 && Object.keys(state.stream.randomrate).includes(stringArr[2])) {
+          state.stream.randomrate[stringArr[2]] = !state.stream.randomrate[stringArr[2]]
+          io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(state.stream.randomrate[stringArr[2]]), timeout: true})
+        }
+      }
+    } else {
+      let argVal: number
+      let argProp: string
+      if(stringArr.length === 2 && arrTypeArr[1] === 'number') {
+        argVal = Number(stringArr[1])
+      } else if (stringArr.length === 2 && arrTypeArr[1] === 'string'){
+        argProp = stringArr[1]
+      } else if (stringArr.length === 3 && arrTypeArr[1] === 'string' && arrTypeArr[2] === 'number') {
+        argProp = stringArr[1]
+        argVal = Number(stringArr[2])
+      }
+      parameterChange(parameterList[stringArr[0]], io, state, {value: argVal, property: argProp})
     }
-
-    parameterChange(parameterList[stringArr[0]], io, state, {value: argVal, property: argProp})
-    //parameterchangeにとばす
   } else if(stringArr[0] === 'FADE') {
     if(stringArr[1] === 'IN' || stringArr[1] === 'OUT') {
       if(state.cmd.FADE[stringArr[1]] === 0) {

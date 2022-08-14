@@ -79,9 +79,14 @@ export const states: cmdStateType = {
       PLAYBACK: 1000,
       TIMELAPSE: 1000,
     },
+    randomrate: {
+      CHAT: false,
+      PLAYBACK: false,
+      TIMELAPSE: false
+    },
     quantize: false,
     loop: false,
-    timelapse: false  
+    timelapse: false,
   },
   web: {
     flag: false,
@@ -129,12 +134,13 @@ export let streamList = ['PLAYBACK', 'TIMELAPSE']
 export const parameterList = {
   'PORTAMENT': 'PORTAMENT', // 引数が前提 単体は0なら5、0以外なら0
   'PORT': 'PORTAMENT',
-  'SAMPLERATE': 'SAMPLERATE', // 引数が前提 単体は11025刻みで 
+  'SAMPLERATE': 'SAMPLERATE', 
   'RATE': 'SAMPLERATE',
-  'BPM': 'BPM',  // 引数が前提 単体は60刻みで180までいくか
+  'BPM': 'BPM',
   'GLITCH': 'GLITCH', // 単体でも使える、引数もありうる
   'GRID': 'GRID', // ほぼ単体使いな気がするが、STREAM指定できたらそれはそれで
   'VOICE': 'VOICE', // 単体。引数にするとしたら1 VOICEのような形だと思う
+  'RANDOM': 'RANDOM'
 }
 
 export const uploadParams =  {

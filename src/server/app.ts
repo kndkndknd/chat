@@ -33,21 +33,15 @@ if(states.web.flag && states.web.type === 'websocket') {
 const options = {
   key: fs.readFileSync(path.join(__dirname,'../../..','keys/privkey.pem')),
   cert: fs.readFileSync(path.join(__dirname,'../../..', 'keys/cert.pem'))
-  // key: fs.readFileSync(process.env.HOME + '/keys/privkey.pem'),
-  // cert: fs.readFileSync(process.env.HOME + '/keys/cert.pem')
 }
 
 
 const app = Express();
-/*
-app.set('views', path.join(__dirname, '../..', 'views'));
-app.engine('html', require('ejs').renderFile);
-*/
+
 app.use(Express.static(path.join(__dirname, '..', 'client')));
 app.use(favicon(path.join(__dirname, '../..' ,'lib/favicon.ico')));
 
 app.get('/', function(req, res, next) {
-  //res.render('ts.html')
   try {
     res.sendFile(path.join(__dirname, '../client/static', 'client.html'));
   } catch (error) {
