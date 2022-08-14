@@ -42,7 +42,9 @@ export const chatReceive = (buffer:buffStateType, io: SocketIO.Server) => {
         if(states.stream.glitch[buffer.target] && chunk.video) {
           chunk.video = glitchStream(chunk.video)
         }
+        console.log(states.client)
         const targetId = states.client[Math.floor(Math.random() * states.client.length)]
+        console.log(targetId)
         if(!states.stream.grid[buffer.target]) {
           io.to(targetId).emit('chatFromServer',chunk)
         } else {
