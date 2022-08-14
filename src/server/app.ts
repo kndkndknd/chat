@@ -20,6 +20,15 @@ import { states, chat_web } from './states'
 
 import { buffStateType } from '../types/global';
 
+// websocket
+/*
+import { WebSocket } from 'ws'
+if(states.web.flag && states.web.type === 'websocket') {
+  const ws = new WebSocket(states.web.url)  
+}
+*/
+
+
 //https鍵読み込み
 const options = {
   key: fs.readFileSync(path.join(__dirname,'../../..','keys/privkey.pem')),
@@ -30,6 +39,10 @@ const options = {
 
 
 const app = Express();
+/*
+app.set('views', path.join(__dirname, '../..', 'views'));
+app.engine('html', require('ejs').renderFile);
+*/
 app.use(Express.static(path.join(__dirname, '..', 'client')));
 app.use(favicon(path.join(__dirname, '../..' ,'lib/favicon.ico')));
 
@@ -43,6 +56,14 @@ app.get('/', function(req, res, next) {
   }
 })
 
+app.get('/three', function(req, res, next) {
+  try {
+    res.sendFile(path.join(__dirname, '../client/static', 'three.html'));
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: "Something went wrong" });
+  }
+})
 
 const port = 8888;
 const httpsserver = Https.createServer(options,app).listen(port);
@@ -89,7 +110,8 @@ io.sockets.on('connection',(socket)=>{
     console.log('disconnect: ' + String(socket.id));
     let sockId = String(socket.id);
     states.client = states.client.filter((id) => {
-      if(io.sockets.adapter.rooms.has(id) && id === sockId) {
+      if(io.sockets.adapter.rooms.has(id) && id !== sockId) {
+        console.log(id)
         return id
       }
     })

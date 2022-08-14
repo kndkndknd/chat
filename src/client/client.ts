@@ -12,12 +12,8 @@ let start = false
 
 const cnvs = <HTMLCanvasElement> document.getElementById('cnvs');
 const ctx: CanvasRenderingContext2D = cnvs.getContext('2d');
-const strCnvs = <HTMLCanvasElement> document.getElementById('strCnvs');
-const stx: CanvasRenderingContext2D = strCnvs.getContext('2d');
-const bckCnvs = <HTMLCanvasElement> document.getElementById('bckCnvs');
-const btx: CanvasRenderingContext2D = bckCnvs.getContext('2d');
-const instructionCnvs = <HTMLCanvasElement> document.getElementById('instructionCnvs');
-const itx: CanvasRenderingContext2D = strCnvs.getContext('2d');
+// const strCnvs = <HTMLCanvasElement> document.getElementById('strCnvs');
+// const stx: CanvasRenderingContext2D = strCnvs.getContext('2d');
 
 let darkFlag = false
 
@@ -51,34 +47,35 @@ eListener.addEventListener('click', (()=>{
    initialize()
   }
 }), false);
+
 window.addEventListener('resize', (e) =>{
   console.log('resizing')
   canvasSizing()
 })
+canvasSizing();
+
 document.addEventListener('keydown', (e) => {
   console.log(e)
-  stringsClient = keyDown(e, stringsClient, start, socket, stx, strCnvs, ctx, cnvs)
+  stringsClient = keyDown(e, stringsClient, start, socket, ctx, cnvs, ctx, cnvs)
 })
 
-canvasSizing();
-socket.emit('connectFromClient', 'client')
 socket.on('stringsFromServer', (data: {
   strings: string,
   timeout: boolean
 }) =>{
-    erasePrint(stx, strCnvs);
+    // erasePrint(stx, strCnvs);
     erasePrint(ctx, cnvs);
     console.log(data)
     stringsClient = data.strings
-    textPrint(stringsClient, stx, strCnvs)
+    textPrint(stringsClient, ctx, cnvs)
     if(data.timeout) {
       setTimeout(() => {
-        erasePrint(stx, strCnvs)
+        erasePrint(ctx, cnvs)
       }, 500)
     }
 });
 socket.on('erasePrintFromServer',() =>{
-  erasePrint(stx, strCnvs)
+  // erasePrint(stx, strCnvs)
   erasePrint(ctx, cnvs)
 });
 
@@ -95,36 +92,36 @@ socket.on('cmdFromServer', (cmd: {
 }) => {
   switch(cmd.cmd){
     case 'WHITENOISE':
-      erasePrint(stx, strCnvs);
+      // erasePrint(stx, strCnvs);
       erasePrint(ctx, cnvs);
-      textPrint("WHITENOISE", stx, strCnvs);
+      textPrint("WHITENOISE", ctx, cnvs);
       whitenoise(cmd.flag, cmd.fade, cmd.gain)
       break;
     case 'SINEWAVE':
-      erasePrint(stx, strCnvs);
+      // erasePrint(stx, strCnvs);
       erasePrint(ctx, cnvs);
-      textPrint(String(cmd.value) + 'Hz', stx, strCnvs);
+      textPrint(String(cmd.value) + 'Hz', ctx, cnvs);
       sinewave(cmd.flag, cmd.value, cmd.fade, cmd.portament, cmd.gain)
       break;
     case 'FEEDBACK':
-      erasePrint(stx, strCnvs);
+      // erasePrint(stx, strCnvs);
       erasePrint(ctx, cnvs);
-      textPrint("FEEDBACK", stx, strCnvs);
+      textPrint("FEEDBACK", ctx, cnvs);
       feedback(cmd.flag, cmd.fade, cmd.gain)
       break;
     case 'BASS':
       bass(cmd.flag, cmd.gain)
-      erasePrint(stx, strCnvs);
+      // erasePrint(stx, strCnvs);
       erasePrint(ctx, cnvs);
-      textPrint("BASS", stx, strCnvs);
+      textPrint("BASS", ctx, cnvs);
       break;
     case 'CLICK':
       click(cmd.gain)
-      erasePrint(stx, strCnvs)
+      // erasePrint(stx, strCnvs)
       erasePrint(ctx, cnvs)
-      textPrint('CLICK', stx, strCnvs)
+      textPrint('CLICK', ctx, cnvs)
       setTimeout(()=>{
-        erasePrint(stx, strCnvs);
+        erasePrint(ctx, cnvs);
       },300);  
         
       break;
@@ -138,30 +135,30 @@ socket.on('cmdFromServer', (cmd: {
 socket.on('stopFromServer', (fadeOutVal) => {
   stopCmd(fadeOutVal)
   erasePrint(ctx, cnvs)
-  erasePrint(stx, strCnvs)
-  textPrint('STOP', stx, strCnvs)
+  // erasePrint(stx, strCnvs)
+  textPrint('STOP', ctx, cnvs)
   setTimeout(()=> {
-    erasePrint(stx, strCnvs)
+    erasePrint(ctx, cnvs)
   },800)
 })
 
 socket.on('textFromServer', (data: {text: string}) => {
-    erasePrint(stx, strCnvs)
-    textPrint(data.text, stx, strCnvs)
+    erasePrint(ctx, cnvs)
+    textPrint(data.text, ctx, cnvs)
 });
 
 socket.on('chatReqFromServer', () => {
   chatReq()
   setTimeout(() => {
-    erasePrint(stx, strCnvs)
+    erasePrint(ctx, cnvs)
   },1000)
 })
 
 socket.on('recordReqFromServer', (data: {target: string, timeout:number}) => {
   recordReq(data)
-  textPrint('RECORD', stx, strCnvs)
+  textPrint('RECORD', ctx, cnvs)
   setTimeout(() => {
-    erasePrint(stx, strCnvs)
+    erasePrint(ctx, cnvs)
   }, data.timeout)
 })
 
@@ -177,7 +174,7 @@ socket.on('chatFromServer', (data: {
 }) => {
   console.log(data.audio)
   playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize)
-  showImage(data.video, cnvs)
+  showImage(data.video, ctx)
   chatReq()
 });
 
@@ -193,13 +190,13 @@ socket.on('streamFromServer', (data: {
 }) => {
   console.log(data.audio)
   // console.log(data.video)
-  erasePrint(stx, strCnvs)
+  erasePrint(ctx, cnvs)
   playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize)
   console.log(data.video)
   if(data.video) {
-    showImage(data.video, cnvs)
+    showImage(data.video, ctx)
   } else {
-    textPrint(data.source, stx, strCnvs)
+    textPrint(data.source, ctx, cnvs)
   }
   console.log(data.source)
   socket.emit('streamReqFromClient', data.source)
@@ -215,7 +212,6 @@ socket.on('disconnect', ()=>{
 
 
 export const initialize = async () => {
-  erasePrint(stx, strCnvs)
   erasePrint(ctx, cnvs)
 
   await initVideo(videoElement)
@@ -247,30 +243,15 @@ export const initialize = async () => {
     await initAudioStream(stream)
     await initVideoStream(stream, videoElement)
     await console.log(stream)
-    await textPrint('initialized', stx, strCnvs)
+    await textPrint('initialized', ctx, cnvs)
+    await socket.emit('connectFromClient', 'client')
     await setTimeout(() => {
-      erasePrint(stx, strCnvs)
+      erasePrint(ctx, cnvs)
     }, 500);
   } else {
-    textPrint('not support navigator.mediaDevices.getUserMedia', stx, strCnvs)
-//    oldGetUserMedia()
-/*
-    let oldNavigator: any
-    oldNavigator = navigator
-
-    const stream = await oldNavigator.getUserMedia({
-      video: true,audio : true
-    })
-    await textPrint('try init')
-    await initAudioStream(stream)
-    await initVideoStream(stream)
-    await textPrint('initialized')
-    await setTimeout(() => {
-      erasePrint('strings')
-    }, 500);
-    */
+    textPrint('not support navigator.mediaDevices.getUserMedia', ctx, cnvs)
   }
   
   start = true
 }
-textPrint('click screen', stx, strCnvs)
+textPrint('click screen', ctx, cnvs)

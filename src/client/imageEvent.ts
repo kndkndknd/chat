@@ -1,18 +1,3 @@
-/*
-const cnvs = <HTMLCanvasElement> document.getElementById('cnvs');
-const ctx: CanvasRenderingContext2D = cnvs.getContext('2d');
-const strCnvs = <HTMLCanvasElement> document.getElementById('strCnvs');
-const stx: CanvasRenderingContext2D = strCnvs.getContext('2d');
-const bckCnvs = <HTMLCanvasElement> document.getElementById('bckCnvs');
-const btx: CanvasRenderingContext2D = bckCnvs.getContext('2d');
-const instructionCnvs = <HTMLCanvasElement> document.getElementById('instructionCnvs');
-const itx: CanvasRenderingContext2D = strCnvs.getContext('2d');
-
-let darkFlag = false
-
-let windowWidth = window.innerWidth
-let windowHeight = window.innerHeight
-*/
 
 let videoElement = <HTMLVideoElement>document.getElementById('video');
 export function textPrint(text: string, stx: CanvasRenderingContext2D, strCnvs:HTMLCanvasElement) {
@@ -41,12 +26,6 @@ export function canvasSizing () {
   console.log(height)
   document.getElementById("cnvs").setAttribute("height", height + "px")
   document.getElementById("cnvs").setAttribute("width", width + "px")
-  document.getElementById("strCnvs").setAttribute("height", height + "px")
-  document.getElementById("strCnvs").setAttribute("width", width + "px")
-  document.getElementById("bckCnvs").setAttribute("height", height + "px")
-  document.getElementById("bckCnvs").setAttribute("width", width + "px")
-  document.getElementById("instructionCnvs").setAttribute("height", height + "px")
-  document.getElementById("instructionCnvs").setAttribute("width", width + "px")
 }
 
 export function initVideo (videoElement) {
@@ -96,11 +75,11 @@ export function renderStart(){
   render();
 }
 
-export function showImage (url:string, receive: HTMLCanvasElement) {
-  const image = new Image();
-  image.src = url;
-  console.log('test')
-  image.onload = function(){
+export function showImage (url:string, receive_ctx: CanvasRenderingContext2D) {
+  //canvasSizing()
+  const image = new Image()
+  image.src = url
+  image.onload = () => {
     const aspect = image.width / image.height
     let hght = window.innerHeight
     let wdth = hght * aspect
@@ -110,10 +89,9 @@ export function showImage (url:string, receive: HTMLCanvasElement) {
     }
     const x = window.innerWidth /2 - (wdth / 2)
     const y = 0
-    console.log("width:" + String(wdth) + ",height:" + String(hght) + ", x:"+ x + ", y:"+ y)
-    //const receive = <HTMLCanvasElement> document.getElementById("cnvs");
-    const receive_ctx = receive.getContext("2d");
+    //console.log("width:" + String(wdth) + ",height:" + String(hght) + ", x:"+ x + ", y:"+ y)
     receive_ctx.drawImage(image, x, y, wdth, hght);
+    //receive_ctx.drawImage(image, 0, 0);
   }
 }
 
