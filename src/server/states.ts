@@ -95,19 +95,36 @@ export const states: cmdStateType = {
   }
 }
 
+export let basisBufferSize = 8192
 
 export const streams = {
-  "KICK": [],
-  "SNARE": [],
-  "HAT": [],
-  "SILENCE": [],
+  "CHAT": [],
+  "KICK": {
+    "audio": [],
+    "video": [],
+    "bufferSize": basisBufferSize
+  },
+  "SNARE": {
+    "audio": [],
+    "video": [],
+    "bufferSize": basisBufferSize
+  },
+  "HAT": {
+    "audio": [],
+    "video": [],
+    "bufferSize": basisBufferSize
+  },
+  "SILENCE": {
+    "audio": [],
+    "video": [],
+    "bufferSize": basisBufferSize
+  },
   "PLAYBACK": [],
   "TIMELAPSE": {
     "audio": [],
     "video": [],
     "index": 0
   },
-  "CHAT": [],
   "INTERNET": {
     "audio": [],
     "video": [],
@@ -117,7 +134,6 @@ export const streams = {
 
 export const chat_web = true
 
-export let basisBufferSize = 8192
 
 
 export const cmdList = {

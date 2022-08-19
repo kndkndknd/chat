@@ -42,12 +42,20 @@ const notTargetEmit = (targetId: string, idArr: string[], io: SocketIO.Server) =
 }
 
 export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, state: cmdStateType) => {
+  //VOICE
+  emitVoice(io, strings, state)
+
   if(strings === 'CHAT') {
     if(!state.current.stream.CHAT) {
       console.log(state.client)
       state.current.stream.CHAT = true
       const targetId = state.client[Math.floor(Math.random() * state.client.length)]
       io.to(targetId).emit('chatReqFromServer')
+      if(state.cmd.VOICE.length > 0) {
+        state.cmd.VOICE.forEach((element) => {
+          io.to(element).emit('voiceFromServer', 'CHAT')
+        })
+      }
     } else {
       state.current.stream.CHAT = false
     }
@@ -55,6 +63,11 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
     if(!state.current.RECORD) {
       state.current.RECORD = true
       io.emit('recordReqFromServer', {target: 'PLAYBACK', timeout: 10000})
+      if(state.cmd.VOICE.length > 0) {
+        state.cmd.VOICE.forEach((element) => {
+          io.to(element).emit('voiceFromServer', 'RECORD')
+        })
+      }
     } else {
       state.current.RECORD = false
     }
@@ -81,7 +94,8 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
   } else if(strings === 'NO' || strings === 'NUMBER') {
     state.client.forEach((id, index) => {
       console.log(id)
-      io.to(id).emit('stringsFromServer',{strings: String(index), timeout: true})
+      // io.to(id).emit('stringsFromServer',{strings: String(index), timeout: true})
+      putString(io, String(index), state)
     })
   }
 
@@ -141,7 +155,8 @@ export const cmdEmit = (cmdStrings: string, io: SocketIO.Server, state: cmdState
           targetId = state.current.cmd[cmd.cmd].shift()
         }
       }
-      io.to(targetId).emit('cmdFromServer', cmd)
+      // io.to(targetId).emit('cmdFromServer', cmd)
+      putCmd(io, targetId, cmd, state)
       notTargetEmit(targetId, state.client, io)        
       break
     case 'CLICK':
@@ -156,7 +171,8 @@ export const cmdEmit = (cmdStrings: string, io: SocketIO.Server, state: cmdState
       } else {
         targetId = state.client[Math.floor(Math.random() * state.client.length)]
       }
-      io.to(targetId).emit('cmdFromServer', cmd)
+      // io.to(targetId).emit('cmdFromServer', cmd)
+      putCmd(io, targetId, cmd, state)
       notTargetEmit(targetId, state.client, io)
       break
       /*
@@ -177,6 +193,12 @@ export const cmdEmit = (cmdStrings: string, io: SocketIO.Server, state: cmdState
 
 export const stopEmit = (io: SocketIO.Server, state: cmdStateType) => {
   io.emit('stopFromServer', state.cmd.FADE.OUT)
+  // STOPは個別の関数があるのでVOICEはそこに相乗り
+  if(state.cmd.VOICE.length > 0) {
+    state.cmd.VOICE.forEach((element) => {
+      io.to(element).emit('voiceFromServer', "STOP")
+    })
+  }
 
   // current -> previous && current -> stop
   for(let cmd in state.current.cmd) {
@@ -245,7 +267,8 @@ export const sinewaveEmit = (frequencyStr: string, io: SocketIO.Server, state: c
   }
   console.log(state.current.sinewave)
   console.log(targetId)
-  io.to(targetId).emit('cmdFromServer', cmd)
+  // io.to(targetId).emit('cmdFromServer', cmd)
+  putCmd(io, targetId, cmd, state)
   //io.emit('cmdFromServer', cmd)
   notTargetEmit(targetId, state.client, io)
 }
@@ -270,7 +293,8 @@ const sinewaveChange = (cmdStrings: string, io: SocketIO.Server, state: cmdState
           portament: state.cmd.PORTAMENT,
           gain: state.cmd.GAIN.SINEWAVE
         }
-        io.to(id).emit('cmdFromServer', cmd)
+        putCmd(io, id, cmd, state)
+        // io.to(id).emit('cmdFromServer', cmd)
       }
 
   } else if (cmdStrings === 'HALF') {
@@ -292,7 +316,8 @@ const sinewaveChange = (cmdStrings: string, io: SocketIO.Server, state: cmdState
         portament: state.cmd.PORTAMENT,
         gain: state.cmd.GAIN.SINEWAVE
       }
-      io.to(id).emit('cmdFromServer', cmd)
+      //io.to(id).emit('cmdFromServer', cmd)
+      putCmd(io, id, cmd, state)
     }
 
   }
@@ -310,7 +335,8 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
           state.cmd.PORTAMENT = 5
         }
       }
-      io.emit('stringsFromServer',{strings: 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', timeout: true})
+      // io.emit('stringsFromServer',{strings: 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', timeout: true})
+      putString(io, 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', state)
       break
     case 'SAMPLERATE':
       let sampleRate = 44100
@@ -334,18 +360,21 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
       }
       if(arg && arg.source) {
         state.stream.sampleRate[arg.source] = sampleRate
-        io.emit('stringsFromServer',{strings: 'SampleRate: ' + String(state.stream.sampleRate[arg.source]) + 'Hz', timeout: true})
+        // io.emit('stringsFromServer',{strings: 'SampleRate: ' + String(state.stream.sampleRate[arg.source]) + 'Hz', timeout: true})
+        putString(io, 'SampleRate: ' + String(state.stream.sampleRate[arg.source]) + 'Hz', state)
       } else {
         for(let source in state.stream.sampleRate) {
           state.stream.sampleRate[source] = sampleRate
         }
-        io.emit('stringsFromServer',{strings: 'SampleRate: ' + String(state.stream.sampleRate.CHAT) + 'Hz', timeout: true})
+        // io.emit('stringsFromServer',{strings: 'SampleRate: ' + String(state.stream.sampleRate.CHAT) + 'Hz', timeout: true})
+        putString(io, 'SampleRate: ' + String(state.stream.sampleRate.CHAT) + 'Hz', state)
       }
       break
     case 'GLITCH':
       if(arg && arg.source) {
         state.stream.glitch[arg.source] = !state.stream.glitch[arg.source]
-        io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(state.stream.glitch[arg.source]), timeout: true})
+        // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(state.stream.glitch[arg.source]), timeout: true})
+        putString(io, 'GLITCH: ' + String(state.stream.glitch[arg.source]), state)
       } else {
         let flag = false
         if(Object.values(states.stream.glitch).includes(false)) {
@@ -354,13 +383,15 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
         for(let source in state.stream.glitch) {
           state.stream.glitch[source] = flag
         }  
-        io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(state.stream.glitch.CHAT), timeout: true})
+        // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(state.stream.glitch.CHAT), timeout: true})
+        putString(io, 'GLITCH: ' + String(state.stream.glitch.CHAT), state)
       }
       break
     case 'GRID':
       if(arg && arg.property) {
         state.stream.grid[arg.property] = !state.stream.grid[arg.property]
-        io.emit('stringsFromServer',{strings: 'GRID: ' + String(state.stream.grid[arg.property]) + '(' + arg.property + ')', timeout: true})
+        // io.emit('stringsFromServer',{strings: 'GRID: ' + String(state.stream.grid[arg.property]) + '(' + arg.property + ')', timeout: true})
+        putString(io, 'GRID: ' + String(state.stream.grid[arg.property]) + '(' + arg.property + ')', state)
       } else {
         let flag = false
         if(Object.values(states.stream.grid).includes(false)) {
@@ -369,7 +400,8 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
         for(let source in state.stream.grid) {
           state.stream.grid[source] = flag
         }
-        io.emit('stringsFromServer',{strings: 'GRID: ' + String(state.stream.grid.CHAT), timeout: true})
+        // io.emit('stringsFromServer',{strings: 'GRID: ' + String(state.stream.grid.CHAT), timeout: true})
+        putString(io, 'GRID: ' + String(state.stream.grid.CHAT), state)
       }
       break
     case 'BPM':
@@ -377,19 +409,22 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
         const latency = 60 * 1000 / arg.value
         if(arg.property) {
           state.stream.latency[arg.property] = latency
-          io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value)  + '(' + arg.property + ')', timeout: true})
+          // io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value)  + '(' + arg.property + ')', timeout: true})
+          putString(io, 'BPM: ' + String(arg.value)  + '(' + arg.property + ')', state)
         } else {
           for(let target in state.stream.latency) {
             state.stream.latency[target] = latency
           }
-          io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value), timeout: true})
+          putString(io, 'BPM: ' + String(arg.value), state)
+          // io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value), timeout: true})
         }
       }
       break
     case 'RANDOM':
       if(arg && arg.source) {
         state.stream.random[arg.source] = !state.stream.random[arg.source]
-        io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random[arg.source]), timeout: true})
+        // io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random[arg.source]), timeout: true})
+        putString(io, 'RANDOM: ' + String(state.stream.random[arg.source]), state)
       } else {
         let flag = false
         if(Object.values(states.stream.random).includes(false)) {
@@ -398,7 +433,8 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
         for(let target in state.stream.random) {
           state.stream.random[target] = flag
         }
-        io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random.CHAT), timeout: true})
+        //io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random.CHAT), timeout: true})
+        putString(io, 'RANDOM: ' + String(state.stream.random.CHAT), state)
       }
       break
     case 'VOICE':
@@ -412,7 +448,8 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
           state.cmd.VOICE.push(arg.source)
           flag = true
         }
-        io.emit('stringsFromServer',{strings: 'VOICE: ' + String(flag), timeout: true})
+        // io.emit('stringsFromServer',{strings: 'VOICE: ' + String(flag), timeout: true})
+        putString(io, 'VOICE: ' + String(flag), state)
       }
       break
   }  
@@ -450,10 +487,12 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
           for(let key in state.stream.randomrate) {
             state.stream.randomrate[key] = !state.stream.randomrate[key]
           }
-          io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM: ' + String(state.stream.randomrate.CHAT), timeout: true})
+          // io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM: ' + String(state.stream.randomrate.CHAT), timeout: true})
+          putString(io, 'SAMPLERATE RANDOM: ' + String(state.stream.randomrate.CHAT), state)
         } else if(stringArr.length === 3 && Object.keys(state.stream.randomrate).includes(stringArr[2])) {
           state.stream.randomrate[stringArr[2]] = !state.stream.randomrate[stringArr[2]]
-          io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(state.stream.randomrate[stringArr[2]]), timeout: true})
+          //io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(state.stream.randomrate[stringArr[2]]), timeout: true})
+          putString(io, 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(state.stream.randomrate[stringArr[2]]), state)
         }
       }
     } else {
@@ -476,7 +515,8 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
       } else {
         state.cmd.FADE[stringArr[1]] = 0
       }
-      io.emit('stringsFromServer',{strings: 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), timeout: true})
+      // io.emit('stringsFromServer',{strings: 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), timeout: true})
+      putString(io, 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), state)
     }
   } else if(stringArr[0] === 'UPLOAD' && stringArr.length == 2) {
     uploadStream(stringArr, io)
@@ -497,5 +537,43 @@ const previousCmd = (io: SocketIO.Server, state: cmdStateType) => {
   }
   for(let target in state.previous.sinewave){
     sinewaveEmit(String(state.previous.sinewave[target]), io, state, target)
+  }
+}
+
+const putCmd = (io: SocketIO.Server, id: string, cmd: {
+  cmd: string,
+  value?: number,
+  flag?: boolean,
+  fade?: number,
+  portament?: number,
+  gain?: number
+},
+state: cmdStateType) => {
+  io.to(id).emit('cmdFromServer', cmd)
+  /*
+  if(state.cmd.VOICE.length > 0) {
+    state.cmd.VOICE.forEach((element) => {
+      io.to(element).emit('voiceFromServer', cmd.cmd)
+    })
+  }
+  */
+}
+
+const putString = (io: SocketIO.Server, strings: string, state: cmdStateType) => {
+  io.emit('stringsFromServer',{strings: strings, timeout: true})
+  /*
+  if(state.cmd.VOICE.length > 0) {
+    state.cmd.VOICE.forEach((element) => {
+      io.to(element).emit('voiceFromServer', strings)
+    })
+  }
+  */
+}
+
+const emitVoice = (io: SocketIO.Server, strings: string, state: cmdStateType) => {
+  if(state.cmd.VOICE.length > 0) {
+    state.cmd.VOICE.forEach((element) => {
+      io.to(element).emit('voiceFromServer', strings)
+    })
   }
 }
