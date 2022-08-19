@@ -198,7 +198,7 @@ socket.on('streamFromServer', (data: {
   if(data.video) {
     showImage(data.video, ctx)
   } else {
-    textPrint(data.source, ctx, cnvs)
+    textPrint(data.source.toLowerCase(), ctx, cnvs)
   }
   console.log(data.source)
   socket.emit('streamReqFromClient', data.source)

@@ -103,7 +103,7 @@ export const initAudio = () =>{
 }
 
 export const initAudioStream = (stream) => {
-  let mediastreamsource = void 0
+  let mediastreamsource: MediaStreamAudioSourceNode
   mediastreamsource = audioContext.createMediaStreamSource(stream)
   mediastreamsource.connect(javascriptnode)
   mediastreamsource.connect(feedbackGain)
@@ -145,7 +145,8 @@ export const playAudioStream = (bufferArray: Float32Array, sampleRate: number, g
       audioData[i] = 0.0
     }
   }
-  // console.log(bufferSize) 
+  console.log(bufferSize) 
+  console.log(sampleRate) 
   // console.log(audioData)
   if(!glitch){
     let audio_buf = audioContext.createBuffer(1, bufferSize, sampleRate)

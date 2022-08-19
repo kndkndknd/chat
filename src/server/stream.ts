@@ -1,6 +1,6 @@
 import SocketIO from 'socket.io';
 import { cmdStateType, buffStateType } from '../types/global'
-import { streams, states } from './states'
+import { streams, states, basisBufferSize } from './states'
 
 
 export const streamEmit = (source: string, io: SocketIO.Server, state: cmdStateType) => {
@@ -19,6 +19,18 @@ export const streamEmit = (source: string, io: SocketIO.Server, state: cmdStateT
         }
       } else {
         io.emit('stringsFromServer',{strings: "NO BUFFER", timeout: true})
+      }
+    } else if(source === 'EMPTY') {
+      let audioBuff = new Float32Array(basisBufferSize)
+      for(let i = 0; i < basisBufferSize; i++){
+        audioBuff[i] = 1.0
+      }    
+      buff = {
+        target: source,
+        bufferSize: basisBufferSize,
+        audio: audioBuff,
+        video: streams[source].video.shift(),
+        duration: basisBufferSize / 44100
       }
     } else {
       if(streams[source].audio.length > 0 || streams[source].video.length > 0) {
@@ -50,7 +62,7 @@ export const streamEmit = (source: string, io: SocketIO.Server, state: cmdStateT
     const stream = {
       source: source,
       sampleRate: (state.stream.glitch[source] ? state.stream.glitchSampleRate : state.stream.sampleRate[source]), // glicthがtrueならサンプルレートを切替
-      glitch: state.stream.glitch[source],
+      glitch: (state.stream.glitch[source] ? state.stream.glitch[source] : false),
       ...buff
     }
     
