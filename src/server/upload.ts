@@ -1,5 +1,6 @@
 import { streams, cmdList, streamList, parameterList, states, uploadParams, basisBufferSize } from './states'
 import SocketIO from 'socket.io'
+import { cmdStateType } from '../types/global';
 
 const pcm = require('pcm');
 const fs = require('fs');
@@ -32,6 +33,16 @@ export const pcm2arr = (url) => {
     }
   );
   return rtnBuff;
+}
+
+const pushStateStream = (streamName:string, states:cmdStateType) => {
+  states.current.stream[streamName] = false
+  states.previous.stream[streamName] = false
+  states.stream.sampleRate[streamName] = 44100
+  states.stream.glitch[streamName] = false
+  states.stream.grid[streamName] = false
+  states.stream.random[streamName] = false
+  states.stream.randomrate[streamName] = false
 }
 
 export const uploadStream = async (stringArr, io) => {
@@ -71,19 +82,18 @@ export const uploadStream = async (stringArr, io) => {
       let f = files[i]
       //ドット区切りがあり、ドット区切りの手前がstringArr[1]と同じ場合
       if(f != undefined && f.split(".")[0] === stringArr[1]) {
+        console.log(f)
         const streamName = stringArr[1]
         let fSplit = f.split(".");
         if(!(streamName in streams)) {
-          streams[streamName] = []
+          streams[streamName] = {audio: [], video: [], bufferSize: basisBufferSize}
         }
         let tmpBuff = new Float32Array(basisBufferSize);
         let rtnBuff = [];
         let i = 0;
-        switch(fSplit[1]) {
+        switch(fSplit[1].toLowerCase()){
           case "mov":
-          case "MOV":
           case "mp4":
-          case "MP4":
             let sndConvert = ""
             let imgConvert = ""
             sndConvert = 'ffmpeg -i ' + uploadParams.mediaDir + f + ' -vn -acodec aac ' + uploadParams.mediaDir + fSplit[0] + '.aac';
@@ -94,15 +104,33 @@ export const uploadStream = async (stringArr, io) => {
             }
             await execPromise(sndConvert)
             await execPromise(imgConvert)
+            
+            // let j = 0
             await pcm.getPcmData(uploadParams.mediaDir + streamName + ".aac", { stereo: true, sampleRate: 22050 },
               function(sample, channel) {
-                tmpBuff[i] = sample;
-                i++;
+                tmpBuff[i] = sample
+                i++
                 if(i === basisBufferSize){
                   // rtnBuff.push(tmpBuff);
-                  streams[streamName].push({audio:tmpBuff, bufferSize: basisBufferSize})
-                  tmpBuff = new Float32Array(basisBufferSize);
-                  i = 0;
+                  //console.log(tmpBuff)
+                  console.log("push audio buff")
+                  streams[streamName].audio.push(tmpBuff)
+                  /*
+                  if(streams[streamName].length === 0) {
+                    streams[streamName].push({audio:tmpBuff, bufferSize: basisBufferSize})
+                    console.log(streams[streamName][streams[streamName].length-1].bufferSize)
+                  } else {
+                    // if(streams[streamName].length >= j+1 && streams[streamName][j].video !== undefined) {
+                    if(streams[streamName].length >= j+1) {
+                      streams[streamName][j].audio = tmpBuff
+                      streams[streamName][j].bufferSize = basisBufferSize
+                    console.log(streams[streamName][j].bufferSize)
+                    } 
+                    j++
+                  }
+                  */
+                  tmpBuff = new Float32Array(basisBufferSize)
+                  i = 0
                 }
               },
               function(err, output) {
@@ -112,7 +140,7 @@ export const uploadStream = async (stringArr, io) => {
                 }
                 // streams[streamName].push({audio:rtnBuff})
                 console.log('pcm.getPcmData(' + streamName + '.aac, { stereo: true, sampleRate: 44100 })')
-//                console.log(streams[streamName].audio.length);
+  //                console.log(streams[streamName].audio.length);
                 execPromise("rm " + uploadParams.mediaDir + streamName + ".aac")
               }
             )
@@ -123,100 +151,58 @@ export const uploadStream = async (stringArr, io) => {
                 await jpgs.push(file)
               }
             });
+            // console.log(jpgs)
             // const jpgs = await readDir(uploadParams.mediaDir);
-            console.log(streams[streamName].length)
-            await streams[streamName].forEach(async (element, index) => {
-              console.log("debug ohinasama "+ jpgs[index])
-              //j番目のファイルがjpgだった場合
-//              if(jpgs[j] != undefined && jpgs[j].includes(fSplit[0]) && jpgs[j].includes(".jpg")){
-              console.log(process.env.HOME + uploadParams.mediaDir + jpgs[index])
-              const img = await readFile(uploadParams.mediaDir + jpgs[index])
+            jpgs.forEach(async (element) => {
+              const img = await readFile(uploadParams.mediaDir + element)
               const base64str = await new Buffer(img).toString('base64')  
-              element.video = 'data:image/jpeg;base64,' + String(base64str)
-              await execPromise('rm ' + uploadParams.mediaDir + jpgs[index])
+              // console.log(base64str)
+              streams[streamName].video.push('data:image/jpeg;base64,' + String(base64str))
+              await execPromise('rm ' + uploadParams.mediaDir + element)
               io.emit('stringsFromServer',{strings: "UPLOADED", timeout: true})
-              // オーディオ側のバッファ数よりjが小さければ1進める
-
-
-            });
+            })
             /*
-            for(let a=0;a<streams[streamName].length;a++){
-              //j番目のファイルがjpgだった場合
-              if(jpgs[j] != undefined && jpgs[j].includes(fSplit[0]) && jpgs[j].includes(".jpg")){
-                console.log(process.env.HOME + uploadParams.mediaDir + jpgs[j])
-                const img = await readFile(uploadParams.mediaDir + jpgs[j])
+            if(streams[streamName].length === 0) {
+              jpgs.forEach(async (element) => {
+                const img = await readFile(uploadParams.mediaDir + element)
                 const base64str = await new Buffer(img).toString('base64')  
-                streams[streamName][a].video = 'data:image/jpeg;base64,' + String(base64str)
-                await execPromise('rm ' + uploadParams.mediaDir + jpgs[j])
+                // console.log(base64str)
+                streams[streamName].push('data:image/jpeg;base64,' + String(base64str))
+                await execPromise('rm ' + uploadParams.mediaDir + element)
                 io.emit('stringsFromServer',{strings: "UPLOADED", timeout: true})
-              }
-              // オーディオ側のバッファ数よりjが小さければ1進める
-              if(j+1 < streams[streamName].length) j++
+                
+              })
+            } else {
+              await streams[streamName].forEach(async (element, index) => {
+  //              if(jpgs[j] != undefined && jpgs[j].includes(fSplit[0]) && jpgs[j].includes(".jpg")){
+                console.log(process.env.HOME + uploadParams.mediaDir + jpgs[index])
+                const img = await readFile(uploadParams.mediaDir + jpgs[index])
+                const base64str = await new Buffer(img).toString('base64')  
+                // console.log(base64str)
+                element.video = 'data:image/jpeg;base64,' + String(base64str)
+                await execPromise('rm ' + uploadParams.mediaDir + jpgs[index])
+                io.emit('stringsFromServer',{strings: "UPLOADED", timeout: true})
+              });
+              
             }
-*/
-/*
-            //            for(let j=0;j<jpgs.length;j++) {
-//              let jpg = jpgs[j]
-//              console.log(jpgs[i])
-              if(jpgs[j] != undefined && jpgs[j].includes(fSplit[0]) && jpgs[j].includes(".jpg")){
-                console.log(process.env.HOME + uploadParams.mediaDir + jpgs[j])
-                // let img = await readFile(uploadParams.mediaDir + jpgs[j])
-                // let base64str = await new Buffer(img).toString('base64')
-//                console.log(base64str)
-//                console.log(streams[streamName].length)
-//                console.log(`${typeof(base64str)} ${Object.prototype.toString.call(base64str)}`);
-                if(streamArrNo < streams[streamName].length) {
-                  // console.log(jpgs[j])
-                  const img = await readFile(uploadParams.mediaDir + jpgs[j])
-                  const base64str = await new Buffer(img).toString('base64')  
-                  // console.log(base64str)
-                  streams[streamName][streamArrNo].video = 'data:image/jpeg;base64,' + String(base64str)
-                  // console.log('data:image/jpeg;base64,' + String(base64str))
-                  streamArrNo++
-                }
-                await execPromise('rm ' + uploadParams.mediaDir + jpgs[j])
-                io.emit('stringsFromServer',{strings: "UPLOADED", timeout: true})
-*/
-
-                /*                io.emit('textFromServer',{
-                  "text": "UPLOADED",
-                  "alert": false,
-                  "timeout": true
-                })
-                */
-//              }
-//            }
-//            statusImport(fSplit[0])
+            */
             console.log("video file")
             //コマンド、パラメータにUPLOAD対象を追加
             streamList.push(streamName)
-            states.current.stream[streamName] = false
-            states.previous.stream[streamName] = false
-            states.stream.sampleRate[streamName] = 44100
-            states.stream.glitch[streamName] = false
-            states.stream.grid[streamName] = false
-            states.stream.random[streamName] = false
-
-            break;
+            pushStateStream(streamName, states)
+            break
           case "aac":
-          case "AAC":
           case "m4a":
           case "mp3":
-          case "MP3":
           case "wav":
-          case "WAV":
           case "aif":
           case "aiff":
-          case "AIF":
-          case "AIFF":
             await pcm.getPcmData(uploadParams.mediaDir + f, { stereo: true, sampleRate: 22050 },
               function(sample, channel) {
                 tmpBuff[i] = sample;
                 i++;
                 if(i === basisBufferSize){
-                  console.log(tmpBuff)
-                  //rtnBuff.push(tmpBuff);
-                  streams[streamName].push({audio:tmpBuff, bufferSize: basisBufferSize})
+                  streams[streamName].audio.push(tmpBuff)
                   tmpBuff = new Float32Array(basisBufferSize);
                   i = 0;
                 }
@@ -226,36 +212,16 @@ export const uploadStream = async (stringArr, io) => {
                   console.log("err");
                   throw new Error(err);
                 }
-                //movBuff[f].audio = rtnBuff
-//                streams[streamName].audio = rtnBuff
-                // console.log(rtnBuff)
-                //streams[streamName].push({audio:rtnBuff})
                 console.log('pcm.getPcmData(' + f+ ', { stereo: true, sampleRate: 44100 })')
                 io.emit('stringsFromServer',{strings: "UPLOADED", timeout: true})
-/*
-                io.emit('textFromServer',{
-                  "text": "UPLOADED",
-                  "alert": false,
-                  "timeout": true
-                })
-                */
               }
             )
-            console.log("audio file")
             streamList.push(streamName)
-            states.current.stream[streamName] = false
-            states.current.stream[streamName] = false
-            states.previous.stream[streamName] = false
-            states.stream.sampleRate[streamName] = 44100
-            states.stream.glitch[streamName] = false
-            states.stream.grid[streamName] = false
-            states.stream.random[streamName] = false
-//            statusImport(fSplit[0])
-            break;
+            pushStateStream(streamName, states)
+            break
           default:
             console.log("not media file")
             io.emit('stringsFromServer',{strings: "NO MEDIA FILE", timeout: true})
-            break;
         }
       }
     }

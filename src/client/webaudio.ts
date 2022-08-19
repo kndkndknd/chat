@@ -132,12 +132,15 @@ const onAudioProcess = (e: AudioProcessingEvent) => {
 
 export const playAudioStream = (bufferArray: Float32Array, sampleRate: number, glitch: boolean, bufferSize: number) => {
   console.log(sampleRate)
+  console.log(bufferSize)
+  console.log(bufferArray)
   let audio_src = audioContext.createBufferSource();
   const flo32arr = new Float32Array(bufferArray)
   let audioData = new Float32Array(bufferSize);
   for(let i = 0; i < bufferSize; i++){
     if(flo32arr[i]) {
       audioData[i] = flo32arr[i];
+      // audioData[i] = 1.0
     } else {
       audioData[i] = 0.0
     }

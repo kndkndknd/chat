@@ -188,11 +188,13 @@ socket.on('streamFromServer', (data: {
   bufferSize: number,
   duration?: number 
 }) => {
-  console.log(data.audio)
-  // console.log(data.video)
-  // erasePrint(ctx, cnvs)
-  playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize)
+  // console.log(data.audio)
   console.log(data.video)
+  // erasePrint(ctx, cnvs)
+  if(data.audio){
+    playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize)
+  }
+  // console.log(data.video)
   if(data.video) {
     showImage(data.video, ctx)
   } else {
@@ -200,6 +202,33 @@ socket.on('streamFromServer', (data: {
   }
   console.log(data.source)
   socket.emit('streamReqFromClient', data.source)
+})
+
+socket.on('voiceFromServer', (data: string) => {
+  const uttr = new SpeechSynthesisUtterance();
+  //const synth = window.speechSynthesis;
+  uttr.lang = 'en-US';
+  uttr.text = data
+  // 英語に対応しているvoiceを設定
+  speechSynthesis.onvoiceschanged = function(){
+    const voices = speechSynthesis.getVoices()
+    console.log(voices)
+    for (let i = 0; i < voices.length; i++)  {
+      console.log(voices[i])
+      if (voices[i].lang === 'en-US') {
+        uttr.voice = voices[i]
+      }
+    }
+    /*
+    var voices = speechSynthesis.getVoices();
+    for (var i = 0; i < voices.length; i++) {
+      if (voices[i].lang == "ja-JP"){
+        self.speech.voice = voices[i];
+      }
+    }
+    */
+  };
+  speechSynthesis.speak(uttr);
 })
 
 // disconnect時、1秒後再接続
