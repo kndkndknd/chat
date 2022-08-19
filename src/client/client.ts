@@ -198,7 +198,7 @@ socket.on('streamFromServer', (data: {
   if(data.video) {
     showImage(data.video, ctx)
   } else {
-    textPrint(data.source, ctx, cnvs)
+    textPrint(data.source.toLowerCase(), ctx, cnvs)
   }
   console.log(data.source)
   socket.emit('streamReqFromClient', data.source)
@@ -210,6 +210,23 @@ socket.on('voiceFromServer', (data: string) => {
   uttr.lang = 'en-US';
   uttr.text = data
   // 英語に対応しているvoiceを設定
+  /*
+  speechSynthesis.onvoiceschanged = getVoices
+  var voices
+  function getVoices () {
+    voices = speechSynthesis.getVoices()
+  }
+  console.log(voices)
+  for (let i = 0; i < voices.length; i++)  {
+    console.log(voices[i])
+    if (voices[i].lang === 'en-US') {
+      uttr.voice = voices[i]
+    }
+  }
+  */
+
+
+  
   speechSynthesis.onvoiceschanged = function(){
     const voices = speechSynthesis.getVoices()
     console.log(voices)
@@ -219,16 +236,10 @@ socket.on('voiceFromServer', (data: string) => {
         uttr.voice = voices[i]
       }
     }
-    /*
-    var voices = speechSynthesis.getVoices();
-    for (var i = 0; i < voices.length; i++) {
-      if (voices[i].lang == "ja-JP"){
-        self.speech.voice = voices[i];
-      }
-    }
-    */
+    speechSynthesis.speak(uttr);
+
   };
-  speechSynthesis.speak(uttr);
+  
 })
 
 // disconnect時、1秒後再接続

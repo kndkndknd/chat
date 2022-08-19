@@ -57,6 +57,7 @@ export const states: cmdStateType = {
       CHAT: 44100,
       PLAYBACK: 44100,
       TIMELAPSE: 44100,
+      EMPTY: 444100
     },
     random: {
       CHAT: false,
@@ -129,6 +130,11 @@ export const streams = {
     "audio": [],
     "video": [],
     "index": 0
+  },
+  "EMPTY" : {
+    "audio": [],
+    "video": [],
+    "index": []
   }
 }
 
@@ -145,7 +151,7 @@ export const cmdList = {
   'BASS': 'BASS',
 }
 
-export let streamList = ['PLAYBACK', 'TIMELAPSE']
+export let streamList = ['PLAYBACK', 'TIMELAPSE', 'EMPTY']
 
 export const parameterList = {
   'PORTAMENT': 'PORTAMENT', // 引数が前提 単体は0なら5、0以外なら0
