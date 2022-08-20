@@ -236,9 +236,9 @@ socket.on('voiceFromServer', (data: string) => {
         uttr.voice = voices[i]
       }
     }
-    speechSynthesis.speak(uttr);
 
   };
+    speechSynthesis.speak(uttr);
   
 })
 
