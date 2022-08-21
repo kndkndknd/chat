@@ -509,7 +509,7 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
       parameterChange(parameterList[stringArr[0]], io, state, {value: argVal, property: argProp})
     }
   } else if(stringArr[0] === 'FADE') {
-    if(stringArr[1] === 'IN' || stringArr[1] === 'OUT') {
+    if((stringArr[1] === 'IN' || stringArr[1] === 'OUT') && stringArr.length === 2) {
       if(state.cmd.FADE[stringArr[1]] === 0) {
         state.cmd.FADE[stringArr[1]] = 5
       } else {
@@ -517,6 +517,14 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
       }
       // io.emit('stringsFromServer',{strings: 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), timeout: true})
       putString(io, 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), state)
+    } else if(stringArr.length === 3 && (stringArr[1] === 'IN' || stringArr[1] === 'OUT') && arrTypeArr[2] === 'number') {
+      if(state.cmd.FADE[stringArr[1]] !== Number(stringArr[2])) {
+        state.cmd.FADE[stringArr[1]] = Number(stringArr[2])
+      } else {
+        state.cmd.FADE[stringArr[1]] = 0
+      }
+      putString(io, 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), state)
+      
     }
   } else if(stringArr[0] === 'UPLOAD' && stringArr.length == 2) {
     uploadStream(stringArr, io)
