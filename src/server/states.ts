@@ -4,11 +4,11 @@ export const states: cmdStateType = {
   cmd: {
     GAIN: {
       MASTER: 1.0,
-      SINEWAVE:0.2,
+      SINEWAVE:0.5,
       FEEDBACK:1.0,
-      WHITENOISE:0.3,
+      WHITENOISE:0.45,
       CLICK:0.6,
-      BASS:0.2,
+      BASS:0.5,
       CHAT:1.0,
       GLITCH:0.9
     },
@@ -124,7 +124,8 @@ export const streams = {
   "TIMELAPSE": {
     "audio": [],
     "video": [],
-    "index": 0
+    "index": 0,
+    "bufferSize": basisBufferSize
   },
   "INTERNET": {
     "audio": [],

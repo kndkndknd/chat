@@ -20,15 +20,6 @@ import { states, chat_web } from './states'
 
 import { buffStateType } from '../types/global';
 
-// websocket
-/*
-import { WebSocket } from 'ws'
-if(states.web.flag && states.web.type === 'websocket') {
-  const ws = new WebSocket(states.web.url)  
-}
-*/
-
-
 //https鍵読み込み
 const options = {
   key: fs.readFileSync(path.join(__dirname,'../../..','keys/privkey.pem')),
