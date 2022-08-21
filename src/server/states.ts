@@ -124,7 +124,8 @@ export const streams = {
   "TIMELAPSE": {
     "audio": [],
     "video": [],
-    "index": 0
+    "index": 0,
+    "bufferSize": basisBufferSize
   },
   "INTERNET": {
     "audio": [],

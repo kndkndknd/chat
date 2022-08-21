@@ -121,6 +121,12 @@ export const chatReceive = (buffer:buffStateType, io: SocketIO.Server) => {
       streams.PLAYBACK.push(buffer)
       console.log('PLAYBACK.length:' + String(streams.PLAYBACK.length))
       break
+    case 'TIMELAPSE':
+      streams.TIMELAPSE.audio.push(buffer.audio)
+      streams.TIMELAPSE.video.push(buffer.video)
+      // console.log(buffer.audio)
+      console.log('TIMELAPSE.length:' + String(streams.TIMELAPSE.audio.length))
+      break
   }
 
 }

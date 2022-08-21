@@ -2,8 +2,7 @@ import { io, Socket } from 'socket.io-client';
 const socket: Socket = io();
 import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage} from './imageEvent'
 
-import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq} from './webaudio'
-//import { oldGetUserMedia } from './oldGetUserMedia';
+import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag} from './webaudio'
 
 import {keyDown} from './textInput'
 
@@ -12,33 +11,14 @@ let start = false
 
 const cnvs = <HTMLCanvasElement> document.getElementById('cnvs');
 const ctx: CanvasRenderingContext2D = cnvs.getContext('2d');
-// const strCnvs = <HTMLCanvasElement> document.getElementById('strCnvs');
-// const stx: CanvasRenderingContext2D = strCnvs.getContext('2d');
 
 let darkFlag = false
 
 let windowWidth = window.innerWidth
 let windowHeight = window.innerHeight
 let videoElement = <HTMLVideoElement>document.getElementById('video');
+let timelapseId: NodeJS.Timer
 
-/*
-let bufferLength
-let beatGain
-let prevGain = 0.7;
-let oscPortament = 0;
-let streamBuffer = <Array<{audio:Float32Array, video:string}>> [];
-let bufferSize = 8192;
-let bufferRate = 48000;
-let chatBuffer = <{
-  audio:Float32Array,
-  target?:string,
-  video?:string
-}> {};
-
-let playsampleRate = 48000
-
-let freqVal: number;
-*/
 let stringsClient = '';
 
 let eListener = <HTMLElement> document.getElementById('wrapper')
@@ -206,27 +186,9 @@ socket.on('streamFromServer', (data: {
 
 socket.on('voiceFromServer', (data: string) => {
   const uttr = new SpeechSynthesisUtterance();
-  //const synth = window.speechSynthesis;
   uttr.lang = 'en-US';
   uttr.text = data
   // 英語に対応しているvoiceを設定
-  /*
-  speechSynthesis.onvoiceschanged = getVoices
-  var voices
-  function getVoices () {
-    voices = speechSynthesis.getVoices()
-  }
-  console.log(voices)
-  for (let i = 0; i < voices.length; i++)  {
-    console.log(voices[i])
-    if (voices[i].lang === 'en-US') {
-      uttr.voice = voices[i]
-    }
-  }
-  */
-
-
-  
   speechSynthesis.onvoiceschanged = function(){
     const voices = speechSynthesis.getVoices()
     console.log(voices)
@@ -293,5 +255,8 @@ export const initialize = async () => {
   }
   
   start = true
+  timelapseId = setInterval(() => {
+    streamFlag.timelapse = true
+  }, 60000)
 }
 textPrint('click screen', ctx, cnvs)

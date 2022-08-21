@@ -23,9 +23,10 @@ let chatGain: GainNode
 let convolver: ConvolverNode
 let glitchGain: GainNode
 
-let flag = {
+export let streamFlag = {
   chat: false,
   record: false,
+  timelapse: false
 }
 
 
@@ -115,18 +116,25 @@ export const initAudioStream = (stream) => {
 
 const onAudioProcess = (e: AudioProcessingEvent) => {
   const bufferSize = 8192
-  if(flag.chat) {
+  if(streamFlag.chat) {
     let bufferData = {target: 'CHAT', video:toBase64(), audio: new Float32Array(bufferSize), bufferSize: bufferSize, duration: e.inputBuffer.duration}
     e.inputBuffer.copyFromChannel(bufferData.audio, 0);
     // console.log(bufferData.audio)
     socket.emit('chatFromClient', bufferData)
-    flag.chat = false
+    streamFlag.chat = false
   }
-  if(flag.record) {
+  if(streamFlag.record) {
     let bufferData = {target: 'PLAYBACK', video:toBase64(), audio: new Float32Array(bufferSize), bufferSize: bufferSize, duration: e.inputBuffer.duration}
     e.inputBuffer.copyFromChannel(bufferData.audio, 0);
     console.log(bufferData)
     socket.emit('chatFromClient', bufferData)
+  }
+  if(streamFlag.timelapse) {
+    let bufferData = {target: 'TIMELAPSE', video:toBase64(), audio: new Float32Array(bufferSize), bufferSize: bufferSize, duration: e.inputBuffer.duration}
+    e.inputBuffer.copyFromChannel(bufferData.audio, 0);
+    // console.log(bufferData.audio)
+    socket.emit('chatFromClient', bufferData)
+    streamFlag.timelapse = false
   }
 }
 
@@ -205,7 +213,7 @@ export const click = (gain: number, frequency?: number) => {
 }
 
 export const chatReq = () => {
-  flag.chat= true
+  streamFlag.chat= true
 }
 
 export const recordReq = (recordReq: {
@@ -214,9 +222,9 @@ export const recordReq = (recordReq: {
 ) => {
   switch(recordReq.target) {
     case 'PLAYBACK':
-      flag.record = true
+      streamFlag.record = true
       setTimeout(() => {
-        flag.record = false
+        streamFlag.record = false
       }, recordReq.timeout)
       break;
   }
