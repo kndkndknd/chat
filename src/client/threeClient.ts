@@ -338,8 +338,8 @@ let videoMaterial = new THREE.MeshStandardMaterial();
 let videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
 
 
-const controls = new OrbitControls(camera, renderer.domElement)
-controls.enableDamping = true
+//const controls = new OrbitControls(camera, renderer.domElement)
+//controls.enableDamping = true
 
 const material = new THREE.PointsMaterial({
   vertexColors: true,//頂点の色付けを有効にする
@@ -393,7 +393,7 @@ function animate() {
 
     requestAnimationFrame(animate)
 
-  controls.update()
+  //controls.update()
 
   render()
 }
