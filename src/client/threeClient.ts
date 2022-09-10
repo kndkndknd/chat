@@ -189,6 +189,14 @@ socket.on('disconnect', ()=>{
   },1000)
 })
 
+socket.on('orientationFromServer', (deviceorientation) => {
+  console.log(deviceorientation)
+  camera.lookAt(new THREE.Vector3(
+    deviceorientation.frontToBack, 
+    deviceorientation.leftToRight, 
+    deviceorientation.rotateDegrees));
+})
+
 
 export const initialize = async () => {
     erasePrint(ctx, canvas)

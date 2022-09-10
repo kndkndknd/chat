@@ -101,6 +101,11 @@ io.sockets.on('connection',(socket)=>{
     }
   })
 
+  socket.on('orientationFromClient', (deviceorientation) => {
+    console.log(deviceorientation)
+    io.emit('orientationFromServer', deviceorientation)
+  })
+
   socket.on("disconnect", () =>{
     console.log('disconnect: ' + String(socket.id));
     let sockId = String(socket.id);

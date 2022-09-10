@@ -39,15 +39,35 @@ document.addEventListener('keydown', (e) => {
   stringsClient = keyDown(e, stringsClient, start, socket, ctx, cnvs, ctx, cnvs)
 })
 
-const handleOrientaion = (event) => {
-  var absolute = event.absolute;
-  var alpha    = event.alpha;
-  var beta     = event.beta;
-  var gamma    = event.gamma;
-  textPrint(String(absolute), ctx, cnvs)
+
+let nIntervId
+let readyFlag = false
+if (!nIntervId) {
+  nIntervId = setInterval(()=> {readyFlag = true}, 300);
 }
 
-window.addEventListener('deviceorientation', handleOrientaion, true)
+const handleOrientationEvent = (frontToBack, leftToRight, rotateDegrees) => {
+    //textPrint(String(frontToBack), ctx, cnvs)
+  socket.emit('orientationFromClient', {
+    frontToBack: frontToBack,
+    leftToRight: leftToRight,
+    rotateDegrees: rotateDegrees
+  })
+}
+
+window.addEventListener('deviceorientation', function(event) {
+  if(readyFlag) {
+    // alpha: rotation around z-axis
+    var rotateDegrees = event.alpha;
+    // gamma: left to right
+    var leftToRight = event.gamma;
+    // beta: front back motion
+    var frontToBack = event.beta;
+
+    handleOrientationEvent(frontToBack, leftToRight, rotateDegrees);
+    readyFlag = false
+  }
+}, true)
 
 
 socket.on('stringsFromServer', (data: {
