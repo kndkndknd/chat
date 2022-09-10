@@ -46,25 +46,26 @@ if (!nIntervId) {
   nIntervId = setInterval(()=> {readyFlag = true}, 300);
 }
 
-const handleOrientationEvent = (frontToBack, leftToRight, rotateDegrees) => {
-    //textPrint(String(frontToBack), ctx, cnvs)
-  socket.emit('orientationFromClient', {
-    frontToBack: frontToBack,
-    leftToRight: leftToRight,
-    rotateDegrees: rotateDegrees
-  })
+const handleOrientationEvent = (orientationObject) => {
+  textPrint(String(orientationObject.alpha), ctx, cnvs)
+  socket.emit('orientationFromClient', orientationObject)
 }
 
 window.addEventListener('deviceorientation', function(event) {
   if(readyFlag) {
     // alpha: rotation around z-axis
-    var rotateDegrees = event.alpha;
+    // var rotateDegrees = event.alpha;
     // gamma: left to right
-    var leftToRight = event.gamma;
+    // var leftToRight = event.gamma;
     // beta: front back motion
-    var frontToBack = event.beta;
+    // var frontToBack = event.beta;
+    const alpha = event.alpha-90
+    const beta = event.beta < 180 ? -event.beta : -(event.beta - 360)
+    const gamma = event.gamma < 180 ? event.gamma : (event.gamma - 360)
+    console.log(event)    
+    const orientation = {alpha: alpha, gamma: gamma, beta: beta}
 
-    handleOrientationEvent(frontToBack, leftToRight, rotateDegrees);
+    handleOrientationEvent(orientation);
     readyFlag = false
   }
 }, true)
