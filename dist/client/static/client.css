@@ -14,7 +14,7 @@ body #wrapper{
 }
 
 body #cnvs{
-  position:absolute;
+  position:relative;
   z-index:1;
 }
 body #strCnvs{

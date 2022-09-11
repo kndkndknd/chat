@@ -21,6 +21,7 @@ const clientConfig = {
     client: './src/client/client.ts',
     threeClient: './src/client/threeClient.ts',
     orientation: './src/client/orientation.ts',
+    facetest: './src/client/facetest.ts',
   } ,
   // entry: scripts,
   // ファイルの出力設定
@@ -53,7 +54,7 @@ const clientConfig = {
           }
         ],
         // node_modulesは除外する
-        // exclude: /node_modules/
+        exclude: /node_modules/
       },
       { //拡張子.tsの場合
         test: /\.(ts|tsx)?$/,
@@ -68,7 +69,8 @@ const clientConfig = {
     extensions: [
     '.ts',
     '.js' // node_modulesのライブラリ読み込みに必要
-    ]
+    ],
+    fallback: { fs: false }
   },
 
   // ソースマップを有効にする

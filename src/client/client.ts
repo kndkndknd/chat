@@ -6,7 +6,6 @@ import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click,
 
 import {keyDown} from './textInput'
 
-
 let start = false
 
 const cnvs = <HTMLCanvasElement> document.getElementById('cnvs');

@@ -29,7 +29,7 @@ export function canvasSizing () {
 }
 
 export function initVideo (videoElement) {
-  videoElement.play()
+  //videoElement.play()
   videoElement.volume = 0
 }
 

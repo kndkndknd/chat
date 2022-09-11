@@ -59,6 +59,25 @@ app.get('/orientation', function(req, res, next) {
   }
 })
 
+app.get('/faceapi', function(req, res, next) {
+  try {
+    res.sendFile(path.join(__dirname, '../client/static', 'faceapi.html'));
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: "Something went wrong" });
+  }
+})
+/*
+app.get('/vosk', function(req, res, next) {
+  try {
+    res.sendFile(path.join(__dirname, '../client/static', 'vosk.html'));
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: "Something went wrong" });
+  }
+})
+*/
+
 
 const port = 8888;
 const httpsserver = Https.createServer(options,app).listen(port);
