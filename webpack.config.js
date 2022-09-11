@@ -20,6 +20,7 @@ const clientConfig = {
     // mobile: './src/client/workletProcessor.js',
     client: './src/client/client.ts',
     threeClient: './src/client/threeClient.ts',
+    orientation: './src/client/orientation.ts',
   } ,
   // entry: scripts,
   // ファイルの出力設定

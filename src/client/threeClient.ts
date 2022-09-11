@@ -4,6 +4,8 @@ import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click,
 import {keyDown} from './textInput'
 import {textPrint, erasePrint, showImage, initVideoStream, initVideo} from './imageEvent'
 
+const roomFileName = 'room'
+
 // CHAT部分
 let start = false
 let printStrings = "";
@@ -189,6 +191,21 @@ socket.on('disconnect', ()=>{
   },1000)
 })
 
+socket.on('addRoomFromServer', () => {
+  particles.scale.set(8, 8, 8)
+  scene.add(particles)
+})
+
+socket.on('orientationFromServer', (deviceorientation) => {
+  console.log(deviceorientation)
+  cameraControl = false
+  camera.lookAt(new THREE.Vector3(
+    deviceorientation.alpha, 
+    deviceorientation.beta, 
+    deviceorientation.gamma)
+  );
+})
+
 
 export const initialize = async () => {
     erasePrint(ctx, canvas)
@@ -234,7 +251,7 @@ export const initialize = async () => {
     start = true
 
     fbxLoader.load(
-      'objects/mpm_f21__Apple_MacBook_Pro_15.fbx',
+      'static/threeObjects/macbook/mpm_f21__Apple_MacBook_Pro_15.fbx',
       (object) => {
           // object.traverse(function (child) {
           //     if ((child as THREE.Mesh).isMesh) {
@@ -249,7 +266,30 @@ export const initialize = async () => {
           scene.add(object)
       },
       (xhr) => {
-          console.log((xhr.loaded / xhr.total) * 100 + '% loaded')
+          console.log('macbook: ' + (xhr.loaded / xhr.total) * 100 + '% loaded')
+      },
+      (error) => {
+          console.log(error)
+      }
+  )
+
+  
+  plyLoader.load(
+      'static/threeObjects/' + roomFileName + '.ply',
+      function (geometry) {
+          //geometry.computeVertexNormals()
+          particles = new THREE.Points(geometry, plyMaterial)
+          // mesh.rotateX(-Math.PI / 2)
+          /*
+          particles.scale.set(8, 8, 8)
+          scene.add(particles)
+          */
+      },
+      (xhr) => {
+          console.log('ply: ' + (xhr.loaded / xhr.total) * 100 + '% loaded')
+          if(xhr.loaded === 1) {
+            textPrint('initialized', ctx, canvas)
+          }
       },
       (error) => {
           console.log(error)
@@ -262,9 +302,12 @@ export const initialize = async () => {
 
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-// import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader'
+
+import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader'
 //import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
+
+
 
 const scene = new THREE.Scene()
 
@@ -278,8 +321,8 @@ const camera = new THREE.PerspectiveCamera(
     0.1,
     500
 )
-camera.position.z = 10
-camera.position.y = 5
+camera.position.z = 5
+camera.position.y = 2
 
 camera.lookAt(new THREE.Vector3(0, 0, 0));
 let rot = 0;
@@ -330,8 +373,15 @@ let videoMaterial = new THREE.MeshStandardMaterial();
 let videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
 
 
+//const controls = new TrackballControls(camera)
+//controls.rotateSpeed = 1.0
+//controls.zoomSpeed = 1.0
+//controls.panSpeed = 1.0
+//controls.enableDamping = true
+
 const controls = new OrbitControls(camera, renderer.domElement)
-controls.enableDamping = true
+
+let cameraControl = true
 
 const material = new THREE.PointsMaterial({
   vertexColors: true,//頂点の色付けを有効にする
@@ -341,6 +391,15 @@ const material = new THREE.PointsMaterial({
 // const plyLoader = new PLYLoader()
 //const objLoader = new OBJLoader()
 const fbxLoader = new FBXLoader()
+
+// particles
+const plyLoader = new PLYLoader()
+const plyMaterial = new THREE.PointsMaterial({
+  vertexColors: true,//頂点の色付けを有効にする
+  size: 0.03,
+});
+let particles: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>
+
 
 window.addEventListener('resize', onWindowResize, false)
 function onWindowResize() {
@@ -384,8 +443,9 @@ function animate() {
   
 
     requestAnimationFrame(animate)
-
-  controls.update()
+  if(cameraControl) {
+    controls.update()
+  }
 
   render()
 }
@@ -432,7 +492,7 @@ const reloadVideo = (img: string) => {
 function showImage3d (url:string, receive: HTMLCanvasElement) {
   const image = new Image();
   image.src = url;
-  console.log('test')
+  // console.log('test')
   image.onload = function(){
     const aspect = image.width / image.height
     let hght = window.innerHeight

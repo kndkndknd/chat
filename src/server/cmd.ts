@@ -45,7 +45,10 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
   //VOICE
   emitVoice(io, strings, state)
 
-  if(strings === 'CHAT') {
+  // for 20220915
+  if(strings === 'SOTO') {
+    io.emit('addRoomFromServer')
+  } else if(strings === 'CHAT') {
     if(!state.current.stream.CHAT) {
       console.log(state.client)
       state.current.stream.CHAT = true

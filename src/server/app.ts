@@ -50,6 +50,16 @@ app.get('/three', function(req, res, next) {
   }
 })
 
+app.get('/orientation', function(req, res, next) {
+  try {
+    res.sendFile(path.join(__dirname, '../client/static', 'orientation.html'));
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: "Something went wrong" });
+  }
+})
+
+
 const port = 8888;
 const httpsserver = Https.createServer(options,app).listen(port);
 const io = new Server(httpsserver)
@@ -89,6 +99,11 @@ io.sockets.on('connection',(socket)=>{
     if(states.current.stream[source]) {
       streamEmit(source, io, states)
     }
+  })
+
+  socket.on('orientationFromClient', (deviceorientation) => {
+    console.log(deviceorientation)
+    io.emit('orientationFromServer', deviceorientation)
   })
 
   socket.on("disconnect", () =>{
