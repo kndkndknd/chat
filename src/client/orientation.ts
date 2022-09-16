@@ -10,7 +10,7 @@ import {keyDown} from './textInput'
 let start = false
 
 const cnvs = <HTMLCanvasElement> document.getElementById('cnvs');
-const ctx: CanvasRenderingContext2D = cnvs.getContext('2d');
+const ctx = <CanvasRenderingContext2D>cnvs.getContext('2d');
 
 let darkFlag = false
 
@@ -36,39 +36,12 @@ canvasSizing();
 
 document.addEventListener('keydown', (e) => {
   console.log(e)
-  stringsClient = keyDown(e, stringsClient, start, socket, ctx, cnvs, ctx, cnvs)
+  stringsClient = keyDown(e, stringsClient, socket, ctx, cnvs, ctx, cnvs)
 })
 
 
 let nIntervId
 let readyFlag = false
-if (!nIntervId) {
-  nIntervId = setInterval(()=> {readyFlag = true}, 300);
-}
-
-const handleOrientationEvent = (orientationObject) => {
-  textPrint(String(orientationObject.alpha), ctx, cnvs)
-  socket.emit('orientationFromClient', orientationObject)
-}
-
-window.addEventListener('deviceorientation', function(event) {
-  if(readyFlag) {
-    // alpha: rotation around z-axis
-    // var rotateDegrees = event.alpha;
-    // gamma: left to right
-    // var leftToRight = event.gamma;
-    // beta: front back motion
-    // var frontToBack = event.beta;
-    const alpha = event.alpha-90
-    const beta = event.beta < 180 ? -event.beta : -(event.beta - 360)
-    const gamma = event.gamma < 180 ? event.gamma : (event.gamma - 360)
-    console.log(event)    
-    const orientation = {alpha: alpha, gamma: gamma, beta: beta}
-
-    handleOrientationEvent(orientation);
-    readyFlag = false
-  }
-}, true)
 
 
 socket.on('stringsFromServer', (data: {
@@ -91,204 +64,60 @@ socket.on('erasePrintFromServer',() =>{
   erasePrint(ctx, cnvs)
 });
 
-socket.on('cmdFromServer', (cmd: {
-  cmd: string, 
-  property: string, 
-  value: number, 
-  flag: boolean, 
-  target?: string, 
-  overlay?: boolean, 
-  fade?: number, 
-  portament?: number, 
-  gain?: number  
-}) => {
-  switch(cmd.cmd){
-    case 'WHITENOISE':
-      // erasePrint(stx, strCnvs);
-      erasePrint(ctx, cnvs);
-      textPrint("WHITENOISE", ctx, cnvs);
-      whitenoise(cmd.flag, cmd.fade, cmd.gain)
-      break;
-    case 'SINEWAVE':
-      // erasePrint(stx, strCnvs);
-      erasePrint(ctx, cnvs);
-      textPrint(String(cmd.value) + 'Hz', ctx, cnvs);
-      sinewave(cmd.flag, cmd.value, cmd.fade, cmd.portament, cmd.gain)
-      break;
-    case 'FEEDBACK':
-      // erasePrint(stx, strCnvs);
-      erasePrint(ctx, cnvs);
-      textPrint("FEEDBACK", ctx, cnvs);
-      feedback(cmd.flag, cmd.fade, cmd.gain)
-      break;
-    case 'BASS':
-      bass(cmd.flag, cmd.gain)
-      // erasePrint(stx, strCnvs);
-      erasePrint(ctx, cnvs);
-      textPrint("BASS", ctx, cnvs);
-      break;
-    case 'CLICK':
-      click(cmd.gain)
-      // erasePrint(stx, strCnvs)
-      erasePrint(ctx, cnvs)
-      textPrint('CLICK', ctx, cnvs)
-      setTimeout(()=>{
-        erasePrint(ctx, cnvs);
-      },300);  
-        
-      break;
-    default:
-      break;
-  }
-  // strings = '';
-  stringsClient = '';
-});
-
-socket.on('stopFromServer', (fadeOutVal) => {
-  stopCmd(fadeOutVal)
-  erasePrint(ctx, cnvs)
-  // erasePrint(stx, strCnvs)
-  textPrint('STOP', ctx, cnvs)
-  setTimeout(()=> {
-    erasePrint(ctx, cnvs)
-  },800)
-})
-
 socket.on('textFromServer', (data: {text: string}) => {
     erasePrint(ctx, cnvs)
     textPrint(data.text, ctx, cnvs)
 });
 
-socket.on('chatReqFromServer', () => {
-  chatReq()
-  setTimeout(() => {
-    erasePrint(ctx, cnvs)
-  },1000)
-})
-
-socket.on('recordReqFromServer', (data: {target: string, timeout:number}) => {
-  recordReq(data)
-  textPrint('RECORD', ctx, cnvs)
-  setTimeout(() => {
-    erasePrint(ctx, cnvs)
-  }, data.timeout)
-})
-
-// CHATのみ向けにする
-socket.on('chatFromServer', (data: {
-  audio: Float32Array, 
-  video?: string, 
-  sampleRate: number, 
-  source?: string, 
-  glitch: boolean,
-  bufferSize: number,
-  duration: number
-}) => {
-  console.log(data.audio)
-  playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize)
-  showImage(data.video, ctx)
-  chatReq()
-});
-
-// CHAT以外のSTREAM向け
-socket.on('streamFromServer', (data: {
-  source: string, 
-  audio: Float32Array, 
-  video?: string, 
-  sampleRate: number, 
-  glitch: boolean,
-  bufferSize: number,
-  duration?: number 
-}) => {
-  // console.log(data.audio)
-  console.log(data.video)
-  // erasePrint(ctx, cnvs)
-  if(data.audio){
-    playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize)
-  }
-  // console.log(data.video)
-  if(data.video) {
-    showImage(data.video, ctx)
-  } else {
-    textPrint(data.source.toLowerCase(), ctx, cnvs)
-  }
-  console.log(data.source)
-  socket.emit('streamReqFromClient', data.source)
-})
-
-socket.on('voiceFromServer', (data: string) => {
-  const uttr = new SpeechSynthesisUtterance();
-  uttr.lang = 'en-US';
-  uttr.text = data
-  // 英語に対応しているvoiceを設定
-  speechSynthesis.onvoiceschanged = function(){
-    const voices = speechSynthesis.getVoices()
-    console.log(voices)
-    for (let i = 0; i < voices.length; i++)  {
-      console.log(voices[i])
-      if (voices[i].lang === 'en-US') {
-        uttr.voice = voices[i]
-      }
-    }
-
-  };
-    speechSynthesis.speak(uttr);
-  
-})
-
-// disconnect時、1秒後再接続
-socket.on('disconnect', ()=>{
-  console.log("disconnect")
-  setTimeout(()=> {
-    socket.connect()
-  },1000)
-})
 
 
 export const initialize = async () => {
-  erasePrint(ctx, cnvs)
 
-  await initVideo(videoElement)
-  await initAudio()
-
-  const SUPPORTS_MEDIA_DEVICES = 'mediaDevices' in navigator
-  if (SUPPORTS_MEDIA_DEVICES && navigator.mediaDevices.getUserMedia) {
-    const devices = await navigator.mediaDevices.enumerateDevices()
-    const cameras = devices.filter((device) => device.kind === 'videoinput');
-    if (cameras.length === 0) {
-      throw 'No camera found on this device.'
-    }
-//    const camera = cameras[cameras.length - 1]
-    const camera = cameras[0];
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        //facingMode: 'environment'
-        deviceId: camera.deviceId,
-        facingMode: ['user', 'environment'],
-        height: {ideal: 1080},
-        width: {ideal: 1920}
-      },audio : {
-        sampleRate: {ideal: 44100},
-        echoCancellation: false,
-        noiseSuppression: false,
-        autoGainControl: false
-      }
-    })
-    await initAudioStream(stream)
-    await initVideoStream(stream, videoElement)
-    await console.log(stream)
-    await textPrint('initialized', ctx, cnvs)
-    await socket.emit('connectFromClient', 'client')
-    await setTimeout(() => {
-      erasePrint(ctx, cnvs)
-    }, 500);
-  } else {
-    textPrint('not support navigator.mediaDevices.getUserMedia', ctx, cnvs)
+  if (!nIntervId) {
+    nIntervId = setInterval(()=> {readyFlag = true}, 300);
   }
   
-  start = true
-  timelapseId = setInterval(() => {
-    streamFlag.timelapse = true
-  }, 60000)
+  const handleOrientationEvent = (orientationObject) => {
+    textPrint(String(orientationObject.alpha), ctx, cnvs)
+    socket.emit('orientationFromClient', orientationObject)
+  }
+
+  if(typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
+    (DeviceOrientationEvent as any).requestPermission().then( function( response ){
+      if( response === 'granted' ){
+        window.addEventListener('deviceorientation', function(event) {
+          if(readyFlag && event.alpha && event.beta && event.gamma) {
+            const alpha = event.alpha-90
+            const beta = event.beta < 180 ? -event.beta : -(event.beta - 360)
+            const gamma = event.gamma < 180 ? event.gamma : (event.gamma - 360)
+            console.log(event)    
+            const orientation = {alpha: alpha, gamma: gamma, beta: beta}
+        
+            handleOrientationEvent(orientation);
+            readyFlag = false
+          }
+        }, true)
+      }
+    }).catch( function( e ){
+      console.log( e );
+    });  
+  } else {
+    window.addEventListener('deviceorientation', function(event) {
+      if(readyFlag && event.alpha && event.beta && event.gamma) {
+        const alpha = event.alpha-90
+        const beta = event.beta < 180 ? -event.beta : -(event.beta - 360)
+        const gamma = event.gamma < 180 ? event.gamma : (event.gamma - 360)
+        console.log(event)    
+        const orientation = {alpha: alpha, gamma: gamma, beta: beta}
+    
+        handleOrientationEvent(orientation);
+        readyFlag = false
+      }
+    }, true)
+  
+  }
+
+  erasePrint(ctx, cnvs)
+
 }
 textPrint('click screen', ctx, cnvs)

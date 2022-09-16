@@ -32,6 +32,16 @@ export const streamEmit = (source: string, io: SocketIO.Server, state: cmdStateT
         video: streams[source].video.shift(),
         duration: basisBufferSize / 44100
       }
+    } else if(source === 'TIMELAPSE') {
+      if(streams.TIMELAPSE.audio.length > 0 && streams.TIMELAPSE.video.length > 0) {
+        buff = {
+          target: source,
+          bufferSize: streams[source].bufferSize,
+          audio: streams[source].audio.shift(),
+          video: streams[source].video.shift(),
+          duration: streams[source].bufferSize / 44100
+        }
+      }
     } else {
       if(streams[source].audio.length > 0 || streams[source].video.length > 0) {
 
@@ -59,25 +69,29 @@ export const streamEmit = (source: string, io: SocketIO.Server, state: cmdStateT
         io.emit('stringsFromServer',{strings: "NO BUFFER", timeout: true})
       }
     }
-    const stream = {
-      source: source,
-      sampleRate: (state.stream.glitch[source] ? state.stream.glitchSampleRate : state.stream.sampleRate[source]), // glicthがtrueならサンプルレートを切替
-      glitch: (state.stream.glitch[source] ? state.stream.glitch[source] : false),
-      ...buff
-    }
-    
-    if(state.stream.randomrate[source]) {
-      stream.sampleRate = 11025 + Math.floor(Math.random() * 10) * 11025
-    }
-    
-    if(!stream.video) console.log("not video")
-    if(!state.stream.grid[source]) {
-      io.to(targetId).emit('streamFromServer', stream)  
-    } else {
-      const timeOutVal = Math.round(Math.random() * 16) * states.stream.latency[source] / 4
-      setTimeout(()=> {
+    if(buff) {
+      const stream = {
+        source: source,
+        sampleRate: (state.stream.glitch[source] ? state.stream.glitchSampleRate : state.stream.sampleRate[source]), // glicthがtrueならサンプルレートを切替
+        glitch: (state.stream.glitch[source] ? state.stream.glitch[source] : false),
+        ...buff
+      }
+      
+      if(state.stream.randomrate[source]) {
+        stream.sampleRate = 11025 + Math.floor(Math.random() * 10) * 11025
+      }
+      
+      if(!stream.video) console.log("not video")
+      if(!state.stream.grid[source]) {
         io.to(targetId).emit('streamFromServer', stream)  
-      }, timeOutVal)
+      } else {
+        const timeOutVal = Math.round(Math.random() * 16) * states.stream.latency[source] / 4
+        setTimeout(()=> {
+          io.to(targetId).emit('streamFromServer', stream)  
+        }, timeOutVal)
+      }  
+    } else {
+      console.log('no buffer')
     }
     /*
   } else {

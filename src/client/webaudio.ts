@@ -1,5 +1,20 @@
 import { io, Socket } from "socket.io-client";
-import { toBase64 } from './imageEvent'
+import { erasePrint, textPrint, toBase64 } from './imageEvent'
+
+export let streamFlag = {
+  chat: false,
+  record: false,
+  timelapse: false,
+  simulate: false
+}
+
+let simsGain = 1
+
+
+const cnvs = <HTMLCanvasElement> document.getElementById('cnvs');
+const ctx  = <CanvasRenderingContext2D>cnvs.getContext('2d');
+
+
 const socket: Socket = io();
 
 let audioContext: AudioContext
@@ -23,11 +38,11 @@ let chatGain: GainNode
 let convolver: ConvolverNode
 let glitchGain: GainNode
 
-export let streamFlag = {
-  chat: false,
-  record: false,
-  timelapse: false
-}
+let simulateOsc: OscillatorNode
+let simulateGain: GainNode
+let simFilter: BiquadFilterNode
+let analyser: AnalyserNode
+
 
 
 export const initAudio = () =>{
@@ -100,7 +115,18 @@ export const initAudio = () =>{
   chatGain = audioContext.createGain()
   chatGain.gain.setValueAtTime(1,0)
   chatGain.connect(masterGain)
-  
+
+  // SIMULATE
+  simulateOsc = audioContext.createOscillator();
+  simulateGain = audioContext.createGain();
+  simulateOsc.connect(simulateGain);
+  simulateOsc.frequency.setValueAtTime(440, 0);
+  simulateGain.gain.setValueAtTime(0,0);
+  simulateGain.connect(masterGain)
+  simulateOsc.start(0);
+  simFilter = audioContext.createBiquadFilter();
+  simFilter.type = "lowpass";
+  simFilter.frequency.setValueAtTime(1000,0);
 }
 
 export const initAudioStream = (stream) => {
@@ -112,6 +138,11 @@ export const initAudioStream = (stream) => {
   javascriptnode.onaudioprocess = onAudioProcess
   javascriptnode.connect(masterGain)
   //rec
+
+  //SIMULATE
+  analyser = audioContext.createAnalyser();
+  mediastreamsource.connect(simFilter);
+  simFilter.connect(analyser);
 };
 
 const onAudioProcess = (e: AudioProcessingEvent) => {
@@ -136,6 +167,28 @@ const onAudioProcess = (e: AudioProcessingEvent) => {
     socket.emit('chatFromClient', bufferData)
     streamFlag.timelapse = false
   }
+  if(streamFlag.simulate){
+    let freqData = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(freqData);
+    console.log(freqData.length)
+    let freq = {freq:0,val:0}
+    for (let i = 0, len = freqData.length; i < len; i++) {
+      //if(freq.val < freqData[i]) freq = {freq:(i*20000/2048), val:freqData[i]/256}
+      if(freq.val < freqData[i]) freq = {freq:(i*22050/analyser.fftSize), val:freqData[i]/256}
+    }
+    //let currentTime = audioContext.currentTime
+    if(freq.val > simsGain) freq.val = simsGain
+//    freq.val = simsGain
+//    freq.val //later
+//    if(freq.val > clientState.gain.manekkoGain) freq.val = clientState.gain.manekkoGain
+    console.log(freq)
+    let currentTime = audioContext.currentTime;
+    simulateGain.gain.setTargetAtTime(freq.val,currentTime,0.1)
+    simulateOsc.frequency.setTargetAtTime(freq.freq,currentTime,0.1)
+    erasePrint(ctx, cnvs);
+    textPrint(String(freq.freq) + "Hz", ctx, cnvs);
+  }
+
 }
 
 export const playAudioStream = (bufferArray: Float32Array, sampleRate: number, glitch: boolean, bufferSize: number) => {
@@ -167,6 +220,7 @@ export const playAudioStream = (bufferArray: Float32Array, sampleRate: number, g
 
 export const sinewave = (flag: boolean, frequency: number, fade: number, portament: number, gain: number) => {
   const currentTime = audioContext.currentTime
+  console.log('debug')
   osc.frequency.setTargetAtTime(frequency, currentTime, portament);
   if(flag){
     oscGain.gain.setTargetAtTime(gain,currentTime,fade);
@@ -240,3 +294,14 @@ export const stopCmd = (fade: number) => {
   oscGain.gain.setTargetAtTime(0,currentTime,fade)
 }
 
+
+export const simulate = (gain: number) => {
+  streamFlag.simulate = !streamFlag.simulate
+  if(streamFlag.simulate) {
+    simsGain = gain
+  } else {
+    simsGain = 0
+    simulateGain.gain.setValueAtTime(0,0);
+  }
+
+}

@@ -3,7 +3,7 @@ import { Socket } from 'socket.io-client';
 import { textPrint, erasePrint, eraseText } from './imageEvent'
 
 
-export const keyDown = (e: KeyboardEvent, stringsClient: string, start: boolean, socket: Socket, stx, strCnvs, ctx?, cnvs?) => {
+export const keyDown = (e: KeyboardEvent, stringsClient: string, socket: Socket, stx, strCnvs, ctx?, cnvs?) => {
 
   let character:string
 

@@ -4,13 +4,14 @@ export const states: cmdStateType = {
   cmd: {
     GAIN: {
       MASTER: 1.0,
-      SINEWAVE:0.5,
-      FEEDBACK:1.0,
-      WHITENOISE:0.45,
-      CLICK:0.6,
-      BASS:0.5,
-      CHAT:1.0,
-      GLITCH:0.9
+      SINEWAVE:0.9,
+      FEEDBACK:1,
+      WHITENOISE:1.0,
+      CLICK:0.9,
+      BASS:1.5,
+      CHAT:1.5,
+      GLITCH:2,
+      SIMULATE: 1.0
     },
     FADE: {
       IN:0,
@@ -150,6 +151,8 @@ export const cmdList = {
   'NOISE': 'WHITENOISE',
   'CLICK': 'CLICK',
   'BASS': 'BASS',
+  'SIMULATE': 'SIMULATE',
+  'SIMS': 'SIMULATE'
 }
 
 export let streamList = ['PLAYBACK', 'TIMELAPSE', 'EMPTY']

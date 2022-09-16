@@ -17,15 +17,7 @@ body #cnvs{
   position:absolute;
   z-index:1;
 }
-body #strCnvs{
-  position:absolute;
-  z-index:2;
-}
-body #instructionCnvs{
-  position:absolute;
-  z-index:3;
-}
-body #bckCnvs{
+body #bckcnvs{
   position:absolute;
   z-index:0;
 }
