@@ -1,15 +1,16 @@
 import { io, Socket } from 'socket.io-client';
 const socket: Socket = io();
-import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage} from './imageEvent'
+import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, playbackCinema} from './imageEvent'
 
-import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag} from './webaudio'
+import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate} from './webaudio'
 
 import {keyDown} from './textInput'
+import { isNoSubstitutionTemplateLiteral } from 'typescript';
 
 let start = false
 
 const cnvs = <HTMLCanvasElement> document.getElementById('cnvs');
-const ctx: CanvasRenderingContext2D = cnvs.getContext('2d');
+const ctx  = <CanvasRenderingContext2D>cnvs.getContext('2d');
 
 let darkFlag = false
 
@@ -35,7 +36,7 @@ canvasSizing();
 
 document.addEventListener('keydown', (e) => {
   console.log(e)
-  stringsClient = keyDown(e, stringsClient, start, socket, ctx, cnvs, ctx, cnvs)
+  stringsClient = keyDown(e, stringsClient, socket, ctx, cnvs, ctx, cnvs)
 })
 
 socket.on('stringsFromServer', (data: {
@@ -74,35 +75,47 @@ socket.on('cmdFromServer', (cmd: {
       // erasePrint(stx, strCnvs);
       erasePrint(ctx, cnvs);
       textPrint("WHITENOISE", ctx, cnvs);
-      whitenoise(cmd.flag, cmd.fade, cmd.gain)
+      // if(cmd.fade && cmd.gain) 
+        whitenoise(cmd.flag, cmd.fade, cmd.gain)
       break;
     case 'SINEWAVE':
       // erasePrint(stx, strCnvs);
       erasePrint(ctx, cnvs);
       textPrint(String(cmd.value) + 'Hz', ctx, cnvs);
-      sinewave(cmd.flag, cmd.value, cmd.fade, cmd.portament, cmd.gain)
+      console.log('debug2')
+      // if(cmd.fade && cmd.portament && cmd.gain) {
+        console.log('debug3')
+        sinewave(cmd.flag, cmd.value, cmd.fade, cmd.portament, cmd.gain)
       break;
     case 'FEEDBACK':
       // erasePrint(stx, strCnvs);
       erasePrint(ctx, cnvs);
       textPrint("FEEDBACK", ctx, cnvs);
-      feedback(cmd.flag, cmd.fade, cmd.gain)
+      // if(cmd.fade && cmd.gain) 
+        feedback(cmd.flag, cmd.fade, cmd.gain)
       break;
     case 'BASS':
-      bass(cmd.flag, cmd.gain)
+      // if(cmd.gain) 
+        bass(cmd.flag, cmd.gain)
       // erasePrint(stx, strCnvs);
       erasePrint(ctx, cnvs);
       textPrint("BASS", ctx, cnvs);
       break;
     case 'CLICK':
-      click(cmd.gain)
+      // if(cmd.gain)
+        click(cmd.gain)
       // erasePrint(stx, strCnvs)
       erasePrint(ctx, cnvs)
       textPrint('CLICK', ctx, cnvs)
       setTimeout(()=>{
         erasePrint(ctx, cnvs);
-      },300);  
-        
+      },300)
+      break
+    case 'SIMULATE':
+      simulate(cmd.gain)
+      break
+    case 'CINEMA':
+      playbackCinema()
       break;
     default:
       break;
@@ -153,7 +166,9 @@ socket.on('chatFromServer', (data: {
 }) => {
   console.log(data.audio)
   playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize)
-  showImage(data.video, ctx)
+  if(data.video) {
+    showImage(data.video, ctx)
+  }
   chatReq()
 });
 
@@ -185,20 +200,22 @@ socket.on('streamFromServer', (data: {
 
 socket.on('voiceFromServer', (data: string) => {
   const uttr = new SpeechSynthesisUtterance();
-  uttr.lang = 'en-US';
+//  uttr.lang = 'en-US';
   uttr.text = data
   // 英語に対応しているvoiceを設定
+  /*
   speechSynthesis.onvoiceschanged = function(){
     const voices = speechSynthesis.getVoices()
-    console.log(voices)
     for (let i = 0; i < voices.length; i++)  {
       console.log(voices[i])
-      if (voices[i].lang === 'en-US') {
+      if (voices[i].name === 'Google US English') {
+        console.log(voices)
         uttr.voice = voices[i]
       }
     }
 
   };
+  */
     speechSynthesis.speak(uttr);
   
 })
@@ -256,6 +273,6 @@ export const initialize = async () => {
   start = true
   timelapseId = setInterval(() => {
     streamFlag.timelapse = true
-  }, 60000)
+  }, 12000)
 }
 textPrint('click screen', ctx, cnvs)

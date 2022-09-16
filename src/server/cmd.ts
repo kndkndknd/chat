@@ -3,6 +3,7 @@ import { cmdStateType } from '../types/global'
 import { cmdList, streamList, parameterList, states } from './states'
 import { uploadStream } from './upload'
 import { streamEmit } from './stream'
+import e from 'express'
 
 export function charProcess(character:string, strings: string, id: string, io: SocketIO.Server, state: cmdStateType) {
   //console.log(character)
@@ -45,9 +46,27 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
   //VOICE
   emitVoice(io, strings, state)
 
-  // for 20220915
-  if(strings === 'SOTO') {
+  // for 20220916-18 -----
+  if(strings === 'CINEMA') {
+    console.log('cinema')
+    io.emit('cmdFromServer', {
+      cmd: 'CINEMA',
+      property: '', 
+      value: 0, 
+      flag: true,     
+    })
+  } else if(strings === 'MACBOOK') {
+    console.log('debug')
+    io.emit('threeSwitchFromServer', true)
+  } else if(strings === 'HOWDY WORLD') {
     io.emit('addRoomFromServer')
+  } else if(strings === 'FADE AWAY' || strings === 'GO AWAY') {
+    io.emit('fadeAwayFromServer')
+  } else if(strings === "REPLAYING THE WORLD FROM TODAY'S COMPUTER PERSPECTIVE") {
+    console.log('TIMELAPSE')
+    state.current.stream.TIMELAPSE = true
+    streamEmit('TIMELAPSE', io, state)
+  // -----
   } else if(strings === 'CHAT') {
     if(!state.current.stream.CHAT) {
       console.log(state.client)
@@ -97,8 +116,8 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
   } else if(strings === 'NO' || strings === 'NUMBER') {
     state.client.forEach((id, index) => {
       console.log(id)
-      // io.to(id).emit('stringsFromServer',{strings: String(index), timeout: true})
-      putString(io, String(index), state)
+      io.to(id).emit('stringsFromServer',{strings: String(index), timeout: true})
+      //putString(io, String(index), state)
     })
   }
 
@@ -178,6 +197,19 @@ export const cmdEmit = (cmdStrings: string, io: SocketIO.Server, state: cmdState
       putCmd(io, targetId, cmd, state)
       notTargetEmit(targetId, state.client, io)
       break
+    case 'SIMULATE':
+      console.log(state.cmd.GAIN.SIMULATE)
+      cmd = {
+        cmd: 'SIMULATE',
+        gain: state.cmd.GAIN.SIMULATE
+      }
+      if(target) {
+        targetId = target
+      } else {
+        targetId = state.client[Math.floor(Math.random() * state.client.length)]
+      }
+      putCmd(io, targetId, cmd, state)
+      notTargetEmit(targetId, state.client, io)
       /*
     case 'RECORD':
       // console.log("debug")
@@ -239,14 +271,24 @@ export const sinewaveEmit = (frequencyStr: string, io: SocketIO.Server, state: c
   if(target) {
     targetId = target
     if(Object.keys(state.current.sinewave).includes(targetId)) {
-      cmd.flag = false,
-      cmd.fade = state.cmd.FADE.OUT
-      delete state.current.sinewave[targetId]
+      // 送信先が同じ周波数で音を出している場合
+      if(state.current.sinewave[targetId] === cmd.value) {
+        cmd.flag = false
+        cmd.fade = state.cmd.FADE.OUT
+        delete state.current.sinewave[targetId]  
+      // 送信先が違う周波数で音を出している場合
+      } else {
+        cmd.flag = true
+        cmd.fade = 0
+        state.current.sinewave[targetId] = cmd.value
+      }
     } else {
+      // 送信先が音を出していない場合
       cmd.fade = state.cmd.FADE.IN
       state.current.sinewave[targetId] = cmd.value
     }
   } else {
+    // どの端末も音を出していない場合
     if(Object.keys(state.current.sinewave).length === 0) {
       cmd.fade = state.cmd.FADE.IN
       targetId = state.client[Math.floor(Math.random() * state.client.length)]
@@ -254,6 +296,7 @@ export const sinewaveEmit = (frequencyStr: string, io: SocketIO.Server, state: c
       state.current.sinewave[targetId] = cmd.value
       // state.previous.sinewave = {}
     } else {
+      //同じ周波数の音を出している端末がある場合
       for(let id in state.current.sinewave) {
         if(cmd.value === state.current.sinewave[id]) {
           targetId = id
@@ -262,8 +305,18 @@ export const sinewaveEmit = (frequencyStr: string, io: SocketIO.Server, state: c
           delete state.current.sinewave[targetId]
         }
       }
+      // 同じ周波数の音を出している端末がない場合
       if(targetId === 'initial') {
-        targetId = Object.keys(state.current.sinewave)[0]
+        for(let i = 0; i < state.client.length; i++) {
+          if(Object.keys(state.current.sinewave).includes(state.client[i])) {
+            continue
+          } else {
+            targetId = state.client[i]
+          }
+        }
+        if(targetId === 'initial') {
+          targetId = Object.keys(state.current.sinewave)[Math.floor(Math.random() * Object.keys(state.current.sinewave).length)]
+        }
         state.current.sinewave[targetId] = cmd.value
       }
     }
@@ -444,9 +497,18 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
       if(arg && arg.source) {
         let flag = false
         if(state.cmd.VOICE.includes(arg.source)) {
-          state.cmd.VOICE.filter((id) => {
-            return id !== arg.source
-          })
+          const arr = []
+          for(let i = 0; i < state.cmd.VOICE.length; i++) {
+            if(state.cmd.VOICE[i] === arg.source) {
+              continue
+            } else {
+              arr.push(state.cmd.VOICE[i])
+            }
+          }
+          state.cmd.VOICE = arr
+          // state.cmd.VOICE.filter((id) => {
+          // })
+          console.log(state.cmd.VOICE)
         } else {
           state.cmd.VOICE.push(arg.source)
           flag = true

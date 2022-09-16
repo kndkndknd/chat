@@ -1,19 +1,26 @@
 import { io, Socket } from 'socket.io-client';
 const socket: Socket = io();
-import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq} from './webaudio'
+import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag} from './webaudio'
 import {keyDown} from './textInput'
-import {textPrint, erasePrint, showImage, initVideoStream, initVideo} from './imageEvent'
+import {textPrint, erasePrint, showImage, initVideoStream, initVideo, canvasSizing} from './imageEvent'
+import { initThree, stringsToThree, removeMesh, canvasMaterialUpdate, onWindowResize, threeKeyDown, threeErasePrint, threeTextPrint, reloadVideo, addRoom, orientationToThree, fadeAway } from './threes';
 
-const roomFileName = 'room'
+let printStrings = "";
+let inputStrings = "";
+
+const canvas2d = <HTMLCanvasElement> document.getElementById('cnvs')
+const ctx2d = <CanvasRenderingContext2D> canvas2d.getContext('2d') 
 
 // CHAT部分
 let start = false
-let printStrings = "";
-let inputStrings = "";
 let videoElement = <HTMLVideoElement>document.getElementById('video');
 let videoStore: string = ''
 
-let pos = {x:0,y:0,z:0}
+let threeFlag = false
+
+// TIMELAPSE
+let timelapseId: NodeJS.Timer
+
 
 let eListener = <HTMLElement> document.getElementById('wrapper')
 eListener.addEventListener('click', (()=>{
@@ -23,8 +30,12 @@ eListener.addEventListener('click', (()=>{
 }), false);
 
 document.addEventListener('keydown', (e) => {
-  inputStrings = keyDown(e, printStrings, start, socket, ctx, canvas)
-  printStrings = inputStrings
+  if(threeFlag) {
+    inputStrings = threeKeyDown(e, printStrings, socket)    
+  } else {
+    inputStrings = keyDown(e, printStrings, socket, ctx2d, canvas2d)
+    printStrings = inputStrings  
+  }
 //  screenMaterial.map.needsUpdate = true
 })
 
@@ -34,20 +45,19 @@ socket.on('stringsFromServer', (data: {
   strings: string,
   timeout: boolean
 }) =>{
-  scene.remove(videoMesh);
-    erasePrint(ctx, canvas);
-    console.log(data)
-    inputStrings = data.strings
-    printStrings = inputStrings
-    textPrint(printStrings, ctx, canvas)
-    if(data.timeout) {
-      setTimeout(() => {
-        erasePrint(ctx, canvas)
-      }, 500)
-    }
+  if(threeFlag) {
+    stringsToThree(data, inputStrings, printStrings)
+  } else {
+    printStrings = data.strings
+    textPrint(printStrings, ctx2d, canvas2d)
+  }
 });
 socket.on('erasePrintFromServer',() =>{
-  erasePrint(ctx, canvas)
+  if(threeFlag) {
+    threeErasePrint()
+  } else {
+    erasePrint(ctx2d, canvas2d)
+  }
 });
 
 socket.on('cmdFromServer', (cmd: {
@@ -66,30 +76,60 @@ socket.on('cmdFromServer', (cmd: {
   switch(cmd.cmd){
     case 'WHITENOISE':
       printStrings = cmd.cmd
-      erasePrint(ctx, canvas);
-      textPrint("WHITENOISE", ctx, canvas);
-      whitenoise(cmd.flag, cmd.fade, cmd.gain)
+      if(threeFlag) {
+        threeErasePrint()
+        threeTextPrint("WHITENOISE")
+      } else {
+        erasePrint(ctx2d, canvas2d)
+        textPrint("WHITENOISE", ctx2d, canvas2d);
+      }
+      // if(cmd.fade && cmd.gain)
+        whitenoise(cmd.flag, cmd.fade, cmd.gain)
       break;
     case 'SINEWAVE':
-      erasePrint(ctx, canvas);
-      textPrint(String(cmd.value) + 'Hz', ctx, canvas);
+      if(threeFlag) {
+        threeErasePrint()
+        threeTextPrint(String(cmd.value) + 'Hz')
+      } else {
+        erasePrint(ctx2d, canvas2d)
+        textPrint(String(cmd.value) + 'Hz', ctx2d, canvas2d);
+      }
       printStrings = String(cmd.value) + 'Hz'
-      sinewave(cmd.flag, cmd.value, cmd.fade, cmd.portament, cmd.gain)
+      // if(cmd.fade && cmd.gain && cmd.portament)
+        sinewave(cmd.flag, cmd.value, cmd.fade, cmd.portament, cmd.gain)
       break;
     case 'FEEDBACK':
-      erasePrint(ctx, canvas);
-      textPrint("FEEDBACK", ctx, canvas);
-      feedback(cmd.flag, cmd.fade, cmd.gain)
+      if(threeFlag) {
+        threeErasePrint()
+        threeTextPrint('FEEDBACK')
+      } else {
+        erasePrint(ctx2d, canvas2d)
+        textPrint("FEEDBACK", ctx2d, canvas2d);
+      }
+      // if(cmd.fade && cmd.gain)
+        feedback(cmd.flag, cmd.fade, cmd.gain)
       break;
     case 'BASS':
-      bass(cmd.flag, cmd.gain)
-      erasePrint(ctx, canvas);
-      textPrint("BASS", ctx, canvas);
+      // if(cmd.gain)
+        bass(cmd.flag, cmd.gain)
+      if(threeFlag) {
+        threeErasePrint()
+        threeTextPrint("BASS")
+      } else {
+        erasePrint(ctx2d, canvas2d)
+        textPrint("BASS", ctx2d, canvas2d);
+      }
       break;
     case 'CLICK':
-      click(cmd.gain)
-      erasePrint(ctx, canvas)
-      textPrint('CLICK', ctx, canvas)
+      // if(cmd.gain)
+        click(cmd.gain)
+      if(threeFlag) {
+        threeErasePrint()
+        threeTextPrint('CLICK')
+      } else {
+        erasePrint(ctx2d, canvas2d)
+        textPrint('CLICK', ctx2d, canvas2d)
+      }
       setTimeout(()=>{
         printStrings = '';
       },300);
@@ -100,39 +140,66 @@ socket.on('cmdFromServer', (cmd: {
 
 socket.on('stopFromServer', (fadeOutVal) => {
   stopCmd(fadeOutVal)
-  printStrings = 'STOP'
-  scene.remove(videoMesh);
+  if(threeFlag) {
+    threeErasePrint()
+    threeTextPrint('STOP')
+    setTimeout(()=> {
+      threeErasePrint()
+      printStrings = ''
+    },800)
+  } else {
+    erasePrint(ctx2d, canvas2d)
+    textPrint('CSTOP', ctx2d, canvas2d)
+    setTimeout(()=> {
+      erasePrint(ctx2d, canvas2d)
+      printStrings = ''
+    },800)
+  }
 
-  setTimeout(()=> {
-    printStrings = ''
-  },800)
   /*
-  erasePrint(ctx, canvas)
-  textPrint('STOP', ctx, canvas)
+  erasePrint(threeCtx, threeCanvas)
+  textPrint('STOP', threeCtx, threeCanvas)
   setTimeout(()=> {
-    erasePrint(ctx, canvas)
+    erasePrint(threeCtx, threeCanvas)
   },800)
   */
 })
 
 socket.on('textFromServer', (data: {text: string}) => {
-  erasePrint(ctx, canvas)
-  textPrint(data.text, ctx, canvas)
+  if(threeFlag) {
+    threeErasePrint()
+    threeTextPrint(data.text)
+  } else {
+    erasePrint(ctx2d, canvas2d)
+    textPrint(data.text, ctx2d, canvas2d)
+  }
 });
 
 socket.on('chatReqFromServer', () => {
   chatReq()
   setTimeout(() => {
-  erasePrint(ctx, canvas)
-},1000)
+    if(threeFlag) {
+      threeErasePrint()
+    } else {
+      erasePrint(ctx2d, canvas2d)
+    }
+  },1000)
 })
 
 socket.on('recordReqFromServer', (data: {target: string, timeout:number}) => {
   recordReq(data)
-  textPrint('RECORD', ctx, canvas)
+  if(threeFlag){
+    threeTextPrint('RECORD')
+  } else {
+    textPrint('RECORD', ctx2d, canvas2d)
+  }
   setTimeout(() => {
-  erasePrint(ctx, canvas)
-}, data.timeout)
+    if(threeFlag) {
+      threeErasePrint()
+    } else {
+      erasePrint(ctx2d, canvas2d)
+    }
+  }, data.timeout)
 })
 
 // CHATのみ向けにする
@@ -150,9 +217,11 @@ socket.on('chatFromServer', (data: {
 //  videoStore = data.video
 //  console.log(videoStore)
   if(data.video) {
-    reloadVideo(data.video);
+    if(threeFlag){
+      reloadVideo(data.video);
+    }
   }
-//  showImage3d(data.video, canvas)
+//  showImage3d(data.video, threeCanvas)
   chatReq()
 });
 
@@ -168,16 +237,27 @@ socket.on('streamFromServer', (data: {
 }) => {
   console.log(data.audio)
   // console.log(data.video)
-  erasePrint(ctx, canvas)
+  if(threeFlag) {
+    threeErasePrint()
+  } else {
+    erasePrint(ctx2d, canvas2d)
+  }
   playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize)
   console.log(data.video)
   if(data.video) {
     reloadVideo(data.video);
-//    showImage3d(data.video, canvas)
+//    showImage3d(data.video, threeCanvas)
 //    canvasMaterial.map.needsUpdate = true;
   } else {
-    textPrint(data.source, ctx, canvas)
-    canvasMaterial.map.needsUpdate = true;
+    if(threeFlag) {
+      threeTextPrint(data.source)
+    } else {
+      textPrint(data.source, ctx2d, canvas2d)
+    }
+
+    if(threeFlag) {
+      canvasMaterialUpdate();
+    }
   }
   console.log(data.source)
   socket.emit('streamReqFromClient', data.source)
@@ -191,25 +271,33 @@ socket.on('disconnect', ()=>{
   },1000)
 })
 
+socket.on('threeSwitchFromServer', (flag) => {
+  console.log(flag)
+  if(flag) {
+    threeFlag = flag
+    canvas2d.style.display ="none";
+    initThree()  
+    onWindowResize
+  }
+})
+
 socket.on('addRoomFromServer', () => {
-  particles.scale.set(8, 8, 8)
-  scene.add(particles)
+  addRoom()
 })
 
 socket.on('orientationFromServer', (deviceorientation) => {
   console.log(deviceorientation)
-  cameraControl = false
-  camera.lookAt(new THREE.Vector3(
-    deviceorientation.alpha, 
-    deviceorientation.beta, 
-    deviceorientation.gamma)
-  );
+  orientationToThree(deviceorientation)
+})
+
+socket.on('fadeAwayFromServer', () => {
+  fadeAway()
 })
 
 
 export const initialize = async () => {
-    erasePrint(ctx, canvas)
-  
+    //erasePrint(threeCtx, threeCanvas)
+    erasePrint(ctx2d, canvas2d)
     await initVideo(videoElement)
     await initAudio()
   
@@ -239,295 +327,29 @@ export const initialize = async () => {
       await initAudioStream(stream)
       await initVideoStream(stream, videoElement)
       await console.log(stream)
-      printStrings = 'initialized'
-///      await textPrint('initialized')
+      await textPrint('initialized', ctx2d, canvas2d)
       await setTimeout(() => {
-        printStrings = ''
+        erasePrint(ctx2d, canvas2d)
       }, 500);
     } else {
 //      textPrint('not support navigator.mediaDevices.getUserMedia')
     }
     
     start = true
-
-    fbxLoader.load(
-      'static/threeObjects/macbook/mpm_f21__Apple_MacBook_Pro_15.fbx',
-      (object) => {
-          // object.traverse(function (child) {
-          //     if ((child as THREE.Mesh).isMesh) {
-          //         // (child as THREE.Mesh).material = material
-          //         if ((child as THREE.Mesh).material) {
-          //             ((child as THREE.Mesh).material as THREE.MeshBasicMaterial).transparent = false
-          //         }
-          //     }
-          // })
-          object.scale.set(.008, .008, .008)
-//          object.scale.set(0.01,0.01,0.01)
-          scene.add(object)
-      },
-      (xhr) => {
-          console.log('macbook: ' + (xhr.loaded / xhr.total) * 100 + '% loaded')
-      },
-      (error) => {
-          console.log(error)
-      }
-  )
-
+    timelapseId = setInterval(() => {
+      streamFlag.timelapse = true
+    }, 12000)
   
-  plyLoader.load(
-      'static/threeObjects/' + roomFileName + '.ply',
-      function (geometry) {
-          //geometry.computeVertexNormals()
-          particles = new THREE.Points(geometry, plyMaterial)
-          // mesh.rotateX(-Math.PI / 2)
-          /*
-          particles.scale.set(8, 8, 8)
-          scene.add(particles)
-          */
-      },
-      (xhr) => {
-          console.log('ply: ' + (xhr.loaded / xhr.total) * 100 + '% loaded')
-          if(xhr.loaded === 1) {
-            textPrint('initialized', ctx, canvas)
-          }
-      },
-      (error) => {
-          console.log(error)
-      }
-  )
-  animate()
-}
-  
-// three.js部分
-
-import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
-
-import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader'
-//import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
-
-
-
-const scene = new THREE.Scene()
-
-const light = new THREE.SpotLight()
-light.position.set(10, 10, 10)
-scene.add(light)
-
-const camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    500
-)
-camera.position.z = 5
-camera.position.y = 2
-
-camera.lookAt(new THREE.Vector3(0, 0, 0));
-let rot = 0;
-
-const renderer = new THREE.WebGLRenderer()
-renderer.outputEncoding = THREE.sRGBEncoding
-renderer.setSize(window.innerWidth, window.innerHeight)
-document.getElementById('wrapper').appendChild(renderer.domElement)
-
-const canvas = document.createElement('canvas');
-const ctx = canvas.getContext('2d');
-//const rtx = canvas.getContext('2d');
-
-const fontSize = 560;
-
-canvas.width = 2880;
-canvas.height = 1800;
-
-// canvasの下のバックスクリーンのMesh作成
-/*
-const backscreenGeometry = new THREE.PlaneGeometry(canvas.width / 1100, canvas.height / 1100);
-const backscreenMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff})
-const backscreenMesh = new THREE.Mesh(backscreenGeometry, backscreenMaterial);
-backscreenMesh.position.y = 1;
-backscreenMesh.position.z = -1;
-*/
-
-// canvasのMesh作成
-const canvasGeometry = new THREE.PlaneGeometry(canvas.width / 1100, canvas.height / 1100);
-const canvasTexture = new THREE.CanvasTexture(canvas);
-const canvasMaterial = new THREE.MeshBasicMaterial({
-  map: canvasTexture
-});
-
-let canvasMesh = new THREE.Mesh(canvasGeometry, canvasMaterial);
-canvasMesh.position.y = 1;
-canvasMesh.position.z = -1;
-canvasMesh.material.map.needsUpdate = true;
-/*
-ctx.fillStyle = 'white';
-ctx.fillRect(0, 0, canvas.width, canvas.height);
-*/
-scene.add(canvasMesh);
-
-const videoGeometry = new THREE.PlaneGeometry(canvas.width / 1100, canvas.height / 1100);
-let loader = new THREE.TextureLoader();
-let videoMaterial = new THREE.MeshStandardMaterial();
-let videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
-
-
-//const controls = new TrackballControls(camera)
-//controls.rotateSpeed = 1.0
-//controls.zoomSpeed = 1.0
-//controls.panSpeed = 1.0
-//controls.enableDamping = true
-
-const controls = new OrbitControls(camera, renderer.domElement)
-
-let cameraControl = true
-
-const material = new THREE.PointsMaterial({
-  vertexColors: true,//頂点の色付けを有効にする
-  size: 0.005,
-});
-
-// const plyLoader = new PLYLoader()
-//const objLoader = new OBJLoader()
-const fbxLoader = new FBXLoader()
-
-// particles
-const plyLoader = new PLYLoader()
-const plyMaterial = new THREE.PointsMaterial({
-  vertexColors: true,//頂点の色付けを有効にする
-  size: 0.03,
-});
-let particles: THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>
-
-
-window.addEventListener('resize', onWindowResize, false)
-function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight
-  camera.updateProjectionMatrix()
-  renderer.setSize(window.innerWidth, window.innerHeight)
-  render()
+    // initThree()
+    // threeFlag = true
 }
 
-function animate() {
-  /*
-    rot += 0.5; // 毎フレーム角度を0.5度ずつ足していく
-    // ラジアンに変換する
-    const radian = (rot * Math.PI) / 180;
-    // 角度に応じてカメラの位置を設定
-    camera.position.x = 10 * Math.sin(radian);
-    camera.position.z = 10 * Math.cos(radian);
-  */
-//  freq = 440 + ((pos.x - camera.position.x)^2 + (pos.y - camera.position.y)^2 + (pos.z - camera.position.z)^2)
-//    sinewave(true, freq, 0, 0, 1.0);
-
-    //screenMaterial.map.needsUpdate = true;
-    //canvasMesh.material.map.needsUpdate = true;
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    /*
-    if(videoStore.length > 0) {
-    showImage3d(videoStore, canvas)
-//      reloadVideo(videoStore)
-    }
-    */
-    
-    if(printStrings.length > 0) {
-      textPrint(printStrings, ctx, canvas)
-    }
-
-//    textPrint(printStrings, ctx, canvas)
-    canvasMaterial.map.needsUpdate = true;
-  
-//    requestAnimationFrame(update);
-  
-
-    requestAnimationFrame(animate)
-  if(cameraControl) {
-    controls.update()
+window.addEventListener('resize', ()=>{
+  if(threeFlag) {
+    onWindowResize
+  } else {
+    canvasSizing
   }
-
-  render()
-}
-function render() {
-  renderer.render(scene, camera)
-}
-/*
-socket.on('stringsFromServer', (data: {
-  strings: string,
-  timeout: boolean
-}) =>{
-  textPrint(data.strings, ctx, canvas)
-  console.log(data)
-  printStrings = data.strings
-  textPrint(printStrings, ctx, canvas)
-  if(data.timeout) {
-    setTimeout(() => {
-      erasePrint(ctx, canvas)
-    }, 500)
-  }
-  canvasMesh.material.map.needsUpdate = true;
-});
-*/
-
-const reloadVideo = (img: string) => {
-  let texture = loader.load(img);
-  let videoMaterial = new THREE.MeshStandardMaterial({map: texture});
-  scene.remove(videoMesh);
-
-  videoMesh = new THREE.Mesh(videoGeometry, videoMaterial);
-  videoMesh.position.y = 1;
-  videoMesh.position.z = -1;
-  
-  /*
-  videoMesh.position.x = 10 * (Math.random() - 0.5);
-  videoMesh.position.y = 10 * (Math.random() - 0.5);
-  videoMesh.position.z = -5 * Math.random();
-  */
-  videoMesh.material.map.needsUpdate = true;
-  
-  scene.add(videoMesh);
-}
-
-function showImage3d (url:string, receive: HTMLCanvasElement) {
-  const image = new Image();
-  image.src = url;
-  // console.log('test')
-  image.onload = function(){
-    const aspect = image.width / image.height
-    let hght = window.innerHeight
-    let wdth = hght * aspect
-    if(aspect > (window.innerWidth / window.innerHeight)) {
-      hght = wdth / aspect
-      wdth = window.innerWidth
-    }
-    const x = window.innerWidth /2 - (wdth / 2)
-    const y = 0
-    console.log("width:" + String(wdth) + ",height:" + String(hght) + ", x:"+ x + ", y:"+ y)
-    //const receive = <HTMLCanvasElement> document.getElementById("cnvs");
-    const vtx = receive.getContext('2d')
-    vtx.drawImage(image, x, y, wdth, hght);
-    let videoTexture = new THREE.Texture(canvas)
-    videoTexture.needsUpdate = true
-    /*
-    let videoMaterial = new THREE.SpriteMaterial( { map: videoTexture, color: 0xffffff } );
-    let videoSprite = new THREE.Sprite( videoMaterial )
-    videoSprite.scale.set(200,200,200);
-    videoSprite.position.set( 5,5,5)
-    scene.add( videoSprite )
-    */
-    let videoMaterial = new THREE.MeshBasicMaterial({map: videoTexture})
-    scene.remove(canvasMesh)
-    canvasMesh = new THREE.Mesh(canvasGeometry, videoMaterial)
-    canvasMesh.position.y = 10 * (Math.random());
-    canvasMesh.position.z = -10 * (Math.random());
-    scene.add(canvasMesh)
-/*
-ctx.fillStyle = 'white';
-ctx.fillRect(0, 0, canvas.width, canvas.height);
-*/
-//scene.add(canvasMesh);
-
-//    canvasMesh.material.map.needsUpdate = true
-  }
-}
+}, false)
+canvasSizing()
+textPrint('click screen', ctx2d, canvas2d)

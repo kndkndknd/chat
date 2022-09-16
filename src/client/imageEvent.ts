@@ -1,8 +1,10 @@
 
-let videoElement = <HTMLVideoElement>document.getElementById('video');
+const videoElement = <HTMLVideoElement>document.getElementById('video');
+const cinemaElement = <HTMLVideoElement> document.getElementById('cinema');
 export function textPrint(text: string, stx: CanvasRenderingContext2D, strCnvs:HTMLCanvasElement) {
   stx.fillStyle = 'white';
   stx.fillRect(0, 0, strCnvs.width, strCnvs.height);
+  console.log(text)
   print(text, stx, strCnvs)
 }
 
@@ -13,8 +15,8 @@ export function eraseText(stx: CanvasRenderingContext2D, strCnvs: HTMLCanvasElem
 
 export function erasePrint(ctx, cnvs) {
   ctx.clearRect(0, 0, cnvs.width, cnvs.height);
-  ctx.fillStyle = 'white';
-  ctx.fillRect(0, 0, cnvs.width, cnvs.height);
+//  ctx.fillStyle = 'white';
+//  ctx.fillRect(0, 0, cnvs.width, cnvs.height);
 }
 
 export function canvasSizing () {
@@ -24,27 +26,50 @@ export function canvasSizing () {
   const height = String(windowHeight)
   console.log(width)
   console.log(height)
-  document.getElementById("cnvs").setAttribute("height", height + "px")
-  document.getElementById("cnvs").setAttribute("width", width + "px")
+  const cnvsElement = <HTMLCanvasElement> document.getElementById('cnvs')
+  cnvsElement.setAttribute("height", height + "px")
+  cnvsElement.setAttribute("width", width + "px")  
 }
 
 export function initVideo (videoElement) {
-  //videoElement.play()
+  videoElement.play()
   videoElement.volume = 0
 }
 
 export function initVideoStream (stream, videoElement) {
   videoElement.srcObject = stream
-  const canvasElement = <HTMLCanvasElement> document.createElement('canvas')
-  const bufferContext = canvasElement.getContext('2d');
+  const cnvsElement = <HTMLCanvasElement> document.createElement('canvas')
+  const bufferContext = cnvsElement.getContext('2d');
   let render = () => {
     requestAnimationFrame(render);
     const width = videoElement.videoWidth;
     const height = videoElement.videoHeight;
     if(width == 0 || height ==0) {return;}
-    canvasElement.width = width;
-    canvasElement.height = height;
-    bufferContext.drawImage(videoElement, 0, 0);
+    cnvsElement.width = width;
+    cnvsElement.height = height;
+    if(bufferContext) {
+      bufferContext.drawImage(videoElement, 0, 0);
+    }
+  }
+  render();
+}
+
+export function playbackCinema () {
+  cinemaElement.play()
+  const cnvsElement = <HTMLCanvasElement> document.createElement('canvas')
+  const bufferContext = cnvsElement.getContext('2d');
+  const width = cinemaElement.videoWidth;
+  const height = cinemaElement.videoHeight;
+  console.log(width)
+  console.log(height)
+  if(width == 0 || height ==0) {return;}
+  cnvsElement.width = width;
+  cnvsElement.height = height;
+  let render = () => {
+    requestAnimationFrame(render);
+    if(bufferContext) {
+      bufferContext.drawImage(cinemaElement, 0, 0);
+    }
   }
   render();
 }
@@ -54,7 +79,9 @@ export function toBase64(){
   let bufferContext = canvasElement.getContext('2d');
   canvasElement.width = videoElement.videoWidth;
   canvasElement.height = videoElement.videoHeight;
-  bufferContext.drawImage(videoElement, 0, 0);
+  if(bufferContext) {
+    bufferContext.drawImage(videoElement, 0, 0);
+  }
   const returnURL = canvasElement.toDataURL("image/jpeg")
   return returnURL
 }
@@ -70,7 +97,9 @@ export function renderStart(){
     if(width == 0 || height ==0) {return;}
     canvasElement.width = width;
     canvasElement.height = height;
-    bufferContext.drawImage(videoElement, 0, 0);
+    if(bufferContext){
+      bufferContext.drawImage(videoElement, 0, 0);
+    }
   }
   render();
 }

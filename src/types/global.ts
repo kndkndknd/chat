@@ -58,7 +58,8 @@ export type cmdStateType = {
       CLICK:number,
       BASS:number,
       CHAT:number,
-      GLITCH:number
+      GLITCH:number,
+      SIMULATE:number,
     },
     FADE: {
       IN:number,

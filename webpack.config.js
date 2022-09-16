@@ -1,17 +1,4 @@
-// const glob = require("glob");
 const path = require("path");
-// const webpack = require("webpack");
-
-// const srcDir = "./src/";
-// let scriptFiles = glob.sync("./src/*.js");
-/*
-let scripts = {};
-
-for (let i in scriptFiles){
-  var script = scriptFiles[i];
-  scripts[script.slice(srcDir.length,-3)] = script;
-}
-*/
 
 const clientConfig = {
   // メインとなるJavaScriptファイル（エントリーポイント）
@@ -21,7 +8,8 @@ const clientConfig = {
     client: './src/client/client.ts',
     threeClient: './src/client/threeClient.ts',
     orientation: './src/client/orientation.ts',
-    facetest: './src/client/facetest.ts',
+//    facetest: './src/client/facetest.ts',
+    vosk_recognition: './src/client/vosk_recognition.js'
   } ,
   // entry: scripts,
   // ファイルの出力設定
@@ -81,27 +69,4 @@ const clientConfig = {
   }
 };
 
-const serverConfig = {
-  mode: "development",
-  entry: "./src/server/app.ts",
-  target: "node",
-  node: {
-    // expressを使うときにはこの設定をしないと失敗します
-    // 参考：https://medium.com/@binyamin/creating-a-node-express-webpack-app-with-dev-and-prod-builds-a4962ce51334
-    __dirname: false,
-    __filename: false,
-  },
-  // externals: [nodeExternals()],
-  module: {
-    rules: [{
-      test: /\.ts$/,
-      use: "ts-loader",
-      exclude: /node_modules/,
-    }]
-  },
-  resolve: {
-    extensions: [".ts", ".js"]
-  },
-}
 module.exports = [clientConfig]
-// module.exports = [serverConfig]
