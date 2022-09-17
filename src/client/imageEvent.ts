@@ -1,6 +1,10 @@
 
 const videoElement = <HTMLVideoElement>document.getElementById('video');
 const cinemaElement = <HTMLVideoElement> document.getElementById('cinema');
+const bckcnvsElement = <HTMLCanvasElement> document.getElementById('bckcnvs')
+const bckcnvsContext = bckcnvsElement.getContext('2d');
+
+
 export function textPrint(text: string, stx: CanvasRenderingContext2D, strCnvs:HTMLCanvasElement) {
   stx.fillStyle = 'white';
   stx.fillRect(0, 0, strCnvs.width, strCnvs.height);
@@ -29,6 +33,9 @@ export function canvasSizing () {
   const cnvsElement = <HTMLCanvasElement> document.getElementById('cnvs')
   cnvsElement.setAttribute("height", height + "px")
   cnvsElement.setAttribute("width", width + "px")  
+  const bckcnvsElement = <HTMLCanvasElement> document.getElementById('bckcnvs')
+  bckcnvsElement.setAttribute("height", height + "px")
+  bckcnvsElement.setAttribute("width", width + "px")  
 }
 
 export function initVideo (videoElement) {
@@ -56,22 +63,39 @@ export function initVideoStream (stream, videoElement) {
 
 export function playbackCinema () {
   cinemaElement.play()
-  const cnvsElement = <HTMLCanvasElement> document.createElement('canvas')
-  const bufferContext = cnvsElement.getContext('2d');
-  const width = cinemaElement.videoWidth;
+  console.log(cinemaElement.width)
+  console.log(cinemaElement.offsetHeight)
+  console.log(window.innerHeight)
+
+  const aspect = cinemaElement.width / cinemaElement.height
+  let hght = window.innerHeight
+  let wdth = hght * aspect
+  if(aspect > (window.innerWidth / window.innerHeight)) {
+    hght = wdth / aspect
+    wdth = window.innerWidth
+  }
+  const x = window.innerWidth /2 - (wdth / 2)
+  const y = 0
+  bckcnvsElement.setAttribute("height", window.innerHeight + "px")
+  bckcnvsElement.setAttribute("width", window.innerWidth + "px")  
+/*  const width = cinemaElement.videoWidth;
   const height = cinemaElement.videoHeight;
   console.log(width)
   console.log(height)
   if(width == 0 || height ==0) {return;}
   cnvsElement.width = width;
   cnvsElement.height = height;
+*/
   let render = () => {
     requestAnimationFrame(render);
-    if(bufferContext) {
-      bufferContext.drawImage(cinemaElement, 0, 0);
-    }
+    bckcnvsContext.drawImage(cinemaElement, 600, 200);
   }
   render();
+}
+
+export function stopCinema () {
+  cinemaElement.pause()
+  erasePrint(bckcnvsContext, bckcnvsElement)
 }
 
 export function toBase64(){

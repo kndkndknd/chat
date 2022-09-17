@@ -9,8 +9,8 @@ import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader'
 //import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
 
-const roomFileName = 'soto'
-const rotateY = -90
+const roomFileName = 'lux'
+const rotateY = 0
 let printThreeStrings = ''
 
 const scene = new THREE.Scene()
