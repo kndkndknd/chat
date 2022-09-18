@@ -114,6 +114,7 @@ export const chatReceive = (buffer:buffStateType, io: SocketIO.Server) => {
         }
         if(states.stream.randomrate.CHAT) {
           chunk.sampleRate = 11025 + Math.floor(Math.random() * 10) * 11025
+//          console.log(chunk.sampleRate)
         }
         if(states.stream.glitch[buffer.target] && chunk.video) {
           chunk.video = glitchStream(chunk.video)

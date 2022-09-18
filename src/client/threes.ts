@@ -141,6 +141,7 @@ export function onWindowResize() {
 // three.js部分
 export const initThree = () => {
   threeCanvas.style.display = 'block'
+  threeCanvas.style.zIndex = '4'
   renderer.outputEncoding = THREE.sRGBEncoding
   renderer.setSize(window.innerWidth, window.innerHeight)
 
@@ -160,7 +161,7 @@ export const initThree = () => {
         console.log(error)
     })
 
-
+/*
   plyLoader.load(
       'static/threeObjects/' + roomFileName + '.ply',
       function (geometry) {
@@ -178,8 +179,8 @@ export const initThree = () => {
           console.log(error)
       }
   )
-  animate()
-
+*/
+animate()
 
 }
 
@@ -205,12 +206,14 @@ export const reloadVideo = (img: string) => {
 }
 
 export const orientationToThree = (deviceorientation) => {
+  /*
   cameraControl = false
   camera.lookAt(new THREE.Vector3(
     deviceorientation.alpha, 
     deviceorientation.beta, 
     deviceorientation.gamma)
   );
+  */
 }
 
 export const addRoom = () => {
@@ -257,16 +260,17 @@ function animate() {
     }
     canvasMaterial.map.needsUpdate = true;
     requestAnimationFrame(animate)
-  if(cameraControl) {
+  // if(cameraControl) {
     controls.update()
-  }
+  // }
 
   render()
 }
-
 export const fadeAway = () => {
+  /*
   const fadeAwayInterval = setInterval(() => {
     camera.position.z = camera.position.z + 0.025
     camera.position.y = camera.position.y + 0.025
   },100)
+  */
 }
