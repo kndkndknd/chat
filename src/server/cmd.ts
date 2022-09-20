@@ -414,11 +414,13 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
           sampleRate = 88200
         }
       }
-      if(arg && arg.source) {
-        state.stream.sampleRate[arg.source] = sampleRate
+      if(arg && arg.property) {
+        console.log('hit source')
+        state.stream.sampleRate[arg.property] = sampleRate
         // io.emit('stringsFromServer',{strings: 'SampleRate: ' + String(state.stream.sampleRate[arg.source]) + 'Hz', timeout: true})
-        putString(io, 'SampleRate: ' + String(state.stream.sampleRate[arg.source]) + 'Hz', state)
+        putString(io, 'SampleRate: ' + String(state.stream.sampleRate[arg.property]) + 'Hz', state)
       } else {
+        console.log(arg)
         for(let source in state.stream.sampleRate) {
           state.stream.sampleRate[source] = sampleRate
         }
@@ -559,10 +561,13 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
           //io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(state.stream.randomrate[stringArr[2]]), timeout: true})
           putString(io, 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(state.stream.randomrate[stringArr[2]]), state)
         }
+        console.log(state.stream.randomrate)
       }
     } else {
       let argVal: number
       let argProp: string
+      console.log(stringArr)
+      console.log(arrTypeArr)
       if(stringArr.length === 2 && arrTypeArr[1] === 'number') {
         argVal = Number(stringArr[1])
       } else if (stringArr.length === 2 && arrTypeArr[1] === 'string'){
@@ -572,6 +577,12 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
         argVal = Number(stringArr[2])
       }
       parameterChange(parameterList[stringArr[0]], io, state, {value: argVal, property: argProp})
+      putString(io, stringArr[0] + ' ' + stringArr[1], state)
+    }
+  } else if(stringArr[0] === 'STOP') {
+    if(stringArr.length === 2 && Object.keys(state.current.stream).includes(stringArr[1])) {
+      state.current.stream[stringArr[1]] = false
+      putString(io, stringArr[0] + ' ' + stringArr[1], state)
     }
   } else if(stringArr[0] === 'FADE') {
     if((stringArr[1] === 'IN' || stringArr[1] === 'OUT') && stringArr.length === 2) {
