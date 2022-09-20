@@ -11,7 +11,8 @@ export const states: cmdStateType = {
       BASS:1.5,
       CHAT:1.5,
       GLITCH:2,
-      SIMULATE: 1.0
+      SIMULATE: 1.0,
+      METRONOME: 0.9
     },
     FADE: {
       IN:0,
@@ -20,7 +21,8 @@ export const states: cmdStateType = {
     SINEWAVE: {
     },
     PORTAMENT: 0,
-    VOICE: []
+    VOICE: [],
+    METRONOME: {}
   },
   client: [],
   current: {
@@ -28,7 +30,8 @@ export const states: cmdStateType = {
       FEEDBACK: [],
       WHITENOISE: [],
       CLICK: [],
-      BASS: []
+      BASS: [],
+      METRONOME: []
     },
     sinewave: {},
     stream:{
@@ -43,7 +46,8 @@ export const states: cmdStateType = {
       FEEDBACK: [],
       WHITENOISE: [],
       CLICK: [],
-      BASS: []
+      BASS: [],
+      METRONOME: []
     },
     sinewave: {},
     stream:{
@@ -58,7 +62,7 @@ export const states: cmdStateType = {
       CHAT: 44100,
       PLAYBACK: 44100,
       TIMELAPSE: 44100,
-      EMPTY: 444100
+      EMPTY: 44100
     },
     random: {
       CHAT: false,
@@ -152,7 +156,8 @@ export const cmdList = {
   'CLICK': 'CLICK',
   'BASS': 'BASS',
   'SIMULATE': 'SIMULATE',
-  'SIMS': 'SIMULATE'
+  'SIMS': 'SIMULATE',
+  'METRONOME': 'METRONOME'
 }
 
 export let streamList = ['PLAYBACK', 'TIMELAPSE', 'EMPTY']
