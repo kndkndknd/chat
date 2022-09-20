@@ -4,14 +4,14 @@ export const states: cmdStateType = {
   cmd: {
     GAIN: {
       MASTER: 1.0,
-      SINEWAVE:0.9,
+      SINEWAVE:0.4,
       FEEDBACK:1,
-      WHITENOISE:1.0,
-      CLICK:0.9,
-      BASS:1.5,
-      CHAT:1.5,
-      GLITCH:2,
-      SIMULATE: 1.0
+      WHITENOISE:0.3,
+      CLICK:0.4,
+      BASS:0.4,
+      CHAT:2.0,
+      GLITCH:2.0,
+      SIMULATE: 0.4
     },
     FADE: {
       IN:0,

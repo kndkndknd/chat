@@ -338,7 +338,7 @@ export const initialize = async () => {
     start = true
     timelapseId = setInterval(() => {
       streamFlag.timelapse = true
-    }, 12000)
+    }, 60000)
   
     // initThree()
     // threeFlag = true

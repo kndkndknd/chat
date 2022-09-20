@@ -19,7 +19,7 @@ export function charProcess(character:string, strings: string, id: string, io: S
   } else if(character === 'Escape'){
     stopEmit(io, state);
     strings =  '';
-  } else if(character === 'BASS' || character === 'BASS'){
+  } else if(character === 'BASS') {
     console.log('io.to(' + id + ').emit("cmdFromSever",{"cmd":"BASS","property":"LOW"})')
     io.to(id).emit('cmdFromServer',{'cmd':'BASS','property':'LOW'})
   } else if(character === 'BASSS'){
@@ -58,7 +58,7 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
   } else if(strings === 'MACBOOK') {
     console.log('debug')
     io.emit('threeSwitchFromServer', true)
-  } else if(strings === 'HOWDY WORLD') {
+  } else if(strings === 'HELLO WORLD') {
     io.emit('addRoomFromServer')
   } else if(strings === 'FADE AWAY' || strings === 'GO AWAY') {
     io.emit('fadeAwayFromServer')
@@ -593,6 +593,10 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
     }
   } else if(stringArr[0] === 'UPLOAD' && stringArr.length == 2) {
     uploadStream(stringArr, io)
+  } else if (stringArr[0] === 'GAIN' && stringArr.length === 3 && Object.keys(state.cmd.GAIN).includes(stringArr[1]) && arrTypeArr[2] === 'number') {
+    state.cmd.GAIN[stringArr[1]] = Number(stringArr[2])
+    console.log(state.cmd.GAIN)
+    putString(io, stringArr[1] +  ' GAIN: ' + stringArr[2], state)
   }
 
 }
