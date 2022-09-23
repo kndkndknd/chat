@@ -484,15 +484,35 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
       if(arg && arg.value) {
         const latency = 60 * 1000 / arg.value
         if(arg.property) {
+          // propertyがSTREAMを指定している場合
           if(Object.keys(state.stream.latency).includes(arg.property)) {
             state.stream.latency[arg.property] = latency
             putString(io, 'BPM: ' + String(arg.value)  + '(' + arg.property + ')', state)
+          // propertyが端末番号を指定している場合
           } else if(/^([1-9]\d*|0)(\.\d+)?$/.test(arg.property)){
             const target = state.client[Number(arg.property)]
             if(Object.keys(state.cmd.METRONOME).includes(target)){
               state.cmd.METRONOME[target] = latency
               putString(io, 'BPM: ' + String(arg.value)  + '(client ' + arg.property + ')', state)
             }
+            if(state.current.cmd.METRONOME.includes(target)) {
+              const cmd: {
+                cmd: string,
+                property?: string,
+                value?: number,
+                flag?: boolean,
+                fade?: number,
+                gain?: number
+              } = {
+                cmd: 'METRONOME',
+                flag: true,
+                gain: state.cmd.GAIN.METRONOME,
+                value: latency
+              }
+              putCmd(io, target, cmd, state)
+          }
+  
+
           }
           // io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value)  + '(' + arg.property + ')', timeout: true})
         } else {
@@ -501,6 +521,25 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
           }
           for(let target in state.cmd.METRONOME) {
             state.cmd.METRONOME[target] = latency
+          }
+          if(state.current.cmd.METRONOME.length > 0) {
+            state.current.cmd.METRONOME.forEach((target) => {
+              const cmd: {
+                cmd: string,
+                property?: string,
+                value?: number,
+                flag?: boolean,
+                fade?: number,
+                gain?: number
+              } = {
+                cmd: 'METRONOME',
+                flag: true,
+                gain: state.cmd.GAIN.METRONOME,
+                value: latency
+              }
+              putCmd(io, target, cmd, state)
+    
+            })
           }
           putString(io, 'BPM: ' + String(arg.value), state)
           // io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value), timeout: true})
