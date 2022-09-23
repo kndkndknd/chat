@@ -73,6 +73,7 @@ export type cmdStateType = {
     },
     PORTAMENT: number,
     VOICE: Array<string>,
+    voiceLang: string,
     METRONOME: {
       [key: string]: number
     }

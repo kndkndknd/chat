@@ -22,6 +22,7 @@ export const states: cmdStateType = {
     },
     PORTAMENT: 0,
     VOICE: [],
+    voiceLang: 'en-US',
     METRONOME: {}
   },
   client: [],

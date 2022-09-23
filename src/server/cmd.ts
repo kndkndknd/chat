@@ -66,7 +66,8 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
       io.emit('recordReqFromServer', {target: 'PLAYBACK', timeout: 10000})
       if(state.cmd.VOICE.length > 0) {
         state.cmd.VOICE.forEach((element) => {
-          io.to(element).emit('voiceFromServer', 'RECORD')
+//          io.to(element).emit('voiceFromServer', 'RECORD')
+          io.to(element).emit('voiceFromServer', {text: 'RECORD', lang: state.cmd.voiceLang})
         })
       }
     } else {
@@ -251,7 +252,8 @@ export const stopEmit = (io: SocketIO.Server, state: cmdStateType) => {
   // STOPは個別の関数があるのでVOICEはそこに相乗り
   if(state.cmd.VOICE.length > 0) {
     state.cmd.VOICE.forEach((element) => {
-      io.to(element).emit('voiceFromServer', "STOP")
+//      io.to(element).emit('voiceFromServer', "STOP")
+      io.to(element).emit('voiceFromServer', {text: 'STOP', lang: state.cmd.voiceLang})
     })
   }
 
@@ -633,6 +635,16 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
         }
         console.log(state.stream.randomrate)
       }
+    } else if (stringArr[0] === 'VOICE') {
+      //  } else if (stringArr[0] === 'VOICE' && stringArr.length === 2 && arrTypeArr[1] === 'string') {
+      console.log('debt')
+      if(stringArr[1] === "JA" || stringArr[1] === "JP") {
+        state.cmd.voiceLang = 'ja-JP'
+        putString(io, 'VOICE: ja-JP', state)
+      } else if(stringArr[1] === "EN" || stringArr[1] === "US") {
+        state.cmd.voiceLang = 'en-US'
+        putString(io, 'VOICE: en-US', state)
+      }
     } else {
       let argVal: number
       let argProp: string
@@ -736,7 +748,7 @@ const putString = (io: SocketIO.Server, strings: string, state: cmdStateType) =>
 const emitVoice = (io: SocketIO.Server, strings: string, state: cmdStateType) => {
   if(state.cmd.VOICE.length > 0) {
     state.cmd.VOICE.forEach((element) => {
-      io.to(element).emit('voiceFromServer', strings)
+      io.to(element).emit('voiceFromServer', {text: strings, lang: state.cmd.voiceLang})
     })
   }
 }
