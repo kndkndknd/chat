@@ -51,6 +51,7 @@ export const initAudio = () =>{
   masterGain = audioContext.createGain();
   masterGain.gain.setValueAtTime(1,0)
   masterGain.connect(audioContext.destination);
+  console.log(masterGain.gain.maxValue)
 
   //record/play
   // javascriptnode = audioContext.createScriptProcessor(8192, 1, 1);

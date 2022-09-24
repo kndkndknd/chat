@@ -41,6 +41,16 @@ app.get('/', function(req, res, next) {
   }
 })
 
+app.get('/main', function(req, res, next) {
+  try {
+    res.sendFile(path.join(__dirname, '../client/static', 'main.html'));
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: "Something went wrong" });
+  }
+})
+
+
 app.get('/three', function(req, res, next) {
   try {
     res.sendFile(path.join(__dirname, '../client/static', 'three.html'));

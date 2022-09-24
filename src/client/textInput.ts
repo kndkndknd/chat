@@ -1,6 +1,8 @@
 import { Socket } from 'socket.io-client';
 //import { initialize } from "./ts"
 import { textPrint, erasePrint, eraseText } from './imageEvent'
+import { bass } from './webaudio';
+let bassFlag = false
 
 
 export const keyDown = (e: KeyboardEvent, stringsClient: string, socket: Socket, stx, strCnvs, ctx?, cnvs?) => {
@@ -17,20 +19,32 @@ export const keyDown = (e: KeyboardEvent, stringsClient: string, socket: Socket,
     initialize()
   }
   */
-  if(/\w/.test(character) && character.length === 1){
-    stringsClient = stringsClient + character.toUpperCase();
-    socket.emit('charFromClient', character.toUpperCase());
+  if(character === '\\') {
+    bassFlag = !bassFlag
+    stringsClient = 'BASS'
+    bass(bassFlag, 0.4)
+    if(bassFlag) {
+      textPrint(stringsClient, stx, strCnvs)
+    } else {
+      erasePrint(stx, strCnvs)
+    }
   } else {
-    socket.emit('charFromClient', character);
-  }
+    if(/\w/.test(character) && character.length === 1){
+      stringsClient = stringsClient + character.toUpperCase();
+      socket.emit('charFromClient', character.toUpperCase());
+    } else {
+      socket.emit('charFromClient', character);
+    }
+    
+    console.log(character)
   
-  console.log(character)
-
-  if(character === 'Enter' && stringsClient != 'VOICE') stringsClient = ''
-//  erasePrint('strings', stx, strCnvs)
-  eraseText(stx, strCnvs)
-  textPrint(stringsClient, stx, strCnvs)
-//  if(ctx) erasePrint('canvas', ctx, cnvs)
+    if(character === 'Enter' && stringsClient != 'VOICE') stringsClient = ''
+  //  erasePrint('strings', stx, strCnvs)
+    eraseText(stx, strCnvs)
+    textPrint(stringsClient, stx, strCnvs)
+  //  if(ctx) erasePrint('canvas', ctx, cnvs)
+  
+  }
 
   return stringsClient
 }

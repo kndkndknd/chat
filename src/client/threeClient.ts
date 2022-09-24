@@ -149,7 +149,7 @@ socket.on('stopFromServer', (fadeOutVal) => {
     },800)
   } else {
     erasePrint(ctx2d, canvas2d)
-    textPrint('CSTOP', ctx2d, canvas2d)
+    textPrint('STOP', ctx2d, canvas2d)
     setTimeout(()=> {
       erasePrint(ctx2d, canvas2d)
       printStrings = ''
@@ -219,6 +219,8 @@ socket.on('chatFromServer', (data: {
   if(data.video) {
     if(threeFlag){
       reloadVideo(data.video);
+    } else {
+      showImage(data.video, ctx2d)
     }
   }
 //  showImage3d(data.video, threeCanvas)
@@ -338,7 +340,7 @@ export const initialize = async () => {
     start = true
     timelapseId = setInterval(() => {
       streamFlag.timelapse = true
-    }, 12000)
+    }, 60000)
   
     // initThree()
     // threeFlag = true

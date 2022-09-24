@@ -32,6 +32,7 @@ export const streamEmit = (source: string, io: SocketIO.Server, state: cmdStateT
         video: streams[source].video.shift(),
         duration: basisBufferSize / 44100
       }
+      /*
     } else if(source === 'TIMELAPSE') {
       if(streams.TIMELAPSE.audio.length > 0 && streams.TIMELAPSE.video.length > 0) {
         buff = {
@@ -42,6 +43,7 @@ export const streamEmit = (source: string, io: SocketIO.Server, state: cmdStateT
           duration: streams[source].bufferSize / 44100
         }
       }
+      */
     } else {
       if(streams[source].audio.length > 0 || streams[source].video.length > 0) {
 
@@ -112,6 +114,7 @@ export const chatReceive = (buffer:buffStateType, io: SocketIO.Server) => {
         }
         if(states.stream.randomrate.CHAT) {
           chunk.sampleRate = 11025 + Math.floor(Math.random() * 10) * 11025
+//          console.log(chunk.sampleRate)
         }
         if(states.stream.glitch[buffer.target] && chunk.video) {
           chunk.video = glitchStream(chunk.video)
