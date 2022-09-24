@@ -46,28 +46,7 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
   //VOICE
   emitVoice(io, strings, state)
 
-  // for 20220916-18 -----
-  if(strings === 'CINEMA') {
-    console.log('cinema')
-    io.emit('cmdFromServer', {
-      cmd: 'CINEMA',
-      property: '', 
-      value: 0, 
-      flag: true,     
-    })
-  } else if(strings === 'MACBOOK') {
-    console.log('debug')
-    io.emit('threeSwitchFromServer', true)
-  } else if(strings === 'HELLO WORLD') {
-    io.emit('addRoomFromServer')
-  } else if(strings === 'FADE AWAY' || strings === 'GO AWAY') {
-    io.emit('fadeAwayFromServer')
-  } else if(strings === "REPLAYING THE WORLD FROM TODAY'S COMPUTER PERSPECTIVE") {
-    console.log('TIMELAPSE')
-    state.current.stream.TIMELAPSE = true
-    streamEmit('TIMELAPSE', io, state)
-  // -----
-  } else if(strings === 'CHAT') {
+  if(strings === 'CHAT') {
     if(!state.current.stream.CHAT) {
       console.log(state.client)
       state.current.stream.CHAT = true
@@ -210,6 +189,47 @@ export const cmdEmit = (cmdStrings: string, io: SocketIO.Server, state: cmdState
       }
       putCmd(io, targetId, cmd, state)
       notTargetEmit(targetId, state.client, io)
+      break
+    case 'METRONOME':
+      cmd =  {
+        cmd: 'METRONOME'
+      }
+      
+      if(target) {
+        if(state.current.cmd[cmd.cmd].includes(target)) {
+          cmd.flag = false
+          cmd.gain = state.cmd.GAIN.METRONOME
+          for(let id in state.current.cmd.METRONOME) {
+            if(target === state.current.cmd.METRONOME[id]) {
+              cmd.value = state.cmd.METRONOME[target]
+              delete state.current.cmd[cmd.cmd][id]
+            }
+          }
+          console.log(state.current.cmd.METRONOME)
+        } else {
+          cmd.flag = true
+          cmd.gain = state.cmd.GAIN.METRONOME
+          state.current.cmd.METRONOME.push(target)
+          cmd.value = state.cmd.METRONOME[target]
+        }
+      } else {
+        if(state.current.cmd.METRONOME.length === 0 ) {
+          cmd.flag = true
+          cmd.gain = state.cmd.GAIN.METRONOME
+          target = state.client[Math.floor(Math.random() * state.client.length)]
+          state.current.cmd[cmd.cmd].push(target)
+          cmd.value = state.cmd.METRONOME[target]
+        } else {
+          cmd.flag = false
+          cmd.gain = state.cmd.GAIN.METRONOME
+          target = state.current.cmd.METRONOME.shift()
+          cmd.value = state.cmd.METRONOME[target]
+        }
+      }
+      putCmd(io, target, cmd, state)
+      notTargetEmit(target, state.client, io)
+      console.log('metronome')
+    break
       /*
     case 'RECORD':
       // console.log("debug")
@@ -466,12 +486,62 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
       if(arg && arg.value) {
         const latency = 60 * 1000 / arg.value
         if(arg.property) {
-          state.stream.latency[arg.property] = latency
+          // propertyがSTREAMを指定している場合
+          if(Object.keys(state.stream.latency).includes(arg.property)) {
+            state.stream.latency[arg.property] = latency
+            putString(io, 'BPM: ' + String(arg.value)  + '(' + arg.property + ')', state)
+          // propertyが端末番号を指定している場合
+          } else if(/^([1-9]\d*|0)(\.\d+)?$/.test(arg.property)){
+            const target = state.client[Number(arg.property)]
+            if(Object.keys(state.cmd.METRONOME).includes(target)){
+              state.cmd.METRONOME[target] = latency
+              putString(io, 'BPM: ' + String(arg.value)  + '(client ' + arg.property + ')', state)
+            }
+            if(state.current.cmd.METRONOME.includes(target)) {
+              const cmd: {
+                cmd: string,
+                property?: string,
+                value?: number,
+                flag?: boolean,
+                fade?: number,
+                gain?: number
+              } = {
+                cmd: 'METRONOME',
+                flag: true,
+                gain: state.cmd.GAIN.METRONOME,
+                value: latency
+              }
+              putCmd(io, target, cmd, state)
+          }
+  
+
+          }
           // io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value)  + '(' + arg.property + ')', timeout: true})
-          putString(io, 'BPM: ' + String(arg.value)  + '(' + arg.property + ')', state)
         } else {
           for(let target in state.stream.latency) {
             state.stream.latency[target] = latency
+          }
+          for(let target in state.cmd.METRONOME) {
+            state.cmd.METRONOME[target] = latency
+          }
+          if(state.current.cmd.METRONOME.length > 0) {
+            state.current.cmd.METRONOME.forEach((target) => {
+              const cmd: {
+                cmd: string,
+                property?: string,
+                value?: number,
+                flag?: boolean,
+                fade?: number,
+                gain?: number
+              } = {
+                cmd: 'METRONOME',
+                flag: true,
+                gain: state.cmd.GAIN.METRONOME,
+                value: latency
+              }
+              putCmd(io, target, cmd, state)
+    
+            })
           }
           putString(io, 'BPM: ' + String(arg.value), state)
           // io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value), timeout: true})
@@ -572,9 +642,14 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
         argVal = Number(stringArr[1])
       } else if (stringArr.length === 2 && arrTypeArr[1] === 'string'){
         argProp = stringArr[1]
-      } else if (stringArr.length === 3 && arrTypeArr[1] === 'string' && arrTypeArr[2] === 'number') {
-        argProp = stringArr[1]
-        argVal = Number(stringArr[2])
+      } else if (stringArr.length === 3) {
+        if(arrTypeArr[1] === 'string' && arrTypeArr[2] === 'number') {
+          argProp = stringArr[1]
+          argVal = Number(stringArr[2])  
+        } else if(stringArr[0] === 'BPM' && arrTypeArr[1] === 'number' && arrTypeArr[2] === 'number') {
+          argProp = stringArr[1]
+          argVal = Number(stringArr[2])  
+        }
       }
       parameterChange(parameterList[stringArr[0]], io, state, {value: argVal, property: argProp})
       putString(io, stringArr[0] + ' ' + stringArr[1], state)

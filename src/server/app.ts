@@ -106,14 +106,15 @@ io.sockets.on('connection',(socket)=>{
     if(!states.stream.timelapse) states.stream.timelapse = true 
     let sockId = String(socket.id);
     console.log('socket.on("connectFromClient", (data) => {data:' + data + ', id:' + sockId + '}')
-    if(!states.client.includes(sockId)) states.client.push(sockId)
-    
+    if(!states.client.includes(sockId)) states.client.push(sockId)    
     states.client = states.client.filter((id) => {
       //console.log(io.sockets.adapter.rooms.has(id))
       if(io.sockets.adapter.rooms.has(id)) {
         return id
       }
     })
+    // METRONOMEは接続時に初期値を作る
+    states.cmd.METRONOME[sockId] = 1000
     console.log(states.client)
   });
   socket.on('charFromClient', (character) =>{

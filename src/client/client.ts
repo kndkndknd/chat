@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client';
 const socket: Socket = io();
 import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, playbackCinema, stopCinema} from './imageEvent'
 
-import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate} from './webaudio'
+import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate, metronome} from './webaudio'
 
 import {keyDown} from './textInput'
 import { isNoSubstitutionTemplateLiteral } from 'typescript';
@@ -139,21 +139,11 @@ socket.on('cmdFromServer', (cmd: {
       break
     case 'SIMULATE':
       simulate(cmd.gain)
-      if(cinemaFlag) {
-        setTimeout(() => {
-          erasePrint(ctx, cnvs)
-        },500)
-      }
-        break
-    case 'CINEMA':
-      erasePrint(ctx, cnvs)
-      cinemaFlag = true
-      playbackCinema()
-      setTimeout(()=> {
-        cinemaFlag = false
-        stopCinema()
-      }, 101000)
-      break;
+      break
+    case 'METRONOME':
+      console.log('METRONOME')
+      metronome(cmd.flag, cmd.value, cmd.gain)
+      break
     default:
       break;
   }

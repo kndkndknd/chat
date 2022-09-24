@@ -10,6 +10,7 @@ export let streamFlag = {
 
 let simsGain = 1
 
+let metronomeIntervId: NodeJS.Timer
 
 const cnvs = <HTMLCanvasElement> document.getElementById('cnvs');
 const ctx  = <CanvasRenderingContext2D>cnvs.getContext('2d');
@@ -293,6 +294,12 @@ export const stopCmd = (fade: number) => {
   feedbackGain.gain.setTargetAtTime(0,currentTime,fade) 
   noiseGain.gain.setTargetAtTime(0,currentTime,fade)
   oscGain.gain.setTargetAtTime(0,currentTime,fade)
+  simulateGain.gain.setTargetAtTime(0, currentTime,fade)
+  streamFlag.simulate = false
+  if (metronomeIntervId) {
+    clearInterval(metronomeIntervId)
+  }
+
 }
 
 
@@ -304,5 +311,34 @@ export const simulate = (gain: number) => {
     simsGain = 0
     simulateGain.gain.setValueAtTime(0,0);
   }
+}
 
+export const metronome = (flag: boolean, latency: number, gain: number) => {
+  if (!metronomeIntervId) {
+    console.log('metronome init')
+    textPrint('METRONOME', ctx, cnvs)
+    metronomeIntervId = setInterval(()=>{
+      console.log('metronome')
+      console.log(gain)
+      click(gain)
+      textPrint('CLICK', ctx, cnvs)
+      setTimeout(()=>{
+        erasePrint(ctx, cnvs)
+      }, 500)
+    }, latency);
+  } else if(flag) {
+    textPrint('METRONOME', ctx, cnvs)
+    console.log('metronome change')
+    clearInterval(metronomeIntervId)
+    metronomeIntervId = setInterval(()=>{
+      click(gain)
+      textPrint('CLICK', ctx, cnvs)
+      setTimeout(()=>{
+        erasePrint(ctx, cnvs)
+      }, 500)
+    }, latency);
+  } else {
+    console.log('metronome stop')
+    clearInterval(metronomeIntervId)
+  }
 }
