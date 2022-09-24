@@ -240,11 +240,40 @@ socket.on('streamFromServer', (data: {
   socket.emit('streamReqFromClient', data.source)
 })
 
-socket.on('voiceFromServer', (data: string) => {
+socket.on('voiceFromServer', (data: {text: string, lang: string}) => {
+  console.log('debug')
   const uttr = new SpeechSynthesisUtterance();
-//  uttr.lang = 'en-US';
-  uttr.text = data
+  uttr.lang = data.lang
+  uttr.text = data.text
   // 英語に対応しているvoiceを設定
+  speechSynthesis.onvoiceschanged = () => {
+    const voices = speechSynthesis.getVoices()
+    for (let i = 0; i < voices.length; i++)  {
+      console.log(voices[i])
+      if (voices[i].lang === 'en-US') {
+        console.log('hit')
+        console.log(voices[i])
+        uttr.voice = voices[i]
+      }
+    }
+
+  }
+  /*
+  speechSynthesis.onvoiceschanged = getVoices
+  var voices
+  function getVoices () {
+    voices = speechSynthesis.getVoices()
+  }
+  console.log(voices)
+  for (let i = 0; i < voices.length; i++)  {
+    console.log(voices[i])
+    if (voices[i].lang === 'en-US') {
+      uttr.voice = voices[i]
+    }
+  }
+  */
+
+/*
   speechSynthesis.onvoiceschanged = function(){
     const voices = speechSynthesis.getVoices()
     for (let i = 0; i < voices.length; i++)  {
@@ -256,6 +285,7 @@ socket.on('voiceFromServer', (data: string) => {
     }
 
   };
+*/
     speechSynthesis.speak(uttr);
   
 })
