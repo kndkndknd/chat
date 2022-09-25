@@ -1,5 +1,6 @@
+import {videoElement,} from './globalVariable'
 
-const videoElement = <HTMLVideoElement>document.getElementById('video');
+//const videoElement = <HTMLVideoElement>document.getElementById('video');
 const cinemaElement = <HTMLVideoElement> document.getElementById('cinema');
 const bckcnvsElement = <HTMLCanvasElement> document.getElementById('bckcnvs')
 const bckcnvsContext = bckcnvsElement.getContext('2d');

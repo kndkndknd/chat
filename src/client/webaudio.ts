@@ -1,5 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { erasePrint, textPrint, toBase64 } from './imageEvent'
+import {cnvs, ctx,} from './globalVariable'
+
 
 export let streamFlag = {
   chat: false,
@@ -11,8 +13,8 @@ export let streamFlag = {
 let simsGain = 1
 
 
-const cnvs = <HTMLCanvasElement> document.getElementById('cnvs');
-const ctx  = <CanvasRenderingContext2D>cnvs.getContext('2d');
+// const cnvs = <HTMLCanvasElement> document.getElementById('cnvs');
+// const ctx  = <CanvasRenderingContext2D>cnvs.getContext('2d');
 
 
 const socket: Socket = io();
@@ -215,6 +217,14 @@ export const playAudioStream = (bufferArray: Float32Array, sampleRate: number, g
     audio_buf.copyToChannel(audioData, 0);
     audio_src.buffer = audio_buf;
     audio_src.connect(chatGain);
+  } else {
+    console.log('glitched')
+    let audio_buf = audioContext.createBuffer(1, bufferSize, convolver.context.sampleRate)
+    audio_buf.copyToChannel(audioData, 0);
+
+    audio_src.buffer = audio_buf;
+    convolver.buffer = audio_buf;
+    audio_src.connect(convolver);
   }
   audio_src.start(0);
 }

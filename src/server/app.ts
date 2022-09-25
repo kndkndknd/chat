@@ -41,6 +41,16 @@ app.get('/', function(req, res, next) {
   }
 })
 
+app.get('/sl', function(req, res, next) {
+  try {
+    res.sendFile(path.join(__dirname, '../client/static', 'sl.html'));
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: "Something went wrong" });
+  }
+})
+
+
 app.get('/main', function(req, res, next) {
   try {
     res.sendFile(path.join(__dirname, '../client/static', 'main.html'));
@@ -115,6 +125,7 @@ io.sockets.on('connection',(socket)=>{
       }
     })
     console.log(states.client)
+    socket.emit('debugFromServer')
   });
   socket.on('charFromClient', (character) =>{
     strings = charProcess(character,strings, socket.id, io, states);
