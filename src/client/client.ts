@@ -340,7 +340,7 @@ export const initialize = async () => {
   start = true
   timelapseId = setInterval(() => {
     streamFlag.timelapse = true
-  }, 60000)
+  }, 30000)
 }
 textPrint('click screen', ctx, cnvs)
 

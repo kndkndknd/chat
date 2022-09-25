@@ -50,6 +50,7 @@ app.get('/snowleopard', function(req, res, next) {
   }
 })
 
+/*
 
 app.get('/main', function(req, res, next) {
   try {
@@ -78,7 +79,6 @@ app.get('/orientation', function(req, res, next) {
     res.json({ success: false, message: "Something went wrong" });
   }
 })
-/*
 app.get('/faceapi', function(req, res, next) {
   try {
     res.sendFile(path.join(__dirname, '../client/static', 'faceapi.html'));

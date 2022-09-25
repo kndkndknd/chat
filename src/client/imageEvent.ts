@@ -29,8 +29,8 @@ export function canvasSizing () {
   const windowHeight = window.innerHeight
   const width = String(windowWidth)
   const height = String(windowHeight)
-  console.log(width)
-  console.log(height)
+//  console.log(width)
+//  console.log(height)
   const cnvsElement = <HTMLCanvasElement> document.getElementById('cnvs')
   cnvsElement.setAttribute("height", height + "px")
   cnvsElement.setAttribute("width", width + "px")  
@@ -52,7 +52,7 @@ export function initVideoStream (stream, videoElement) {
     requestAnimationFrame(render);
     const width = videoElement.videoWidth;
     const height = videoElement.videoHeight;
-    console.log(width)
+//    console.log(width)
     if(width == 0 || height ==0) {return;}
     cnvsElement.width = width;
     cnvsElement.height = height;

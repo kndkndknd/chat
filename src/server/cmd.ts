@@ -451,21 +451,25 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
       }
       break
     case 'GLITCH':
-      if(arg && arg.source) {
+      if(arg && arg.property) {
+        console.log(arg)
         state.stream.glitch[arg.source] = !state.stream.glitch[arg.source]
         // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(state.stream.glitch[arg.source]), timeout: true})
         putString(io, 'GLITCH: ' + String(state.stream.glitch[arg.source]), state)
       } else {
         let flag = false
-        if(Object.values(states.stream.glitch).includes(false)) {
+        if(Object.values(state.stream.glitch).includes(false)) {
+          console.log('debug')
           flag = true
         }
-        for(let source in state.stream.glitch) {
-          state.stream.glitch[source] = flag
+        for(let stream in state.stream.glitch) {
+          console.log(stream)
+          state.stream.glitch[stream] = flag
         }  
         // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(state.stream.glitch.CHAT), timeout: true})
         putString(io, 'GLITCH: ' + String(state.stream.glitch.CHAT), state)
       }
+      console.log(state.stream.glitch)
       break
     case 'GRID':
       if(arg && arg.property) {

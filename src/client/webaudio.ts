@@ -10,7 +10,9 @@ export let streamFlag = {
   simulate: false
 }
 
-let simsGain = 1
+let simsGainVal = 1
+let glitchGainVal = 1.5
+let chatGainval = 1.5
 
 let metronomeIntervId: NodeJS.Timer
 
@@ -109,7 +111,7 @@ export const initAudio = () =>{
   javascriptnode = audioContext.createScriptProcessor(8192, 1, 1)
   convolver = audioContext.createConvolver();
   glitchGain = audioContext.createGain();
-  glitchGain.gain.setValueAtTime(0.1,0);
+  glitchGain.gain.setValueAtTime(glitchGainVal,0);
   convolver.connect(glitchGain);
   glitchGain.connect(audioContext.destination)
  
@@ -118,7 +120,7 @@ export const initAudio = () =>{
   feedbackGain.gain.setValueAtTime(0,0)
 
   chatGain = audioContext.createGain()
-  chatGain.gain.setValueAtTime(1,0)
+  chatGain.gain.setValueAtTime(chatGainval,0)
   chatGain.connect(masterGain)
 
   // SIMULATE
@@ -183,7 +185,7 @@ const onAudioProcess = (e: AudioProcessingEvent) => {
       if(freq.val < freqData[i]) freq = {freq:(i*22050/analyser.fftSize), val:freqData[i]/256}
     }
     //let currentTime = audioContext.currentTime
-    if(freq.val > simsGain) freq.val = simsGain
+    if(freq.val > simsGainVal) freq.val = simsGainVal
 //    freq.val = simsGain
 //    freq.val //later
 //    if(freq.val > clientState.gain.manekkoGain) freq.val = clientState.gain.manekkoGain

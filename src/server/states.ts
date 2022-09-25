@@ -10,7 +10,7 @@ export const states: cmdStateType = {
       CLICK:0.9,
       BASS:1.5,
       CHAT:1.5,
-      GLITCH:2,
+      GLITCH:3,
       SIMULATE: 1.0,
       METRONOME: 0.9
     },
