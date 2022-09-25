@@ -1,23 +1,21 @@
 import { io, Socket } from 'socket.io-client';
 const socket: Socket = io();
-import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, playbackCinema, stopCinema} from './imageEvent'
+import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, } from './imageEvent'
 
 import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate, metronome} from './webaudio'
 
+import {cnvs, ctx, videoElement,} from './globalVariable'
+
+//import {debugOn} from './socket'
+
 import {keyDown} from './textInput'
-import { isNoSubstitutionTemplateLiteral } from 'typescript';
 
 let start = false
-
-const cnvs = <HTMLCanvasElement> document.getElementById('cnvs');
-const ctx  = <CanvasRenderingContext2D>cnvs.getContext('2d');
 
 let darkFlag = false
 let cinemaFlag = false
 
-let windowWidth = window.innerWidth
-let windowHeight = window.innerHeight
-let videoElement = <HTMLVideoElement>document.getElementById('video');
+// let videoElement = <HTMLVideoElement>document.getElementById('video');
 let timelapseId: NodeJS.Timer
 
 let stringsClient = '';
@@ -298,7 +296,6 @@ socket.on('disconnect', ()=>{
   },1000)
 })
 
-
 export const initialize = async () => {
   erasePrint(ctx, cnvs)
 
@@ -346,3 +343,5 @@ export const initialize = async () => {
   }, 60000)
 }
 textPrint('click screen', ctx, cnvs)
+
+//debugOn

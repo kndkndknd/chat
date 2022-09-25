@@ -6,6 +6,7 @@ const clientConfig = {
     // client: './src/client/client.js',
     // mobile: './src/client/workletProcessor.js',
     client: './src/client/client.ts',
+    snowLeopardClient: './src/client/snowLeopardClient.js',
     threeClient: './src/client/threeClient.ts',
     orientation: './src/client/orientation.ts',
 //    facetest: './src/client/facetest.ts',

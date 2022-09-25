@@ -41,6 +41,16 @@ app.get('/', function(req, res, next) {
   }
 })
 
+app.get('/snowleopard', function(req, res, next) {
+  try {
+    res.sendFile(path.join(__dirname, '../client/static', 'snowLeopard.html'));
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: "Something went wrong" });
+  }
+})
+
+
 app.get('/main', function(req, res, next) {
   try {
     res.sendFile(path.join(__dirname, '../client/static', 'main.html'));
@@ -116,6 +126,7 @@ io.sockets.on('connection',(socket)=>{
     // METRONOMEは接続時に初期値を作る
     states.cmd.METRONOME[sockId] = 1000
     console.log(states.client)
+    socket.emit('debugFromServer')
   });
   socket.on('charFromClient', (character) =>{
     strings = charProcess(character,strings, socket.id, io, states);
