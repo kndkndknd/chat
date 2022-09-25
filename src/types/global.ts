@@ -25,6 +25,7 @@ export type cmdStateType = {
       WHITENOISE: Array<string>,
       CLICK: Array<string>, // 管理する意味なさそう…
       BASS: Array<string>
+      METRONOME: Array<string>
     },
     sinewave: {
       [key: string]: number
@@ -39,7 +40,8 @@ export type cmdStateType = {
       FEEDBACK: Array<string>, // 発音しているIDの配列にする
       WHITENOISE: Array<string>,
       CLICK: Array<string>, // 管理する意味なさそう…
-      BASS: Array<string>  
+      BASS: Array<string>,
+      METRONOME: Array<string>
     },
     sinewave: {
       [key: string]: number
@@ -60,6 +62,7 @@ export type cmdStateType = {
       CHAT:number,
       GLITCH:number,
       SIMULATE:number,
+      METRONOME: number,
     },
     FADE: {
       IN:number,
@@ -69,7 +72,11 @@ export type cmdStateType = {
       [key: string]: number
     },
     PORTAMENT: number,
-    VOICE: Array<string>
+    VOICE: Array<string>,
+    voiceLang: string,
+    METRONOME: {
+      [key: string]: number
+    }
   },
   stream: {
     sampleRate: {

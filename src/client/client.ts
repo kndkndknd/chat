@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client';
 const socket: Socket = io();
 import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, } from './imageEvent'
 
-import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate} from './webaudio'
+import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate, metronome} from './webaudio'
 
 import {cnvs, ctx, videoElement,} from './globalVariable'
 
@@ -137,12 +137,11 @@ socket.on('cmdFromServer', (cmd: {
       break
     case 'SIMULATE':
       simulate(cmd.gain)
-      if(cinemaFlag) {
-        setTimeout(() => {
-          erasePrint(ctx, cnvs)
-        },500)
-      }
-        break
+      break
+    case 'METRONOME':
+      console.log('METRONOME')
+      metronome(cmd.flag, cmd.value, cmd.gain)
+      break
     default:
       break;
   }
@@ -239,11 +238,40 @@ socket.on('streamFromServer', (data: {
   socket.emit('streamReqFromClient', data.source)
 })
 
-socket.on('voiceFromServer', (data: string) => {
+socket.on('voiceFromServer', (data: {text: string, lang: string}) => {
+  console.log('debug')
   const uttr = new SpeechSynthesisUtterance();
-//  uttr.lang = 'en-US';
-  uttr.text = data
+  uttr.lang = data.lang
+  uttr.text = data.text
   // 英語に対応しているvoiceを設定
+  speechSynthesis.onvoiceschanged = () => {
+    const voices = speechSynthesis.getVoices()
+    for (let i = 0; i < voices.length; i++)  {
+      console.log(voices[i])
+      if (voices[i].lang === 'en-US') {
+        console.log('hit')
+        console.log(voices[i])
+        uttr.voice = voices[i]
+      }
+    }
+
+  }
+  /*
+  speechSynthesis.onvoiceschanged = getVoices
+  var voices
+  function getVoices () {
+    voices = speechSynthesis.getVoices()
+  }
+  console.log(voices)
+  for (let i = 0; i < voices.length; i++)  {
+    console.log(voices[i])
+    if (voices[i].lang === 'en-US') {
+      uttr.voice = voices[i]
+    }
+  }
+  */
+
+/*
   speechSynthesis.onvoiceschanged = function(){
     const voices = speechSynthesis.getVoices()
     for (let i = 0; i < voices.length; i++)  {
@@ -255,6 +283,7 @@ socket.on('voiceFromServer', (data: string) => {
     }
 
   };
+*/
     speechSynthesis.speak(uttr);
   
 })
