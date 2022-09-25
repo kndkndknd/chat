@@ -41,9 +41,9 @@ app.get('/', function(req, res, next) {
   }
 })
 
-app.get('/sl', function(req, res, next) {
+app.get('/snowleopard', function(req, res, next) {
   try {
-    res.sendFile(path.join(__dirname, '../client/static', 'sl.html'));
+    res.sendFile(path.join(__dirname, '../client/static', 'snowLeopard.html'));
   } catch (error) {
     console.log(error)
     res.json({ success: false, message: "Something went wrong" });

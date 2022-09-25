@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client';
 const socket: Socket = io();
-import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, playbackCinema, stopCinema} from './imageEvent'
+import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, } from './imageEvent'
 
 import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate} from './webaudio'
 
@@ -143,15 +143,6 @@ socket.on('cmdFromServer', (cmd: {
         },500)
       }
         break
-    case 'CINEMA':
-      erasePrint(ctx, cnvs)
-      cinemaFlag = true
-      playbackCinema()
-      setTimeout(()=> {
-        cinemaFlag = false
-        stopCinema()
-      }, 101000)
-      break;
     default:
       break;
   }

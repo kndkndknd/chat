@@ -52,6 +52,7 @@ export function initVideoStream (stream, videoElement) {
     requestAnimationFrame(render);
     const width = videoElement.videoWidth;
     const height = videoElement.videoHeight;
+    console.log(width)
     if(width == 0 || height ==0) {return;}
     cnvsElement.width = width;
     cnvsElement.height = height;
@@ -62,42 +63,7 @@ export function initVideoStream (stream, videoElement) {
   render();
 }
 
-export function playbackCinema () {
-  cinemaElement.play()
-  console.log(cinemaElement.width)
-  console.log(cinemaElement.offsetHeight)
-  console.log(window.innerHeight)
 
-  const aspect = cinemaElement.width / cinemaElement.height
-  let hght = window.innerHeight
-  let wdth = hght * aspect
-  if(aspect > (window.innerWidth / window.innerHeight)) {
-    hght = wdth / aspect
-    wdth = window.innerWidth
-  }
-  const x = window.innerWidth /2 - (wdth / 2)
-  const y = 0
-  bckcnvsElement.setAttribute("height", window.innerHeight + "px")
-  bckcnvsElement.setAttribute("width", window.innerWidth + "px")  
-/*  const width = cinemaElement.videoWidth;
-  const height = cinemaElement.videoHeight;
-  console.log(width)
-  console.log(height)
-  if(width == 0 || height ==0) {return;}
-  cnvsElement.width = width;
-  cnvsElement.height = height;
-*/
-  let render = () => {
-    requestAnimationFrame(render);
-    bckcnvsContext.drawImage(cinemaElement, 600, 200);
-  }
-  render();
-}
-
-export function stopCinema () {
-  cinemaElement.pause()
-  erasePrint(bckcnvsContext, bckcnvsElement)
-}
 
 export function toBase64(){
   const canvasElement = <HTMLCanvasElement> document.createElement('canvas')

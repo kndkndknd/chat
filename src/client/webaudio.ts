@@ -48,6 +48,7 @@ let analyser: AnalyserNode
 
 
 export const initAudio = () =>{
+  console.log('debug1')
   audioContext = new AudioContext();
   masterGain = audioContext.createGain();
   masterGain.gain.setValueAtTime(1,0)
@@ -133,6 +134,7 @@ export const initAudio = () =>{
 }
 
 export const initAudioStream = (stream) => {
+  console.log('debug2')
   let mediastreamsource: MediaStreamAudioSourceNode
   mediastreamsource = audioContext.createMediaStreamSource(stream)
   mediastreamsource.connect(javascriptnode)
@@ -230,6 +232,7 @@ export const playAudioStream = (bufferArray: Float32Array, sampleRate: number, g
 }
 
 export const sinewave = (flag: boolean, frequency: number, fade: number, portament: number, gain: number) => {
+  console.log('debug3')
   const currentTime = audioContext.currentTime
   console.log('debug')
   osc.frequency.setTargetAtTime(frequency, currentTime, portament);
