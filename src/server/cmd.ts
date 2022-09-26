@@ -451,7 +451,7 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
       }
       break
     case 'GLITCH':
-      if(arg && arg.source) {
+      if(arg && arg.property) {
         state.stream.glitch[arg.source] = !state.stream.glitch[arg.source]
         // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(state.stream.glitch[arg.source]), timeout: true})
         putString(io, 'GLITCH: ' + String(state.stream.glitch[arg.source]), state)

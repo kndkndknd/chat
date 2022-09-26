@@ -52,7 +52,6 @@ export function initVideoStream (stream, videoElement) {
     requestAnimationFrame(render);
     const width = videoElement.videoWidth;
     const height = videoElement.videoHeight;
-    console.log(width)
     if(width == 0 || height ==0) {return;}
     cnvsElement.width = width;
     cnvsElement.height = height;
@@ -74,7 +73,9 @@ export function toBase64(){
     bufferContext.drawImage(videoElement, 0, 0);
   }
   const returnURL = canvasElement.toDataURL("image/jpeg")
-  return returnURL
+//  const returnURL = canvasElement.toDataURL()
+//  console.log(returnURL)
+return returnURL
 }
 
 export function renderStart(){
