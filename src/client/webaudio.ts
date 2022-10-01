@@ -11,6 +11,8 @@ export let streamFlag = {
 }
 
 let simsGain = 1
+let chatGainVal = 1.5
+let glitchGainVal = 1.5
 
 let metronomeIntervId: NodeJS.Timer
 
@@ -109,7 +111,7 @@ export const initAudio = () =>{
   javascriptnode = audioContext.createScriptProcessor(8192, 1, 1)
   convolver = audioContext.createConvolver();
   glitchGain = audioContext.createGain();
-  glitchGain.gain.setValueAtTime(0.1,0);
+  glitchGain.gain.setValueAtTime(glitchGainVal,0);
   convolver.connect(glitchGain);
   glitchGain.connect(audioContext.destination)
  
@@ -118,7 +120,7 @@ export const initAudio = () =>{
   feedbackGain.gain.setValueAtTime(0,0)
 
   chatGain = audioContext.createGain()
-  chatGain.gain.setValueAtTime(1,0)
+  chatGain.gain.setValueAtTime(chatGainVal,0)
   chatGain.connect(masterGain)
 
   // SIMULATE

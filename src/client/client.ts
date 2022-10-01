@@ -198,11 +198,6 @@ socket.on('chatFromServer', (data: {
   playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize)
   if(data.video) {
     showImage(data.video, ctx)
-    if(cinemaFlag) {
-      setTimeout(() => {
-        erasePrint(ctx, cnvs)
-      },300)
-    }
   }
   chatReq()
 });

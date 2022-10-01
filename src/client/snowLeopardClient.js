@@ -12,6 +12,8 @@ navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia 
 window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
 window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext || window.msAudioContext;
 
+let chatGainVal = 1.5
+let glitchGainVal = 1.5
 
 let audioContext
 let masterGain
@@ -143,7 +145,11 @@ switch(cmd.cmd){
   case 'SIMULATE':
     simulate(cmd.gain)
       break
-  default:
+      case 'METRONOME':
+        console.log('METRONOME')
+        metronome(cmd.flag, cmd.value, cmd.gain)
+        break
+    default:
     break;
 }
 // strings = '';
@@ -308,11 +314,11 @@ const initialize = async () =>{
   javascriptnode = audioContext.createScriptProcessor(8192, 1, 1)
   convolver = audioContext.createConvolver();
   glitchGain = audioContext.createGain();
-  glitchGain.gain.setValueAtTime(0.1,0);
+  glitchGain.gain.setValueAtTime(glitchGainVal,0);
   convolver.connect(glitchGain);
   glitchGain.connect(audioContext.destination)
   chatGain = audioContext.createGain()
-  chatGain.gain.setValueAtTime(1,0)
+  chatGain.gain.setValueAtTime(chatGainVal,0)
   chatGain.connect(masterGain)
   // SIMULATE
   simulateOsc = audioContext.createOscillator();
@@ -555,6 +561,15 @@ const stopCmd = (fade) => {
   feedbackGain.gain.setTargetAtTime(0,0,fade) 
   noiseGain.gain.setTargetAtTime(0,0,fade)
   oscGain.gain.setTargetAtTime(0,0,fade)
+
+  simulateGain.gain.setTargetAtTime(0,0,fade)
+  streamFlag.simulate = false
+/*
+  if (metronomeIntervId) {
+    clearInterval(metronomeIntervId)
+  }
+*/
+
 }
 
 
@@ -580,4 +595,35 @@ function toBase64(){
   const returnURL = cnvsElement.toDataURL("image/jpeg")
   console.log(returnURL)
   return returnURL
+}
+
+
+const metronome = (flag, latency, gain) => {
+  if (!metronomeIntervId) {
+    console.log('metronome init')
+    textPrint('METRONOME', ctx, cnvs)
+    metronomeIntervId = setInterval(()=>{
+      console.log('metronome')
+      console.log(gain)
+      click(gain)
+      textPrint('CLICK', ctx, cnvs)
+      setTimeout(()=>{
+        erasePrint(ctx, cnvs)
+      }, 500)
+    }, latency);
+  } else if(flag) {
+    textPrint('METRONOME', ctx, cnvs)
+    console.log('metronome change')
+    clearInterval(metronomeIntervId)
+    metronomeIntervId = setInterval(()=>{
+      click(gain)
+      textPrint('CLICK', ctx, cnvs)
+      setTimeout(()=>{
+        erasePrint(ctx, cnvs)
+      }, 500)
+    }, latency);
+  } else {
+    console.log('metronome stop')
+    clearInterval(metronomeIntervId)
+  }
 }
