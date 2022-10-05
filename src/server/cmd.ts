@@ -46,7 +46,15 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
   //VOICE
   emitVoice(io, strings, state)
 
-  if(strings === 'CHAT') {
+  if(strings === 'CINEMA') {
+    console.log('cinema')
+    io.emit('cmdFromServer', {
+      cmd: 'CINEMA',
+      property: '', 
+      value: 0, 
+      flag: true,     
+    })
+  } else if(strings === 'CHAT') {
     if(!state.current.stream.CHAT) {
       console.log(state.client)
       state.current.stream.CHAT = true

@@ -50,6 +50,14 @@ app.get('/snowleopard', function(req, res, next) {
   }
 })
 
+app.get('/audioWorklet', function(req, res, next) {
+  try {
+    res.sendFile(path.join(__dirname, '../client/static', 'audioWorkletClient.html'));
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: "Something went wrong" });
+  }
+})
 
 app.get('/main', function(req, res, next) {
   try {
@@ -60,6 +68,7 @@ app.get('/main', function(req, res, next) {
   }
 })
 
+/*
 
 app.get('/three', function(req, res, next) {
   try {
@@ -78,7 +87,6 @@ app.get('/orientation', function(req, res, next) {
     res.json({ success: false, message: "Something went wrong" });
   }
 })
-/*
 app.get('/faceapi', function(req, res, next) {
   try {
     res.sendFile(path.join(__dirname, '../client/static', 'faceapi.html'));

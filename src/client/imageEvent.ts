@@ -170,3 +170,33 @@ const print = (text : string, target: CanvasRenderingContext2D, cnvs:HTMLCanvasE
   }
   target.restore();
 }
+
+
+export function playbackCinema () {
+  cinemaElement.play()
+  console.log(cinemaElement.width)
+  console.log(cinemaElement.offsetHeight)
+  console.log(window.innerHeight)
+
+  const aspect = cinemaElement.width / cinemaElement.height
+  let hght = window.innerHeight
+  let wdth = hght * aspect
+  if(aspect > (window.innerWidth / window.innerHeight)) {
+    hght = wdth / aspect
+    wdth = window.innerWidth
+  }
+  const x = window.innerWidth /2 - (wdth / 2)
+  const y = 0
+  bckcnvsElement.setAttribute("height", window.innerHeight + "px")
+  bckcnvsElement.setAttribute("width", window.innerWidth + "px")  
+  let render = () => {
+    requestAnimationFrame(render);
+    bckcnvsContext.drawImage(cinemaElement, 600, 200);
+  }
+  render();
+}
+
+export function stopCinema () {
+  cinemaElement.pause()
+  erasePrint(bckcnvsContext, bckcnvsElement)
+}

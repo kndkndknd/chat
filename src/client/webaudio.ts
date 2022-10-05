@@ -357,3 +357,88 @@ export const metronome = (flag: boolean, latency: number, gain: number) => {
     clearInterval(metronomeIntervId)
   }
 }
+
+var isInitialized = false;
+var audioctx, buffer;
+var src, overdrive, vol, feedbackAudioWorklet;
+
+export const initAudioWorklet = async (stream) => {
+  console.log('debug2')
+  let mediastreamsource: MediaStreamAudioSourceNode
+  await audioContext.audioWorklet.addModule("audioWorkletProcessor/feedback.js");
+  mediastreamsource = audioContext.createMediaStreamSource(stream)
+  feedbackAudioWorklet = new AudioWorkletNode(audioContext,"Feedback");
+  // overdrive.drive = overdrive.parameters.get("drive");
+  // overdrive.drive.value = 0.5
+  vol = new GainNode(audioContext,{gain:0.5});
+  // analyser = new AnalyserNode(audioctx);
+  src = new AudioBufferSourceNode(audioctx, {buffer:buffer, loop:true});
+  src.connect(feedbackAudioWorklet).connect(vol).connect(audioctx.destination);
+
+
+  // mediastreamsource.connect(javascriptnode)
+  // mediastreamsource.connect(feedbackGain)
+  // feedbackGain.connect(masterGain)
+
+
+  // javascriptnode.onaudioprocess = onAudioProcess
+  // javascriptnode.connect(masterGain)
+
+};
+
+
+
+export const initOverDrive = async () => {
+  audioctx = new AudioContext();
+  buffer = await LoadSample(audioctx, "loop.wav");
+  await audioctx.audioWorklet.addModule("overdrive-proc.js");
+  overdrive = new AudioWorkletNode(audioctx,"OverDrive");
+  overdrive.drive = overdrive.parameters.get("drive");
+  overdrive.drive.value = 0.5
+  vol = new GainNode(audioctx,{gain:0.5});
+  analyser = new AnalyserNode(audioctx);
+  src = new AudioBufferSourceNode(audioctx, {buffer:buffer, loop:true});
+  src.connect(overdrive).connect(vol).connect(analyser).connect(audioctx.destination);
+  Setup();
+  src.start();
+  isInitialized = true;
+  Play()
+
+}
+
+function Stop() {
+  if(src) src.stop();
+  src = null;
+}
+
+function Play() {
+  if(!src) {
+      src = audioctx.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
+      src.connect(overdrive);
+      src.start();
+  }
+}
+
+function LoadSample(ctx, url) {
+  return new Promise((resolv)=>{
+      fetch(url).then((res)=>{
+          return res.arrayBuffer();
+      })
+      .then((ar)=>{
+          return ctx.decodeAudioData(ar);
+      })
+      .then((buf)=>{
+          resolv(buf);
+      });
+  });
+}
+
+function Setup() {
+  var driveval = 0.8;
+  console.log(driveval)
+  overdrive.drive.value = driveval;
+  vol.gain.value = 1;
+}
+
