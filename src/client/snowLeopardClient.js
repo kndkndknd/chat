@@ -145,11 +145,13 @@ switch(cmd.cmd){
   case 'SIMULATE':
     simulate(cmd.gain)
       break
-      case 'METRONOME':
-        console.log('METRONOME')
-        metronome(cmd.flag, cmd.value, cmd.gain)
-        break
-    default:
+      /*
+  case 'METRONOME':
+    console.log('METRONOME')
+    metronome(cmd.flag, cmd.value, cmd.gain)
+    break
+    */
+  default:
     break;
 }
 // strings = '';
@@ -372,7 +374,6 @@ const initialize = async () =>{
       requestAnimationFrame(render);
       const width = videoElement.videoWidth;
       const height = videoElement.videoHeight;
-      console.log(width)
       if(width == 0 || height ==0) {return;}
       cnvsElement.width = width;
       cnvsElement.height = height;
@@ -487,8 +488,13 @@ const click = (gain, frequency) => {
   } else {
     clickOsc.frequency.setValueAtTime(440,0)
   }
-  clickGain.gain.setValueAtTime(gain, 0);
-  clickGain.gain.setTargetAtTime(0,0,0.03);
+//  clickGain.gain.setValueAtTime(gain, 0);
+  clickGain.gain.setTargetAtTime(gain, 0, 0)
+  setTimeout(()=> {
+    clickGain.gain.setTargetAtTime(0, 0,0.03);
+  },30)
+
+//  clickGain.gain.setTargetAtTime(0,0,0.03);
 }
 
 const chatReq = () => {
@@ -564,11 +570,11 @@ const stopCmd = (fade) => {
 
   simulateGain.gain.setTargetAtTime(0,0,fade)
   streamFlag.simulate = false
-/*
+  /*
   if (metronomeIntervId) {
     clearInterval(metronomeIntervId)
   }
-*/
+  */
 
 }
 
