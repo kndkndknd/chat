@@ -1,5 +1,6 @@
 import {textPrint, erasePrint, showImage, initVideoStream, initVideo} from './imageEvent'
 import {keyDown} from './textInput'
+import { threeOscFreq } from './webaudio'
 
 //Three 部分
 import * as THREE from 'three'
@@ -8,6 +9,12 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader'
 //import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader'
+
+const rearrangement = {
+  x: 0,
+  y: 0,
+  z: 0,
+}
 
 const roomFileName = 'lux'
 const rotateY = 0
@@ -53,7 +60,7 @@ const camera = new THREE.PerspectiveCamera(
 camera.position.z = 5
 camera.position.y = 2
 
-camera.lookAt(new THREE.Vector3(0, 0, 0));
+//camera.lookAt(new THREE.Vector3(0, 0, 0));
 let rot = 0;
 
 
@@ -258,6 +265,14 @@ function animate() {
     if(printThreeStrings.length > 0) {
       textPrint(printThreeStrings, threeCtx, threeCanvas)
     }
+    const dist = camera.position.x - rearrangement.x
+    // const dist = Math.sqrt((camera.position.x - rearrangement.x)^2 + (camera.position.y - rearrangement.y)^2 + (camera.position.z - rearrangement.z)^2)
+    console.log(dist)
+    threeOscFreq(dist)
+    rearrangement.x = camera.position.x
+    rearrangement.y = camera.position.y
+    rearrangement.z = camera.position.z
+    console.log(rearrangement)
     canvasMaterial.map.needsUpdate = true;
     requestAnimationFrame(animate)
   // if(cameraControl) {

@@ -48,6 +48,8 @@ let simulateGain: GainNode
 let simFilter: BiquadFilterNode
 let analyser: AnalyserNode
 
+let threeOsc: OscillatorNode
+let threeGain: GainNode
 
 
 export const initAudio = () =>{
@@ -134,6 +136,17 @@ export const initAudio = () =>{
   simFilter = audioContext.createBiquadFilter();
   simFilter.type = "lowpass";
   simFilter.frequency.setValueAtTime(1000,0);
+
+  // THREE
+  threeOsc = audioContext.createOscillator()
+  threeOsc.type = 'square'
+  threeGain = audioContext.createGain()
+  threeOsc.connect(threeGain)
+  threeOsc.frequency.setValueAtTime(0, 0)
+  threeGain.gain.setValueAtTime(1,0)
+  threeGain.connect(masterGain)
+  threeOsc.start(0)
+
 }
 
 export const initAudioStream = (stream) => {
@@ -404,6 +417,16 @@ export const initOverDrive = async () => {
   isInitialized = true;
   Play()
 
+}
+
+export const threeOscFreq = (dist : number) => {
+  if(!isNaN(dist)) {
+    threeOsc.frequency.setTargetAtTime(dist * 44, 0, 0)
+  }
+}
+
+export const gainChange = (data) => {
+  
 }
 
 function Stop() {

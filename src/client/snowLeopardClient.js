@@ -196,7 +196,9 @@ playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize)
 if(data.video) {
   showImage(data.video, ctx)
 }
-chatReq()
+setTimeout(()=>{
+  chatReq()
+},data.bufferSize / data.sampleRate * 1000)
 });
 
 // CHAT以外のSTREAM向け
@@ -214,7 +216,10 @@ if(data.video) {
   textPrint(data.source.toLowerCase(), ctx, cnvs)
 }
 console.log(data.source)
-socket.emit('streamReqFromClient', data.source)
+setTimeout(()=>{
+  socket.emit('streamReqFromClient', data.source)
+},data.bufferSize / data.sampleRate * 1000)
+
 })
 
 socket.on('voiceFromServer', (data) => {

@@ -1,4 +1,4 @@
-import {videoElement,} from './globalVariable'
+import {cnvs, ctx, videoElement,} from './globalVariable'
 
 //const videoElement = <HTMLVideoElement>document.getElementById('video');
 const cinemaElement = <HTMLVideoElement> document.getElementById('cinema');
@@ -55,7 +55,7 @@ export function initVideoStream (stream, videoElement) {
     if(width == 0 || height ==0) {return;}
     cnvsElement.width = width;
     cnvsElement.height = height;
-    if(bufferContext) {
+    if(ctx) {
       bufferContext.drawImage(videoElement, 0, 0);
     }
   }
@@ -80,17 +80,17 @@ return returnURL
 
 export function renderStart(){
   console.log(videoElement)
-  const canvasElement = <HTMLCanvasElement> document.createElement('canvas')
-  const bufferContext = canvasElement.getContext('2d');
+  // const canvasElement = <HTMLCanvasElement> document.createElement('canvas')
+  // const bufferContext = canvasElement.getContext('2d');
   let render = () => {
     requestAnimationFrame(render);
     const width = videoElement.videoWidth;
     const height = videoElement.videoHeight;
     if(width == 0 || height ==0) {return;}
-    canvasElement.width = width;
-    canvasElement.height = height;
-    if(bufferContext){
-      bufferContext.drawImage(videoElement, 0, 0);
+    cnvs.width = width;
+    cnvs.height = height;
+    if(ctx){
+      ctx.drawImage(videoElement, 0, 0);
     }
   }
   render();

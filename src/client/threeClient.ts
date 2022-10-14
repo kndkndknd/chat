@@ -277,7 +277,10 @@ socket.on('threeSwitchFromServer', (flag) => {
   console.log(flag)
   if(flag) {
     threeFlag = flag
-    canvas2d.style.display ="none";
+//    canvas2d.style.display ="none";
+    canvas2d.remove()
+    const bckcanvas = <HTMLCanvasElement> document.getElementById('bckcnvs')
+    bckcanvas.remove()
     initThree()  
     onWindowResize
   }
@@ -287,14 +290,6 @@ socket.on('addRoomFromServer', () => {
   addRoom()
 })
 
-socket.on('orientationFromServer', (deviceorientation) => {
-  console.log(deviceorientation)
-  orientationToThree(deviceorientation)
-})
-
-socket.on('fadeAwayFromServer', () => {
-  fadeAway()
-})
 
 
 export const initialize = async () => {

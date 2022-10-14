@@ -6,10 +6,11 @@ const clientConfig = {
     // client: './src/client/client.js',
     // mobile: './src/client/workletProcessor.js',
     client: './src/client/client.ts',
-    main: './src/client/main.ts',
+    ctrl: './src/client/ctrl.ts',
+    // main: './src/client/main.ts',
     snowLeopardClient: './src/client/snowLeopardClient.js',
     audioWorkletClient: './src/client/audioWorkletClient.ts',
-    // threeClient: './src/client/threeClient.ts',
+    threeClient: './src/client/threeClient.ts',
     // orientation: './src/client/orientation.ts',
 //    facetest: './src/client/facetest.ts',
     vosk_recognition: './src/client/vosk_recognition.js'
