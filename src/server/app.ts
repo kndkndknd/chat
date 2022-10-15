@@ -158,6 +158,11 @@ io.sockets.on('connection',(socket)=>{
       streamEmit(source, io, states)
     }
   })
+
+  socket.on('connectFromCtrl', () => {
+    io.emit('gainFromServer', states.cmd.GAIN)
+  })
+
   socket.on('gainFromCtrl', (gain: {target: string, val: number}) => {
     console.log(gain)
     states.cmd.GAIN[gain.target] = gain.val

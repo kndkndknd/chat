@@ -4,10 +4,11 @@ const socket: Socket = io();
 socket.emit('connectFromCtrl')
 
 socket.on('gainFromServer',(data) => {
+  console.log(data)
   for(let key in data) {
-    const labelElement = document.getElementById(key + '_Label')
-    labelElement.innerText = String(data[key])
-    const rangeElement = document.getElementById(key)
+    // const labelElement = document.getElementById(key + '_Label')
+    // labelElement.innerText = String(data[key])
+    const rangeElement = <HTMLInputElement> document.getElementById(key)
     rangeElement.value = data[key]
   }
 })

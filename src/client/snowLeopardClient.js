@@ -242,6 +242,11 @@ speechSynthesis.onvoiceschanged = function(){
 
 })
 
+socket.on('gainFromServer', (data) => {
+  gainChange(data)
+})
+
+
 // disconnect時、1秒後再接続
 socket.on('disconnect', ()=>{
   console.log("disconnect")
@@ -249,6 +254,7 @@ socket.on('disconnect', ()=>{
     socket.connect()
   },1000)
 })
+
 
 const initialize = async () =>{
   erasePrint(ctx, cnvs)
@@ -637,4 +643,11 @@ const metronome = (flag, latency, gain) => {
     console.log('metronome stop')
     clearInterval(metronomeIntervId)
   }
+}
+
+export const gainChange = (data) => {
+  masterGain.gain.setTargetAtTime(data.MASTER,0,0)
+  simsGain = data.SIMULATE
+  chatGainVal = data.CHAT
+  glitchGainVal = data.GLITCH  
 }

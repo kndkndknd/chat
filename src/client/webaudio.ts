@@ -426,7 +426,13 @@ export const threeOscFreq = (dist : number) => {
 }
 
 export const gainChange = (data) => {
-  
+  const currentTime = audioContext.currentTime
+  masterGain.gain.setTargetAtTime(data.MASTER,currentTime,0)
+  simsGain = data.SIMULATE
+  chatGainVal = data.CHAT
+  glitchGainVal = data.GLITCH  
+  chatGain.gain.setTargetAtTime(data.CHAT,currentTime,0)
+  glitchGain.gain.setTargetAtTime(data.GLITCH,currentTime,0)
 }
 
 function Stop() {
