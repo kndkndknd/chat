@@ -46,7 +46,10 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
   //VOICE
   emitVoice(io, strings, state)
 
-  if(strings === 'CHAT') {
+  if(strings === 'MACBOOK' || strings === 'THREE') {
+    console.log('debug')
+    io.emit('threeSwitchFromServer', true)
+  } else if(strings === 'CHAT') {
     if(!state.current.stream.CHAT) {
       console.log(state.client)
       state.current.stream.CHAT = true

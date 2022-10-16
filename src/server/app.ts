@@ -50,10 +50,27 @@ app.get('/snowleopard', function(req, res, next) {
   }
 })
 
+app.get('/audioWorklet', function(req, res, next) {
+  try {
+    res.sendFile(path.join(__dirname, '../client/static', 'audioWorkletClient.html'));
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: "Something went wrong" });
+  }
+})
 
 app.get('/main', function(req, res, next) {
   try {
     res.sendFile(path.join(__dirname, '../client/static', 'main.html'));
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: "Something went wrong" });
+  }
+})
+
+app.get('/ctrl', function(req, res, next) {
+  try {
+    res.sendFile(path.join(__dirname, '../client/static', 'ctrl.html'));
   } catch (error) {
     console.log(error)
     res.json({ success: false, message: "Something went wrong" });
@@ -70,6 +87,7 @@ app.get('/three', function(req, res, next) {
   }
 })
 
+/*
 app.get('/orientation', function(req, res, next) {
   try {
     res.sendFile(path.join(__dirname, '../client/static', 'orientation.html'));
@@ -78,7 +96,6 @@ app.get('/orientation', function(req, res, next) {
     res.json({ success: false, message: "Something went wrong" });
   }
 })
-/*
 app.get('/faceapi', function(req, res, next) {
   try {
     res.sendFile(path.join(__dirname, '../client/static', 'faceapi.html'));
@@ -142,10 +159,22 @@ io.sockets.on('connection',(socket)=>{
     }
   })
 
+  socket.on('connectFromCtrl', () => {
+    io.emit('gainFromServer', states.cmd.GAIN)
+  })
+
+  socket.on('gainFromCtrl', (gain: {target: string, val: number}) => {
+    console.log(gain)
+    states.cmd.GAIN[gain.target] = gain.val
+    io.emit('gainFromServer', states.cmd.GAIN)
+  })
+
+  /*
   socket.on('orientationFromClient', (deviceorientation) => {
     console.log(deviceorientation)
     io.emit('orientationFromServer', deviceorientation)
   })
+  */
 
   socket.on("disconnect", () =>{
     console.log('disconnect: ' + String(socket.id));

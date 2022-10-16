@@ -2,13 +2,15 @@ import { io, Socket } from 'socket.io-client';
 const socket: Socket = io();
 import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, } from './imageEvent'
 
-import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate, metronome, gainChange} from './webaudio'
+import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate, metronome, initAudioWorklet} from './webaudio'
 
 import {cnvs, ctx, videoElement,} from './globalVariable'
 
 //import {debugOn} from './socket'
 
 import {keyDown} from './textInput'
+
+
 
 let start = false
 
@@ -199,9 +201,7 @@ socket.on('chatFromServer', (data: {
   if(data.video) {
     showImage(data.video, ctx)
   }
-  setTimeout(()=>{
-    chatReq()
-  },data.bufferSize / data.sampleRate * 1000)
+  chatReq()
 });
 
 // CHAT以外のSTREAM向け
@@ -232,9 +232,7 @@ socket.on('streamFromServer', (data: {
     textPrint(data.source.toLowerCase(), ctx, cnvs)
   }
   console.log(data.source)
-  setTimeout(()=>{
-    socket.emit('streamReqFromClient', data.source)
-  },data.bufferSize / data.sampleRate * 1000)
+  socket.emit('streamReqFromClient', data.source)
 })
 
 socket.on('voiceFromServer', (data: {text: string, lang: string}) => {
@@ -287,10 +285,6 @@ socket.on('voiceFromServer', (data: {text: string, lang: string}) => {
   
 })
 
-socket.on('gainFromServer', (data) => {
-  gainChange(data)
-})
-
 // disconnect時、1秒後再接続
 socket.on('disconnect', ()=>{
   console.log("disconnect")
@@ -302,8 +296,8 @@ socket.on('disconnect', ()=>{
 export const initialize = async () => {
   erasePrint(ctx, cnvs)
 
-  await initVideo(videoElement)
-  await initAudio()
+  // await initVideo(videoElement)
+  // await initAudio()
 
   const SUPPORTS_MEDIA_DEVICES = 'mediaDevices' in navigator
   if (SUPPORTS_MEDIA_DEVICES && navigator.mediaDevices.getUserMedia) {
@@ -328,8 +322,9 @@ export const initialize = async () => {
         autoGainControl: false
       }
     })
-    await initAudioStream(stream)
+    await initAudioWorklet(stream)
     await initVideoStream(stream, videoElement)
+//    initAudioWorklet()
     await console.log(stream)
     await textPrint('initialized', ctx, cnvs)
     await socket.emit('connectFromClient', 'client')
@@ -344,7 +339,11 @@ export const initialize = async () => {
   timelapseId = setInterval(() => {
     streamFlag.timelapse = true
   }, 60000)
+
+
 }
 textPrint('click screen', ctx, cnvs)
 
 //debugOn
+
+

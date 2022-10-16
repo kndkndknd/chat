@@ -145,11 +145,13 @@ switch(cmd.cmd){
   case 'SIMULATE':
     simulate(cmd.gain)
       break
-      case 'METRONOME':
-        console.log('METRONOME')
-        metronome(cmd.flag, cmd.value, cmd.gain)
-        break
-    default:
+      /*
+  case 'METRONOME':
+    console.log('METRONOME')
+    metronome(cmd.flag, cmd.value, cmd.gain)
+    break
+    */
+  default:
     break;
 }
 // strings = '';
@@ -194,7 +196,9 @@ playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize)
 if(data.video) {
   showImage(data.video, ctx)
 }
-chatReq()
+setTimeout(()=>{
+  chatReq()
+},data.bufferSize / data.sampleRate * 1000)
 });
 
 // CHAT以外のSTREAM向け
@@ -212,7 +216,10 @@ if(data.video) {
   textPrint(data.source.toLowerCase(), ctx, cnvs)
 }
 console.log(data.source)
-socket.emit('streamReqFromClient', data.source)
+setTimeout(()=>{
+  socket.emit('streamReqFromClient', data.source)
+},data.bufferSize / data.sampleRate * 1000)
+
 })
 
 socket.on('voiceFromServer', (data) => {
@@ -235,6 +242,11 @@ speechSynthesis.onvoiceschanged = function(){
 
 })
 
+socket.on('gainFromServer', (data) => {
+  gainChange(data)
+})
+
+
 // disconnect時、1秒後再接続
 socket.on('disconnect', ()=>{
   console.log("disconnect")
@@ -242,6 +254,7 @@ socket.on('disconnect', ()=>{
     socket.connect()
   },1000)
 })
+
 
 const initialize = async () =>{
   erasePrint(ctx, cnvs)
@@ -372,7 +385,6 @@ const initialize = async () =>{
       requestAnimationFrame(render);
       const width = videoElement.videoWidth;
       const height = videoElement.videoHeight;
-      console.log(width)
       if(width == 0 || height ==0) {return;}
       cnvsElement.width = width;
       cnvsElement.height = height;
@@ -487,8 +499,13 @@ const click = (gain, frequency) => {
   } else {
     clickOsc.frequency.setValueAtTime(440,0)
   }
-  clickGain.gain.setValueAtTime(gain, 0);
-  clickGain.gain.setTargetAtTime(0,0,0.03);
+//  clickGain.gain.setValueAtTime(gain, 0);
+  clickGain.gain.setTargetAtTime(gain, 0, 0)
+  setTimeout(()=> {
+    clickGain.gain.setTargetAtTime(0, 0,0.03);
+  },30)
+
+//  clickGain.gain.setTargetAtTime(0,0,0.03);
 }
 
 const chatReq = () => {
@@ -564,11 +581,11 @@ const stopCmd = (fade) => {
 
   simulateGain.gain.setTargetAtTime(0,0,fade)
   streamFlag.simulate = false
-/*
+  /*
   if (metronomeIntervId) {
     clearInterval(metronomeIntervId)
   }
-*/
+  */
 
 }
 
@@ -626,4 +643,11 @@ const metronome = (flag, latency, gain) => {
     console.log('metronome stop')
     clearInterval(metronomeIntervId)
   }
+}
+
+export const gainChange = (data) => {
+  masterGain.gain.setTargetAtTime(data.MASTER,0,0)
+  simsGain = data.SIMULATE
+  chatGainVal = data.CHAT
+  glitchGainVal = data.GLITCH  
 }

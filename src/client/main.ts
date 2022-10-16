@@ -1,8 +1,8 @@
 import { io, Socket } from 'socket.io-client';
 const socket: Socket = io();
-import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, } from './imageEvent'
+import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, playbackCinema} from './imageEvent'
 
-import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate, metronome, gainChange} from './webaudio'
+import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate, metronome} from './webaudio'
 
 import {cnvs, ctx, videoElement,} from './globalVariable'
 
@@ -75,6 +75,10 @@ socket.on('cmdFromServer', (cmd: {
   gain?: number  
 }) => {
   switch(cmd.cmd){
+    case 'CINEMA':
+      erasePrint(ctx, cnvs);
+      playbackCinema()
+      break
     case 'WHITENOISE':
       // erasePrint(stx, strCnvs);
       erasePrint(ctx, cnvs);
@@ -199,9 +203,7 @@ socket.on('chatFromServer', (data: {
   if(data.video) {
     showImage(data.video, ctx)
   }
-  setTimeout(()=>{
-    chatReq()
-  },data.bufferSize / data.sampleRate * 1000)
+  chatReq()
 });
 
 // CHAT以外のSTREAM向け
@@ -232,9 +234,7 @@ socket.on('streamFromServer', (data: {
     textPrint(data.source.toLowerCase(), ctx, cnvs)
   }
   console.log(data.source)
-  setTimeout(()=>{
-    socket.emit('streamReqFromClient', data.source)
-  },data.bufferSize / data.sampleRate * 1000)
+  socket.emit('streamReqFromClient', data.source)
 })
 
 socket.on('voiceFromServer', (data: {text: string, lang: string}) => {
@@ -285,10 +285,6 @@ socket.on('voiceFromServer', (data: {text: string, lang: string}) => {
 */
     speechSynthesis.speak(uttr);
   
-})
-
-socket.on('gainFromServer', (data) => {
-  gainChange(data)
 })
 
 // disconnect時、1秒後再接続
