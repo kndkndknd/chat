@@ -12,8 +12,8 @@ const clientConfig = {
     audioWorkletClient: './src/client/audioWorkletClient.ts',
     threeClient: './src/client/threeClient.ts',
     // orientation: './src/client/orientation.ts',
-//    facetest: './src/client/facetest.ts',
-    vosk_recognition: './src/client/vosk_recognition.js'
+    face: './src/client/face.ts',
+    // vosk_recognition: './src/client/vosk_recognition.js'
   } ,
   // entry: scripts,
   // ファイルの出力設定

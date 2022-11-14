@@ -17,6 +17,7 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.18.1",
+    "face-api.js": "^0.22.2",
     "pcm": "^1.0.3",
     "request": "^2.88.2",
     "serve-favicon": "^2.5.0",
