@@ -35,6 +35,7 @@ const videoEl = <HTMLVideoElement> document.getElementById( 'video' );
 const inputSize = 224;
 const scoreThreshold = 0.5;
 const options = new faceapi.TinyFaceDetectorOptions({ inputSize, scoreThreshold });
+videoEl.volume = 0.01;
     
 async function onPlay()
 {
@@ -46,10 +47,14 @@ async function onPlay()
   if (result) {
     const dims = faceapi.matchDimensions(canvas, videoEl, true)
     const resizedResult = faceapi.resizeResults(result, dims)
-    console.log(resizedResult)
+    console.log(resizedResult.landmarks.positions)
+    console.log(resizedResult.landmarks.getLeftEye())
+    // resizedResult.landmarks.
     faceapi.draw.drawDetections(canvas, resizedResult)
     faceapi.draw.drawFaceLandmarks(canvas, resizedResult)
     console.log(judgeExpression(result))
+  } else {
+    console.log('not ditected')
   }
   setTimeout(() => onPlay())
 };
