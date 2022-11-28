@@ -21,6 +21,10 @@ import { states, chat_web } from './states'
 
 import { buffStateType } from '../types/global';
 
+// face
+import { faceState } from './states';
+import { sevenSinsType } from '../types/global';
+
 //https鍵読み込み
 const options = {
   key: fs.readFileSync(path.join(__dirname,'../../..','keys/privkey.pem')),
@@ -187,25 +191,75 @@ io.sockets.on('connection',(socket)=>{
     console.log(data)
     //cmdEmit("CLICK", io, states)
     if(data.detection) {
-      const speed = Math.sqrt((data.box._x - previousFace.x)^2 + (data.box._y - previousFace.y)^2)
-      previousFace.x = data.box._x
-      previousFace.y = data.box._y
+      //if(!faceState.flag) faceState.flag = true
+      const speed = (data.box._x - faceState.previousFace.x)^2 + (data.box._y - faceState.previousFace.y)^2
+      faceState.previousFace.x = data.box._x
+      faceState.previousFace.y = data.box._y
       console.log(previousFace)
-      console.log(speed)
+      console.log("speed :" + String(speed))
+      // console.log(speed)
       const targetClient = states.client[0]
       console.log(targetClient)
-      io.to(states.client[0]).emit('squareFromServer', speed)  
+      switch(faceState.expression) {
+        case "no expression":
+          if(!faceState.flag) {
+            // send empty
+            faceState.flag = true
+          }
+          break
+        case "gluttony":
+          io.to(states.client[0]).emit('squareFromServer', speed)
+          break
+        case "greed":
+          cmdEmit("CLICK", io, states)
+          break
+        case "envy":
+          if(!faceState.flag) {
+            // send chat
+            faceState.flag = true
+          }
+          break
+        case "lust":
+          if(!faceState.flag) {
+            // send feedback
+            faceState.flag = true
+          }
+          break
+        case "wrath":
+          // send sinewave(frequency: speed)
+          break
+        case "pride":
+          if(!faceState.flag) {
+            // send bass
+            faceState.flag = true
+          }
+          break
+        case "sloth":
+          if(!faceState.flag) {
+            // send playback
+            faceState.flag = true
+          }
+          break
+      }
+      //io.to(states.client[0]).emit('squareFromServer', speed)  
     } else {
       stopEmit(io, states)
+      faceState.previousFace.x = 0
+      faceState.previousFace.y = 0
+      faceState.flag = false
     }
   })
-  socket.on('expressionFromClient', (data) => {
+  socket.on('expressionFromClient', (data: sevenSinsType) => {
     console.log(data)
+    faceState.expression = data
+    faceState.flag = false
     // strings = charProcess(data,strings, socket.id, io, states);
+
+    /*
     states.cmd.VOICE.forEach((element) => {
-      //          io.to(element).emit('voiceFromServer', 'RECORD')
       io.to(element).emit('voiceFromServer', {text: data, lang: states.cmd.voiceLang})
     })
+    */
       
 
   })

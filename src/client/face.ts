@@ -4,6 +4,8 @@ const socket: Socket = io();
 
 import {canvasSizing, clearTextPrint, erasePrint } from './imageEvent'
 import {cnvs, ctx, } from './globalVariable'
+import exp from 'constants';
+import {sevenSinsType} from '../types/global'
 
 
 /*
@@ -37,9 +39,11 @@ export async function detectFace() {
 console.log("hello")
 
 const faceCanvas = <HTMLCanvasElement> document.getElementById( 'bckcnvs' );
+const faceCtx  = <CanvasRenderingContext2D>faceCanvas.getContext('2d')
+
 const videoEl = <HTMLVideoElement> document.getElementById( 'video' );
 const inputSize = 224;
-const scoreThreshold = 0.5;
+const scoreThreshold = 0.8;
 const options = new faceapi.TinyFaceDetectorOptions({ inputSize, scoreThreshold });
 //videoEl.volume = 0.01;
     
@@ -58,15 +62,14 @@ async function onPlay()
     console.log(resizedResult.alignedRect.box)
     console.log(resizedResult.alignedRect.score)
     // resizedResult.landmarks.
-    if(resizedResult.alignedRect.score > 0) {
       faceapi.draw.drawFaceLandmarks(faceCanvas, resizedResult)
       socket.emit('faceFromClient',{
         detection: true,
         box: resizedResult.alignedRect.box,
         score: resizedResult.alignedRect.score
       })
-      const expression = judgeExpression(result, 0.9)
-      if(expression !== ""){
+      const expression: sevenSinsType = judgeExpression(result, 0.9)
+      if(expression !== "no expression"){
         // canvas
         erasePrint(ctx, cnvs)
         // clearTextPrint(expression, ctx, cnvs)
@@ -76,12 +79,10 @@ async function onPlay()
         erasePrint(ctx, cnvs)
       }
   
-    } else {
-      console.log(resizedResult.alignedRect.score)
-    }
     // faceapi.draw.drawDetections(faceCanvas, resizedResult)
   } else {
-    // 顔を消す
+    erasePrint(faceCtx, faceCanvas)
+
     console.log('not ditected')
     socket.emit('faceFromClient',{
       detection: false
@@ -119,29 +120,31 @@ canvasSizing();
 
 
 
-function judgeExpression(data, scoreThreshold) {
-  if (data.expressions.happy >= scoreThreshold) {
-    return "強欲"
-  };
-
-  if (data.expressions.sad >= scoreThreshold) {
-    return "嫉妬"
-  }
-  if (data.expressions.angry >= scoreThreshold){
-    return "憤怒"
-  }
-  if (data.expressions.surprised >= scoreThreshold){
-    return "色欲"
-  }
-  if (data.expressions.neutral >= scoreThreshold){
-    return "暴食"
-  }
-  if (data.expressions.fearful >= scoreThreshold){
-    return "傲慢"
-  }
-  if (data.expressions.dusgusted >= scoreThreshold){
-    return "怠惰"
+function judgeExpression(data, expressionThreshold) {
+  let expr: sevenSinsType
+  expr = "no expression"
+  if (data.expressions.happy > expressionThreshold) {
+    expr = "greed" // 強欲
   }
 
-  return "";
+  if (data.expressions.sad >= expressionThreshold) {
+    expr = "envy" // 嫉妬
+  }
+  if (data.expressions.angry >= expressionThreshold){
+    expr = "wrath" // 憤怒
+  }
+  if (data.expressions.surprised >= expressionThreshold){
+    expr = "lust" // 色欲
+  }
+  if (data.expressions.neutral >= expressionThreshold){
+    expr = "gluttony" // 暴食
+  }
+  if (data.expressions.fearful >= expressionThreshold){
+    expr = "pride" //傲慢
+  }
+  if (data.expressions.dusgusted >= expressionThreshold){
+    expr = "sloth"  //怠惰
+  }
+
+  return expr;
 };
