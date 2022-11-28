@@ -52,6 +52,7 @@ const initialize = async () => {
     if (cameras.length === 0) {
       throw 'No camera found on this device.'
     }
+    console.log(cameras)
 //    const camera = cameras[cameras.length - 1]
     const camera = cameras[0];
     const stream = await navigator.mediaDevices.getUserMedia({

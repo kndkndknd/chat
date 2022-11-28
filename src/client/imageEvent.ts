@@ -17,6 +17,11 @@ export function eraseText(stx: CanvasRenderingContext2D, strCnvs: HTMLCanvasElem
   stx.clearRect(0, 0, strCnvs.width, strCnvs.height);
 }
 
+export function clearTextPrint(text: string, stx: CanvasRenderingContext2D, strCnvs: HTMLCanvasElement) {
+  stx.clearRect(0, 0, strCnvs.width, strCnvs.height);
+  print(text, stx, strCnvs)
+
+}
 
 export function erasePrint(ctx, cnvs) {
   ctx.clearRect(0, 0, cnvs.width, cnvs.height);

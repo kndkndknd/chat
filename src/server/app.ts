@@ -14,6 +14,7 @@ import { statusList, pathList, statusClient } from './statusList'
 import { chatReceive } from './stream'
 
 import { selectOtherClient, roomEmit, pickupTarget, pickCmdTarget, cmdSelect } from './route';
+import { cmdEmit, stopEmit } from './cmd';
 import { charProcess } from './cmd'
 import { streamEmit } from './stream';
 import { states, chat_web } from './states'
@@ -130,6 +131,8 @@ if("en0" in os.networkInterfaces()){
 }
 
 let strings = "";
+const previousFace = {x: 0, y: 0}
+
 io.sockets.on('connection',(socket)=>{
   socket.on("connectFromClient", (data) => {
     if(!states.stream.timelapse) states.stream.timelapse = true 
@@ -177,6 +180,35 @@ io.sockets.on('connection',(socket)=>{
     io.emit('orientationFromServer', deviceorientation)
   })
   */
+
+
+  // face
+  socket.on('faceFromClient', (data) => {
+    console.log(data)
+    //cmdEmit("CLICK", io, states)
+    if(data.detection) {
+      const speed = Math.sqrt((data.box._x - previousFace.x)^2 + (data.box._y - previousFace.y)^2)
+      previousFace.x = data.box._x
+      previousFace.y = data.box._y
+      console.log(previousFace)
+      console.log(speed)
+      const targetClient = states.client[0]
+      console.log(targetClient)
+      io.to(states.client[0]).emit('squareFromServer', speed)  
+    } else {
+      stopEmit(io, states)
+    }
+  })
+  socket.on('expressionFromClient', (data) => {
+    console.log(data)
+    // strings = charProcess(data,strings, socket.id, io, states);
+    states.cmd.VOICE.forEach((element) => {
+      //          io.to(element).emit('voiceFromServer', 'RECORD')
+      io.to(element).emit('voiceFromServer', {text: data, lang: states.cmd.voiceLang})
+    })
+      
+
+  })
 
   socket.on("disconnect", () =>{
     console.log('disconnect: ' + String(socket.id));
