@@ -14,7 +14,7 @@ import { statusList, pathList, statusClient } from './statusList'
 import { chatReceive } from './stream'
 
 import { selectOtherClient, roomEmit, pickupTarget, pickCmdTarget, cmdSelect } from './route';
-import { cmdEmit, stopEmit } from './cmd';
+import { cmdEmit, sinewaveEmit, stopEmit } from './cmd';
 import { charProcess } from './cmd'
 import { streamEmit } from './stream';
 import { states, chat_web } from './states'
@@ -203,47 +203,60 @@ io.sockets.on('connection',(socket)=>{
       switch(faceState.expression) {
         case "no expression":
           if(!faceState.flag) {
+            streamEmit("EMPTY", io, states)
             // send empty
             faceState.flag = true
           }
           break
         case "gluttony":
-          io.to(states.client[0]).emit('squareFromServer', speed)
+          console.log('whitenoise')
+          cmdEmit("WHITENOISE", io, states)
           break
         case "greed":
+          console.log('click')
           cmdEmit("CLICK", io, states)
           break
         case "envy":
           if(!faceState.flag) {
-            // send chat
+            sinewaveEmit(String(data.box._x + data.box._y), io, states)
+            /*
+            console.log('chat')
+            streamEmit("CHAT", io, states)
+            */
             faceState.flag = true
           }
           break
         case "lust":
           if(!faceState.flag) {
-            // send feedback
+            console.log('bass')
+            cmdEmit("BASS", io, states)
             faceState.flag = true
           }
           break
         case "wrath":
+          console.log('sinewave')
           // send sinewave(frequency: speed)
           break
         case "pride":
           if(!faceState.flag) {
-            // send bass
+            console.log('feedback')
+            cmdEmit("FEEDBACK", io, states)
             faceState.flag = true
           }
           break
         case "sloth":
           if(!faceState.flag) {
             // send playback
+            streamEmit("PLAYBACK", io, states)
             faceState.flag = true
           }
           break
       }
       //io.to(states.client[0]).emit('squareFromServer', speed)  
     } else {
-      stopEmit(io, states)
+      if(faceState.expression !== 'greed') {
+        stopEmit(io, states)
+      }
       faceState.previousFace.x = 0
       faceState.previousFace.y = 0
       faceState.flag = false
