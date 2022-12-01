@@ -10,6 +10,8 @@ import {cnvs, ctx, videoElement,} from './globalVariable'
 
 import {keyDown} from './textInput'
 
+import {newWindowReqType} from '../types/global'
+
 let start = false
 
 let darkFlag = false
@@ -289,6 +291,10 @@ socket.on('voiceFromServer', (data: {text: string, lang: string}) => {
 
 socket.on('gainFromServer', (data) => {
   gainChange(data)
+})
+
+socket.on('windowReqFromServer', (data: newWindowReqType) => {
+  window.open(data.URL, '_blank', 'width=' + String(data.width) + ',height=' + String(data.height) + ',top=' + String(data.top) + ',left=' + String(data.left))
 })
 
 // disconnect時、1秒後再接続
