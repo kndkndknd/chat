@@ -76,22 +76,28 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
   emitVoice(io, strings, state)
 
   if(strings === 'MERCARI') {
-    const mercariData: newWindowReqType = {
-      URL: '',
-      width: 0,
-      height: 0,
-      top: 0,
-      left: 0
-    }
-    io.to(state.client[0]).emit('windowReqFromServer', mercariData)
+    mercariUrlArr.forEach((element, index) => {
+      setTimeout(() => {
+        const mercariData: newWindowReqType = {
+          URL: element,
+          width: 1920/2,
+          height: 1080/2,
+          top: 1080 * Math.random(),
+          left: 1920  * Math.random()
+        }
+        io.to(state.client[0]).emit('windowReqFromServer', mercariData)
+    
+      }, index * 3000)
+
+    })
   } else if(strings === 'MERCARI NO MAI' || strings === 'SUZUKIIIIIIIIII') {
     SuzukiiiiiiiiiiTweetArr.forEach((element, index) => {
       const suzukiiiiiiiiiiData: newWindowReqType = {
         URL: element,
-        width: index,
-        height: index,
-        top: index,
-        left: index
+        width: 1920/3,
+        height: 1080/3,
+        top: 1080 * Math.random(),
+        left: 1920  * Math.random()
       }
       io.to(state.client[0]).emit('windowReqFromServer', suzukiiiiiiiiiiData)
 
