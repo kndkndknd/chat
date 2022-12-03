@@ -14,11 +14,16 @@ import { statusList, pathList, statusClient } from './statusList'
 import { chatReceive } from './stream'
 
 import { selectOtherClient, roomEmit, pickupTarget, pickCmdTarget, cmdSelect } from './route';
+import { cmdEmit, sinewaveEmit, stopEmit } from './cmd';
 import { charProcess } from './cmd'
 import { streamEmit } from './stream';
 import { states, chat_web } from './states'
 
 import { buffStateType } from '../types/global';
+
+// face
+import { faceState } from './states';
+import { sevenSinsType } from '../types/global';
 
 //https鍵読み込み
 const options = {
@@ -96,15 +101,16 @@ app.get('/orientation', function(req, res, next) {
     res.json({ success: false, message: "Something went wrong" });
   }
 })
-app.get('/faceapi', function(req, res, next) {
+*/
+app.get('/face', function(req, res, next) {
   try {
-    res.sendFile(path.join(__dirname, '../client/static', 'faceapi.html'));
+    res.sendFile(path.join(__dirname, '../client/static', 'face.html'));
   } catch (error) {
     console.log(error)
     res.json({ success: false, message: "Something went wrong" });
   }
 })
-*/
+
 app.get('/vosk', function(req, res, next) {
   try {
     res.sendFile(path.join(__dirname, '../client/static', 'vosk.html'));
@@ -113,7 +119,6 @@ app.get('/vosk', function(req, res, next) {
     res.json({ success: false, message: "Something went wrong" });
   }
 })
-
 
 
 const port = 8888;
@@ -128,6 +133,8 @@ if("en0" in os.networkInterfaces()){
 }
 
 let strings = "";
+const previousFace = {x: 0, y: 0}
+
 io.sockets.on('connection',(socket)=>{
   socket.on("connectFromClient", (data) => {
     if(!states.stream.timelapse) states.stream.timelapse = true 
@@ -175,6 +182,98 @@ io.sockets.on('connection',(socket)=>{
     io.emit('orientationFromServer', deviceorientation)
   })
   */
+
+
+  // face
+  socket.on('faceFromClient', (data) => {
+    console.log(data)
+    //cmdEmit("CLICK", io, states)
+    if(data.detection) {
+      //if(!faceState.flag) faceState.flag = true
+      const speed = (data.box._x - faceState.previousFace.x)^2 + (data.box._y - faceState.previousFace.y)^2
+      faceState.previousFace.x = data.box._x
+      faceState.previousFace.y = data.box._y
+      console.log(previousFace)
+      console.log("speed :" + String(speed))
+      // console.log(speed)
+      const targetClient = states.client[0]
+      console.log(targetClient)
+      switch(faceState.expression) {
+        case "no expression":
+          if(!faceState.flag) {
+            streamEmit("EMPTY", io, states)
+            // send empty
+            faceState.flag = true
+          }
+          break
+        case "gluttony":
+          console.log('whitenoise')
+          cmdEmit("WHITENOISE", io, states)
+          break
+        case "greed":
+          console.log('click')
+          cmdEmit("CLICK", io, states)
+          break
+        case "envy":
+          if(!faceState.flag) {
+            sinewaveEmit(String(data.box._x + data.box._y), io, states)
+            /*
+            console.log('chat')
+            streamEmit("CHAT", io, states)
+            */
+            faceState.flag = true
+          }
+          break
+        case "lust":
+          if(!faceState.flag) {
+            console.log('bass')
+            cmdEmit("BASS", io, states)
+            faceState.flag = true
+          }
+          break
+        case "wrath":
+          console.log('sinewave')
+          // send sinewave(frequency: speed)
+          break
+        case "pride":
+          if(!faceState.flag) {
+            console.log('feedback')
+            cmdEmit("FEEDBACK", io, states)
+            faceState.flag = true
+          }
+          break
+        case "sloth":
+          if(!faceState.flag) {
+            // send playback
+            streamEmit("PLAYBACK", io, states)
+            faceState.flag = true
+          }
+          break
+      }
+      //io.to(states.client[0]).emit('squareFromServer', speed)  
+    } else {
+      if(faceState.expression !== 'greed') {
+        stopEmit(io, states)
+      }
+      faceState.previousFace.x = 0
+      faceState.previousFace.y = 0
+      faceState.flag = false
+    }
+  })
+  socket.on('expressionFromClient', (data: sevenSinsType) => {
+    console.log(data)
+    faceState.expression = data
+    faceState.flag = false
+    // strings = charProcess(data,strings, socket.id, io, states);
+
+    /*
+    states.cmd.VOICE.forEach((element) => {
+      io.to(element).emit('voiceFromServer', {text: data, lang: states.cmd.voiceLang})
+    })
+    */
+      
+
+  })
 
   socket.on("disconnect", () =>{
     console.log('disconnect: ' + String(socket.id));

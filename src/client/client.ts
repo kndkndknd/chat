@@ -10,6 +10,8 @@ import {cnvs, ctx, videoElement,} from './globalVariable'
 
 import {keyDown} from './textInput'
 
+import {newWindowReqType} from '../types/global'
+
 let start = false
 
 let darkFlag = false
@@ -291,6 +293,11 @@ socket.on('gainFromServer', (data) => {
   gainChange(data)
 })
 
+socket.on('windowReqFromServer', (data: newWindowReqType) => {
+  window.open(data.URL, '_blank', 'width=' + String(data.width) + ',height=' + String(data.height) + ',top=' + String(data.top) + ',left=' + String(data.left))
+  click(1.0)
+})
+
 // disconnect時、1秒後再接続
 socket.on('disconnect', ()=>{
   console.log("disconnect")
@@ -309,11 +316,20 @@ export const initialize = async () => {
   if (SUPPORTS_MEDIA_DEVICES && navigator.mediaDevices.getUserMedia) {
     const devices = await navigator.mediaDevices.enumerateDevices()
     const cameras = devices.filter((device) => device.kind === 'videoinput');
+    const mics = devices.filter((device) => device.kind === 'audioinput');
     if (cameras.length === 0) {
       throw 'No camera found on this device.'
     }
 //    const camera = cameras[cameras.length - 1]
     const camera = cameras[0];
+    const mic = mics.filter((element)=>{
+      if(element.label.includes("Microphone Array")){
+        console.log(element.label)
+        return element
+      }
+    })[0]
+    console.log(mics)
+    console.log(mic)
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
         //facingMode: 'environment'
@@ -322,6 +338,7 @@ export const initialize = async () => {
         height: {ideal: 1080},
         width: {ideal: 1920}
       },audio : {
+        deviceId: mic.deviceId,
         sampleRate: {ideal: 44100},
         echoCancellation: false,
         noiseSuppression: false,

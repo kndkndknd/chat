@@ -232,3 +232,13 @@ export type buffArrayType = {
   },
 }
 */
+
+export type sevenSinsType = "pride" | "greed" | "envy" | "wrath" | "lust" | "gluttony" | "sloth" | "no expression"
+
+export type newWindowReqType = {
+  URL: string,
+  width: number,
+  height: number,
+  top: number,
+  left: number
+}
