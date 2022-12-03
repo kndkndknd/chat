@@ -111,7 +111,6 @@ app.get('/face', function(req, res, next) {
   }
 })
 
-/*
 app.get('/vosk', function(req, res, next) {
   try {
     res.sendFile(path.join(__dirname, '../client/static', 'vosk.html'));
@@ -120,7 +119,6 @@ app.get('/vosk', function(req, res, next) {
     res.json({ success: false, message: "Something went wrong" });
   }
 })
-*/
 
 
 const port = 8888;
