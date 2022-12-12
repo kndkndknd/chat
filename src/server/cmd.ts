@@ -1,5 +1,5 @@
 import SocketIO from 'socket.io'
-import { cmdStateType } from '../types/global'
+import { cmdStateType, gridType } from '../types/global'
 import { cmdList, streamList, parameterList, states } from './states'
 import { uploadStream } from './upload'
 import { streamEmit } from './stream'
@@ -478,19 +478,23 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
       break
     case 'GRID':
       if(arg && arg.property) {
-        state.stream.grid[arg.property] = !state.stream.grid[arg.property]
+        if(state.stream.grid[arg.property] === 'grid') {
+          state.stream.grid[arg.property] = 'no grid'
+        } else {
+          state.stream.grid[arg.property] = 'grid'
+        }
         // io.emit('stringsFromServer',{strings: 'GRID: ' + String(state.stream.grid[arg.property]) + '(' + arg.property + ')', timeout: true})
         putString(io, 'GRID: ' + String(state.stream.grid[arg.property]) + '(' + arg.property + ')', state)
       } else {
-        let flag = false
-        if(Object.values(states.stream.grid).includes(false)) {
-          flag = true
+        let flag: gridType = 'no grid'
+        if(Object.values(states.stream.grid).includes('no grid')) {
+          flag = 'grid'
         }
         for(let source in state.stream.grid) {
           state.stream.grid[source] = flag
         }
         // io.emit('stringsFromServer',{strings: 'GRID: ' + String(state.stream.grid.CHAT), timeout: true})
-        putString(io, 'GRID: ' + String(state.stream.grid.CHAT), state)
+        putString(io, state.stream.grid.CHAT, state)
       }
       break
     case 'BPM':
@@ -643,6 +647,22 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
           putString(io, 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(state.stream.randomrate[stringArr[2]]), state)
         }
         console.log(state.stream.randomrate)
+      } else if(stringArr[1] === 'GRID') {
+        // SAMPLERATEのランダマイズ
+        console.log('random grid')
+        if(stringArr.length === 2) {
+          for(let key in state.stream.grid) {
+            state.stream.grid[key] = 'random'
+          }
+          // io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM: ' + String(state.stream.randomrate.CHAT), timeout: true})
+          putString(io, state.stream.grid.CHAT, state)
+        } else if(stringArr.length === 3 && Object.keys(state.stream.randomrate).includes(stringArr[2])) {
+          state.stream.grid[stringArr[2]] = 'random'
+          //io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(state.stream.randomrate[stringArr[2]]), timeout: true})
+          putString(io, stringArr[2] + ' GRID: ' + state.stream.grid[stringArr[2]], state)
+        }
+        console.log(state.stream.grid)
+
       }
     } else if (stringArr[0] === 'VOICE') {
       //  } else if (stringArr[0] === 'VOICE' && stringArr.length === 2 && arrTypeArr[1] === 'string') {

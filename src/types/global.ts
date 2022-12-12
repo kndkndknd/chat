@@ -15,7 +15,7 @@ export type cmdType = {
   flag?: boolean
 }
 
-
+export type gridType = 'no grid' | 'grid' | 'random'
 
 export type cmdStateType = {
   client: Array<string>,
@@ -86,7 +86,7 @@ export type cmdStateType = {
       [key: string]: boolean
     },
     grid: {
-      [key: string]: boolean
+      [key: string]: gridType
     },
     glitch: {
       [key: string]: boolean
@@ -97,7 +97,7 @@ export type cmdStateType = {
     },
     randomrate: {
       [key: string]: boolean
-    }
+    },
     quantize: boolean,
     loop: boolean,
     timelapse: boolean,

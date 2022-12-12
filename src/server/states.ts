@@ -80,9 +80,9 @@ export const states: cmdStateType = {
       TIMELAPSE: false,
     },
     grid: {
-      CHAT: false,
-      PLAYBACK: false,
-      TIMELAPSE: false,
+      CHAT: 'no grid',
+      PLAYBACK: 'no grid',
+      TIMELAPSE: 'no grid',
     },
     glitch: {
       CHAT: false,

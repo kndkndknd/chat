@@ -84,14 +84,22 @@ export const streamEmit = (source: string, io: SocketIO.Server, state: cmdStateT
       }
       
       if(!stream.video) console.log("not video")
-      if(!state.stream.grid[source]) {
-        io.to(targetId).emit('streamFromServer', stream)  
-      } else {
+      
+      if(state.stream.grid[source] === 'no grid') {
+        io.to(targetId).emit('streamFromServer', stream)
+      } else if(state.stream.grid[source] === 'grid') {
         const timeOutVal = Math.round(Math.random() * 16) * states.stream.latency[source] / 4
         setTimeout(()=> {
           io.to(targetId).emit('streamFromServer', stream)  
         }, timeOutVal)
-      }  
+      } else {
+        const timeOutVal = Math.random() * 16 * states.stream.latency[source] / 4
+        console.log('timeoutval: ' + String(timeOutVal))
+        setTimeout(()=> {
+          io.to(targetId).emit('streamFromServer', stream)  
+        }, timeOutVal)
+
+      }
     } else {
       console.log('no buffer')
     }

@@ -40,7 +40,7 @@ const pushStateStream = (streamName:string, states:cmdStateType) => {
   states.previous.stream[streamName] = false
   states.stream.sampleRate[streamName] = 44100
   states.stream.glitch[streamName] = false
-  states.stream.grid[streamName] = false
+  states.stream.grid[streamName] = 'no grid'
   states.stream.latency[streamName] = 1000
   states.stream.random[streamName] = false
   states.stream.randomrate[streamName] = false
