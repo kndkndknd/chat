@@ -43,7 +43,6 @@ const pushStateStream = (streamName:string, states:cmdStateType) => {
   states.stream.grid[streamName] = 'no grid'
   states.stream.latency[streamName] = 1000
   states.stream.random[streamName] = false
-  states.stream.randomrate[streamName] = false
 }
 
 export const uploadStream = async (stringArr, io) => {

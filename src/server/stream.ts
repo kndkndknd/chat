@@ -79,7 +79,7 @@ export const streamEmit = (source: string, io: SocketIO.Server, state: cmdStateT
         ...buff
       }
       
-      if(state.stream.randomrate[source]) {
+      if(state.stream.sampleRate[source] === 'random') {
         stream.sampleRate = 11025 + Math.floor(Math.random() * 10) * 11025
       }
       
@@ -120,7 +120,7 @@ export const chatReceive = (buffer:buffStateType, io: SocketIO.Server) => {
           glitch: states.stream.glitch.CHAT,
           ...streams.CHAT.shift()
         }
-        if(states.stream.randomrate.CHAT) {
+        if(states.stream.sampleRate.CHAT === 'random') {
           chunk.sampleRate = 11025 + Math.floor(Math.random() * 10) * 11025
 //          console.log(chunk.sampleRate)
         }
@@ -130,10 +130,16 @@ export const chatReceive = (buffer:buffStateType, io: SocketIO.Server) => {
         console.log(states.client)
         const targetId = states.client[Math.floor(Math.random() * states.client.length)]
         console.log(targetId)
-        if(!states.stream.grid[buffer.target]) {
+        if(states.stream.grid[buffer.target] === 'no grid') {
           io.to(targetId).emit('chatFromServer',chunk)
-        } else {
+        } else if(states.stream.grid[buffer.target] === 'grid') {
           const timeOutVal = Math.round(Math.random() * 16) * states.stream.latency.CHAT / 4
+          setTimeout(() => {
+            io.to(targetId).emit('chatFromServer',chunk)
+          }, timeOutVal)
+        } else {
+          const timeOutVal = Math.random() * 16 * states.stream.latency.CHAT / 4
+          console.log('timeoutval: ' + String(timeOutVal))
           setTimeout(() => {
             io.to(targetId).emit('chatFromServer',chunk)
           }, timeOutVal)

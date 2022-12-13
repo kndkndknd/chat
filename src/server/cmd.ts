@@ -423,18 +423,27 @@ export const parameterChange = (param: string, io: SocketIO.Server, state: cmdSt
       putString(io, 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', state)
       break
     case 'SAMPLERATE':
-      for(let key in state.stream.randomrate) {
-        if(state.stream.randomrate[key]) state.stream.randomrate[key] = false
-      }
       let sampleRate = 44100
       if(arg && isFinite(Number(arg.value))) { 
         sampleRate = arg.value
       } else {
         const sampleArr = Object.values(state.stream.sampleRate)
+        /*
         const sum = sampleArr.reduce((accumulator, currentValue) => {
           return accumulator + currentValue
         })
+        */
+        let sum = 0
+        for(let i=0;i<sampleArr.length;i++) {
+          const n = sampleArr[i]
+          if(typeof n === 'number'){
+            sum = sum + n
+          } else {
+            sum = sum + 44100
+          }
+        }
         const average = sum / sampleArr.length
+
         if(average < 11025 || average >= 88200) {
           sampleRate = 11025
         } else if(average < 22050) {
@@ -636,17 +645,17 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
         // SAMPLERATEのランダマイズ
         console.log('random rate')
         if(stringArr.length === 2) {
-          for(let key in state.stream.randomrate) {
-            state.stream.randomrate[key] = !state.stream.randomrate[key]
+          for(let key in state.stream.sampleRate) {
+            state.stream.sampleRate[key] = 'random'
           }
           // io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM: ' + String(state.stream.randomrate.CHAT), timeout: true})
-          putString(io, 'SAMPLERATE RANDOM: ' + String(state.stream.randomrate.CHAT), state)
-        } else if(stringArr.length === 3 && Object.keys(state.stream.randomrate).includes(stringArr[2])) {
-          state.stream.randomrate[stringArr[2]] = !state.stream.randomrate[stringArr[2]]
+          putString(io, 'SAMPLERATE RANDOM: true', state)
+        } else if(stringArr.length === 3 && Object.keys(state.stream.sampleRate).includes(stringArr[2])) {
+          state.stream.sampleRate[stringArr[2]] = 'random'
           //io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(state.stream.randomrate[stringArr[2]]), timeout: true})
-          putString(io, 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(state.stream.randomrate[stringArr[2]]), state)
+          putString(io, 'SAMPLERATE RANDOM(' + stringArr[2] + '): true', state)
         }
-        console.log(state.stream.randomrate)
+        console.log(state.stream.sampleRate)
       } else if(stringArr[1] === 'GRID') {
         // SAMPLERATEのランダマイズ
         console.log('random grid')
@@ -656,7 +665,7 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
           }
           // io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM: ' + String(state.stream.randomrate.CHAT), timeout: true})
           putString(io, state.stream.grid.CHAT, state)
-        } else if(stringArr.length === 3 && Object.keys(state.stream.randomrate).includes(stringArr[2])) {
+        } else if(stringArr.length === 3 && Object.keys(state.stream.sampleRate).includes(stringArr[2])) {
           state.stream.grid[stringArr[2]] = 'random'
           //io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(state.stream.randomrate[stringArr[2]]), timeout: true})
           putString(io, stringArr[2] + ' GRID: ' + state.stream.grid[stringArr[2]], state)

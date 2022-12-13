@@ -95,11 +95,6 @@ export const states: cmdStateType = {
       PLAYBACK: 1000,
       TIMELAPSE: 1000,
     },
-    randomrate: {
-      CHAT: false,
-      PLAYBACK: false,
-      TIMELAPSE: false
-    },
     quantize: false,
     loop: false,
     timelapse: false,

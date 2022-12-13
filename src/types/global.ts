@@ -80,7 +80,7 @@ export type cmdStateType = {
   },
   stream: {
     sampleRate: {
-      [key: string]: number
+      [key: string]: number | 'random'
     },
     random: {
       [key: string]: boolean
@@ -94,9 +94,6 @@ export type cmdStateType = {
     glitchSampleRate: number,
     latency: {
       [key: string]: number
-    },
-    randomrate: {
-      [key: string]: boolean
     },
     quantize: boolean,
     loop: boolean,
