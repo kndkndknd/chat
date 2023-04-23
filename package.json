@@ -23,7 +23,8 @@
     "request": "^2.88.2",
     "serve-favicon": "^2.5.0",
     "socket.io": "^4.5.4",
-    "vosk-browser": "^0.0.7",
+    "vosk": "^0.3.39",
+    "vosk-browser": "^0.0.8",
     "ws": "^8.11.0"
   },
   "devDependencies": {

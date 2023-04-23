@@ -1,0 +1,97 @@
+<html>
+  <head>
+    <title>vosk test</title>
+    <script type="application/javascript" src="https://cdn.jsdelivr.net/npm/vosk-browser@0.0.3/dist/vosk.js"></script>
+    <script>
+      //
+      let model = null
+
+      // 初期化処理
+      async function init() {
+        // 権限取得のための素振り
+        const s = await navigator.mediaDevices.getUserMedia({video: false, audio: true})
+        s.getTracks().forEach(t => t.stop())
+
+        // マイク列挙処理
+        const select = document.getElementById('micSelect')
+        navigator.mediaDevices.enumerateDevices().then(devices => {
+          devices.filter(d => d.kind === "audioinput").forEach(d => {
+            const option = document.createElement('option')
+            option.value = d.deviceId
+            option.innerText = d.label
+            select.append(option)
+          })
+        })
+        // 同一ディレクトリの model.tar.gz を（Webから）読み込む。
+        model = await Vosk.createModel('model/model.tar.gz')
+
+        // ボタン有効化
+        document.getElementById('start').disabled = false
+      }
+
+      // ボタンの処理
+      async function start() {
+        document.getElementById('start').disabled = true
+
+        const recognizer = new model.KaldiRecognizer()
+
+        const result = document.getElementById('result')
+
+        // 文章確定時はdivに流し込む
+        recognizer.on('result', event => {
+          const p = document.createElement('p')
+          p.innerText = event.result.text
+          result.append(p)
+        })
+
+        // 部分的結果はspanでリアルタイム表示してみる
+        recognizer.on('partialresult', event => {
+          const p = document.getElementById('partialResult')
+          p.innerText = event.result.partial
+        })
+
+        // 選択されたマイクをオープン
+        const select = document.getElementById('micSelect')
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: false,
+          audio: {
+            deviceId: select.value,
+            echoCancellation: true,
+            noiseSuppression: true,
+            channelCount: 1
+          }
+        })
+
+        // WebAudioでノードをつなぐ
+        const audioContext = new AudioContext()
+
+        // AudioWorkletにするのも複雑なんでdeprecatedだけどサンプル通りScriptProcessorNodeで実装
+        // 言語バインディングによって異なるが、JavaScriptバインディングは AudioBuffer を受け取るので
+        // ScriptProcessorNode が一番簡単。f32-plannerでも受け取ってくれる
+        const recognizerNode = audioContext.createScriptProcessor(4096, 1, 1)
+        recognizerNode.onaudioprocess = event => {
+          try {
+            // 認識エンジンに突っ込む
+            recognizer.acceptWaveform(event.inputBuffer)
+            // outputをゼロフィル（無音化）しておく
+            // 何もしなくても無音かも
+            event.outputBuffer.getChannelData(0).fill(0)
+          } catch (err) {
+            console.error(err)
+          }
+        }
+
+        // destinationまでつながないと動かないような・・・？
+        const sourceNode = audioContext.createMediaStreamSource(stream)
+        sourceNode.connect(recognizerNode).connect(audioContext.destination)
+      }
+    </script>
+  </head>
+  <body onload="init()">
+    <select id="micSelect">
+    </select>
+    <button id="start" onclick="start()" disabled="true">start</button>
+    <div><span>PartialResult:</span><span id="partialResult"></span></div>
+    <div id="result"></div>
+  </body>
+</html>
