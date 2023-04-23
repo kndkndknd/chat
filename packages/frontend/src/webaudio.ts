@@ -149,7 +149,7 @@ export const initAudio = () =>{
 
 }
 
-export const initAudioStream = (stream) => {
+export const initAudioStream = (stream: MediaStream) => {
   console.log('debug2')
   let mediastreamsource: MediaStreamAudioSourceNode
   mediastreamsource = audioContext.createMediaStreamSource(stream)
@@ -370,7 +370,7 @@ export const metronome = (flag: boolean, latency: number, gain: number) => {
     clearInterval(metronomeIntervId)
   }
 }
-
+/*
 var isInitialized = false;
 var audioctx, buffer;
 var src, overdrive, vol, feedbackAudioWorklet;
@@ -471,3 +471,4 @@ function Setup() {
   vol.gain.value = 1;
 }
 
+*/
