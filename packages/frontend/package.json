@@ -13,6 +13,7 @@
     "vite": "^4.3.0"
   },
   "dependencies": {
+    "@types/node": "^18.16.1",
     "face-api.js": "^0.22.2",
     "socket.io-client": "^4.6.1",
     "vosk-browser": "^0.0.8"

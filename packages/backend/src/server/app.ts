@@ -24,6 +24,7 @@ import { buffStateType } from '../types/global';
 // face
 import { faceState } from './states';
 import { sevenSinsType } from '../types/global';
+import { fetchNetWeights } from 'face-api.js';
 
 //https鍵読み込み
 const options = {
@@ -123,7 +124,18 @@ app.get('/vosk', function(req, res, next) {
 
 const port = 8888;
 const httpsserver = Https.createServer(options,app).listen(port);
-const io = new Server(httpsserver)
+
+const socketOptions = {
+  cors: {
+    origin: function (origin, callback) {
+      const isTarget = origin != undefined && origin.includes("localhost") !== null;
+      return isTarget ? callback(null, origin) : callback('error invalid domain');
+    },
+    credentials: true
+  }
+};
+
+const io = new Server(httpsserver, socketOptions)
 
 if("en0" in os.networkInterfaces()){
   console.log("server start in " + os.networkInterfaces().en0[0]["address"] + ":" + String(port));
