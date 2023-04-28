@@ -1,19 +1,19 @@
-import './style.css'
+import '../assets/css/style.css'
 
 import { io, Socket } from 'socket.io-client';
 const socket: Socket = io('https://localhost:8888/', {
   withCredentials: true
 });
 
-import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, } from './imageEvent'
+import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, } from '../components/imageEvent'
 
-import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate, metronome} from './webaudio'
+import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate, metronome} from '../components/webaudio'
 
-import {cnvs, ctx, videoElement,} from './globalVariable'
+import {cnvs, ctx, videoElement,} from '../components/globalVariable'
 
 //import {debugOn} from './socket'
 
-import {keyDown} from './textInput'
+import {keyDown} from '../components/textInput'
 
 // import {newWindowReqType} from '../types/global'
 
