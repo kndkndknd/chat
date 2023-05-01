@@ -1,6 +1,6 @@
 import SocketIO from 'socket.io'
 import { cmdStateType } from './types/global'
-import { cmdList, streamList, parameterList, states } from './states'
+import { cmdList, streamList, parameterList, states, streams } from './states'
 import { uploadStream } from './upload'
 import { streamEmit } from './stream'
 import e from 'express'
@@ -44,11 +44,32 @@ const notTargetEmit = (targetId: string, idArr: string[], io: SocketIO.Server) =
   })
 }
 
+const postMongo = async () => {
+  const body = {
+    'type': 'PLAYBACk',
+    'audio': streams.PLAYBACK[0].audio,
+    'video': streams.PLAYBACK[0].video,
+    'location': 'IE'
+  }
+  const options = {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: {
+      'Content-Type': 'application/json'
+    } 
+  }
+  const res = await fetch('http://192.168.0.220:3000/api/stream', options)
+}
+
 export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, state: cmdStateType) => {
   //VOICE
   emitVoice(io, strings, state)
 
-  if(strings === 'MACBOOK' || strings === 'THREE') {
+
+  if(strings === 'INSERT') {
+    const result = postMongo()
+    console.log(result)
+  } else if(strings === 'MACBOOK' || strings === 'THREE') {
     io.emit('threeSwitchFromServer', true)
   } else if(strings === 'CHAT') {
     console.log(state.current.stream.CHAT)
