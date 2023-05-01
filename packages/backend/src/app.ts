@@ -20,24 +20,26 @@ import { charProcess } from './cmd'
 import { streamEmit } from './stream';
 import { states, chat_web } from './states'
 
-import { buffStateType } from '../types/global';
+import { buffStateType } from './types/global';
 
 // face
 import { faceState } from './states';
-import { sevenSinsType } from '../types/global';
+import { sevenSinsType } from './types/global';
 import { fetchNetWeights } from 'face-api.js';
 
 //https鍵読み込み
+/*
 const options = {
   key: fs.readFileSync(path.join(__dirname,'../../..','keys/privkey.pem')),
   cert: fs.readFileSync(path.join(__dirname,'../../..', 'keys/cert.pem'))
 }
+*/
 
 
 const app = Express();
 
 app.use(Express.static(path.join(__dirname, '..', 'client')));
-app.use(favicon(path.join(__dirname, '../..' ,'lib/favicon.ico')));
+app.use(favicon(path.join(__dirname, '..' ,'lib/favicon.ico')));
 
 app.get('/', function(req, res, next) {
   try {

@@ -5,12 +5,9 @@
   "main": "app.js",
   "private": true,
   "scripts": {
-    "demon": "./node_modules/.bin/nodemon app.js",
-    "watch": "webpack --watch --mode development",
-    "build": "webpack --mode development",
-    "dev": "npx tsc && webpack --mode development && node ./dist/server/app.js",
-    "start": "node ./dist/server/app.js",
-    "tsnode": "ts-node app.ts",
+    "dev": "npx tsc && node ./dist/app.js",
+    "start": "node ./dist/app.js",
+    "tsnode": "ts-node ./src/app.ts",
     "tsc": "tsc"
   },
   "author": "knd",

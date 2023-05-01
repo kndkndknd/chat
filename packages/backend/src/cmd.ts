@@ -1,11 +1,11 @@
 import SocketIO from 'socket.io'
-import { cmdStateType } from '../types/global'
+import { cmdStateType } from './types/global'
 import { cmdList, streamList, parameterList, states } from './states'
 import { uploadStream } from './upload'
 import { streamEmit } from './stream'
 import e from 'express'
 
-import { newWindowReqType } from '../types/global'
+import { newWindowReqType } from './types/global'
 
 export function charProcess(character:string, strings: string, id: string, io: SocketIO.Server, state: cmdStateType) {
   //console.log(character)

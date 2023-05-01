@@ -1,6 +1,6 @@
 import { streams, cmdList, streamList, parameterList, states, uploadParams, basisBufferSize } from './states'
 import SocketIO from 'socket.io'
-import { cmdStateType } from '../types/global';
+import { cmdStateType } from './types/global';
 
 const pcm = require('pcm');
 const fs = require('fs');

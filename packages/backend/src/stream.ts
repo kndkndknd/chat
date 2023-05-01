@@ -1,5 +1,5 @@
 import SocketIO from 'socket.io';
-import { cmdStateType, buffStateType } from '../types/global'
+import { cmdStateType, buffStateType } from './types/global'
 import { streams, states, basisBufferSize } from './states'
 
 
