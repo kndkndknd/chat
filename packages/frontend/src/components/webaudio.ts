@@ -20,7 +20,11 @@ let metronomeIntervId: NodeJS.Timer
 // const ctx  = <CanvasRenderingContext2D>cnvs.getContext('2d');
 
 
-const socket: Socket = io();
+// const socket: Socket = io();
+const socket: Socket = io('https://localhost:8888/', {
+  withCredentials: true
+});
+
 
 let audioContext: AudioContext
 let masterGain: GainNode
@@ -171,7 +175,7 @@ const onAudioProcess = (e: AudioProcessingEvent) => {
   if(streamFlag.chat) {
     let bufferData = {target: 'CHAT', video:toBase64(), audio: new Float32Array(bufferSize), bufferSize: bufferSize, duration: e.inputBuffer.duration}
     e.inputBuffer.copyFromChannel(bufferData.audio, 0);
-    // console.log(bufferData.audio)
+    // console.log(bufferData)
     socket.emit('chatFromClient', bufferData)
     streamFlag.chat = false
   }

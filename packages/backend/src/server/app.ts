@@ -132,7 +132,8 @@ const socketOptions = {
       return isTarget ? callback(null, origin) : callback('error invalid domain');
     },
     credentials: true
-  }
+  },
+  maxHttpBufferSize: 1e8,
 };
 
 const io = new Server(httpsserver, socketOptions)

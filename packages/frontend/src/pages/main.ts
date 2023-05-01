@@ -18,6 +18,33 @@ import {keyDown} from '../components/textInput'
 // import {newWindowReqType} from '../types/global'
 
 
+// for snowleopard(navigator.getUserMedia)
+interface NavigatorWithDeprecatedGetUserMedia extends Navigator {
+  getUserMedia: (
+    constraints: MediaStreamConstraints,
+    successCallback: (stream: MediaStream) => void,
+    errorCallback: (error: Error) => void
+  ) => void;
+}
+const navigatorWithDeprecatedGetUserMedia = navigator as NavigatorWithDeprecatedGetUserMedia;
+
+function getUserMedia(
+  constraints: MediaStreamConstraints
+): Promise<MediaStream> {
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    return navigator.mediaDevices.getUserMedia(constraints);
+  }
+
+  return new Promise<MediaStream>((resolve, reject) => {
+    const navigatorWithDeprecatedGetUserMedia = navigator as NavigatorWithDeprecatedGetUserMedia;
+    navigatorWithDeprecatedGetUserMedia.getUserMedia(
+      constraints,
+      (stream) => resolve(stream),
+      (error) => reject(error)
+    );
+  });
+}
+
 let start = false
 
 let cinemaFlag = false
@@ -311,6 +338,17 @@ export const initialize = async () => {
   await initVideo(videoElement)
   await initAudio()
 
+  const stream = await getUserMedia({video: true, audio: true})
+  await initAudioStream(stream)
+  await initVideoStream(stream, videoElement)
+  await console.log(stream)
+  await textPrint('initialized', ctx, cnvs)
+  await socket.emit('connectFromClient', 'client')
+  await setTimeout(() => {
+    erasePrint(ctx, cnvs)
+  }, 500);
+
+  /*
   const SUPPORTS_MEDIA_DEVICES = 'mediaDevices' in navigator
   if (SUPPORTS_MEDIA_DEVICES && navigator.mediaDevices.getUserMedia) {
     const devices = await navigator.mediaDevices.enumerateDevices()
@@ -355,7 +393,7 @@ export const initialize = async () => {
   } else {
     textPrint('not support navigator.mediaDevices.getUserMedia', ctx, cnvs)
   }
-  
+  */
   start = true
   timelapseId = setInterval(() => {
     streamFlag.timelapse = true

@@ -9,7 +9,6 @@ const bckcnvsContext = bckcnvsElement.getContext('2d');
 export function textPrint(text: string, stx: CanvasRenderingContext2D, strCnvs:HTMLCanvasElement) {
   stx.fillStyle = 'white';
   stx.fillRect(0, 0, strCnvs.width, strCnvs.height);
-  console.log(text)
   print(text, stx, strCnvs)
 }
 
@@ -23,7 +22,7 @@ export function clearTextPrint(text: string, stx: CanvasRenderingContext2D, strC
 
 }
 
-export function erasePrint(ctx, cnvs) {
+export function erasePrint(ctx: CanvasRenderingContext2D, cnvs: HTMLCanvasElement) {
   ctx.clearRect(0, 0, cnvs.width, cnvs.height);
 //  ctx.fillStyle = 'white';
 //  ctx.fillRect(0, 0, cnvs.width, cnvs.height);
@@ -79,8 +78,8 @@ export function toBase64(){
   }
   const returnURL = canvasElement.toDataURL("image/jpeg")
 //  const returnURL = canvasElement.toDataURL()
-//  console.log(returnURL)
-return returnURL
+  // console.log(returnURL)
+  return returnURL
 }
 
 export function renderStart(){

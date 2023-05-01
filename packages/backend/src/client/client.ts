@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client';
 const socket: Socket = io();
 import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, } from './imageEvent'
 
-import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate, metronome, gainChange} from './webaudio'
+import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate, metronome} from './webaudio'
 
 import {cnvs, ctx, videoElement,} from './globalVariable'
 
@@ -290,7 +290,7 @@ socket.on('voiceFromServer', (data: {text: string, lang: string}) => {
 })
 
 socket.on('gainFromServer', (data) => {
-  gainChange(data)
+  // gainChange(data)
 })
 
 socket.on('windowReqFromServer', (data: newWindowReqType) => {
