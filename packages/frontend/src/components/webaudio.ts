@@ -21,7 +21,11 @@ let metronomeIntervId: NodeJS.Timer
 
 
 // const socket: Socket = io();
-const socket: Socket = io('https://localhost:8888/', {
+// const socket: Socket = io('https://localhost:8888/', {
+  // withCredentials: true
+// });
+const socket: Socket = io('/', {
+  path: "/socket.io",
   withCredentials: true
 });
 

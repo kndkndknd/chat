@@ -36,8 +36,8 @@ export default defineConfig({
     },
     proxy: {
       '/socket.io': {
-        target: 'ws://localhost:8888',
-        ws: true
+        target: 'http://localhost:8888',
+        ws: true,
       }
     }
   },

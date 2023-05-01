@@ -9,6 +9,7 @@ import * as path from "path"
 import { default as favicon } from 'serve-favicon'
 
 import * as Https from 'https'
+import * as Http from 'http'
 import { Server } from "socket.io"
 import { statusList, pathList, statusClient } from './statusList'
 import { chatReceive } from './stream'
@@ -123,7 +124,8 @@ app.get('/vosk', function(req, res, next) {
 
 
 const port = 8888;
-const httpsserver = Https.createServer(options,app).listen(port);
+//const httpsserver = Https.createServer(options,app).listen(port);
+const httpserver = Http.createServer(app).listen(port)
 
 /*
 const socketOptions = {
@@ -139,7 +141,7 @@ const socketOptions = {
 */
 
 // const io = new Server(httpsserver, socketOptions)
-const io = new Server(httpsserver, {
+const io = new Server(httpserver, {
   path: "/socket.io",
 })
 if("en0" in os.networkInterfaces()){
