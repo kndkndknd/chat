@@ -1,9 +1,17 @@
 import '../assets/css/style.css'
 
 import { io, Socket } from 'socket.io-client';
+/*
 const socket: Socket = io('https://localhost:8888/', {
   withCredentials: true
 });
+*/
+
+const socket: Socket = io('/', {
+  path: "/socket.io",
+  withCredentials: true
+});
+
 
 import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, } from '../components/imageEvent'
 

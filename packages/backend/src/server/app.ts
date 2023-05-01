@@ -125,6 +125,7 @@ app.get('/vosk', function(req, res, next) {
 const port = 8888;
 const httpsserver = Https.createServer(options,app).listen(port);
 
+/*
 const socketOptions = {
   cors: {
     origin: function (origin, callback) {
@@ -135,9 +136,12 @@ const socketOptions = {
   },
   maxHttpBufferSize: 1e8,
 };
+*/
 
-const io = new Server(httpsserver, socketOptions)
-
+// const io = new Server(httpsserver, socketOptions)
+const io = new Server(httpsserver, {
+  path: "/socket.io",
+})
 if("en0" in os.networkInterfaces()){
   console.log("server start in " + os.networkInterfaces().en0[0]["address"] + ":" + String(port));
 } else {

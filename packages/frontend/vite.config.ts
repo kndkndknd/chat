@@ -33,6 +33,12 @@ export default defineConfig({
     https: {
       key: fs.readFileSync('../keys/privkey.pem'),
       cert: fs.readFileSync('../keys/cert.pem'),
+    },
+    proxy: {
+      '/socket.io': {
+        target: 'ws://localhost:8888',
+        ws: true
+      }
     }
   },
 })
