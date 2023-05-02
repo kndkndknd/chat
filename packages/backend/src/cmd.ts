@@ -46,9 +46,9 @@ const notTargetEmit = (targetId: string, idArr: string[], io: SocketIO.Server) =
 
 const postMongo = async () => {
   const body = {
-    'type': 'PLAYBACk',
-    'audio': streams.PLAYBACK[0].audio,
-    'video': streams.PLAYBACK[0].video,
+    'type': 'PLAYBACK',
+    'audio': new Float32Array(8192),
+    'video': 'video',
     'location': 'IE'
   }
   const options = {
@@ -59,6 +59,7 @@ const postMongo = async () => {
     } 
   }
   const res = await fetch('http://192.168.0.220:3000/api/stream', options)
+  console.log(res)
 }
 
 export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, state: cmdStateType) => {
