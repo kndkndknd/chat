@@ -9,7 +9,7 @@ import { parameterChange } from './parameterChange'
 import { putString } from './putString'
 
 import { insertStream } from '../mongoAccess/insertStream'
-
+import { findStream } from '../mongoAccess/findStream'
 
 export const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdStateType) => {
   const arrTypeArr = stringArr.map((string) => {
@@ -114,6 +114,8 @@ export const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state:
     putString(io, stringArr[1] +  ' GAIN: ' + stringArr[2], state)
   } else if (stringArr[0] === 'INSERT' && stringArr.length === 3 && Object.keys(streams).includes(stringArr[1])) {
     insertStream(stringArr[1], stringArr[2], io)
+  } else if (stringArr[0] === 'FIND' && stringArr.length === 3 && Object.keys(streams).includes(stringArr[1])) {
+    findStream(stringArr[1], stringArr[2], io)
   }
 
 }

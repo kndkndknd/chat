@@ -35,7 +35,7 @@ export const pcm2arr = (url) => {
   return rtnBuff;
 }
 
-const pushStateStream = (streamName:string, states:cmdStateType) => {
+export const pushStateStream = (streamName:string, states:cmdStateType) => {
   states.current.stream[streamName] = false
   states.previous.stream[streamName] = false
   states.stream.sampleRate[streamName] = 44100
