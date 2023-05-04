@@ -1,6 +1,6 @@
 import SocketIO from 'socket.io'
 import { cmdList, streamList, parameterList, states, streams } from '../states'
-import { putString } from '../cmd'
+import { putString } from '../cmd/putString'
 
 const ipaddress = '100.66.229.75'
 
