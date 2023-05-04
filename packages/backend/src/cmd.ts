@@ -3,7 +3,7 @@ import { cmdStateType } from './types/global'
 import { cmdList, streamList, parameterList, states, streams } from './states'
 import { uploadStream } from './upload'
 import { streamEmit } from './stream'
-import e from 'express'
+import { insertStream } from './mongoAccess/insertStream'
 
 import { newWindowReqType } from './types/global'
 
@@ -44,33 +44,18 @@ const notTargetEmit = (targetId: string, idArr: string[], io: SocketIO.Server) =
   })
 }
 
-const postMongo = async () => {
-  const body = {
-    'type': 'PLAYBACK',
-    'audio': new Float32Array(8192),
-    'video': 'video',
-    'location': 'IE'
-  }
-  const options = {
-    method: 'POST',
-    body: JSON.stringify(body),
-    headers: {
-      'Content-Type': 'application/json'
-    } 
-  }
-  const res = await fetch('http://192.168.0.220:3000/api/stream', options)
-  console.log(res)
-}
 
 export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, state: cmdStateType) => {
   //VOICE
   emitVoice(io, strings, state)
 
 
+  /*
   if(strings === 'INSERT') {
     const result = postMongo()
-    console.log(result)
-  } else if(strings === 'MACBOOK' || strings === 'THREE') {
+  }
+  */
+  if(strings === 'MACBOOK' || strings === 'THREE') {
     io.emit('threeSwitchFromServer', true)
   } else if(strings === 'CHAT') {
     console.log(state.current.stream.CHAT)
@@ -722,6 +707,8 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
     state.cmd.GAIN[stringArr[1]] = Number(stringArr[2])
     console.log(state.cmd.GAIN)
     putString(io, stringArr[1] +  ' GAIN: ' + stringArr[2], state)
+  } else if (stringArr[0] === 'INSERT' && stringArr.length === 3 && Object.keys(streams).includes(stringArr[1])) {
+    insertStream(stringArr[1], stringArr[2], io)
   }
 
 }
@@ -761,7 +748,7 @@ state: cmdStateType) => {
   */
 }
 
-const putString = (io: SocketIO.Server, strings: string, state: cmdStateType) => {
+export const putString = (io: SocketIO.Server, strings: string, state: cmdStateType) => {
   io.emit('stringsFromServer',{strings: strings, timeout: true})
   /*
   if(state.cmd.VOICE.length > 0) {
