@@ -11,7 +11,7 @@ const ipaddress = process.env.DB_HOST;
 interface streamInterface {
   _id: string;
   type: string;
-  audio: Buffer;
+  audio: Uint8Array;
   video: string;
   location: string;
 }
@@ -33,7 +33,7 @@ export const findStream = async (type: string, location: string = 'UNDEFINED', i
     const { done, value } = await reader.read();
     if (done) {
       const result:Array<streamInterface> = JSON.parse(str)
-      // const audio = new Float32Array(arraybuffer);
+      // const audio = new Float32Array(result[0].audio.buffer);
       pushStream(result)
       // console.log(result[0].audio)
       console.log(i)
@@ -58,8 +58,9 @@ const pushStream = (streamArray: Array<streamInterface>) => {
     bufferSize: 8192
   }
   streamArray.forEach((element: streamInterface, index: number) => {
-    console.log(element.audio)
-    const audio = new Float32Array(element.audio)
+    // console.log(element.audio)
+    console.log(element.audio.buffer)
+    const audio = new Float32Array(element.audio.buffer)
     console.log(audio)
 
     streams[type].audio.push(audio)
