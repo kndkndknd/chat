@@ -25,11 +25,17 @@ import { buffStateType } from '../types/global';
 import { faceState } from './states';
 import { sevenSinsType } from '../types/global';
 
+// socket.io-client
+import { io as ioClient } from "socket.io-client";
+const socketClient = ioClient('http://localhost:3000');
+
 //https鍵読み込み
 const options = {
   key: fs.readFileSync(path.join(__dirname,'../../..','keys/privkey.pem')),
   cert: fs.readFileSync(path.join(__dirname,'../../..', 'keys/cert.pem'))
 }
+
+
 
 
 const app = Express();
@@ -151,6 +157,10 @@ io.sockets.on('connection',(socket)=>{
     states.cmd.METRONOME[sockId] = 1000
     console.log(states.client)
     socket.emit('debugFromServer')
+
+    console.log('emit hello')
+    socketClient.emit('hello')
+
   });
   socket.on('charFromClient', (character) =>{
     strings = charProcess(character,strings, socket.id, io, states);
@@ -288,3 +298,12 @@ io.sockets.on('connection',(socket)=>{
     io.emit("statusFromServer",statusList);
   });
 });
+
+socketClient.on('stringFromWeb', (data: string) => {
+  io.emit('stringsFromServer',{strings: data, timeout: false})
+})
+
+socketClient.on('charFromWeb', (data: string) => {
+  const targetId = states.client[Math.floor(Math.random() * states.client.length)]
+  strings = charProcess(data, strings, targetId, io, states);
+})

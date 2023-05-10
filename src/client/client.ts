@@ -322,6 +322,7 @@ export const initialize = async () => {
     }
 //    const camera = cameras[cameras.length - 1]
     const camera = cameras[0];
+    /*
     const mic = mics.filter((element)=>{
       if(element.label.includes("Microphone Array")){
         console.log(element.label)
@@ -330,6 +331,7 @@ export const initialize = async () => {
     })[0]
     console.log(mics)
     console.log(mic)
+    */
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
         //facingMode: 'environment'
@@ -338,7 +340,6 @@ export const initialize = async () => {
         height: {ideal: 1080},
         width: {ideal: 1920}
       },audio : {
-        deviceId: mic.deviceId,
         sampleRate: {ideal: 44100},
         echoCancellation: false,
         noiseSuppression: false,
