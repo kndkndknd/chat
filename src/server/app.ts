@@ -1,4 +1,4 @@
-import * as fs from 'fs'
+ import * as fs from 'fs'
 import * as child_process from "child_process";
 const exec = child_process.exec
 import * as os from 'os'
@@ -8,6 +8,7 @@ import { default as Express } from "express"
 import * as path from "path"
 import { default as favicon } from 'serve-favicon'
 
+import * as Http from 'http'
 import * as Https from 'https'
 import { Server } from "socket.io"
 import { statusList, pathList, statusClient } from './statusList'
@@ -25,7 +26,8 @@ import { buffStateType } from '../types/global';
 import { faceState } from './states';
 import { sevenSinsType } from '../types/global';
 
-const port = 3000;
+const port = 3001;
+const httpsport = 3000;
 
 
 //https鍵読み込み
@@ -61,13 +63,14 @@ app.get('/snowleopard', function(req, res, next) {
 })
 
 
-const httpsserver = Https.createServer(options,app).listen(port);
-const io = new Server(httpsserver)
+const httpsserver = Https.createServer(options,app).listen(httpsport);
+const httpserver = Http.createServer(app).listen(port);
+const io = new Server(httpserver)
 
 if("en0" in os.networkInterfaces()){
   console.log("server start in " + os.networkInterfaces().en0[0]["address"] + ":" + String(port));
 } else {
-  console.log("server start in localhost:8888")
+  console.log("https server start in localhost:3000")
 //  statusList.ipAddress = "localhost:8888"
 }
 
@@ -94,6 +97,7 @@ io.sockets.on('connection',(socket)=>{
   });
 
   socket.on("connectFromLocal", () => {
+    console.log('debug')
     socket.join("local")
     console.log(`connectFromLocal: ${socket.id}`)
     io.emit('stringFromWeb', 'connect web')
