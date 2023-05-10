@@ -27,7 +27,7 @@ import { sevenSinsType } from '../types/global';
 
 // socket.io-client
 import { io as ioClient } from "socket.io-client";
-const socketClient = ioClient('http://localhost:3000');
+const socketClient = ioClient('http://localhost:3001');
 
 //https鍵読み込み
 const options = {
@@ -158,8 +158,13 @@ io.sockets.on('connection',(socket)=>{
     console.log(states.client)
     socket.emit('debugFromServer')
 
-    console.log('emit hello')
-    socketClient.emit('hello')
+    try {
+      console.log('connect web')
+      socketClient.emit('connectFromLocal')
+  
+    } catch(error) {
+      console.log('connect web error: ', error)
+    }
 
   });
   socket.on('charFromClient', (character) =>{

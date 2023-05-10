@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-const socket: Socket = io();
+const socket: Socket = io('http://localhost:3001');
 import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, } from './imageEvent'
 
 import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate, metronome, gainChange} from './webaudio'
