@@ -25,11 +25,16 @@ import { buffStateType } from '../types/global';
 import { faceState } from './states';
 import { sevenSinsType } from '../types/global';
 
+const port = 3000;
+
+
 //https鍵読み込み
 const options = {
   key: fs.readFileSync(path.join(__dirname,'../../..','keys/privkey.pem')),
   cert: fs.readFileSync(path.join(__dirname,'../../..', 'keys/cert.pem'))
 }
+
+
 
 
 const app = Express();
@@ -55,73 +60,7 @@ app.get('/snowleopard', function(req, res, next) {
   }
 })
 
-app.get('/audioWorklet', function(req, res, next) {
-  try {
-    res.sendFile(path.join(__dirname, '../client/static', 'audioWorkletClient.html'));
-  } catch (error) {
-    console.log(error)
-    res.json({ success: false, message: "Something went wrong" });
-  }
-})
 
-app.get('/main', function(req, res, next) {
-  try {
-    res.sendFile(path.join(__dirname, '../client/static', 'main.html'));
-  } catch (error) {
-    console.log(error)
-    res.json({ success: false, message: "Something went wrong" });
-  }
-})
-
-app.get('/ctrl', function(req, res, next) {
-  try {
-    res.sendFile(path.join(__dirname, '../client/static', 'ctrl.html'));
-  } catch (error) {
-    console.log(error)
-    res.json({ success: false, message: "Something went wrong" });
-  }
-})
-
-
-app.get('/three', function(req, res, next) {
-  try {
-    res.sendFile(path.join(__dirname, '../client/static', 'three.html'));
-  } catch (error) {
-    console.log(error)
-    res.json({ success: false, message: "Something went wrong" });
-  }
-})
-
-/*
-app.get('/orientation', function(req, res, next) {
-  try {
-    res.sendFile(path.join(__dirname, '../client/static', 'orientation.html'));
-  } catch (error) {
-    console.log(error)
-    res.json({ success: false, message: "Something went wrong" });
-  }
-})
-*/
-app.get('/face', function(req, res, next) {
-  try {
-    res.sendFile(path.join(__dirname, '../client/static', 'face.html'));
-  } catch (error) {
-    console.log(error)
-    res.json({ success: false, message: "Something went wrong" });
-  }
-})
-
-app.get('/vosk', function(req, res, next) {
-  try {
-    res.sendFile(path.join(__dirname, '../client/static', 'vosk.html'));
-  } catch (error) {
-    console.log(error)
-    res.json({ success: false, message: "Something went wrong" });
-  }
-})
-
-
-const port = 8888;
 const httpsserver = Https.createServer(options,app).listen(port);
 const io = new Server(httpsserver)
 
@@ -151,9 +90,18 @@ io.sockets.on('connection',(socket)=>{
     states.cmd.METRONOME[sockId] = 1000
     console.log(states.client)
     socket.emit('debugFromServer')
+
   });
+
+  socket.on("connectFromLocal", () => {
+    socket.join("local")
+    console.log(`connectFromLocal: ${socket.id}`)
+    io.emit('stringFromWeb', 'connect web')
+  })
+
   socket.on('charFromClient', (character) =>{
     strings = charProcess(character,strings, socket.id, io, states);
+    io.emit('charFromWeb', character)
   });
   socket.on('chatFromClient', (buffer: buffStateType)=>{
     console.log(states.current.stream)
@@ -165,7 +113,7 @@ io.sockets.on('connection',(socket)=>{
       streamEmit(source, io, states)
     }
   })
-
+/*
   socket.on('connectFromCtrl', () => {
     io.emit('gainFromServer', states.cmd.GAIN)
   })
@@ -175,14 +123,6 @@ io.sockets.on('connection',(socket)=>{
     states.cmd.GAIN[gain.target] = gain.val
     io.emit('gainFromServer', states.cmd.GAIN)
   })
-
-  /*
-  socket.on('orientationFromClient', (deviceorientation) => {
-    console.log(deviceorientation)
-    io.emit('orientationFromServer', deviceorientation)
-  })
-  */
-
 
   // face
   socket.on('faceFromClient', (data) => {
@@ -217,10 +157,6 @@ io.sockets.on('connection',(socket)=>{
         case "envy":
           if(!faceState.flag) {
             sinewaveEmit(String(data.box._x + data.box._y), io, states)
-            /*
-            console.log('chat')
-            streamEmit("CHAT", io, states)
-            */
             faceState.flag = true
           }
           break
@@ -264,17 +200,8 @@ io.sockets.on('connection',(socket)=>{
     console.log(data)
     faceState.expression = data
     faceState.flag = false
-    // strings = charProcess(data,strings, socket.id, io, states);
-
-    /*
-    states.cmd.VOICE.forEach((element) => {
-      io.to(element).emit('voiceFromServer', {text: data, lang: states.cmd.voiceLang})
-    })
-    */
-      
-
   })
-
+*/
   socket.on("disconnect", () =>{
     console.log('disconnect: ' + String(socket.id));
     let sockId = String(socket.id);
