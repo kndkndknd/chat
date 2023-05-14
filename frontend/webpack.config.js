@@ -5,7 +5,7 @@ const clientConfig = {
   entry: {
     client: './src/client.ts',
     ctrl: './src/ctrl.ts',
-    snowLeopardClient: './src/snowLeopardClient.js',
+    snowLeopardClient: './src/snowLeopard.ts',
   } ,
   // entry: scripts,
   // ファイルの出力設定
@@ -54,15 +54,15 @@ const clientConfig = {
   // ソースマップを有効にする
   devtool: 'source-map',
   devServer: {
-    /*
     server: {
       type: 'https',
+      /*
       options: {
         key: '../keys/server.key',
         cert: '../keys/server.crt'
       }
+      */
     },
-    */
     port: 8888,
     static: [
       {
