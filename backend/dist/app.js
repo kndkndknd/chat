@@ -1,0 +1,145 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+var child_process = __importStar(require("child_process"));
+var exec = child_process.exec;
+var express_1 = __importDefault(require("express"));
+var path = __importStar(require("path"));
+var serve_favicon_1 = __importDefault(require("serve-favicon"));
+var Http = __importStar(require("http"));
+var ioServer_1 = require("./socket/ioServer");
+//https鍵読み込み
+/*
+const options = {
+  key: fs.readFileSync(path.join(__dirname,'../../..','keys/privkey.pem')),
+  cert: fs.readFileSync(path.join(__dirname,'../../..', 'keys/cert.pem'))
+}
+*/
+var app = (0, express_1.default)();
+app.use(express_1.default.static(path.join(__dirname, '..', 'client')));
+app.use((0, serve_favicon_1.default)(path.join(__dirname, '..', 'lib/favicon.ico')));
+app.get('/', function (req, res, next) {
+    try {
+        res.sendFile(path.join(__dirname, '../client/static', 'client.html'));
+    }
+    catch (error) {
+        console.log(error);
+        res.json({ success: false, message: "Something went wrong" });
+    }
+});
+app.get('/snowleopard', function (req, res, next) {
+    try {
+        res.sendFile(path.join(__dirname, '../client/static', 'snowLeopard.html'));
+    }
+    catch (error) {
+        console.log(error);
+        res.json({ success: false, message: "Something went wrong" });
+    }
+});
+app.get('/audioWorklet', function (req, res, next) {
+    try {
+        res.sendFile(path.join(__dirname, '../client/static', 'audioWorkletClient.html'));
+    }
+    catch (error) {
+        console.log(error);
+        res.json({ success: false, message: "Something went wrong" });
+    }
+});
+app.get('/main', function (req, res, next) {
+    try {
+        res.sendFile(path.join(__dirname, '../client/static', 'main.html'));
+    }
+    catch (error) {
+        console.log(error);
+        res.json({ success: false, message: "Something went wrong" });
+    }
+});
+app.get('/ctrl', function (req, res, next) {
+    try {
+        res.sendFile(path.join(__dirname, '../client/static', 'ctrl.html'));
+    }
+    catch (error) {
+        console.log(error);
+        res.json({ success: false, message: "Something went wrong" });
+    }
+});
+app.get('/three', function (req, res, next) {
+    try {
+        res.sendFile(path.join(__dirname, '../client/static', 'three.html'));
+    }
+    catch (error) {
+        console.log(error);
+        res.json({ success: false, message: "Something went wrong" });
+    }
+});
+/*
+app.get('/orientation', function(req, res, next) {
+  try {
+    res.sendFile(path.join(__dirname, '../client/static', 'orientation.html'));
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: "Something went wrong" });
+  }
+})
+*/
+app.get('/face', function (req, res, next) {
+    try {
+        res.sendFile(path.join(__dirname, '../client/static', 'face.html'));
+    }
+    catch (error) {
+        console.log(error);
+        res.json({ success: false, message: "Something went wrong" });
+    }
+});
+app.get('/vosk', function (req, res, next) {
+    try {
+        res.sendFile(path.join(__dirname, '../client/static', 'vosk.html'));
+    }
+    catch (error) {
+        console.log(error);
+        res.json({ success: false, message: "Something went wrong" });
+    }
+});
+var port = 8808;
+//const httpsserver = Https.createServer(options,app).listen(port);
+var httpserver = Http.createServer(app).listen(port);
+/*
+const socketOptions = {
+  cors: {
+    origin: function (origin, callback) {
+      const isTarget = origin != undefined && origin.includes("localhost") !== null;
+      return isTarget ? callback(null, origin) : callback('error invalid domain');
+    },
+    credentials: true
+  },
+  maxHttpBufferSize: 1e8,
+};
+*/
+// const io = new Server(httpsserver, socketOptions)
+(0, ioServer_1.ioServer)(httpserver);
+//# sourceMappingURL=app.js.map
