@@ -26,8 +26,8 @@ import { faceState } from './states';
 import { sevenSinsType } from '../types/global';
 
 // socket.io-client
-import { io as ioClient } from "socket.io-client";
-const socketClient = ioClient('http://localhost:3001');
+// import { io as ioClient } from "socket.io-client";
+// const socketClient = ioClient('http://localhost:3001');
 
 //https鍵読み込み
 const options = {
@@ -158,6 +158,7 @@ io.sockets.on('connection',(socket)=>{
     console.log(states.client)
     socket.emit('debugFromServer')
 
+    /*
     try {
       console.log('connect web')
       socketClient.emit('connectFromLocal')
@@ -165,6 +166,7 @@ io.sockets.on('connection',(socket)=>{
     } catch(error) {
       console.log('connect web error: ', error)
     }
+    */
 
   });
   socket.on('charFromClient', (character) =>{
@@ -304,6 +306,7 @@ io.sockets.on('connection',(socket)=>{
   });
 });
 
+/*
 socketClient.on('stringFromWeb', (data: string) => {
   io.emit('stringsFromServer',{strings: data, timeout: false})
 })
@@ -312,3 +315,4 @@ socketClient.on('charFromWeb', (data: string) => {
   const targetId = states.client[Math.floor(Math.random() * states.client.length)]
   strings = charProcess(data, strings, targetId, io, states);
 })
+*/
