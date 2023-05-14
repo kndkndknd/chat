@@ -8,11 +8,12 @@ dotenv.config()
 const ipaddress = process.env.DB_HOST;
 
 
-export const insertStream = async (type: string, location: string = 'UNDEFINED', io: SocketIO.Server) => {
+export const insertStream = async (name: string, type: string, location: string = 'UNDEFINED', io: SocketIO.Server) => {
   // const streamChunk = streams[type].shift();
   streams[type].forEach(async (streamChunk: {audio: Float32Array, video: string}) => {
     // const uint8Array = new Uint8Array(streamChunk.audio.buffer)
     const body = {
+      'name': name,
       'type': type,
       'video': streamChunk.video,
       'location': location
