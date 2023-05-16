@@ -1,17 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.receiveEnter = void 0;
-var states_1 = require("../states");
-var stream_1 = require("../stream");
-var cmdEmit_1 = require("../cmd/cmdEmit");
-var stopEmit_1 = require("../cmd/stopEmit");
-var splitSpace_1 = require("../cmd/splitSpace");
-var sinewaveEmit_1 = require("../cmd/sinewaveEmit");
-var sinewaveChange_1 = require("../cmd/sinewaveChange");
-var parameterChange_1 = require("../cmd/parameterChange");
-var voiceEmit_1 = require("../cmd/voiceEmit");
-var previousCmd_1 = require("../cmd/previousCmd");
-var receiveEnter = function (strings, id, io, state) {
+const states_1 = require("../states");
+const stream_1 = require("../stream");
+const cmdEmit_1 = require("../cmd/cmdEmit");
+const stopEmit_1 = require("../cmd/stopEmit");
+const splitSpace_1 = require("../cmd/splitSpace");
+const sinewaveEmit_1 = require("../cmd/sinewaveEmit");
+const sinewaveChange_1 = require("../cmd/sinewaveChange");
+const parameterChange_1 = require("../cmd/parameterChange");
+const voiceEmit_1 = require("../cmd/voiceEmit");
+const previousCmd_1 = require("../cmd/previousCmd");
+const receiveEnter = (strings, id, io, state) => {
     //VOICE
     (0, voiceEmit_1.voiceEmit)(io, strings, state);
     /*
@@ -27,10 +27,10 @@ var receiveEnter = function (strings, id, io, state) {
         if (!state.current.stream.CHAT) {
             console.log(state.client);
             state.current.stream.CHAT = true;
-            var targetId = state.client[Math.floor(Math.random() * state.client.length)];
+            const targetId = state.client[Math.floor(Math.random() * state.client.length)];
             io.to(targetId).emit('chatReqFromServer');
             if (state.cmd.VOICE.length > 0) {
-                state.cmd.VOICE.forEach(function (element) {
+                state.cmd.VOICE.forEach((element) => {
                     io.to(element).emit('voiceFromServer', 'CHAT');
                 });
             }
@@ -44,7 +44,7 @@ var receiveEnter = function (strings, id, io, state) {
             state.current.RECORD = true;
             io.emit('recordReqFromServer', { target: 'PLAYBACK', timeout: 10000 });
             if (state.cmd.VOICE.length > 0) {
-                state.cmd.VOICE.forEach(function (element) {
+                state.cmd.VOICE.forEach((element) => {
                     //          io.to(element).emit('voiceFromServer', 'RECORD')
                     io.to(element).emit('voiceFromServer', { text: 'RECORD', lang: state.cmd.voiceLang });
                 });
@@ -83,7 +83,7 @@ var receiveEnter = function (strings, id, io, state) {
         (0, parameterChange_1.parameterChange)(states_1.parameterList[strings], io, state, { source: id });
     }
     else if (strings === 'NO' || strings === 'NUMBER') {
-        state.client.forEach(function (id, index) {
+        state.client.forEach((id, index) => {
             console.log(id);
             io.to(id).emit('stringsFromServer', { strings: String(index), timeout: true });
             //putString(io, String(index), state)

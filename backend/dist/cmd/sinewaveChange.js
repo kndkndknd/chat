@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sinewaveChange = void 0;
-var putCmd_1 = require("./putCmd");
-var sinewaveChange = function (cmdStrings, io, state, value) {
+const putCmd_1 = require("./putCmd");
+const sinewaveChange = (cmdStrings, io, state, value) => {
     if (cmdStrings === 'TWICE') {
-        for (var id in state.current.sinewave) {
+        for (let id in state.current.sinewave) {
             state.previous.sinewave[id] = state.current.sinewave[id];
             state.current.sinewave[id] = state.current.sinewave[id] * 2;
-            var cmd = {
+            const cmd = {
                 cmd: 'SINEWAVE',
                 value: state.current.sinewave[id],
                 flag: true,
@@ -20,10 +20,10 @@ var sinewaveChange = function (cmdStrings, io, state, value) {
         }
     }
     else if (cmdStrings === 'HALF') {
-        for (var id in state.current.sinewave) {
+        for (let id in state.current.sinewave) {
             state.previous.sinewave[id] = state.current.sinewave[id];
             state.current.sinewave[id] = state.current.sinewave[id] / 2;
-            var cmd = {
+            const cmd = {
                 cmd: 'SINEWAVE',
                 value: state.current.sinewave[id],
                 flag: true,

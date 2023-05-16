@@ -1,6 +1,8 @@
 import * as fs from 'fs'
+/*
 import * as child_process from "child_process";
 const exec = child_process.exec
+*/
 import * as os from 'os'
 import * as util from 'util'
 

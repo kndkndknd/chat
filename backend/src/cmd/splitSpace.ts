@@ -113,7 +113,7 @@ export const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state:
     console.log(state.cmd.GAIN)
     putString(io, stringArr[1] +  ' GAIN: ' + stringArr[2], state)
     // 動作確認用
-  } else if(stringArr[0] === 'INSERT' && stringArr.length === 2 && Object.keys(streams.includes(stringArr[1]))) {
+  } else if(stringArr[0] === 'INSERT' && stringArr.length === 2 && Object.keys(streams).includes(stringArr[1])) {
     insertStream('TEST', stringArr[1], 'TEST', io)
     /*
   } else if (stringArr[0] === 'INSERT' && stringArr.length === 4 && Object.keys(streams).includes(stringArr[1])) {

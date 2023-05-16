@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cmdEmit = void 0;
-var states_1 = require("../states");
-var stopEmit_1 = require("./stopEmit");
-var putCmd_1 = require("./putCmd");
-var notTargetEmit_1 = require("./notTargetEmit");
-var cmdEmit = function (cmdStrings, io, state, target) {
-    var targetId = '';
-    var cmd;
+const states_1 = require("../states");
+const stopEmit_1 = require("./stopEmit");
+const putCmd_1 = require("./putCmd");
+const notTargetEmit_1 = require("./notTargetEmit");
+const cmdEmit = (cmdStrings, io, state, target) => {
+    let targetId = '';
+    let cmd;
     switch (cmdStrings) {
         case 'STOP':
             (0, stopEmit_1.stopEmit)(io, state);
@@ -15,7 +15,7 @@ var cmdEmit = function (cmdStrings, io, state, target) {
         case 'WHITENOISE':
         case 'FEEDBACK':
         case 'BASS':
-            var cmdKey = cmdStrings;
+            const cmdKey = cmdStrings;
             cmd = {
                 cmd: states_1.cmdList[cmdKey]
             };
@@ -26,7 +26,7 @@ var cmdEmit = function (cmdStrings, io, state, target) {
                 if (state.current.cmd[cmd.cmd].includes(targetId)) {
                     cmd.flag = false;
                     cmd.fade = state.cmd.FADE.OUT;
-                    for (var id in state.current.cmd[cmd.cmd]) {
+                    for (let id in state.current.cmd[cmd.cmd]) {
                         if (targetId === state.current.cmd[cmd.cmd][id]) {
                             delete state.current.cmd[cmd.cmd][id];
                         }
@@ -99,7 +99,7 @@ var cmdEmit = function (cmdStrings, io, state, target) {
                 if (state.current.cmd[cmd.cmd].includes(target)) {
                     cmd.flag = false;
                     cmd.gain = state.cmd.GAIN.METRONOME;
-                    for (var id in state.current.cmd.METRONOME) {
+                    for (let id in state.current.cmd.METRONOME) {
                         if (target === state.current.cmd.METRONOME[id]) {
                             cmd.value = state.cmd.METRONOME[target];
                             delete state.current.cmd[cmd.cmd][id];

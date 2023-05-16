@@ -1,8 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.charProcess = void 0;
-var receiveEnter_1 = require("./receiveEnter");
-var stopEmit_1 = require("../cmd/stopEmit");
+const receiveEnter_1 = require("./receiveEnter");
+const stopEmit_1 = require("../cmd/stopEmit");
 function charProcess(character, strings, id, io, state) {
     //console.log(character)
     if (character === 'Enter') {

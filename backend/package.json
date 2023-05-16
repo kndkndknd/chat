@@ -1,6 +1,7 @@
 {
   "name": "backend",
   "packageManager": "yarn@3.5.1",
+  "private": true,
   "scripts": {
     "start": "ts-node src/app.ts",
     "build": "tsc"

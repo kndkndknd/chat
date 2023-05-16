@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.putString = void 0;
-var putString = function (io, strings, state) {
+const putString = (io, strings, state) => {
     io.emit('stringsFromServer', { strings: strings, timeout: true });
     /*
     if(state.cmd.VOICE.length > 0) {

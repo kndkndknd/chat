@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.putCmd = void 0;
-var putCmd = function (io, id, cmd, state) {
+const putCmd = (io, id, cmd, state) => {
     io.to(id).emit('cmdFromServer', cmd);
     /*
     if(state.cmd.VOICE.length > 0) {

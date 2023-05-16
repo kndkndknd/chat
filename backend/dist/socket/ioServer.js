@@ -1,32 +1,32 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ioServer = void 0;
-var socket_io_1 = require("socket.io");
-var statusList_1 = require("../statusList");
-var stream_1 = require("../stream");
-var cmdEmit_1 = require("../cmd/cmdEmit");
-var charProcess_1 = require("../cmd/charProcess");
-var stopEmit_1 = require("../cmd/stopEmit");
-var sinewaveEmit_1 = require("../cmd/sinewaveEmit");
-var stream_2 = require("../stream");
-var states_1 = require("../states");
+const socket_io_1 = require("socket.io");
+const statusList_1 = require("../statusList");
+const stream_1 = require("../stream");
+const cmdEmit_1 = require("../cmd/cmdEmit");
+const charProcess_1 = require("../cmd/charProcess");
+const stopEmit_1 = require("../cmd/stopEmit");
+const sinewaveEmit_1 = require("../cmd/sinewaveEmit");
+const stream_2 = require("../stream");
+const states_1 = require("../states");
 // face
-var states_2 = require("../states");
-var strings = "";
-var previousFace = { x: 0, y: 0 };
-var ioServer = function (httpserver) {
-    var io = new socket_io_1.Server(httpserver, {
+const states_2 = require("../states");
+let strings = "";
+const previousFace = { x: 0, y: 0 };
+const ioServer = (httpserver) => {
+    const io = new socket_io_1.Server(httpserver, {
         path: "/socket.io",
     });
-    io.sockets.on('connection', function (socket) {
-        socket.on("connectFromClient", function (data) {
+    io.sockets.on('connection', (socket) => {
+        socket.on("connectFromClient", (data) => {
             if (!states_1.states.stream.timelapse)
                 states_1.states.stream.timelapse = true;
-            var sockId = String(socket.id);
+            let sockId = String(socket.id);
             console.log('socket.on("connectFromClient", (data) => {data:' + data + ', id:' + sockId + '}');
             if (!states_1.states.client.includes(sockId))
                 states_1.states.client.push(sockId);
-            states_1.states.client = states_1.states.client.filter(function (id) {
+            states_1.states.client = states_1.states.client.filter((id) => {
                 //console.log(io.sockets.adapter.rooms.has(id))
                 if (io.sockets.adapter.rooms.has(id)) {
                     return id;
@@ -37,23 +37,23 @@ var ioServer = function (httpserver) {
             console.log(states_1.states.client);
             socket.emit('debugFromServer');
         });
-        socket.on('charFromClient', function (character) {
+        socket.on('charFromClient', (character) => {
             strings = (0, charProcess_1.charProcess)(character, strings, socket.id, io, states_1.states);
         });
-        socket.on('chatFromClient', function (buffer) {
+        socket.on('chatFromClient', (buffer) => {
             console.log(states_1.states.current.stream);
             (0, stream_1.chatReceive)(buffer, io);
         });
-        socket.on('streamReqFromClient', function (source) {
+        socket.on('streamReqFromClient', (source) => {
             console.log(source);
             if (states_1.states.current.stream[source]) {
                 (0, stream_2.streamEmit)(source, io, states_1.states);
             }
         });
-        socket.on('connectFromCtrl', function () {
+        socket.on('connectFromCtrl', () => {
             io.emit('gainFromServer', states_1.states.cmd.GAIN);
         });
-        socket.on('gainFromCtrl', function (gain) {
+        socket.on('gainFromCtrl', (gain) => {
             console.log(gain);
             states_1.states.cmd.GAIN[gain.target] = gain.val;
             io.emit('gainFromServer', states_1.states.cmd.GAIN);
@@ -65,18 +65,18 @@ var ioServer = function (httpserver) {
         })
         */
         // face
-        socket.on('faceFromClient', function (data) {
+        socket.on('faceFromClient', (data) => {
             console.log(data);
             //cmdEmit("CLICK", io, states)
             if (data.detection) {
                 //if(!faceState.flag) faceState.flag = true
-                var speed = (data.box._x - states_2.faceState.previousFace.x) ^ 2 + (data.box._y - states_2.faceState.previousFace.y) ^ 2;
+                const speed = (data.box._x - states_2.faceState.previousFace.x) ^ 2 + (data.box._y - states_2.faceState.previousFace.y) ^ 2;
                 states_2.faceState.previousFace.x = data.box._x;
                 states_2.faceState.previousFace.y = data.box._y;
                 console.log(previousFace);
                 console.log("speed :" + String(speed));
                 // console.log(speed)
-                var targetClient = states_1.states.client[0];
+                const targetClient = states_1.states.client[0];
                 console.log(targetClient);
                 switch (states_2.faceState.expression) {
                     case "no expression":
@@ -141,7 +141,7 @@ var ioServer = function (httpserver) {
                 states_2.faceState.flag = false;
             }
         });
-        socket.on('expressionFromClient', function (data) {
+        socket.on('expressionFromClient', (data) => {
             console.log(data);
             states_2.faceState.expression = data;
             states_2.faceState.flag = false;
@@ -152,10 +152,10 @@ var ioServer = function (httpserver) {
             })
             */
         });
-        socket.on("disconnect", function () {
+        socket.on("disconnect", () => {
             console.log('disconnect: ' + String(socket.id));
-            var sockId = String(socket.id);
-            states_1.states.client = states_1.states.client.filter(function (id) {
+            let sockId = String(socket.id);
+            states_1.states.client = states_1.states.client.filter((id) => {
                 if (io.sockets.adapter.rooms.has(id) && id !== sockId) {
                     console.log(id);
                     return id;

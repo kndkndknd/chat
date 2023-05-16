@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2021",
+    "module": "commonjs",
+    "rootDir": "./src",
+    "noEmit": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noUnusedLocals": false, //未使用チェックをしない
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": false //.d.tsの型チェックを有効化
+  },
+  "include": [ "src" ]
+}

@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sinewaveEmit = void 0;
-var putCmd_1 = require("./putCmd");
-var notTargetEmit_1 = require("./notTargetEmit");
-var sinewaveEmit = function (frequencyStr, io, state, target) {
+const putCmd_1 = require("./putCmd");
+const notTargetEmit_1 = require("./notTargetEmit");
+const sinewaveEmit = (frequencyStr, io, state, target) => {
     // サイン波の処理
-    var cmd = {
+    let cmd = {
         cmd: 'SINEWAVE',
         value: Number(frequencyStr),
         flag: true,
@@ -14,7 +14,7 @@ var sinewaveEmit = function (frequencyStr, io, state, target) {
         gain: state.cmd.GAIN.SINEWAVE
     };
     state.previous.sinewave = state.current.sinewave;
-    var targetId = 'initial';
+    let targetId = 'initial';
     if (target) {
         targetId = target;
         if (Object.keys(state.current.sinewave).includes(targetId)) {
@@ -48,7 +48,7 @@ var sinewaveEmit = function (frequencyStr, io, state, target) {
         }
         else {
             //同じ周波数の音を出している端末がある場合
-            for (var id in state.current.sinewave) {
+            for (let id in state.current.sinewave) {
                 if (cmd.value === state.current.sinewave[id]) {
                     targetId = id;
                     cmd.flag = false;
@@ -58,7 +58,7 @@ var sinewaveEmit = function (frequencyStr, io, state, target) {
             }
             // 同じ周波数の音を出している端末がない場合
             if (targetId === 'initial') {
-                for (var i = 0; i < state.client.length; i++) {
+                for (let i = 0; i < state.client.length; i++) {
                     if (Object.keys(state.current.sinewave).includes(state.client[i])) {
                         continue;
                     }

@@ -2,16 +2,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.cmdSelect = exports.pickCmdTarget = exports.pickupTarget = exports.roomEmit = exports.selectOtherClient = void 0;
 function selectOtherClient(rooms, source) {
-    var targetArr = [];
-    for (var id in rooms) {
+    let targetArr = [];
+    for (let id in rooms) {
         targetArr.push(String(source));
     }
     if (targetArr.length > 1) {
         targetArr.splice(targetArr.indexOf(String(source)), 1);
     }
-    var target = targetArr[Math.floor(Math.random() * targetArr.length)];
-    var targetID = String(rooms[0]);
-    for (var id in rooms) {
+    const target = targetArr[Math.floor(Math.random() * targetArr.length)];
+    let targetID = String(rooms[0]);
+    for (let id in rooms) {
         if (target === String(id))
             targetID = id;
     }
@@ -19,7 +19,7 @@ function selectOtherClient(rooms, source) {
 }
 exports.selectOtherClient = selectOtherClient;
 function roomEmit(io, func, arg, target) {
-    for (var key in target) {
+    for (let key in target) {
         if (key in io.sockets.adapter.rooms) {
             io.to(key).emit(func, arg);
         }
@@ -30,12 +30,12 @@ function roomEmit(io, func, arg, target) {
 }
 exports.roomEmit = roomEmit;
 function pickupTarget(io, list, sourceId) {
-    var idArr = [];
-    var idStrArr = [];
+    let idArr = [];
+    let idStrArr = [];
     if (io.sockets.adapter.rooms !== undefined) {
-        var room = io.sockets.adapter.rooms;
-        for (var key in list) {
-            for (var id in room) {
+        const room = io.sockets.adapter.rooms;
+        for (let key in list) {
+            for (let id in room) {
                 if (list[key] != undefined && String(id) === key) { //client*streamのルーティングをやめた、いったん
                     idArr.push(id);
                     idStrArr.push(String(id));
@@ -49,11 +49,10 @@ function pickupTarget(io, list, sourceId) {
     return idArr;
 }
 exports.pickupTarget = pickupTarget;
-function pickCmdTarget(idHsh, cmd, room) {
-    if (room === void 0) { room = "all"; }
-    var targetArr = { "id": [], "No": [], "cmd": [], "timestamp": [], "noneId": [], "targetId": "none", "duplicate": "none" };
+function pickCmdTarget(idHsh, cmd, room = "all") {
+    let targetArr = { "id": [], "No": [], "cmd": [], "timestamp": [], "noneId": [], "targetId": "none", "duplicate": "none" };
     //console.log(cmd)
-    for (var strId in idHsh) {
+    for (let strId in idHsh) {
         //console.log(strId)
         //console.log(idHsh[strId].cmd)
         if (room === "all" || idHsh[strId].room === room) {
@@ -86,9 +85,9 @@ function pickCmdTarget(idHsh, cmd, room) {
 }
 exports.pickCmdTarget = pickCmdTarget;
 function cmdSelect(strings, statusList) {
-    var cmd = { cmd: "" };
-    var nowFlag = false;
-    for (var key in statusList["cmd"]["list"]) {
+    let cmd = { cmd: "" };
+    let nowFlag = false;
+    for (let key in statusList["cmd"]["list"]) {
         if (strings === key) {
             cmd = { "cmd": statusList["cmd"]["list"][key], overlay: true };
             // cmd.overlay = true

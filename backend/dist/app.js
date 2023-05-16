@@ -26,13 +26,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var child_process = __importStar(require("child_process"));
-var exec = child_process.exec;
-var express_1 = __importDefault(require("express"));
-var path = __importStar(require("path"));
-var serve_favicon_1 = __importDefault(require("serve-favicon"));
-var Http = __importStar(require("http"));
-var ioServer_1 = require("./socket/ioServer");
+const express_1 = __importDefault(require("express"));
+const path = __importStar(require("path"));
+const serve_favicon_1 = __importDefault(require("serve-favicon"));
+const Http = __importStar(require("http"));
+const ioServer_1 = require("./socket/ioServer");
 //https鍵読み込み
 /*
 const options = {
@@ -40,7 +38,7 @@ const options = {
   cert: fs.readFileSync(path.join(__dirname,'../../..', 'keys/cert.pem'))
 }
 */
-var app = (0, express_1.default)();
+const app = (0, express_1.default)();
 app.use(express_1.default.static(path.join(__dirname, '..', 'client')));
 app.use((0, serve_favicon_1.default)(path.join(__dirname, '..', 'lib/favicon.ico')));
 app.get('/', function (req, res, next) {
@@ -125,9 +123,9 @@ app.get('/vosk', function (req, res, next) {
         res.json({ success: false, message: "Something went wrong" });
     }
 });
-var port = 8808;
+const port = 8000;
 //const httpsserver = Https.createServer(options,app).listen(port);
-var httpserver = Http.createServer(app).listen(port);
+const httpserver = Http.createServer(app).listen(port);
 /*
 const socketOptions = {
   cors: {

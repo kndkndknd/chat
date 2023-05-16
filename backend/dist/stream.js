@@ -1,23 +1,12 @@
 "use strict";
-var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
-        for (var s, i = 1, n = arguments.length; i < n; i++) {
-            s = arguments[i];
-            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-                t[p] = s[p];
-        }
-        return t;
-    };
-    return __assign.apply(this, arguments);
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.chatReceive = exports.streamEmit = void 0;
-var states_1 = require("./states");
-var streamEmit = function (source, io, state) {
+const states_1 = require("./states");
+const streamEmit = (source, io, state) => {
     // if(streams[source].length > 0) {
     console.log(state.client);
-    var targetId = state.client[Math.floor(Math.random() * state.client.length)];
-    var buff;
+    const targetId = state.client[Math.floor(Math.random() * state.client.length)];
+    let buff;
     if (source === 'PLAYBACK') {
         if (states_1.streams[source].length > 0) {
             if (!state.stream.random[source]) {
@@ -34,8 +23,8 @@ var streamEmit = function (source, io, state) {
         }
     }
     else if (source === 'EMPTY') {
-        var audioBuff = new Float32Array(states_1.basisBufferSize);
-        for (var i = 0; i < states_1.basisBufferSize; i++) {
+        let audioBuff = new Float32Array(states_1.basisBufferSize);
+        for (let i = 0; i < states_1.basisBufferSize; i++) {
             audioBuff[i] = 1.0;
         }
         buff = {
@@ -86,19 +75,24 @@ var streamEmit = function (source, io, state) {
         }
     }
     if (buff) {
-        var stream_1 = __assign({ source: source, sampleRate: (state.stream.glitch[source] ? state.stream.glitchSampleRate : state.stream.sampleRate[source]), glitch: (state.stream.glitch[source] ? state.stream.glitch[source] : false) }, buff);
+        const stream = {
+            source: source,
+            sampleRate: (state.stream.glitch[source] ? state.stream.glitchSampleRate : state.stream.sampleRate[source]),
+            glitch: (state.stream.glitch[source] ? state.stream.glitch[source] : false),
+            ...buff
+        };
         if (state.stream.randomrate[source]) {
-            stream_1.sampleRate = 11025 + Math.floor(Math.random() * 10) * 11025;
+            stream.sampleRate = 11025 + Math.floor(Math.random() * 10) * 11025;
         }
-        if (!stream_1.video)
+        if (!stream.video)
             console.log("not video");
         if (!state.stream.grid[source]) {
-            io.to(targetId).emit('streamFromServer', stream_1);
+            io.to(targetId).emit('streamFromServer', stream);
         }
         else {
-            var timeOutVal = Math.round(Math.random() * 16) * states_1.states.stream.latency[source] / 4;
-            setTimeout(function () {
-                io.to(targetId).emit('streamFromServer', stream_1);
+            const timeOutVal = Math.round(Math.random() * 16) * states_1.states.stream.latency[source] / 4;
+            setTimeout(() => {
+                io.to(targetId).emit('streamFromServer', stream);
             }, timeOutVal);
         }
     }
@@ -112,29 +106,33 @@ var streamEmit = function (source, io, state) {
   */
 };
 exports.streamEmit = streamEmit;
-var chatReceive = function (buffer, io) {
+const chatReceive = (buffer, io) => {
     switch (buffer.target) {
         case 'CHAT':
             states_1.streams.CHAT.push(buffer);
             if (states_1.states.current.stream.CHAT) {
-                var chunk_1 = __assign({ sampleRate: states_1.states.stream.sampleRate.CHAT, glitch: states_1.states.stream.glitch.CHAT }, states_1.streams.CHAT.shift());
+                const chunk = {
+                    sampleRate: states_1.states.stream.sampleRate.CHAT,
+                    glitch: states_1.states.stream.glitch.CHAT,
+                    ...states_1.streams.CHAT.shift()
+                };
                 if (states_1.states.stream.randomrate.CHAT) {
-                    chunk_1.sampleRate = 11025 + Math.floor(Math.random() * 10) * 11025;
+                    chunk.sampleRate = 11025 + Math.floor(Math.random() * 10) * 11025;
                     //          console.log(chunk.sampleRate)
                 }
-                if (states_1.states.stream.glitch[buffer.target] && chunk_1.video) {
-                    chunk_1.video = glitchStream(chunk_1.video);
+                if (states_1.states.stream.glitch[buffer.target] && chunk.video) {
+                    chunk.video = glitchStream(chunk.video);
                 }
                 console.log(states_1.states.client);
-                var targetId_1 = states_1.states.client[Math.floor(Math.random() * states_1.states.client.length)];
-                console.log(targetId_1);
+                const targetId = states_1.states.client[Math.floor(Math.random() * states_1.states.client.length)];
+                console.log(targetId);
                 if (!states_1.states.stream.grid[buffer.target]) {
-                    io.to(targetId_1).emit('chatFromServer', chunk_1);
+                    io.to(targetId).emit('chatFromServer', chunk);
                 }
                 else {
-                    var timeOutVal = Math.round(Math.random() * 16) * states_1.states.stream.latency.CHAT / 4;
-                    setTimeout(function () {
-                        io.to(targetId_1).emit('chatFromServer', chunk_1);
+                    const timeOutVal = Math.round(Math.random() * 16) * states_1.states.stream.latency.CHAT / 4;
+                    setTimeout(() => {
+                        io.to(targetId).emit('chatFromServer', chunk);
                     }, timeOutVal);
                 }
             }
@@ -155,10 +153,10 @@ var chatReceive = function (buffer, io) {
     }
 };
 exports.chatReceive = chatReceive;
-var glitchStream = function (chunk) {
-    var rtnChunk = "data:image/jpeg;base64,";
-    var baseImgString = chunk.split("data:image/jpeg;base64,")[1];
-    var str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const glitchStream = (chunk) => {
+    let rtnChunk = "data:image/jpeg;base64,";
+    let baseImgString = chunk.split("data:image/jpeg;base64,")[1];
+    let str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     rtnChunk += baseImgString.replace(str[Math.floor(Math.random() * str.length)], str[Math.floor(Math.random() * str.length)]);
     return rtnChunk.replace(String(Math.floor(Math.random() + 10)), String(Math.floor(Math.random() + 10)));
 };

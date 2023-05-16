@@ -359,6 +359,7 @@ export const initialize = async () => {
   }
   
   start = true
+  streamFlag.timelapse = true
   timelapseId = setInterval(() => {
     streamFlag.timelapse = true
   }, 60000)
