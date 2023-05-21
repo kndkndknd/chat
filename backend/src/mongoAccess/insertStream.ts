@@ -13,6 +13,37 @@ export const insertStream = async (name: string, type: string, location: string 
     'type': type,
     'location': location,
     'video': streams[type].video[0],
+    'audio': btoa(String.fromCharCode(...(new Uint8Array(streams[type].audio[0]))))
+  }
+  const options = {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: {
+      'Content-Type': 'application/json'
+    } 
+  }
+  const res = await fetch('http://' + ipaddress + ':3000/insert', options)
+  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      console.log(value)
+      await io.emit('stringsFromServer',{strings: 'INSERT DONE', timeout: true})
+      return;
+    }
+    // console.log(value);
+  }  
+
+
+}
+
+
+export const insert32ArrayStream = async (name: string, type: string, location: string = 'UNDEFINED', io: SocketIO.Server) => {
+  const body = {
+    'name': name,
+    'type': type,
+    'location': location,
+    'video': streams[type].video[0],
     'audio': streams[type].audio[0]
   }
   const options = {

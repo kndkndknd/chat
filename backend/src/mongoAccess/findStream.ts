@@ -11,15 +11,14 @@ const ipaddress = process.env.DB_HOST;
 interface streamInterface {
   _id: string;
   type: string;
-  audio: Uint8Array;
+  audio: string;
   video: string;
   location: string;
 }
 
-export const findStream = async (type: string, location: string = 'UNDEFINED', io: SocketIO.Server) => {
+export const findStream = async (key: string, value: string = 'UNDEFINED', io: SocketIO.Server) => {
   const queryParams = new URLSearchParams({
-    type: type,
-    location: location
+    [key]: value
   })
   const res = await fetch(`http://${ipaddress}:3000/api/stream?${queryParams}`)
     // .then(response => {
@@ -49,7 +48,7 @@ export const findStream = async (type: string, location: string = 'UNDEFINED', i
 }
 
 const pushStream = (streamArray: Array<streamInterface>) => {
-  const type = 'DOUTOR'
+  const type = 'FIND'
   // const type = streamArray[0].type
   streams[type] = {
     audio: [],
@@ -58,9 +57,12 @@ const pushStream = (streamArray: Array<streamInterface>) => {
     bufferSize: 8192
   }
   streamArray.forEach((element: streamInterface, index: number) => {
-    // console.log(element.audio)
+    /*
+    console.log(element.audio)
     console.log(element.audio.buffer)
     const audio = new Float32Array(element.audio.buffer)
+    */
+    const audio = new Uint8Array([...atob(element.audio)].map(c => c.charCodeAt(0))).buffer;
     console.log(audio)
 
     streams[type].audio.push(audio)
