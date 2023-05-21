@@ -119,6 +119,7 @@ app.get('/vosk', function(req, res, next) {
 const port = 8000;
 //const httpsserver = Https.createServer(options,app).listen(port);
 const httpserver = Http.createServer(app).listen(port)
+console.log(`Server listening on port ${port}`)
 
 /*
 const socketOptions = {
