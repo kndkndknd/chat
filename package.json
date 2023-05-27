@@ -16,14 +16,11 @@
   "author": "knd",
   "license": "ISC",
   "dependencies": {
-    "@types/webgl2": "^0.0.6",
     "express": "^4.18.2",
-    "face-api.js": "^0.22.2",
     "pcm": "^1.0.3",
     "request": "^2.88.2",
     "serve-favicon": "^2.5.0",
     "socket.io": "^4.5.4",
-    "vosk-browser": "^0.0.7",
     "ws": "^8.11.0"
   },
   "devDependencies": {
@@ -35,10 +32,10 @@
     "@types/serve-favicon": "^2.5.3",
     "@types/socket.io": "^3.0.2",
     "@types/socket.io-client": "^3.0.0",
-    "@types/three": "^0.146.0",
     "babel-cli": "^6.26.0",
     "babel-loader": "^9.1.0",
     "babel-preset-env": "^1.7.0",
+    "dotenv": "^16.0.3",
     "eslint": "^8.28.0",
     "three": "^0.146.0",
     "ts-loader": "^9.4.1",

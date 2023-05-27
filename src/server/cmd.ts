@@ -3,6 +3,7 @@ import { cmdStateType } from '../types/global'
 import { cmdList, streamList, parameterList, states } from './states'
 import { uploadStream } from './upload'
 import { streamEmit } from './stream'
+import { insertStream } from './mongoaccess/insertStream'
 import e from 'express'
 
 import { newWindowReqType } from '../types/global'
@@ -44,69 +45,12 @@ const notTargetEmit = (targetId: string, idArr: string[], io: SocketIO.Server) =
   })
 }
 
-let mercariUrlArr = [
-  'https://jp.mercari.com/item/m41207267896',
-  'https://jp.mercari.com/user/profile/118372550',
-  'https://jp.mercari.com/item/m59941194063',
-  'https://jp.mercari.com/item/m55727263266',
-  'https://jp.mercari.com/item/m71741365650',
-  'https://jp.mercari.com/item/m55905740220',
-  'https://jp.mercari.com/item/m35102215360',
-  'https://jp.mercari.com/item/m54475520809',
-  'https://jp.mercari.com/item/m56197531876'
-]
-
-let SuzukiiiiiiiiiiTweetArr = [
-  'https://twitter.com/suzukiiiiiiiiii/status/1448894383231627266',
-  'https://twitter.com/suzukiiiiiiiiii/status/1451383540944293889',
-  'https://twitter.com/suzukiiiiiiiiii/status/1455725256685993995',
-  'https://twitter.com/suzukiiiiiiiiii/status/1452654169408499715',
-  'https://twitter.com/suzukiiiiiiiiii/status/1430307325399617538',
-  'https://twitter.com/suzukiiiiiiiiii/status/1447457223072882690',
-  'https://twitter.com/suzukiiiiiiiiii/status/1503951195832201216',
-  'https://twitter.com/suzukiiiiiiiiii/status/1429316774734884868',
-  'https://twitter.com/suzukiiiiiiiiii/status/1506583184196386817',
-  'https://twitter.com/suzukiiiiiiiiii/status/1585606840037277696',
-  'https://twitter.com/suzukiiiiiiiiii/status/1553519711874596865',
-  'https://twitter.com/suzukiiiiiiiiii/status/1580544857843830784'
-]
 
 export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, state: cmdStateType) => {
   //VOICE
   emitVoice(io, strings, state)
 
-  if(strings === 'MERCARI') {
-    mercariUrlArr.forEach((element, index) => {
-      setTimeout(() => {
-        const mercariData: newWindowReqType = {
-          URL: element,
-          width: 1920/2,
-          height: 1080/2,
-          top: 1080 * Math.random(),
-          left: 1920  * Math.random()
-        }
-        io.to(state.client[0]).emit('windowReqFromServer', mercariData)
-    
-      }, index * 3000)
-
-    })
-  } else if(strings === 'MERCARI NO MAI' || strings === 'SUZUKIIIIIIIIII') {
-    SuzukiiiiiiiiiiTweetArr.forEach((element, index) => {
-      const suzukiiiiiiiiiiData: newWindowReqType = {
-        URL: element,
-        width: 1920/3,
-        height: 1080/3,
-        top: 1080 * Math.random(),
-        left: 1920  * Math.random()
-      }
-      io.to(state.client[0]).emit('windowReqFromServer', suzukiiiiiiiiiiData)
-
-    })
-
-  } else if(strings === 'MACBOOK' || strings === 'THREE') {
-    console.log('debug')
-    io.emit('threeSwitchFromServer', true)
-  } else if(strings === 'CHAT') {
+  if(strings === 'CHAT') {
     if(!state.current.stream.CHAT) {
       console.log(state.client)
       state.current.stream.CHAT = true
@@ -755,6 +699,8 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
     state.cmd.GAIN[stringArr[1]] = Number(stringArr[2])
     console.log(state.cmd.GAIN)
     putString(io, stringArr[1] +  ' GAIN: ' + stringArr[2], state)
+  } else if (stringArr[0] === 'INSERT' && stringArr.length === 2 && Object.keys(state.stream.sampleRate).includes(stringArr[1])) {
+    insertStream(stringArr[1], io);
   }
 
 }
@@ -794,7 +740,7 @@ state: cmdStateType) => {
   */
 }
 
-const putString = (io: SocketIO.Server, strings: string, state: cmdStateType) => {
+export const putString = (io: SocketIO.Server, strings: string, state: cmdStateType) => {
   io.emit('stringsFromServer',{strings: strings, timeout: true})
   /*
   if(state.cmd.VOICE.length > 0) {
@@ -812,3 +758,4 @@ const emitVoice = (io: SocketIO.Server, strings: string, state: cmdStateType) =>
     })
   }
 }
+

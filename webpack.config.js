@@ -8,12 +8,7 @@ const clientConfig = {
     client: './src/client/client.ts',
     ctrl: './src/client/ctrl.ts',
     // main: './src/client/main.ts',
-    snowLeopardClient: './src/client/snowLeopardClient.js',
-    audioWorkletClient: './src/client/audioWorkletClient.ts',
-    threeClient: './src/client/threeClient.ts',
-    // orientation: './src/client/orientation.ts',
-    face: './src/client/face.ts',
-    // vosk_recognition: './src/client/vosk_recognition.js'
+    snowLeopardClient: './src/client/snowLeopardClient.js'
   } ,
   // entry: scripts,
   // ファイルの出力設定
