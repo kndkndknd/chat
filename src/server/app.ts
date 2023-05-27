@@ -25,6 +25,9 @@ import { buffStateType } from '../types/global';
 import { faceState } from './states';
 import { sevenSinsType } from '../types/global';
 
+const port = 8888;
+
+
 //https鍵読み込み
 const options = {
   key: fs.readFileSync(path.join(__dirname,'../../..','keys/privkey.pem')),
@@ -121,14 +124,13 @@ app.get('/vosk', function(req, res, next) {
 })
 
 
-const port = 8888;
 const httpsserver = Https.createServer(options,app).listen(port);
 const io = new Server(httpsserver)
 
 if("en0" in os.networkInterfaces()){
   console.log("server start in " + os.networkInterfaces().en0[0]["address"] + ":" + String(port));
 } else {
-  console.log("server start in localhost:8888")
+  console.log("server start in localhost:", port)
 //  statusList.ipAddress = "localhost:8888"
 }
 
