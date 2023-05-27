@@ -12,16 +12,21 @@ const ipaddress = process.env.DB_HOST;
 export const insertStream = async (type: string, io: SocketIO.Server) => {
   if(type === 'PLAYBACK') {
     await streams[type].forEach(async (stream: buffStateType) => {
-      const audio = btoa(String.fromCharCode(...(new Uint8Array(stream.audio))))
-      await postStream(type, stream.video, audio, io)
+      await setTimeout(async () => {
+        const audio = btoa(String.fromCharCode(...(new Uint8Array(stream.audio))))
+        await postStream(type, stream.video, audio, io)          
+      }, 1000);
     })
     await io.emit('stringsFromServer',{strings: 'INSERT DONE', timeout: true})
   } else {
     streams[type].audio.forEach(async (audio: Float32Array, index) => {
-      const video = streams[type].video[index]
-      const audioStr = btoa(String.fromCharCode(...(new Uint8Array(audio))))
-      await postStream(type, video, audioStr, io)
+      await setTimeout(async () => {
+        const video = streams[type].video[index]
+        const audioStr = btoa(String.fromCharCode(...(new Uint8Array(audio))))
+        await postStream(type, video, audioStr, io)
+      }, 1000);
     })
+      
     await io.emit('stringsFromServer',{strings: 'INSERT DONE', timeout: true})
   }
 }
