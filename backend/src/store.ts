@@ -4,7 +4,7 @@
 // import cmdReducer, { setCmdProcess, setPortament, getSampleRate, getStreamProcess } from './slices/cmdSlice'
 // import buffReducer, { pushBuff, clearBuff, getJsonBuff, incrementIndex } from './slices/buffSlice'
 import { selectOtherClient } from './route';
-import { charProcess } from './cmd';
+import { charProcess } from './cmd/charProcess';
 
 // let rootReducers  = combineReducers({
   // cmds: cmdReducer,

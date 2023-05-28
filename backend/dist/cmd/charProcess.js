@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.charProcess = void 0;
 const receiveEnter_1 = require("./receiveEnter");
-const stopEmit_1 = require("../cmd/stopEmit");
+const stopEmit_1 = require("./stopEmit");
 function charProcess(character, strings, id, io, state) {
     //console.log(character)
     if (character === 'Enter') {
@@ -31,6 +31,8 @@ function charProcess(character, strings, id, io, state) {
     }
     else if (character === 'ArrowUp') {
         io.emit('stringsFromServer', { strings: strings, timeout: false });
+    }
+    else if (character === 'Shift') {
     }
     else if (character != undefined) {
         strings = strings + character;

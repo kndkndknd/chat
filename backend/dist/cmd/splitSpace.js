@@ -9,6 +9,7 @@ const parameterChange_1 = require("./parameterChange");
 const putString_1 = require("./putString");
 const insertStream_1 = require("../mongoAccess/insertStream");
 const findStream_1 = require("../mongoAccess/findStream");
+const timerCmd_1 = require("./timerCmd");
 const splitSpace = (stringArr, io, state) => {
     const arrTypeArr = stringArr.map((string) => {
         if (/^([1-9]\d*|0)(\.\d+)?$/.test(string)) {
@@ -128,15 +129,17 @@ const splitSpace = (stringArr, io, state) => {
         (0, putString_1.putString)(io, stringArr[1] + ' GAIN: ' + stringArr[2], state);
         // 動作確認用
     }
-    else if (stringArr[0] === 'INSERT' && stringArr.length === 2 && Object.keys(states_1.streams.includes(stringArr[1]))) {
-        (0, insertStream_1.insertStream)('TEST', stringArr[1], 'TEST', io);
-        /*
-      } else if (stringArr[0] === 'INSERT' && stringArr.length === 4 && Object.keys(streams).includes(stringArr[1])) {
-        insertStream(stringArr[3], stringArr[1], stringArr[2], io)
-        */
-    }
-    else if (stringArr[0] === 'FIND' && stringArr.length === 3 && Object.keys(states_1.streams).includes(stringArr[1])) {
+    else if (stringArr[0] === 'FIND' && stringArr.length === 3) {
         (0, findStream_1.findStream)(stringArr[1], stringArr[2], io);
+    }
+    else if (stringArr[0] === 'INSERT' && stringArr.length === 2 && Object.keys(state.stream.sampleRate).includes(stringArr[1])) {
+        (0, insertStream_1.insertStream)(stringArr[1], io);
+    }
+    else if (stringArr[0].includes(":")) {
+        let timeStampArr = stringArr[0].split(":");
+        if (timeStampArr.every(item => { return !isNaN(Number(item)); })) {
+            (0, timerCmd_1.timerCmd)(io, state, stringArr, timeStampArr);
+        }
     }
 };
 exports.splitSpace = splitSpace;

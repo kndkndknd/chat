@@ -4,3 +4,4 @@ log/*
 upload
 .yarn
 .env
+!.yarn/release/*

@@ -5,7 +5,7 @@
   "scripts": {
     "backend": "yarn workspace backend start",
     "build": "yarn workspace frontend build && yarn workspace backend build",
-    "frontend": "yarn workspace frontend start"
+    "frontend": "yarn workspace frontend dev"
   },
   "workspaces": [
     "frontend",
@@ -26,6 +26,7 @@
     "@types/socket.io": "^3.0.2",
     "@types/socket.io-client": "^3.0.0",
     "express": "^4.18.2",
+    "http-proxy-middleware": "^2.0.6",
     "socket.io": "^4.6.1",
     "socket.io-client": "^4.6.1"
   }

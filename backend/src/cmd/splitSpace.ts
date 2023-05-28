@@ -10,6 +10,7 @@ import { putString } from './putString'
 
 import { insertStream } from '../mongoAccess/insertStream'
 import { findStream } from '../mongoAccess/findStream'
+import { timerCmd} from './timerCmd'
 
 export const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdStateType) => {
   const arrTypeArr = stringArr.map((string) => {
@@ -113,14 +114,16 @@ export const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state:
     console.log(state.cmd.GAIN)
     putString(io, stringArr[1] +  ' GAIN: ' + stringArr[2], state)
     // 動作確認用
-  } else if(stringArr[0] === 'INSERT' && stringArr.length === 2 && Object.keys(streams).includes(stringArr[1])) {
-    insertStream('TEST', stringArr[1], 'TEST', io)
-    /*
-  } else if (stringArr[0] === 'INSERT' && stringArr.length === 4 && Object.keys(streams).includes(stringArr[1])) {
-    insertStream(stringArr[3], stringArr[1], stringArr[2], io)
-    */
-  } else if (stringArr[0] === 'FIND' && stringArr.length === 3 && Object.keys(streams).includes(stringArr[1])) {
-    findStream(stringArr[1], stringArr[2], io)
+
+  } else if (stringArr[0] === 'FIND' && stringArr.length === 3) {
+    findStream(stringArr[1], stringArr[2], io);
+  } else if (stringArr[0] === 'INSERT' && stringArr.length === 2 && Object.keys(state.stream.sampleRate).includes(stringArr[1])) {
+    insertStream(stringArr[1], io);
+  } else if (stringArr[0].includes(":")) {
+    let timeStampArr = stringArr[0].split(":")
+    if(timeStampArr.every(item => {return !isNaN(Number(item))})) {
+      timerCmd(io, state, stringArr, timeStampArr)
+    }
   }
 
 }

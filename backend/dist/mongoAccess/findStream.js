@@ -9,10 +9,9 @@ const states_1 = require("../states");
 const upload_1 = require("../upload");
 dotenv_1.default.config();
 const ipaddress = process.env.DB_HOST;
-const findStream = async (type, location = 'UNDEFINED', io) => {
+const findStream = async (key, value = 'UNDEFINED', io) => {
     const queryParams = new URLSearchParams({
-        type: type,
-        location: location
+        [key]: value
     });
     const res = await fetch(`http://${ipaddress}:3000/api/stream?${queryParams}`);
     // .then(response => {
@@ -39,7 +38,7 @@ const findStream = async (type, location = 'UNDEFINED', io) => {
 };
 exports.findStream = findStream;
 const pushStream = (streamArray) => {
-    const type = 'DOUTOR';
+    const type = 'FIND';
     // const type = streamArray[0].type
     states_1.streams[type] = {
         audio: [],
@@ -48,9 +47,12 @@ const pushStream = (streamArray) => {
         bufferSize: 8192
     };
     streamArray.forEach((element, index) => {
-        // console.log(element.audio)
-        console.log(element.audio.buffer);
-        const audio = new Float32Array(element.audio.buffer);
+        /*
+        console.log(element.audio)
+        console.log(element.audio.buffer)
+        const audio = new Float32Array(element.audio.buffer)
+        */
+        const audio = new Uint8Array([...atob(element.audio)].map(c => c.charCodeAt(0))).buffer;
         console.log(audio);
         states_1.streams[type].audio.push(audio);
         states_1.streams[type].video.push(element.video);

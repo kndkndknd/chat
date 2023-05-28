@@ -3,7 +3,7 @@ import { cmdStateType } from '../types/global'
 
 import { receiveEnter } from './receiveEnter';
 
-import { stopEmit } from '../cmd/stopEmit';
+import { stopEmit } from './stopEmit';
 
 export function charProcess(character:string, strings: string, id: string, io: SocketIO.Server, state: cmdStateType) {
   //console.log(character)
@@ -27,6 +27,7 @@ export function charProcess(character:string, strings: string, id: string, io: S
     io.to(id).emit('cmdFromServer',{'cmd':'BASS','property':'HIGH'})
   } else if(character === 'ArrowUp'){
     io.emit('stringsFromServer',{strings: strings, timeout: false})
+  } else if(character === 'Shift'){
   } else if(character != undefined) {
     strings =  strings + character;
     io.emit('stringsFromServer',{strings: strings, timeout: false})

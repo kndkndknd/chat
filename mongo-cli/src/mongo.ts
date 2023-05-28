@@ -43,8 +43,10 @@ export async function insertData(stream: streamType) {
   }
 }
 
-export const findData = async (type: string, location: string) => {
-  const searchCondition = { type: type, location: location };
+export const findData = async (key: string, value: string) => {
+  const searchCondition = { 
+    [key]: value
+  };
   const client = new MongoClient(uri);
 
   try {
