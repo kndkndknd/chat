@@ -25,8 +25,10 @@ export function charProcess(character:string, strings: string, id: string, io: S
   } else if(character === 'BASSS'){
     console.log('io.to(' + id + ').emit("cmdFromSever",{"cmd":"BASS","property":"HIGH"})')
     io.to(id).emit('cmdFromServer',{'cmd':'BASS','property':'HIGH'})
+  } else if(character === 'ArrowDown'){
+    strings = ''
   } else if(character === 'ArrowUp'){
-    io.emit('stringsFromServer',{strings: strings, timeout: false})
+    strings = state.previous.text
   } else if(character === 'Shift'){
   } else if(character != undefined) {
     strings =  strings + character;

@@ -36,6 +36,7 @@ export type cmdStateType = {
     RECORD: boolean
   },
   previous: {
+    text: string,
     cmd: {
       FEEDBACK: Array<string>, // 発音しているIDの配列にする
       WHITENOISE: Array<string>,

@@ -28,7 +28,7 @@ const port = 8888;
 app.use(
   '/socket.io',
   createProxyMiddleware({
-    target: 'http://localhost:8808',
+    target: 'http://localhost:8000',
   })
 );
 

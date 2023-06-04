@@ -80,5 +80,6 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
       //putString(io, String(index), state)
     })
   }
+  state.previous.text = strings
 
 }

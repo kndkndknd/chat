@@ -52,6 +52,7 @@ export const states: cmdStateType = {
     RECORD: false
   },
   previous: {
+    text: "",
     cmd: {
       FEEDBACK: [],
       WHITENOISE: [],
