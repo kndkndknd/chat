@@ -1,7 +1,7 @@
 import SocketIO from 'socket.io'
 import { cmdStateType } from '../types/global'
 import { cmdEmit } from './cmdEmit'
-import { streamEmit } from '../stream'
+import { streamEmit } from '../stream/streamEmit'
 import { sinewaveEmit } from './sinewaveEmit'
 
 export const previousCmd = (io: SocketIO.Server, state: cmdStateType) => {

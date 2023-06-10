@@ -2,7 +2,7 @@ import SocketIO from 'socket.io'
 import { cmdStateType } from '../types/global'
 import { cmdList, streamList, parameterList } from '../states'
 
-import { streamEmit } from '../stream'
+import { streamEmit } from '../stream/streamEmit'
 import { cmdEmit } from '../cmd/cmdEmit'
 import { stopEmit } from '../cmd/stopEmit'
 import { splitSpace } from '../cmd/splitSpace'
@@ -80,6 +80,7 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
       //putString(io, String(index), state)
     })
   }
-  state.previous.text = strings
-
+  if(strings !== 'STOP') {
+    state.previous.text = strings
+  }
 }

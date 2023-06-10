@@ -5,6 +5,8 @@ import { receiveEnter } from './receiveEnter';
 
 import { stopEmit } from './stopEmit';
 
+import { metronomeBpmSet } from './metronomeBpmSet';
+
 export function charProcess(character:string, strings: string, id: string, io: SocketIO.Server, state: cmdStateType) {
   //console.log(character)
   if(character === 'Enter') {
@@ -22,13 +24,20 @@ export function charProcess(character:string, strings: string, id: string, io: S
   } else if(character === 'BASS') {
     console.log('io.to(' + id + ').emit("cmdFromSever",{"cmd":"BASS","property":"LOW"})')
     io.to(id).emit('cmdFromServer',{'cmd':'BASS','property':'LOW'})
+    state.previous.text = 'BASS'
   } else if(character === 'BASSS'){
     console.log('io.to(' + id + ').emit("cmdFromSever",{"cmd":"BASS","property":"HIGH"})')
     io.to(id).emit('cmdFromServer',{'cmd':'BASS','property':'HIGH'})
+    state.previous.text = 'BASSS'
   } else if(character === 'ArrowDown'){
     strings = ''
   } else if(character === 'ArrowUp'){
+    console.log('up arrow')
+    console.log(state.previous.text)
     strings = state.previous.text
+    io.emit('stringFromServer', {strings: strings, timeout: false})
+  } else if(character === ' ') {
+    metronomeBpmSet(io, state, id)
   } else if(character === 'Shift'){
   } else if(character != undefined) {
     strings =  strings + character;

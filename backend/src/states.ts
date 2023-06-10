@@ -109,7 +109,8 @@ export const states: cmdStateType = {
     flag: false,
     type: "websocket",
     url: "ws://chat.knd.cloud/ws/"
-  }
+  },
+  bpm: {}
 }
 
 

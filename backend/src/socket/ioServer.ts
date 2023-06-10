@@ -2,7 +2,7 @@ import { Server, Socket } from "socket.io"
 import * as Http from 'http'
 
 import { statusList, pathList, statusClient } from '../statusList'
-import { chatReceive } from '../stream'
+import { chatReceive } from '../stream/chatReceive'
 
 import { buffStateType } from '../types/global';
 
@@ -11,7 +11,7 @@ import { cmdEmit } from '../cmd/cmdEmit';
 import { charProcess } from '../cmd/charProcess'
 import { stopEmit } from '../cmd/stopEmit';
 import { sinewaveEmit } from '../cmd/sinewaveEmit';
-import { streamEmit } from '../stream';
+import { streamEmit } from '../stream/streamEmit';
 import { states, chat_web } from '../states'
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 

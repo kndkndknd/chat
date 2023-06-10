@@ -107,6 +107,9 @@ export type cmdStateType = {
     flag: boolean,
     type: string,
     url: string
+  },
+  bpm: {
+    [key: string]: number
   }
 }
 export type buffArrayType = {
