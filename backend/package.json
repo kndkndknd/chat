@@ -3,8 +3,9 @@
   "packageManager": "yarn@3.5.1",
   "private": true,
   "scripts": {
-    "start": "ts-node src/app.ts",
-    "build": "tsc"
+    "dev": "ts-node src/app.ts",
+    "build": "tsc",
+    "start": "node dist/app.js"
   },
   "devDependencies": {
     "@types/express": "^4.17.17",
