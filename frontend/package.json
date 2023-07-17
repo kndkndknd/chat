@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "webpack serve --mode development",
     "build": "webpack --mode production",
-    "start": "node ./server.js"
+    "start": "node ./server.mjs"
   },
   "dependencies": {
     "http-proxy-middleware": "^2.0.6",
