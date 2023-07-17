@@ -11,5 +11,5 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": false //.d.tsの型チェックを有効化
   },
-  "include": [ "src" ]
+  "include": [ "src", "@types/index.d.ts" ]
 }

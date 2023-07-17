@@ -2,7 +2,25 @@ import { io, Socket } from 'socket.io-client';
 const socket: Socket = io();
 import {initVideo, initVideoStream, canvasSizing, textPrint, erasePrint, showImage, } from './imageEvent'
 
-import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate, metronome, gainChange} from './webaudio'
+import {
+  initAudio, 
+  initAudioStream, 
+  sinewave, 
+  whitenoise, 
+  feedback, 
+  bass, 
+  click, 
+  chatReq, 
+  playAudioStream, 
+  stopCmd, 
+  recordReq, 
+  streamFlag, 
+  simulate, 
+  metronome, 
+  gainChange, 
+  quantize,
+  stopQuantize
+} from './webaudio'
 
 import {cnvs, ctx, videoElement,} from './globalVariable'
 
@@ -298,6 +316,22 @@ socket.on('windowReqFromServer', (data: newWindowReqType) => {
   click(1.0)
 })
 
+socket.on('quantizeFromServer', (data: {flag: boolean, bpm: number, bar: number, eightNote: number}) => {
+  if(data.flag) {
+    quantize(data.bar, data.eightNote)
+    textPrint('QUANTIZE(BPM:' + String(data.bpm) + ')' , ctx, cnvs)
+    setTimeout(() => {
+      erasePrint(ctx, cnvs)
+    }, 800)
+  } else {
+    stopQuantize()
+    textPrint('QUANTIZE:false' , ctx, cnvs)
+    setTimeout(() => {
+      erasePrint(ctx, cnvs)
+    }, 800)
+  }
+})
+
 // disconnect時、1秒後再接続
 socket.on('disconnect', ()=>{
   console.log("disconnect")
@@ -363,7 +397,17 @@ export const initialize = async () => {
   timelapseId = setInterval(() => {
     streamFlag.timelapse = true
   }, 60000)
+
+  /*
+  quantize(100)
+
+setTimeout(() => {
+  stopQuantize()
+},5000)
+
+  */
 }
 textPrint('click screen', ctx, cnvs)
+
 
 //debugOn

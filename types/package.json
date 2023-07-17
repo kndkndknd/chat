@@ -1,6 +1,5 @@
 {
   "name": "@types/chat",
-  "packageManager": "yarn@3.5.1",
   "types": "src/index.d.ts",
   "private": true
 }

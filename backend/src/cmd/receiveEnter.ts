@@ -12,6 +12,8 @@ import { parameterChange } from "./parameterChange";
 import { voiceEmit } from "./voiceEmit";
 import { chatPreparation } from "../stream/chatPreparation";
 
+import { millisecondsPerBar, secondsPerEighthNote} from './bpmCalc'
+
 export const receiveEnter = (
   strings: string,
   id: string,
@@ -26,9 +28,8 @@ export const receiveEnter = (
     const result = postMongo()
   }
   */
-  if (strings === "MACBOOK" || strings === "THREE") {
-    io.emit("threeSwitchFromServer", true);
-  } else if (strings === "CHAT") {
+
+  if (strings === "CHAT") {
     chatPreparation(io, state);
   } else if (strings === "RECORD" || strings === "REC") {
     if (!state.current.RECORD) {
@@ -58,12 +59,25 @@ export const receiveEnter = (
   } else if (Number.isFinite(Number(strings))) {
     console.log("sinewave");
     sinewaveEmit(strings, io, state);
+  } else if (strings === "STOP") {
+    stopEmit(io, state);
+  } else if (strings === "QUANTIZE") {
+    state.stream.quantize = !state.stream.quantize;
+    for(let key in state.bpm) {
+      const bar = millisecondsPerBar(state.bpm[key])
+      const eighthNote = secondsPerEighthNote(state.bpm[key])
+      io.to(key).emit('quantizeFromServer', {
+        flag : state.stream.quantize,
+        bpm: state.bpm[key],
+        bar: bar,
+        eighthNote: eighthNote
+      })
+    }
+
   } else if (strings === "TWICE" || strings === "HALF") {
     sinewaveChange(strings, io, state);
     // } else if (strings === 'PREVIOUS' || strings === 'PREV') {
     // previousCmd(io, state)
-  } else if (strings === "STOP") {
-    stopEmit(io, state);
   } else if (Object.keys(parameterList).includes(strings)) {
     parameterChange(parameterList[strings], io, state, { source: id });
   } else if (strings === "NO" || strings === "NUMBER") {

@@ -242,3 +242,11 @@ export type newWindowReqType = {
   top: number,
   left: number
 }
+
+
+export type quantizeType = {
+  flag: boolean,
+  bpm: number,
+  bar: number,
+  eightNote: number
+}

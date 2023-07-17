@@ -471,3 +471,21 @@ function Setup() {
   vol.gain.value = 1;
 }
 
+let quantizeInterval: NodeJS.Timer
+let quantizerCurrentTime: number = 0
+let eighthNoteSec: number = 0
+
+export const quantize = (bar: number, eightNote: number) => {
+  eighthNoteSec = eightNote
+  quantizeInterval = setInterval(() => {
+    console.log('quantize')
+    quantizerCurrentTime = audioContext.currentTime
+    console.log(quantizerCurrentTime)
+  }, bar)
+}
+
+export const stopQuantize = () => {
+  console.log('stop quantize')
+  clearInterval(quantizeInterval)
+  quantizerCurrentTime = 0
+}
