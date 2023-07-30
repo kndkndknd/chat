@@ -5,19 +5,20 @@ const states_1 = require("../states");
 const stopEmit_1 = require("./stopEmit");
 const putCmd_1 = require("./putCmd");
 const notTargetEmit_1 = require("./notTargetEmit");
+const previousCmd_1 = require("./previousCmd");
 const cmdEmit = (cmdStrings, io, state, target) => {
-    let targetId = '';
+    let targetId = "";
     let cmd;
     switch (cmdStrings) {
-        case 'STOP':
+        case "STOP":
             (0, stopEmit_1.stopEmit)(io, state);
             break;
-        case 'WHITENOISE':
-        case 'FEEDBACK':
-        case 'BASS':
+        case "WHITENOISE":
+        case "FEEDBACK":
+        case "BASS":
             const cmdKey = cmdStrings;
             cmd = {
-                cmd: states_1.cmdList[cmdKey]
+                cmd: states_1.cmdList[cmdKey],
             };
             state.previous.cmd[cmd.cmd] = state.current.cmd[cmd.cmd];
             if (target) {
@@ -45,7 +46,8 @@ const cmdEmit = (cmdStrings, io, state, target) => {
                     cmd.flag = true;
                     cmd.fade = state.cmd.FADE.IN;
                     cmd.gain = state.cmd.GAIN[cmd.cmd];
-                    targetId = state.client[Math.floor(Math.random() * state.client.length)];
+                    targetId =
+                        state.client[Math.floor(Math.random() * state.client.length)];
                     state.current.cmd[cmd.cmd].push(targetId);
                 }
                 else {
@@ -59,41 +61,43 @@ const cmdEmit = (cmdStrings, io, state, target) => {
             (0, putCmd_1.putCmd)(io, targetId, cmd, state);
             (0, notTargetEmit_1.notTargetEmit)(targetId, state.client, io);
             break;
-        case 'CLICK':
+        case "CLICK":
             console.log(state.cmd.GAIN.CLICK);
             cmd = {
-                cmd: 'CLICK',
-                gain: state.cmd.GAIN.CLICK
+                cmd: "CLICK",
+                gain: state.cmd.GAIN.CLICK,
             };
             // cmd.gain = state.cmd.GAIN.CLICK
             if (target) {
                 targetId = target;
             }
             else {
-                targetId = state.client[Math.floor(Math.random() * state.client.length)];
+                targetId =
+                    state.client[Math.floor(Math.random() * state.client.length)];
             }
             // io.to(targetId).emit('cmdFromServer', cmd)
             (0, putCmd_1.putCmd)(io, targetId, cmd, state);
             (0, notTargetEmit_1.notTargetEmit)(targetId, state.client, io);
             break;
-        case 'SIMULATE':
+        case "SIMULATE":
             console.log(state.cmd.GAIN.SIMULATE);
             cmd = {
-                cmd: 'SIMULATE',
-                gain: state.cmd.GAIN.SIMULATE
+                cmd: "SIMULATE",
+                gain: state.cmd.GAIN.SIMULATE,
             };
             if (target) {
                 targetId = target;
             }
             else {
-                targetId = state.client[Math.floor(Math.random() * state.client.length)];
+                targetId =
+                    state.client[Math.floor(Math.random() * state.client.length)];
             }
             (0, putCmd_1.putCmd)(io, targetId, cmd, state);
             (0, notTargetEmit_1.notTargetEmit)(targetId, state.client, io);
             break;
-        case 'METRONOME':
+        case "METRONOME":
             cmd = {
-                cmd: 'METRONOME'
+                cmd: "METRONOME",
             };
             if (target) {
                 if (state.current.cmd[cmd.cmd].includes(target)) {
@@ -118,7 +122,8 @@ const cmdEmit = (cmdStrings, io, state, target) => {
                 if (state.current.cmd.METRONOME.length === 0) {
                     cmd.flag = true;
                     cmd.gain = state.cmd.GAIN.METRONOME;
-                    target = state.client[Math.floor(Math.random() * state.client.length)];
+                    target =
+                        state.client[Math.floor(Math.random() * state.client.length)];
                     state.current.cmd[cmd.cmd].push(target);
                     cmd.value = state.cmd.METRONOME[target];
                 }
@@ -131,22 +136,27 @@ const cmdEmit = (cmdStrings, io, state, target) => {
             }
             (0, putCmd_1.putCmd)(io, target, cmd, state);
             (0, notTargetEmit_1.notTargetEmit)(target, state.client, io);
-            console.log('metronome');
+            console.log("metronome");
+            break;
+        case "PREVIOUS":
+        case "PREV":
+            console.log("previous");
+            (0, previousCmd_1.previousCmd)(io, state);
             break;
         /*
-      case 'RECORD':
-        // console.log("debug")
-        if(!state.current.RECORD) {
-          console.log("debug cmd ts")
-          state.current.RECORD = true
-          io.emit('recordReqFromServer', {target: 'PLAYBACK', timeout: 10000})
-        } else {
-          state.current.RECORD = false
-        }
-        break
-        */
+        case 'RECORD':
+          // console.log("debug")
+          if(!state.current.RECORD) {
+            console.log("debug cmd ts")
+            state.current.RECORD = true
+            io.emit('recordReqFromServer', {target: 'PLAYBACK', timeout: 10000})
+          } else {
+            state.current.RECORD = false
+          }
+          break
+          */
     }
-    cmdStrings = '';
+    cmdStrings = "";
 };
 exports.cmdEmit = cmdEmit;
 //# sourceMappingURL=cmdEmit.js.map

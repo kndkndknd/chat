@@ -1,11 +1,10 @@
-import { createProxyMiddleware } from 'http-proxy-middleware';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import * as Https from 'https'
-import * as fs from 'fs'
+import { createProxyMiddleware } from "http-proxy-middleware";
+import path from "path";
+import { fileURLToPath } from "url";
+import * as Https from "https";
+import * as fs from "fs";
 
-
-import express from 'express';
+import express from "express";
 /*
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const path = require('path');
@@ -26,28 +25,27 @@ const __dirname = path.dirname(__filename);
 const port = 8888;
 
 app.use(
-  '/socket.io',
+  "/socket.io",
   createProxyMiddleware({
-    target: 'http://localhost:8000',
+    target: "http://localhost:8000",
   })
 );
 
-app.use('/', express.static(path.join(__dirname, 'dist')));
+app.use("/", express.static(path.join(__dirname, "dist")));
 
-app.get('/', (req, res) => {
-  console.log('debug')
-  console.log(path.join(__dirname, 'assets', 'client.html'))
-  res.sendFile(path.join(__dirname, 'assets', 'client.html'));
+app.get("/", (req, res) => {
+  console.log("debug");
+  console.log(path.join(__dirname, "assets", "client.html"));
+  res.sendFile(path.join(__dirname, "assets", "client.html"));
 });
 
-app.get('/snowleopard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'assets', 'snowLeopard', 'snowleopard.html'));
+app.get("/snowleopard", (req, res) => {
+  res.sendFile(path.join(__dirname, "assets", "snowleopard.html"));
 });
-
 
 app.use((err, req, res, next) => {
-  console.log(err)
-  res.status(500).send('Internal Server Error');
+  console.log(err);
+  res.status(500).send("Internal Server Error");
 });
 
 /*
@@ -56,8 +54,8 @@ app.listen(3000, () => {
 });
 */
 const options = {
-  key: fs.readFileSync(path.join(__dirname,'../..','keys/privkey.pem')),
-  cert: fs.readFileSync(path.join(__dirname,'../..', 'keys/cert.pem'))
-}
+  key: fs.readFileSync(path.join(__dirname, "../..", "keys/privkey.pem")),
+  cert: fs.readFileSync(path.join(__dirname, "../..", "keys/cert.pem")),
+};
 
-const httpsserver = Https.createServer(options,app).listen(port);
+const httpsserver = Https.createServer(options, app).listen(port);

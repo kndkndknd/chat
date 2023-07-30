@@ -5,9 +5,9 @@ exports.faceState = {
     flag: false,
     previousFace: {
         x: 0,
-        y: 0
+        y: 0,
     },
-    expression: "no expression"
+    expression: "no expression",
 };
 exports.states = {
     cmd: {
@@ -21,7 +21,7 @@ exports.states = {
             CHAT: 1.5,
             GLITCH: 2,
             SIMULATE: 1.0,
-            METRONOME: 0.9
+            METRONOME: 0.9,
         },
         FADE: {
             IN: 0,
@@ -30,8 +30,8 @@ exports.states = {
         SINEWAVE: {},
         PORTAMENT: 0,
         VOICE: [],
-        voiceLang: 'en-US',
-        METRONOME: {}
+        voiceLang: "en-US",
+        METRONOME: {},
     },
     client: [],
     current: {
@@ -40,38 +40,39 @@ exports.states = {
             WHITENOISE: [],
             CLICK: [],
             BASS: [],
-            METRONOME: []
+            METRONOME: [],
         },
         sinewave: {},
         stream: {
             CHAT: false,
             PLAYBACK: false,
-            TIMELAPSE: false
+            TIMELAPSE: false,
         },
-        RECORD: false
+        RECORD: false,
     },
     previous: {
+        text: "",
         cmd: {
             FEEDBACK: [],
             WHITENOISE: [],
             CLICK: [],
             BASS: [],
-            METRONOME: []
+            METRONOME: [],
         },
         sinewave: {},
         stream: {
             CHAT: false,
             PLAYBACK: false,
-            TIMELAPSE: false
+            TIMELAPSE: false,
         },
-        RECORD: false
+        RECORD: false,
     },
     stream: {
         sampleRate: {
             CHAT: 44100,
             PLAYBACK: 44100,
             TIMELAPSE: 44100,
-            EMPTY: 44100
+            EMPTY: 44100,
         },
         random: {
             CHAT: false,
@@ -97,7 +98,7 @@ exports.states = {
         randomrate: {
             CHAT: false,
             PLAYBACK: false,
-            TIMELAPSE: false
+            TIMELAPSE: false,
         },
         quantize: false,
         loop: false,
@@ -106,77 +107,80 @@ exports.states = {
     web: {
         flag: false,
         type: "websocket",
-        url: "ws://chat.knd.cloud/ws/"
-    }
+        url: "ws://chat.knd.cloud/ws/",
+    },
+    bpm: {},
 };
 exports.basisBufferSize = 8192;
 exports.streams = {
-    "CHAT": [],
-    "KICK": {
-        "audio": [],
-        "video": [],
-        "bufferSize": exports.basisBufferSize
+    CHAT: [],
+    KICK: {
+        audio: [],
+        video: [],
+        bufferSize: exports.basisBufferSize,
     },
-    "SNARE": {
-        "audio": [],
-        "video": [],
-        "bufferSize": exports.basisBufferSize
+    SNARE: {
+        audio: [],
+        video: [],
+        bufferSize: exports.basisBufferSize,
     },
-    "HAT": {
-        "audio": [],
-        "video": [],
-        "bufferSize": exports.basisBufferSize
+    HAT: {
+        audio: [],
+        video: [],
+        bufferSize: exports.basisBufferSize,
     },
-    "SILENCE": {
-        "audio": [],
-        "video": [],
-        "bufferSize": exports.basisBufferSize
+    SILENCE: {
+        audio: [],
+        video: [],
+        bufferSize: exports.basisBufferSize,
     },
-    "PLAYBACK": [],
-    "TIMELAPSE": {
-        "audio": [],
-        "video": [],
-        "index": 0,
-        "bufferSize": exports.basisBufferSize
+    PLAYBACK: [],
+    TIMELAPSE: {
+        audio: [],
+        video: [],
+        index: 0,
+        bufferSize: exports.basisBufferSize,
     },
-    "INTERNET": {
-        "audio": [],
-        "video": [],
-        "index": 0
+    INTERNET: {
+        audio: [],
+        video: [],
+        index: 0,
     },
-    "EMPTY": {
-        "audio": [],
-        "video": [],
-        "index": []
-    }
+    EMPTY: {
+        audio: [],
+        video: [],
+        index: [],
+    },
 };
 exports.chat_web = true;
 exports.cmdList = {
-    'FEEDBACK': 'FEEDBACK',
-    'FEED': 'FEEDBACK',
-    'WHITENOISE': 'WHITENOISE',
-    'NOISE': 'WHITENOISE',
-    'CLICK': 'CLICK',
-    'BASS': 'BASS',
-    'SIMULATE': 'SIMULATE',
-    'SIMS': 'SIMULATE',
-    'METRONOME': 'METRONOME'
+    FEEDBACK: "FEEDBACK",
+    FEED: "FEEDBACK",
+    WHITENOISE: "WHITENOISE",
+    NOISE: "WHITENOISE",
+    CLICK: "CLICK",
+    BASS: "BASS",
+    SIMULATE: "SIMULATE",
+    SIMS: "SIMULATE",
+    METRONOME: "METRONOME",
+    PREVIOUS: "PREVIOUS",
+    PREV: "PREVIOUS",
 };
-exports.streamList = ['PLAYBACK', 'TIMELAPSE', 'EMPTY'];
+exports.streamList = ["PLAYBACK", "TIMELAPSE", "EMPTY"];
 exports.parameterList = {
-    'PORTAMENT': 'PORTAMENT',
-    'PORT': 'PORTAMENT',
-    'SAMPLERATE': 'SAMPLERATE',
-    'RATE': 'SAMPLERATE',
-    'BPM': 'BPM',
-    'GLITCH': 'GLITCH',
-    'GRID': 'GRID',
-    'VOICE': 'VOICE',
-    'RANDOM': 'RANDOM'
+    PORTAMENT: "PORTAMENT",
+    PORT: "PORTAMENT",
+    SAMPLERATE: "SAMPLERATE",
+    RATE: "SAMPLERATE",
+    BPM: "BPM",
+    GLITCH: "GLITCH",
+    GRID: "GRID",
+    VOICE: "VOICE",
+    RANDOM: "RANDOM",
 };
 exports.uploadParams = {
-    mediaDir: './upload/',
-    ss: '00:00:00',
-    t: '00:00:20'
+    mediaDir: "./upload/",
+    ss: "00:00:00",
+    t: "00:00:20",
 };
 //# sourceMappingURL=states.js.map

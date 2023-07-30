@@ -3,12 +3,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ioServer = void 0;
 const socket_io_1 = require("socket.io");
 const statusList_1 = require("../statusList");
-const stream_1 = require("../stream");
+const chatReceive_1 = require("../stream/chatReceive");
 const cmdEmit_1 = require("../cmd/cmdEmit");
 const charProcess_1 = require("../cmd/charProcess");
 const stopEmit_1 = require("../cmd/stopEmit");
 const sinewaveEmit_1 = require("../cmd/sinewaveEmit");
-const stream_2 = require("../stream");
+const streamEmit_1 = require("../stream/streamEmit");
 const states_1 = require("../states");
 // face
 const states_2 = require("../states");
@@ -42,12 +42,12 @@ const ioServer = (httpserver) => {
         });
         socket.on('chatFromClient', (buffer) => {
             console.log(states_1.states.current.stream);
-            (0, stream_1.chatReceive)(buffer, io);
+            (0, chatReceive_1.chatReceive)(buffer, io);
         });
         socket.on('streamReqFromClient', (source) => {
             console.log(source);
             if (states_1.states.current.stream[source]) {
-                (0, stream_2.streamEmit)(source, io, states_1.states);
+                (0, streamEmit_1.streamEmit)(source, io, states_1.states);
             }
         });
         socket.on('connectFromCtrl', () => {
@@ -81,7 +81,7 @@ const ioServer = (httpserver) => {
                 switch (states_2.faceState.expression) {
                     case "no expression":
                         if (!states_2.faceState.flag) {
-                            (0, stream_2.streamEmit)("EMPTY", io, states_1.states);
+                            (0, streamEmit_1.streamEmit)("EMPTY", io, states_1.states);
                             // send empty
                             states_2.faceState.flag = true;
                         }
@@ -125,7 +125,7 @@ const ioServer = (httpserver) => {
                     case "sloth":
                         if (!states_2.faceState.flag) {
                             // send playback
-                            (0, stream_2.streamEmit)("PLAYBACK", io, states_1.states);
+                            (0, streamEmit_1.streamEmit)("PLAYBACK", io, states_1.states);
                             states_2.faceState.flag = true;
                         }
                         break;
