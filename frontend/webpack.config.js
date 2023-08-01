@@ -3,18 +3,18 @@ const path = require("path");
 const clientConfig = {
   // メインとなるJavaScriptファイル（エントリーポイント）
   entry: {
-    client: './src/client.ts',
-    ctrl: './src/ctrl.ts',
-    snowLeopardClient: './src/snowLeopard.ts',
-  } ,
+    client: "./src/client.ts",
+    ctrl: "./src/ctrl.ts",
+    snowLeopardClient: "./src/snowLeopard.mjs",
+  },
   // entry: scripts,
   // ファイルの出力設定
   output: {
     //  出力ファイルのディレクトリ名
     path: `${__dirname}/dist`,
     // 出力ファイル名
-    filename: '[name].js',
-    globalObject: 'this'
+    filename: "[name].js",
+    globalObject: "this",
   },
   module: {
     rules: [
@@ -24,38 +24,48 @@ const clientConfig = {
         use: [
           {
             // Babel を利用する
-            loader: 'babel-loader',
+            loader: "babel-loader",
             // Babel のオプションを指定する
             options: {
-              presets: [
-                ['@babel/preset-env', {'modules': false}]
-              ]
-            }
-          }
+              presets: [["@babel/preset-env", { modules: false }]],
+            },
+          },
         ],
-        exclude: /node_modules/
+        exclude: /node_modules/,
       },
-      { //拡張子.tsの場合
+      {
+        test: /\.mjs$/, // .mjsファイルにマッチする
+        exclude: /(node_modules|bower_components)/, // これらのディレクトリを除外
+        use: {
+          loader: "babel-loader", // Babelを使用してトランスパイル
+          options: {
+            presets: ["@babel/preset-env"], // 使用するプリセット
+          },
+        },
+      },
+      {
+        //拡張子.tsの場合
         test: /\.(ts|tsx)?$/,
-        use: 'ts-loader'
-      }
-    ]
+        use: "ts-loader",
+      },
+    ],
   },
   resolve: {
     modules: [
-    "node_modules", // node_modules 内も対象とする
+      "node_modules", // node_modules 内も対象とする
     ],
     extensions: [
-    '.ts',
-    '.js' // node_modulesのライブラリ読み込みに必要
+      ".ts",
+      ".js",
+      "mjs", // node_modulesのライブラリ読み込みに必要
     ],
-    fallback: { fs: false }
+    fallback: { fs: false },
   },
   // ソースマップを有効にする
-  devtool: 'source-map',
+  devtool: "source-map",
   devServer: {
     server: {
-      type: 'https',
+      type: "https",
       /*
       options: {
         key: '../keys/server.key',
@@ -66,14 +76,14 @@ const clientConfig = {
     port: 8888,
     static: [
       {
-        directory: path.join(__dirname, 'assets'),
-      }
+        directory: path.join(__dirname, "assets"),
+      },
     ],
-    host: '0.0.0.0',
+    host: "0.0.0.0",
     proxy: {
-      '/socket.io': 'http://localhost:8000'
-    }
-  }
+      "/socket.io": "http://localhost:8000",
+    },
+  },
 };
 
-module.exports = [clientConfig]
+module.exports = [clientConfig];
