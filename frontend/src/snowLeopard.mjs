@@ -1,5 +1,5 @@
 import { io, Socket } from "socket.io-client";
-const socket: Socket = io();
+const socket = io();
 import {
   initVideo,
   initVideoStream,
@@ -8,7 +8,7 @@ import {
   erasePrint,
   showImage,
   playbackCinema,
-} from "./imageEvent";
+} from "./imageEvent.ts";
 
 import {
   initAudio,
@@ -25,13 +25,13 @@ import {
   streamFlag,
   simulate,
   metronome,
-} from "./webaudio";
+} from "./webaudio.ts";
 
-import { cnvs, ctx, videoElement } from "./globalVariable";
+import { cnvs, ctx, videoElement } from "./globalVariable.ts";
 
 //import {debugOn} from './socket'
 
-import { keyDown } from "./textInput";
+import { keyDown } from "./textInput.ts";
 
 function getUserMedia(constraints) {
   return new Promise((resolve, reject) => {

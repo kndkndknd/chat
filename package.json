@@ -1,11 +1,12 @@
 {
   "name": "chat",
-  "packageManager": "yarn@3.5.1",
   "private": true,
   "scripts": {
-    "backend": "yarn workspace backend start",
-    "build": "yarn workspace frontend build && yarn workspace backend build",
-    "frontend": "yarn workspace frontend dev"
+    "build": "npm run build --workspaces",
+    "dev": "npm run dev --workspaces",
+    "start": "npm run start --workspaces",
+    "backend": "npm run backend --workspaces",
+    "frontend": "npm run frontend --workspaces"
   },
   "workspaces": [
     "frontend",

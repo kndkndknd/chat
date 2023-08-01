@@ -57,7 +57,7 @@ const clientConfig = {
     extensions: [
       ".ts",
       ".js",
-      "mjs", // node_modulesのライブラリ読み込みに必要
+      ".mjs", // node_modulesのライブラリ読み込みに必要
     ],
     fallback: { fs: false },
   },
