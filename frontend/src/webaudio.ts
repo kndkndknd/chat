@@ -2,7 +2,6 @@ import { io, Socket } from "socket.io-client";
 import { erasePrint, textPrint, toBase64 } from './imageEvent'
 import {cnvs, ctx,} from './globalVariable'
 
-
 export let streamFlag = {
   chat: false,
   record: false,

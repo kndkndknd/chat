@@ -10,8 +10,7 @@
   },
   "workspaces": [
     "frontend",
-    "backend",
-    "mongo-cli"
+    "backend"
   ],
   "devDependencies": {
     "@types/express": "^4.17.17",

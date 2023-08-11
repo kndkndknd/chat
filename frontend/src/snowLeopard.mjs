@@ -25,13 +25,16 @@ import {
   streamFlag,
   simulate,
   metronome,
-} from "./webaudio.ts";
+} from "./webaudio_snowleopard.mjs";
 
 import { cnvs, ctx, videoElement } from "./globalVariable.ts";
 
 //import {debugOn} from './socket'
 
 import { keyDown } from "./textInput.ts";
+
+navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
 
 function getUserMedia(constraints) {
   return new Promise((resolve, reject) => {
