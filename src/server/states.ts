@@ -10,6 +10,7 @@ export const faceState: {flag: boolean, previousFace: {x: number, y: number}, ex
 }
 
 export const states: cmdStateType = {
+  inputMode: "client",
   cmd: {
     GAIN: {
       MASTER: 1.0,

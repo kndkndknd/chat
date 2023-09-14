@@ -55,6 +55,16 @@ app.get('/snowleopard', function(req, res, next) {
   }
 })
 
+app.get('/env', function(req, res, next) {
+  try {
+    res.sendFile(path.join(__dirname, '../client/static', 'env.html'));
+  } catch (error) {
+    console.log(error)
+    res.json({ success: false, message: "Something went wrong" });
+  }
+})
+
+
 app.get('/audioWorklet', function(req, res, next) {
   try {
     res.sendFile(path.join(__dirname, '../client/static', 'audioWorkletClient.html'));
@@ -137,20 +147,37 @@ const previousFace = {x: 0, y: 0}
 
 io.sockets.on('connection',(socket)=>{
   socket.on("connectFromClient", (data) => {
-    if(!states.stream.timelapse) states.stream.timelapse = true 
-    let sockId = String(socket.id);
-    console.log('socket.on("connectFromClient", (data) => {data:' + data + ', id:' + sockId + '}')
-    if(!states.client.includes(sockId)) states.client.push(sockId)    
-    states.client = states.client.filter((id) => {
-      //console.log(io.sockets.adapter.rooms.has(id))
-      if(io.sockets.adapter.rooms.has(id)) {
-        return id
-      }
-    })
-    // METRONOMEは接続時に初期値を作る
-    states.cmd.METRONOME[sockId] = 1000
-    console.log(states.client)
-    socket.emit('debugFromServer')
+    if(data === 'client') {
+      if(!states.stream.timelapse) states.stream.timelapse = true 
+      const sockId = String(socket.id);
+      console.log('socket.on("connectFromClient", (data) => {data:' + data + ', id:' + sockId + '}')
+      if(!states.client.includes(sockId)) states.client.push(sockId)    
+      states.client = states.client.filter((id) => {
+        //console.log(io.sockets.adapter.rooms.has(id))
+        if(io.sockets.adapter.rooms.has(id)) {
+          return id
+        }
+      })
+      // METRONOMEは接続時に初期値を作る
+      states.cmd.METRONOME[sockId] = 1000
+      console.log(states.client)
+      socket.emit('debugFromServer')
+    } else if(data === 'env') {
+      const sockId = String(socket.id);
+      console.log('socket.on("connectFromClient", (data) => {data:' + data + ', id:' + sockId + '}')
+      if(!states.env.includes(sockId)) states.env.push(sockId)    
+      states.env = states.env.filter((id) => {
+        //console.log(io.sockets.adapter.rooms.has(id))
+        if(io.sockets.adapter.rooms.has(id)) {
+          return id
+        }
+      })
+      // METRONOMEは接続時に初期値を作る
+      states.cmd.METRONOME[sockId] = 1000
+      console.log(states.client)
+      socket.emit('connectAckFromServer')
+    }
+
   });
   socket.on('charFromClient', (character) =>{
     strings = charProcess(character,strings, socket.id, io, states);

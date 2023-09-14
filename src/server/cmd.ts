@@ -1,5 +1,5 @@
 import SocketIO from 'socket.io'
-import { cmdStateType } from '../types/global'
+import { cmdStateType, clientType } from '../types/global'
 import { cmdList, streamList, parameterList, states } from './states'
 import { uploadStream } from './upload'
 import { streamEmit } from './stream'
@@ -75,50 +75,15 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
   //VOICE
   emitVoice(io, strings, state)
 
-  if(strings === 'MERCARI') {
-    mercariUrlArr.forEach((element, index) => {
-      setTimeout(() => {
-        const mercariData: newWindowReqType = {
-          URL: element,
-          width: 1920/2,
-          height: 1080/2,
-          top: 1080 * Math.random(),
-          left: 1920  * Math.random()
-        }
-        io.to(state.client[0]).emit('windowReqFromServer', mercariData)
-    
-      }, index * 3000)
-
-    })
-  } else if(strings === 'MERCARI NO MAI' || strings === 'SUZUKIIIIIIIIII') {
-    SuzukiiiiiiiiiiTweetArr.forEach((element, index) => {
-      const suzukiiiiiiiiiiData: newWindowReqType = {
-        URL: element,
-        width: 1920/3,
-        height: 1080/3,
-        top: 1080 * Math.random(),
-        left: 1920  * Math.random()
-      }
-      io.to(state.client[0]).emit('windowReqFromServer', suzukiiiiiiiiiiData)
-
-    })
-
-  } else if(strings === 'MACBOOK' || strings === 'THREE') {
-    console.log('debug')
-    io.emit('threeSwitchFromServer', true)
-  } else if(strings === 'CHAT') {
-    if(!state.current.stream.CHAT) {
-      console.log(state.client)
-      state.current.stream.CHAT = true
-      const targetId = state.client[Math.floor(Math.random() * state.client.length)]
-      io.to(targetId).emit('chatReqFromServer')
-      if(state.cmd.VOICE.length > 0) {
-        state.cmd.VOICE.forEach((element) => {
-          io.to(element).emit('voiceFromServer', 'CHAT')
-        })
-      }
-    } else {
-      state.current.stream.CHAT = false
+  if (strings === 'ENV') {
+    if(state.inputMode === 'client') {
+      state.inputMode = 'env'
+      io.emit('stringsFromServer',{strings: 'ENV', timeout: true})
+    }
+  } else if (strings === 'CLIENT') {
+    if(state.inputMode === 'env') {
+      state.inputMode = 'client'
+      io.emit('stringsFromServer',{strings: 'CLIENT', timeout: true})
     }
   } else if(strings === "RECORD" || strings === "REC") {
     if(!state.current.RECORD) {

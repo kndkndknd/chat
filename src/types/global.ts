@@ -15,10 +15,12 @@ export type cmdType = {
   flag?: boolean
 }
 
-
+export type clientType = "client" | "env";
 
 export type cmdStateType = {
   client: Array<string>,
+  env: Array<string>,
+  inputMode: clientType,
   current: {
     cmd: {
       FEEDBACK: Array<string>, // 発音しているIDの配列にする
