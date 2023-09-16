@@ -27,8 +27,8 @@ export const states: cmdStateType = {
     FADE: {
       IN:0,
       OUT:0,
-      ENV_IN:0,
-      ENV_OUT:0,
+      ENV_IN:30,
+      ENV_OUT:30,
     },
     SINEWAVE: {
     },

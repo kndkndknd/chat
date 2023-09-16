@@ -93,7 +93,7 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
     } else {
       state.current.RECORD = false
     }
-  } else if(strings.includes(' ') && strings.split(' ').length < 4) {
+  } else if(strings.includes(' ') && strings.split(' ').length < 5) {
     splitSpace(strings.split(' '), io, state)
   } else if(streamList.includes(strings)) {
     console.log('in stream')
@@ -274,6 +274,10 @@ export const stopEmit = (io: SocketIO.Server, state: cmdStateType, mode?: InputT
     if(mode === 'client') {
       stopClient(io, state)
     } else {
+      console.log(state.env)
+      if(state.env.length === 0) {
+        putString(io, 'NO ENV', state)
+      }
       state.env.forEach((id) => {
         io.to(id).emit('stopFromServer', state.cmd.FADE.ENV_OUT)
       })
@@ -282,7 +286,7 @@ export const stopEmit = (io: SocketIO.Server, state: cmdStateType, mode?: InputT
     }
   } else if(state.inputMode === 'client') {
     stopClient(io, state)
-  } else if(state.inputMode === 'env') {
+  } else if(state.inputMode  === 'env') {
     state.env.forEach((id) => {
       io.to(id).emit('stopFromServer', state.cmd.FADE.ENV_OUT)
     })
@@ -318,7 +322,8 @@ const stopClient = (io: SocketIO.Server, state: cmdStateType) => {
 }
 
 const stopAll = (io: SocketIO.Server, state: cmdStateType) => {
-  io.emit('stopFromServer', state.cmd.FADE.ENV_OUT)
+  console.log('stop all')
+  io.emit('stopFromServer', state.cmd.FADE.OUT)
   // STOPは個別の関数があるのでVOICEはそこに相乗り
   if(state.cmd.VOICE.length > 0) {
     state.cmd.VOICE.forEach((element) => {
@@ -888,74 +893,7 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
     if(stringArr.length === 2 && Object.keys(state.current.stream).includes(stringArr[1])) {
       state.current.stream[stringArr[1]] = false
       putString(io, stringArr[0] + ' ' + stringArr[1], state)
-    }
-  } else if(stringArr[0] === 'FADE') {
-    if((stringArr[1] === 'IN' || stringArr[1] === 'OUT') && stringArr.length === 2) {
-      if(state.cmd.FADE[stringArr[1]] === 0) {
-        state.cmd.FADE[stringArr[1]] = 5
-      } else {
-        state.cmd.FADE[stringArr[1]] = 0
-      }
-      // io.emit('stringsFromServer',{strings: 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), timeout: true})
-      putString(io, 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), state)
-    } else if(stringArr.length === 3 && (stringArr[1] === 'IN' || stringArr[1] === 'OUT') && arrTypeArr[2] === 'number') {
-      if(state.cmd.FADE[stringArr[1]] !== Number(stringArr[2])) {
-        state.cmd.FADE[stringArr[1]] = Number(stringArr[2])
-      } else {
-        state.cmd.FADE[stringArr[1]] = 0
-      }
-      putString(io, 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), state)
-      
-    }
-  } else if(stringArr[0] === 'UPLOAD' && stringArr.length == 2) {
-    uploadStream(stringArr, io)
-  } else if (stringArr[0] === 'GAIN' && stringArr.length === 3 && Object.keys(state.cmd.GAIN).includes(stringArr[1]) && arrTypeArr[2] === 'number') {
-    state.cmd.GAIN[stringArr[1]] = Number(stringArr[2])
-    console.log(state.cmd.GAIN)
-    putString(io, stringArr[1] +  ' GAIN: ' + stringArr[2], state)
-  } else if (stringArr[0] === 'ENV') {
-    if(stringArr[1] === 'PORTAMENT' || stringArr[1] === 'PORT') {
-      if(stringArr.length === 2) {
-        console.log('debug ' + stringArr[1])
-        parameterChange("PORTAMENT", io, state, {mode: 'env'})
-        // putString(io, stringArr[0] + ' ' + stringArr[1], state)  
-      } else {
-        console.log(arrTypeArr[2])
-        if(arrTypeArr[2] === 'number') {
-          parameterChange("PORTAMENT", io, state, {value: Number(stringArr[2]), mode: 'env'})
-          // putString(io, stringArr[0] + ' ' + stringArr[1] + ' ' + stringArr[2] + ' sec', state) 
-        }
-      }
-    } else if(stringArr[1] === 'FADE') {
-      if((stringArr[2] === 'IN' || stringArr[2] === 'OUT') && stringArr.length === 3) {
-        if(state.cmd.FADE['ENV_' + stringArr[2]] === 0) {
-          state.cmd.FADE['ENV_' + stringArr[2]] = 5
-        } else {
-          state.cmd.FADE['ENV_' + stringArr[2]] = 0
-        }
-        // io.emit('stringsFromServer',{strings: 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), timeout: true})
-        putString(io, 'ENV FADE ' + stringArr[2] +  ': ' + String(state.cmd.FADE['ENV_' + stringArr[2]]), state)
-      } else if(stringArr.length === 4 && (stringArr[2] === 'IN' || stringArr[2] === 'OUT') && arrTypeArr[3] === 'number') {
-        if(state.cmd.FADE['ENV_' + stringArr[2]] !== Number(stringArr[3])) {
-          state.cmd.FADE['ENV_' + stringArr[2]] = Number(stringArr[3])
-        } else {
-          state.cmd.FADE['ENV_' + stringArr[2]] = 0
-        }
-        putString(io, 'ENV FADE ' + stringArr[2] +  ': ' + String(state.cmd.FADE['ENV_' + stringArr[2]]), state)
-      }      
-    } else if(stringArr[1] === 'STOP') {
-      stopEmit(io, state, 'env');
-    } else if(arrTypeArr[1] === 'number') {
-      if(stringArr.length === 2) {
-        console.log('debug ' + stringArr[1])
-
-        envSinewaveEmit(stringArr[1], io, state)
-      // } else if(stringArr.length === 3 && arrTypeArr[2] === 'number') {
-        // sinewaveEmit(stringArr[2], io, state, stringArr[1])
-      }
-    }
-  } else if(stringArr[0] === 'STOP') {
-    if(stringArr[1] === 'ALL') {
+    } else if(stringArr[1] === 'ALL') {
       stopAll(io, state)
     } else if(stringArr[1] === 'CMD') {
       state.client.forEach((id) => {
@@ -988,6 +926,77 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
       })
       state.previous.env = state.current.env
       state.current.env = {}
+    }
+  } else if(stringArr[0] === 'FADE') {
+    if((stringArr[1] === 'IN' || stringArr[1] === 'OUT') && stringArr.length === 2) {
+      if(state.cmd.FADE[stringArr[1]] === 0) {
+        state.cmd.FADE[stringArr[1]] = 5
+      } else {
+        state.cmd.FADE[stringArr[1]] = 0
+      }
+      // io.emit('stringsFromServer',{strings: 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), timeout: true})
+      putString(io, 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), state)
+    } else if(stringArr.length === 3 && (stringArr[1] === 'IN' || stringArr[1] === 'OUT') && arrTypeArr[2] === 'number') {
+      if(state.cmd.FADE[stringArr[1]] !== Number(stringArr[2])) {
+        state.cmd.FADE[stringArr[1]] = Number(stringArr[2])
+      } else {
+        state.cmd.FADE[stringArr[1]] = 0
+      }
+      putString(io, 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), state)
+      
+    }
+  } else if(stringArr[0] === 'UPLOAD' && stringArr.length == 2) {
+    uploadStream(stringArr, io)
+  } else if (stringArr[0] === 'GAIN' && stringArr.length === 3 && Object.keys(state.cmd.GAIN).includes(stringArr[1]) && arrTypeArr[2] === 'number') {
+    state.cmd.GAIN[stringArr[1]] = Number(stringArr[2])
+    console.log(state.cmd.GAIN)
+    putString(io, stringArr[1] +  ' GAIN: ' + stringArr[2], state)
+  } else if (stringArr[0] === 'ENV') {
+    console.log('test')
+    if(stringArr[1] === 'PORTAMENT' || stringArr[1] === 'PORT') {
+      if(stringArr.length === 2) {
+        console.log('debug ' + stringArr[1])
+        parameterChange("PORTAMENT", io, state, {mode: 'env'})
+        // putString(io, stringArr[0] + ' ' + stringArr[1], state)  
+      } else {
+        console.log(arrTypeArr[2])
+        if(arrTypeArr[2] === 'number') {
+          parameterChange("PORTAMENT", io, state, {value: Number(stringArr[2]), mode: 'env'})
+          // putString(io, stringArr[0] + ' ' + stringArr[1] + ' ' + stringArr[2] + ' sec', state) 
+        }
+      }
+    } else if(stringArr[1] === 'FADE') {
+      console.log('env fade')
+      if((stringArr[2] === 'IN' || stringArr[2] === 'OUT') && stringArr.length === 3) {
+        if(state.cmd.FADE['ENV_' + stringArr[2]] === 0) {
+          state.cmd.FADE['ENV_' + stringArr[2]] = 5
+        } else {
+          state.cmd.FADE['ENV_' + stringArr[2]] = 0
+        }
+        // io.emit('stringsFromServer',{strings: 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), timeout: true})
+        putString(io, 'ENV FADE ' + stringArr[2] +  ': ' + String(state.cmd.FADE['ENV_' + stringArr[2]]), state)
+      } else if(stringArr.length === 4 && (stringArr[2] === 'IN' || stringArr[2] === 'OUT') && arrTypeArr[3] === 'number') {
+        console.log('debug')
+        if(state.cmd.FADE['ENV_' + stringArr[2]] !== Number(stringArr[3])) {
+          console.log(stringArr[3] + 'sec')
+          state.cmd.FADE['ENV_' + stringArr[2]] = Number(stringArr[3])
+        } else {
+          console.log(stringArr[3] + '-> 0')
+          state.cmd.FADE['ENV_' + stringArr[2]] = 0
+        }
+        putString(io, 'ENV FADE ' + stringArr[2] +  ': ' + String(state.cmd.FADE['ENV_' + stringArr[2]]), state)
+      }      
+    } else if(stringArr[1] === 'STOP') {
+      console.log('env stop')
+      stopEmit(io, state, 'env');
+    } else if(arrTypeArr[1] === 'number') {
+      if(stringArr.length === 2) {
+        console.log('debug ' + stringArr[1])
+
+        envSinewaveEmit(stringArr[1], io, state)
+      // } else if(stringArr.length === 3 && arrTypeArr[2] === 'number') {
+        // sinewaveEmit(stringArr[2], io, state, stringArr[1])
+      }
     }
   }
 
@@ -1097,7 +1106,7 @@ const setModulation = (intervalStr: string, io, state) => {
           cmd: 'SINEWAVE',
           value: state.current.env[Reference] + (frequencyDiff * (machineNo + 1)),
           flag: true,
-          fade: 0,
+          fade: state.cmd.FADE.ENV_IN,
           portament: state.cmd.ENV_PORTAMENT,
           gain: state.cmd.GAIN.SINEWAVE
         }
