@@ -4,7 +4,6 @@ import { textPrint, erasePrint, eraseText } from './imageEvent'
 import { bass } from './webaudio';
 let bassFlag = false
 
-
 export const keyDown = (e: KeyboardEvent, stringsClient: string, socket: Socket, stx, strCnvs, ctx?, cnvs?) => {
 
   let character:string
@@ -28,6 +27,8 @@ export const keyDown = (e: KeyboardEvent, stringsClient: string, socket: Socket,
     } else {
       erasePrint(stx, strCnvs)
     }
+  } else if(character === 'Eisu' || character == 'Meta') {
+    console.log(character + ' pressed')
   } else {
     if(/\w/.test(character) && character.length === 1){
       stringsClient = stringsClient + character.toUpperCase();

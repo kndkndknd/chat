@@ -248,9 +248,8 @@ export const playAudioStream = (bufferArray: Float32Array, sampleRate: number, g
 }
 
 export const sinewave = (flag: boolean, frequency: number, fade: number, portament: number, gain: number) => {
-  console.log('debug3')
   const currentTime = audioContext.currentTime
-  console.log('debug')
+  console.log(frequency)
   osc.frequency.setTargetAtTime(frequency, currentTime, portament);
   if(flag){
     oscGain.gain.setTargetAtTime(gain,currentTime,fade);
@@ -327,7 +326,6 @@ export const stopCmd = (fade: number) => {
   if (metronomeIntervId) {
     clearInterval(metronomeIntervId)
   }
-
 }
 
 

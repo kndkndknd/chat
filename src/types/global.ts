@@ -32,6 +32,9 @@ export type cmdStateType = {
     sinewave: {
       [key: string]: number
     },
+    env: {
+      [key: string]: number
+    }
     stream: {
       [key: string]: boolean
     },
@@ -46,6 +49,9 @@ export type cmdStateType = {
       METRONOME: Array<string>
     },
     sinewave: {
+      [key: string]: number
+    },
+    env: {
       [key: string]: number
     },
     stream: {
@@ -69,11 +75,14 @@ export type cmdStateType = {
     FADE: {
       IN:number,
       OUT:number,
+      ENV_IN?: number,
+      ENV_OUT?: number,
     },
     SINEWAVE: {
       [key: string]: number
     },
     PORTAMENT: number,
+    ENV_PORTAMENT?: number,
     VOICE: Array<string>,
     voiceLang: string,
     METRONOME: {

@@ -6,6 +6,8 @@ import { streamEmit } from './stream'
 import e from 'express'
 
 import { newWindowReqType } from '../types/global'
+import { stat } from 'fs'
+import { InputType } from 'zlib'
 
 export function charProcess(character:string, strings: string, id: string, io: SocketIO.Server, state: cmdStateType) {
   //console.log(character)
@@ -19,7 +21,7 @@ export function charProcess(character:string, strings: string, id: string, io: S
     strings = strings.slice(0,-1)
     io.emit('stringsFromServer',{strings: strings, timeout: false})
   } else if(character === 'Escape'){
-    stopEmit(io, state);
+    stopEmit(io, state, 'client');
     strings =  '';
   } else if(character === 'BASS') {
     console.log('io.to(' + id + ').emit("cmdFromSever",{"cmd":"BASS","property":"LOW"})')
@@ -44,32 +46,6 @@ const notTargetEmit = (targetId: string, idArr: string[], io: SocketIO.Server) =
   })
 }
 
-let mercariUrlArr = [
-  'https://jp.mercari.com/item/m41207267896',
-  'https://jp.mercari.com/user/profile/118372550',
-  'https://jp.mercari.com/item/m59941194063',
-  'https://jp.mercari.com/item/m55727263266',
-  'https://jp.mercari.com/item/m71741365650',
-  'https://jp.mercari.com/item/m55905740220',
-  'https://jp.mercari.com/item/m35102215360',
-  'https://jp.mercari.com/item/m54475520809',
-  'https://jp.mercari.com/item/m56197531876'
-]
-
-let SuzukiiiiiiiiiiTweetArr = [
-  'https://twitter.com/suzukiiiiiiiiii/status/1448894383231627266',
-  'https://twitter.com/suzukiiiiiiiiii/status/1451383540944293889',
-  'https://twitter.com/suzukiiiiiiiiii/status/1455725256685993995',
-  'https://twitter.com/suzukiiiiiiiiii/status/1452654169408499715',
-  'https://twitter.com/suzukiiiiiiiiii/status/1430307325399617538',
-  'https://twitter.com/suzukiiiiiiiiii/status/1447457223072882690',
-  'https://twitter.com/suzukiiiiiiiiii/status/1503951195832201216',
-  'https://twitter.com/suzukiiiiiiiiii/status/1429316774734884868',
-  'https://twitter.com/suzukiiiiiiiiii/status/1506583184196386817',
-  'https://twitter.com/suzukiiiiiiiiii/status/1585606840037277696',
-  'https://twitter.com/suzukiiiiiiiiii/status/1553519711874596865',
-  'https://twitter.com/suzukiiiiiiiiii/status/1580544857843830784'
-]
 
 export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, state: cmdStateType) => {
   //VOICE
@@ -78,12 +54,31 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
   if (strings === 'ENV') {
     if(state.inputMode === 'client') {
       state.inputMode = 'env'
-      io.emit('stringsFromServer',{strings: 'ENV', timeout: true})
+      io.emit('stringsFromServer',{strings: 'ENV MODE', timeout: true})
+    } else {
+      io.emit('stringsFromServer',{strings: 'ALREADY ENV MODE', timeout: true})
     }
   } else if (strings === 'CLIENT') {
     if(state.inputMode === 'env') {
       state.inputMode = 'client'
       io.emit('stringsFromServer',{strings: 'CLIENT', timeout: true})
+    } else {
+      io.emit('stringsFromServer',{strings: 'ALREADY CLIENT MODE', timeout: true})
+    }
+  } else if(strings === 'CHAT') {
+    console.log('chat start');
+    if(!state.current.stream.CHAT) {
+      console.log(state.client)
+      state.current.stream.CHAT = true
+      const targetId = state.client[Math.floor(Math.random() * state.client.length)]
+      io.to(targetId).emit('chatReqFromServer')
+      if(state.cmd.VOICE.length > 0) {
+        state.cmd.VOICE.forEach((element) => {
+          io.to(element).emit('voiceFromServer', 'CHAT')
+        })
+      }
+    } else {
+      state.current.stream.CHAT = false
     }
   } else if(strings === "RECORD" || strings === "REC") {
     if(!state.current.RECORD) {
@@ -115,7 +110,7 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
   } else if (strings === 'PREVIOUS' || strings === 'PREV') {
     previousCmd(io, state)
   } else if (strings === 'STOP') {
-    stopEmit(io, state);
+    stopEmit(io, state, 'client');
   } else if(Object.keys(parameterList).includes(strings)) {
     parameterChange(parameterList[strings], io, state, {source: id})
   } else if(strings === 'NO' || strings === 'NUMBER') {
@@ -124,8 +119,10 @@ export const receiveEnter = (strings: string, id: string, io: SocketIO.Server, s
       io.to(id).emit('stringsFromServer',{strings: String(index), timeout: true})
       //putString(io, String(index), state)
     })
+  } else if(strings.includes('MIN') || strings.includes('SEC')) {
+    console.log('in MIN SEC')
+    setModulation(strings, io, state)
   }
-
 }
 
 export const cmdEmit = (cmdStrings: string, io: SocketIO.Server, state: cmdStateType, target?: string) => {
@@ -272,12 +269,37 @@ export const cmdEmit = (cmdStrings: string, io: SocketIO.Server, state: cmdState
   cmdStrings = '';
 }
 
-export const stopEmit = (io: SocketIO.Server, state: cmdStateType) => {
-  io.emit('stopFromServer', state.cmd.FADE.OUT)
+export const stopEmit = (io: SocketIO.Server, state: cmdStateType, mode?: InputType) => {
+  if(mode !== undefined) {
+    if(mode === 'client') {
+      stopClient(io, state)
+    } else {
+      state.env.forEach((id) => {
+        io.to(id).emit('stopFromServer', state.cmd.FADE.ENV_OUT)
+      })
+      state.previous.env = state.current.env
+      state.current.env = {}
+    }
+  } else if(state.inputMode === 'client') {
+    stopClient(io, state)
+  } else if(state.inputMode === 'env') {
+    state.env.forEach((id) => {
+      io.to(id).emit('stopFromServer', state.cmd.FADE.ENV_OUT)
+    })
+    state.previous.env = state.current.env
+    state.current.env = {}
+  }
+}
+
+const stopClient = (io: SocketIO.Server, state: cmdStateType) => {
+  state.client.forEach((id) => {
+    io.to(id).emit('stopFromServer', state.cmd.FADE.OUT)
+  })
+    // io.emit('stopFromServer', state.cmd.FADE.OUT)
   // STOPは個別の関数があるのでVOICEはそこに相乗り
   if(state.cmd.VOICE.length > 0) {
     state.cmd.VOICE.forEach((element) => {
-//      io.to(element).emit('voiceFromServer', "STOP")
+      //      io.to(element).emit('voiceFromServer', "STOP")
       io.to(element).emit('voiceFromServer', {text: 'STOP', lang: state.cmd.voiceLang})
     })
   }
@@ -295,17 +317,41 @@ export const stopEmit = (io: SocketIO.Server, state: cmdStateType) => {
   state.current.sinewave = {}
 }
 
+const stopAll = (io: SocketIO.Server, state: cmdStateType) => {
+  io.emit('stopFromServer', state.cmd.FADE.ENV_OUT)
+  // STOPは個別の関数があるのでVOICEはそこに相乗り
+  if(state.cmd.VOICE.length > 0) {
+    state.cmd.VOICE.forEach((element) => {
+      //      io.to(element).emit('voiceFromServer', "STOP")
+      io.to(element).emit('voiceFromServer', {text: 'STOP', lang: state.cmd.voiceLang})
+    })
+  }
+
+  // current -> previous && current -> stop
+  for(let cmd in state.current.cmd) {
+    state.previous.cmd[cmd] = state.current.cmd[cmd]
+    state.current.cmd[cmd] = []
+  }
+  for(let stream in state.current.stream) {
+    state.previous.stream[stream] = state.current.stream[stream]
+    state.current.stream[stream] = false
+  }
+  state.previous.sinewave = state.current.sinewave
+  state.current.sinewave = {}
+}
+
+type sinewaveEmitType = {
+  cmd: string,
+  value: number,
+  flag: boolean,
+  fade: number,
+  portament: number,
+  gain: number
+}
 
 export const sinewaveEmit = (frequencyStr: string, io: SocketIO.Server, state: cmdStateType, target?: string) => {
   // サイン波の処理
-  let cmd: {
-    cmd: string,
-    value: number,
-    flag: boolean,
-    fade: number,
-    portament: number,
-    gain: number
-  } = {
+  let cmd: sinewaveEmitType = {
     cmd: 'SINEWAVE',
     value: Number(frequencyStr),
     flag: true,
@@ -335,37 +381,42 @@ export const sinewaveEmit = (frequencyStr: string, io: SocketIO.Server, state: c
       state.current.sinewave[targetId] = cmd.value
     }
   } else {
-    // どの端末も音を出していない場合
-    if(Object.keys(state.current.sinewave).length === 0) {
-      cmd.fade = state.cmd.FADE.IN
-      targetId = state.client[Math.floor(Math.random() * state.client.length)]
-      console.log("debug: " + targetId)
-      state.current.sinewave[targetId] = cmd.value
-      // state.previous.sinewave = {}
-    } else {
-      //同じ周波数の音を出している端末がある場合
-      for(let id in state.current.sinewave) {
-        if(cmd.value === state.current.sinewave[id]) {
-          targetId = id
-          cmd.flag = false
-          cmd.fade = state.cmd.FADE.OUT
-          delete state.current.sinewave[targetId]
-        }
-      }
-      // 同じ周波数の音を出している端末がない場合
-      if(targetId === 'initial') {
-        for(let i = 0; i < state.client.length; i++) {
-          if(Object.keys(state.current.sinewave).includes(state.client[i])) {
-            continue
-          } else {
-            targetId = state.client[i]
+    if(state.inputMode === 'client') {
+      // どの端末も音を出していない場合
+      if(Object.keys(state.current.sinewave).length === 0) {
+        cmd.fade = state.cmd.FADE.IN
+        targetId = state.client[Math.floor(Math.random() * state.client.length)]
+        console.log("debug: " + targetId)
+        state.current.sinewave[targetId] = cmd.value
+        // state.previous.sinewave = {}
+      } else {
+
+        //同じ周波数の音を出している端末がある場合
+        for(let id in state.current.sinewave) {
+          if(cmd.value === state.current.sinewave[id]) {
+            targetId = id
+            cmd.flag = false
+            cmd.fade = state.cmd.FADE.OUT
+            delete state.current.sinewave[targetId]
           }
         }
+        // 同じ周波数の音を出している端末がない場合
         if(targetId === 'initial') {
-          targetId = Object.keys(state.current.sinewave)[Math.floor(Math.random() * Object.keys(state.current.sinewave).length)]
+          for(let i = 0; i < state.client.length; i++) {
+            if(Object.keys(state.current.sinewave).includes(state.client[i])) {
+              continue
+            } else {
+              targetId = state.client[i]
+            }
+          }
+          if(targetId === 'initial') {
+            targetId = Object.keys(state.current.sinewave)[Math.floor(Math.random() * Object.keys(state.current.sinewave).length)]
+          }
+          state.current.sinewave[targetId] = cmd.value
         }
-        state.current.sinewave[targetId] = cmd.value
       }
+    } else if(state.inputMode === 'env') {
+      envSinewaveEmit(frequencyStr, io, state)
     }
   }
   console.log(state.current.sinewave)
@@ -376,8 +427,58 @@ export const sinewaveEmit = (frequencyStr: string, io: SocketIO.Server, state: c
   notTargetEmit(targetId, state.client, io)
 }
 
+const envSinewaveEmit = (frequencyStr: string, io: SocketIO.Server, state: cmdStateType) => {
+  let cmd: sinewaveEmitType = {
+    cmd: 'SINEWAVE',
+    value: Number(frequencyStr),
+    flag: true,
+    fade: 0,
+    portament: state.cmd.PORTAMENT,
+    gain: state.cmd.GAIN.SINEWAVE
+  }
+  let targetId = 'initial'
+      cmd.fade = state.cmd.FADE.ENV_IN
+  // どの端末も音を出していない場合
+      if(Object.keys(state.current.env).length === 0) {
+        cmd.fade = state.cmd.FADE.ENV_IN
+        targetId = state.env[Math.floor(Math.random() * state.env.length)]
+        console.log("debug: " + targetId)
+        state.current.env[targetId] = cmd.value
+        // state.previous.sinewave = {}
+      } else {
+        //同じ周波数の音を出している端末がある場合
+        for(let id in state.current.env) {
+          if(cmd.value === state.current.env[id]) {
+            targetId = id
+            cmd.flag = false
+            cmd.fade = state.cmd.FADE.ENV_OUT
+            delete state.current.env[targetId]
+          }
+        }
+        // 同じ周波数の音を出している端末がない場合
+        if(targetId === 'initial') {
+          for(let i = 0; i < state.client.length; i++) {
+            if(Object.keys(state.current.env).includes(state.env[i])) {
+              continue
+            } else {
+              targetId = state.env[i]
+            }
+          }
+          if(targetId === 'initial') {
+            targetId = Object.keys(state.current.env)[Math.floor(Math.random() * Object.keys(state.current.env).length)]
+          }
+          state.current.env[targetId] = cmd.value
+        }        
+      }
+      cmd.portament = state.cmd.ENV_PORTAMENT
+      putCmd(io, targetId, cmd, state)
+      //io.emit('cmdFromServer', cmd)
+      notTargetEmit(targetId, state.client, io)
+}
+
 const sinewaveChange = (cmdStrings: string, io: SocketIO.Server, state: cmdStateType, value?: number) => {
-  if(cmdStrings === 'TWICE') {
+  if(state.inputMode === 'client') {
+    if(cmdStrings === 'TWICE') {
       for(let id in state.current.sinewave) {
         state.previous.sinewave[id] = state.current.sinewave[id]
         state.current.sinewave[id] = state.current.sinewave[id] * 2
@@ -400,46 +501,138 @@ const sinewaveChange = (cmdStrings: string, io: SocketIO.Server, state: cmdState
         // io.to(id).emit('cmdFromServer', cmd)
       }
 
-  } else if (cmdStrings === 'HALF') {
-    for(let id in state.current.sinewave) {
-      state.previous.sinewave[id] = state.current.sinewave[id]
-      state.current.sinewave[id] = state.current.sinewave[id] / 2
-      const cmd: {
-        cmd: string,
-        value: number,
-        flag: boolean,
-        fade: number,
-        portament: number,
-        gain: number
-      } = {
-        cmd: 'SINEWAVE',
-        value: state.current.sinewave[id],
-        flag: true,
-        fade: 0,
-        portament: state.cmd.PORTAMENT,
-        gain: state.cmd.GAIN.SINEWAVE
+    } else if (cmdStrings === 'HALF') {
+      for(let id in state.current.sinewave) {
+        state.previous.sinewave[id] = state.current.sinewave[id]
+        state.current.sinewave[id] = state.current.sinewave[id] / 2
+        const cmd: {
+          cmd: string,
+          value: number,
+          flag: boolean,
+          fade: number,
+          portament: number,
+          gain: number
+        } = {
+          cmd: 'SINEWAVE',
+          value: state.current.sinewave[id],
+          flag: true,
+          fade: 0,
+          portament: state.cmd.PORTAMENT,
+          gain: state.cmd.GAIN.SINEWAVE
+        }
+        //io.to(id).emit('cmdFromServer', cmd)
+        putCmd(io, id, cmd, state)
       }
-      //io.to(id).emit('cmdFromServer', cmd)
-      putCmd(io, id, cmd, state)
-    }
 
+    }
+  } else if(state.inputMode === 'env') {
+      if(cmdStrings === 'TWICE') {
+        for(let id in state.current.env) {
+          state.previous.env[id] = state.current.env[id]
+          state.current.env[id] = state.current.env[id] * 2
+          const cmd: {
+            cmd: string,
+            value: number,
+            flag: boolean,
+            fade: number,
+            portament: number,
+            gain: number
+          } = {
+            cmd: 'SINEWAVE',
+            value: state.current.env[id],
+            flag: true,
+            fade: 0,
+            portament: state.cmd.ENV_PORTAMENT,
+            gain: state.cmd.GAIN.SINEWAVE
+          }
+          putCmd(io, id, cmd, state)
+          // io.to(id).emit('cmdFromServer', cmd)
+        }
+  
+      } else if (cmdStrings === 'HALF') {
+        for(let id in state.current.env) {
+          state.previous.sinewave[id] = state.current.env[id]
+          state.current.sinewave[id] = state.current.env[id] / 2
+          const cmd: {
+            cmd: string,
+            value: number,
+            flag: boolean,
+            fade: number,
+            portament: number,
+            gain: number
+          } = {
+            cmd: 'SINEWAVE',
+            value: state.current.env[id],
+            flag: true,
+            fade: 0,
+            portament: state.cmd.ENV_PORTAMENT,
+            gain: state.cmd.GAIN.SINEWAVE
+          }
+          //io.to(id).emit('cmdFromServer', cmd)
+          putCmd(io, id, cmd, state)
+        }
+  
+      }
   }
 }
 
-export const parameterChange = (param: string, io: SocketIO.Server, state: cmdStateType, arg?: {source?: string, value?: number, property?:string}) => {
+export const parameterChange = (param: string, io: SocketIO.Server, state: cmdStateType, arg?: {source?: string, value?: number, property?:string, mode?:clientType}) => {
   switch(param) {
     case 'PORTAMENT':
-      if(arg && arg.value && isFinite(Number(arg.value))) {
-        state.cmd.PORTAMENT = arg.value
-      } else {
-        if(state.cmd.PORTAMENT > 0) {
-          state.cmd.PORTAMENT = 0
-        } else {
-          state.cmd.PORTAMENT = 5
+      if(arg.mode === undefined) {
+        if(state.inputMode === 'client') {
+          if(arg && arg.value && isFinite(Number(arg.value))) {
+            state.cmd.PORTAMENT = arg.value
+          } else {
+            if(state.cmd.PORTAMENT > 0) {
+              state.cmd.PORTAMENT = 0
+            } else {
+              state.cmd.PORTAMENT = 5
+            }
+          }
+          // io.emit('stringsFromServer',{strings: 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', timeout: true})
+          putString(io, 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', state)
+        } else if(state.inputMode === 'env') {
+          if(arg && arg.value && isFinite(Number(arg.value))) {
+            state.cmd.ENV_PORTAMENT = arg.value
+
+          } else {
+            if(state.cmd.ENV_PORTAMENT > 0) {
+              state.cmd.ENV_PORTAMENT = 0
+            } else {
+              state.cmd.ENV_PORTAMENT = 5
+            }
+          }
+          // io.emit('stringsFromServer',{strings: 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', timeout: true})
+          putString(io, 'ENV PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', state)  
+  
         }
+
+      } else if(arg.mode === 'client') {
+        if(arg && arg.value && isFinite(Number(arg.value))) {
+          state.cmd.PORTAMENT = arg.value
+        } else {
+          if(state.cmd.PORTAMENT > 0) {
+            state.cmd.PORTAMENT = 0
+          } else {
+            state.cmd.PORTAMENT = 5
+          }
+        }
+        // io.emit('stringsFromServer',{strings: 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', timeout: true})
+        putString(io, 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', state)  
+      } else if(arg.mode === 'env') {
+        if(arg && arg.value && isFinite(Number(arg.value))) {
+          state.cmd.ENV_PORTAMENT = arg.value
+        } else {
+          if(state.cmd.ENV_PORTAMENT > 0) {
+            state.cmd.ENV_PORTAMENT = 0
+          } else {
+            state.cmd.ENV_PORTAMENT = 5
+          }
+        }
+        // io.emit('stringsFromServer',{strings: 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', timeout: true})
+        putString(io, 'ENV PORTAMENT: ' + String(state.cmd.ENV_PORTAMENT) + 'sec', state)  
       }
-      // io.emit('stringsFromServer',{strings: 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', timeout: true})
-      putString(io, 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', state)
       break
     case 'SAMPLERATE':
       let sampleRate = 44100
@@ -720,6 +913,82 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
     state.cmd.GAIN[stringArr[1]] = Number(stringArr[2])
     console.log(state.cmd.GAIN)
     putString(io, stringArr[1] +  ' GAIN: ' + stringArr[2], state)
+  } else if (stringArr[0] === 'ENV') {
+    if(stringArr[1] === 'PORTAMENT' || stringArr[1] === 'PORT') {
+      if(stringArr.length === 2) {
+        console.log('debug ' + stringArr[1])
+        parameterChange("PORTAMENT", io, state, {mode: 'env'})
+        // putString(io, stringArr[0] + ' ' + stringArr[1], state)  
+      } else {
+        console.log(arrTypeArr[2])
+        if(arrTypeArr[2] === 'number') {
+          parameterChange("PORTAMENT", io, state, {value: Number(stringArr[2]), mode: 'env'})
+          // putString(io, stringArr[0] + ' ' + stringArr[1] + ' ' + stringArr[2] + ' sec', state) 
+        }
+      }
+    } else if(stringArr[1] === 'FADE') {
+      if((stringArr[2] === 'IN' || stringArr[2] === 'OUT') && stringArr.length === 3) {
+        if(state.cmd.FADE['ENV_' + stringArr[2]] === 0) {
+          state.cmd.FADE['ENV_' + stringArr[2]] = 5
+        } else {
+          state.cmd.FADE['ENV_' + stringArr[2]] = 0
+        }
+        // io.emit('stringsFromServer',{strings: 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), timeout: true})
+        putString(io, 'ENV FADE ' + stringArr[2] +  ': ' + String(state.cmd.FADE['ENV_' + stringArr[2]]), state)
+      } else if(stringArr.length === 4 && (stringArr[2] === 'IN' || stringArr[2] === 'OUT') && arrTypeArr[3] === 'number') {
+        if(state.cmd.FADE['ENV_' + stringArr[2]] !== Number(stringArr[3])) {
+          state.cmd.FADE['ENV_' + stringArr[2]] = Number(stringArr[3])
+        } else {
+          state.cmd.FADE['ENV_' + stringArr[2]] = 0
+        }
+        putString(io, 'ENV FADE ' + stringArr[2] +  ': ' + String(state.cmd.FADE['ENV_' + stringArr[2]]), state)
+      }      
+    } else if(stringArr[1] === 'STOP') {
+      stopEmit(io, state, 'env');
+    } else if(arrTypeArr[1] === 'number') {
+      if(stringArr.length === 2) {
+        console.log('debug ' + stringArr[1])
+
+        envSinewaveEmit(stringArr[1], io, state)
+      // } else if(stringArr.length === 3 && arrTypeArr[2] === 'number') {
+        // sinewaveEmit(stringArr[2], io, state, stringArr[1])
+      }
+    }
+  } else if(stringArr[0] === 'STOP') {
+    if(stringArr[1] === 'ALL') {
+      stopAll(io, state)
+    } else if(stringArr[1] === 'CMD') {
+      state.client.forEach((id) => {
+        io.to(id).emit('stopFromServer', state.cmd.FADE.OUT)
+      })
+        // io.emit('stopFromServer', state.cmd.FADE.OUT)
+      // STOPは個別の関数があるのでVOICEはそこに相乗り
+      if(state.cmd.VOICE.length > 0) {
+        state.cmd.VOICE.forEach((element) => {
+          //      io.to(element).emit('voiceFromServer', "STOP")
+          io.to(element).emit('voiceFromServer', {text: 'STOP', lang: state.cmd.voiceLang})
+        })
+      }
+    
+      // current -> previous && current -> stop
+      for(let cmd in state.current.cmd) {
+        state.previous.cmd[cmd] = state.current.cmd[cmd]
+        state.current.cmd[cmd] = []
+      }
+      state.previous.sinewave = state.current.sinewave
+      state.current.sinewave = {}    
+    } else if(stringArr[1] === 'STREAM') {
+      for(let stream in state.current.stream) {
+        state.previous.stream[stream] = state.current.stream[stream]
+        state.current.stream[stream] = false
+      }
+    } else if(stringArr[1] === 'ENV') {
+      state.env.forEach((id) => {
+        io.to(id).emit('stopFromServer', state.cmd.FADE.ENV_OUT)
+      })
+      state.previous.env = state.current.env
+      state.current.env = {}
+    }
   }
 
 }
@@ -776,4 +1045,98 @@ const emitVoice = (io: SocketIO.Server, strings: string, state: cmdStateType) =>
       io.to(element).emit('voiceFromServer', {text: strings, lang: state.cmd.voiceLang})
     })
   }
+}
+
+
+type TimeUnit = 'SEC' | 'MIN';
+type ParsedTime = {
+    value: number;
+    unit: TimeUnit;
+};
+
+function parseTimeString(timeStr: string): ParsedTime | null {
+  // const regex = /^(\d+)(SEC|MIN)$/;
+  const regex = /^(\d+(?:\.\d+)?)(SEC|MIN)$/;
+  const match = timeStr.match(regex);
+
+  if (match) {
+      const value = parseFloat(match[1]);
+      const unit = match[2] as TimeUnit;
+      return { value, unit };
+  }
+
+  return null;
+}
+
+
+const setModulation = (intervalStr: string, io, state) => {
+  const intervalObj = parseTimeString(intervalStr)
+  // intervalObj.unitが'SEC'の場合は、1 / intervalObj.valueを計算し、intervalObj.unitが'MIN'の場合は、1 / (intervalObj.value * 60)を計算する  
+  console.log(intervalObj)
+  const frequencyDiff: number = intervalObj.unit === 'MIN' ? 1 / (intervalObj.value * 60) : 1 / intervalObj.value
+
+  if(Object.keys(state.current.env).length > 0) {
+    // state.current.env の中からランダムな要素を取り出す
+    const Reference = Object.keys(state.current.env)[Math.floor(Math.random() * Object.keys(state.current.env).length)]
+    console.log(Reference)
+    console.log(state.current.env)
+    console.log(state.current.env[Reference])
+    console.log(frequencyDiff)
+
+    state.env.forEach((target, index) => {
+      let machineNo = 0
+      if(target !== Reference) {
+        const cmd: {
+          cmd: string,
+          value: number,
+          flag: boolean,
+          fade: number,
+          portament: number,
+          gain: number
+        } = {
+          cmd: 'SINEWAVE',
+          value: state.current.env[Reference] + (frequencyDiff * (machineNo + 1)),
+          flag: true,
+          fade: 0,
+          portament: state.cmd.ENV_PORTAMENT,
+          gain: state.cmd.GAIN.SINEWAVE
+        }
+        console.log(target)
+        console.log(cmd.value)
+        putCmd(io, target, cmd, state)
+        putString(io, String(intervalObj.value) + ' ' + intervalObj.unit, state)
+        machineNo++
+      }
+    })
+    /*
+    for(let target in state.current.env) {
+      if(target === Reference) {
+        console.log('test')
+        continue
+      } else {
+        console.log('test2')
+        const cmd: {
+          cmd: string,
+          value: number,
+          flag: boolean,
+          fade: number,
+          portament: number,
+          gain: number
+        } = {
+          cmd: 'SINEWAVE',
+          value: state.current.env[target] + frequencyDiff,
+          flag: true,
+          fade: 0,
+          portament: state.cmd.ENV_PORTAMENT,
+          gain: state.cmd.GAIN.SINEWAVE
+        }
+        putCmd(io, target, cmd, state)
+        putString(io, String(frequencyDiff) + ' SEC', state)
+      }
+    }
+    */
+  } else {
+    putString(io, 'NO ENV', state)
+  }
+
 }

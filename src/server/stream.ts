@@ -5,6 +5,7 @@ import { streams, states, basisBufferSize } from './states'
 
 export const streamEmit = (source: string, io: SocketIO.Server, state: cmdStateType) => {
   // if(streams[source].length > 0) {
+    console.log('debug');
     console.log(state.client)
     const targetId = state.client[Math.floor(Math.random() * state.client.length)]
     let buff: buffStateType

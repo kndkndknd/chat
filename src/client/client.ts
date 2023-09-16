@@ -338,7 +338,7 @@ export const initialize = async () => {
         height: {ideal: 1080},
         width: {ideal: 1920}
       },audio : {
-        deviceId: mic.deviceId,
+        // deviceId: mic.deviceId,
         sampleRate: {ideal: 44100},
         echoCancellation: false,
         noiseSuppression: false,

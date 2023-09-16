@@ -27,15 +27,19 @@ export const states: cmdStateType = {
     FADE: {
       IN:0,
       OUT:0,
+      ENV_IN:0,
+      ENV_OUT:0,
     },
     SINEWAVE: {
     },
     PORTAMENT: 0,
+    ENV_PORTAMENT: 0,
     VOICE: [],
     voiceLang: 'en-US',
     METRONOME: {}
   },
   client: [],
+  env: [],
   current: {
     cmd: {
       FEEDBACK: [],
@@ -45,6 +49,7 @@ export const states: cmdStateType = {
       METRONOME: []
     },
     sinewave: {},
+    env: {},
     stream:{
       CHAT: false,
       PLAYBACK: false,
@@ -61,6 +66,7 @@ export const states: cmdStateType = {
       METRONOME: []
     },
     sinewave: {},
+    env: {},
     stream:{
       CHAT: false,
       PLAYBACK: false,

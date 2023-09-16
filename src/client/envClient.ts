@@ -12,6 +12,8 @@ import {keyDown} from './textInput'
 
 import {newWindowReqType} from '../types/global'
 
+const envFlag = true;
+
 let start = false
 
 let darkFlag = false
@@ -25,7 +27,7 @@ let stringsClient = '';
 let eListener = <HTMLElement> document.getElementById('wrapper')
 eListener.addEventListener('click', (()=>{
   if(!start) {
-   initialize()
+    initialize()
   }
 }), false);
 
@@ -338,7 +340,7 @@ export const initialize = async () => {
         height: {ideal: 1080},
         width: {ideal: 1920}
       },audio : {
-        deviceId: mic.deviceId,
+        // deviceId: mic.deviceId,
         sampleRate: {ideal: 44100},
         echoCancellation: false,
         noiseSuppression: false,

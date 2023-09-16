@@ -27,8 +27,8 @@ import { sevenSinsType } from '../types/global';
 
 //https鍵読み込み
 const options = {
-  key: fs.readFileSync(path.join(__dirname,'../../..','keys/privkey.pem')),
-  cert: fs.readFileSync(path.join(__dirname,'../../..', 'keys/cert.pem'))
+  key: fs.readFileSync(path.join(__dirname,'../../..','keys/chat/privkey.pem')),
+  cert: fs.readFileSync(path.join(__dirname,'../../..', 'keys/chat/cert.pem'))
 }
 
 
