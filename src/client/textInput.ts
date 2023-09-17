@@ -27,7 +27,7 @@ export const keyDown = (e: KeyboardEvent, stringsClient: string, socket: Socket,
     } else {
       erasePrint(stx, strCnvs)
     }
-  } else if(character === 'Eisu' || character == 'Meta') {
+  } else if(character === 'Eisu' || character == 'Meta' || character === 'Shift') {
     console.log(character + ' pressed')
   } else {
     if(/\w/.test(character) && character.length === 1){

@@ -1015,6 +1015,8 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
     } else if(stringArr[1] === 'ALL' && arrTypeArr[2] === 'number') {
       envAllSinewaveEmit(stringArr[2], io, state)
     }
+  } else if(stringArr[0].includes(':')) {
+    setTimer(stringArr, io, state)
   }
 
 }
@@ -1073,6 +1075,36 @@ const emitVoice = (io: SocketIO.Server, strings: string, state: cmdStateType) =>
   }
 }
 
+//HH:MMまたはHH:MM:SSの文字列とコマンドを入力されたときに、現在時刻と比較してsetTimeoutでコマンドを実行する関数
+const setTimer = (stringArr: Array<string>, io: SocketIO.Server, state: cmdStateType) => {
+  const timeArr = stringArr[0].split(':')
+  // cmdはstringArrの2番目以降の要素を結合した文字列
+  const cmd = stringArr.slice(1).join(' ')
+  const now = new Date()
+  const nowTime = now.getTime()
+  let hour: number
+  let min: number
+  let sec: number
+  let time: number
+  let timeDiff: number
+  if(timeArr.length === 2) {
+    hour = Number(timeArr[0])
+    min = Number(timeArr[1])
+    sec = 0
+  } else if(timeArr.length === 3) {
+    hour = Number(timeArr[0])
+    min = Number(timeArr[1])
+    sec = Number(timeArr[2])
+  }
+  time = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, min, sec).getTime()
+  timeDiff = time - nowTime
+  putString(io, stringArr[0] + ", " + cmd, state)
+  setTimeout(() => {
+    receiveEnter(cmd, "", io, state)
+  }, timeDiff)
+}
+  
+  
 
 type TimeUnit = 'SEC' | 'MIN';
 type ParsedTime = {
