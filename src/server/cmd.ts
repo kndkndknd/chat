@@ -437,12 +437,11 @@ const envSinewaveEmit = (frequencyStr: string, io: SocketIO.Server, state: cmdSt
     cmd: 'SINEWAVE',
     value: Number(frequencyStr),
     flag: true,
-    fade: 0,
+    fade: state.cmd.FADE.ENV_IN,
     portament: state.cmd.PORTAMENT,
     gain: state.cmd.GAIN.SINEWAVE
   }
   let targetId = 'initial'
-      cmd.fade = state.cmd.FADE.ENV_IN
   // どの端末も音を出していない場合
       if(Object.keys(state.current.env).length === 0) {
         cmd.fade = state.cmd.FADE.ENV_IN
@@ -479,6 +478,22 @@ const envSinewaveEmit = (frequencyStr: string, io: SocketIO.Server, state: cmdSt
       putCmd(io, targetId, cmd, state)
       //io.emit('cmdFromServer', cmd)
       notTargetEmit(targetId, state.client, io)
+}
+
+const envAllSinewaveEmit = (frequencyStr: string, io: SocketIO.Server, state: cmdStateType) => {  
+  let cmd: sinewaveEmitType = {
+    cmd: 'SINEWAVE',
+    value: Number(frequencyStr),
+    flag: true,
+    fade: state.cmd.FADE.ENV_IN,
+    portament: state.cmd.PORTAMENT,
+    gain: state.cmd.GAIN.SINEWAVE
+  }
+  state.env.forEach((id, index) => {
+    putCmd(io, id, cmd, state)
+    // putString(io, 'ENV SINWAVE: ' + String(cmd.value) + 'Hz', state)
+    state.current.env[id] = cmd.value
+  })
 }
 
 const sinewaveChange = (cmdStrings: string, io: SocketIO.Server, state: cmdStateType, value?: number) => {
@@ -997,6 +1012,8 @@ const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state: cmdSta
       // } else if(stringArr.length === 3 && arrTypeArr[2] === 'number') {
         // sinewaveEmit(stringArr[2], io, state, stringArr[1])
       }
+    } else if(stringArr[1] === 'ALL' && arrTypeArr[2] === 'number') {
+      envAllSinewaveEmit(stringArr[2], io, state)
     }
   }
 
