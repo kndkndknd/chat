@@ -13,7 +13,7 @@ let simsGain = 1
 let chatGainVal = 1.5
 let glitchGainVal = 1.5
 
-let metronomeIntervId: NodeJS.Timer
+let metronomeIntervId: number
 
 // const cnvs = <HTMLCanvasElement> document.getElementById('cnvs');
 // const ctx  = <CanvasRenderingContext2D>cnvs.getContext('2d');
@@ -344,7 +344,7 @@ export const metronome = (flag: boolean, latency: number, gain: number) => {
   if (!metronomeIntervId) {
     console.log('metronome init')
     textPrint('METRONOME', ctx, cnvs)
-    metronomeIntervId = setInterval(()=>{
+    metronomeIntervId = window.setInterval(()=>{
       console.log('metronome')
       console.log(gain)
       click(gain)
@@ -357,7 +357,7 @@ export const metronome = (flag: boolean, latency: number, gain: number) => {
     textPrint('METRONOME', ctx, cnvs)
     console.log('metronome change')
     clearInterval(metronomeIntervId)
-    metronomeIntervId = setInterval(()=>{
+    metronomeIntervId = window.setInterval(()=>{
       click(gain)
       textPrint('CLICK', ctx, cnvs)
       setTimeout(()=>{
@@ -470,13 +470,14 @@ function Setup() {
   vol.gain.value = 1;
 }
 
-let quantizeInterval: NodeJS.Timer
+
+let quantizeInterval: number
 let quantizerCurrentTime: number = 0
 let eighthNoteSec: number = 0
 
 export const quantize = (bar: number, eightNote: number) => {
   eighthNoteSec = eightNote
-  quantizeInterval = setInterval(() => {
+  quantizeInterval = window.setInterval(() => {
     console.log('quantize')
     quantizerCurrentTime = audioContext.currentTime
     console.log(quantizerCurrentTime)
