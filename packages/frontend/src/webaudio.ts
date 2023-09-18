@@ -352,7 +352,7 @@ export const metronome = (flag: boolean, latency: number, gain: number) => {
       setTimeout(()=>{
         erasePrint(ctx, cnvs)
       }, 500)
-    }, latency);
+  }, latency);
   } else if(flag) {
     textPrint('METRONOME', ctx, cnvs)
     console.log('metronome change')
