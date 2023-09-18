@@ -4,8 +4,7 @@ const clientConfig = {
   // メインとなるJavaScriptファイル（エントリーポイント）
   entry: {
     client: "./src/client.ts",
-    ctrl: "./src/ctrl.ts",
-    snowLeopardClient: "./src/snowLeopard.mjs",
+    snowLeopardClient: "./src/snowLeopardClient.js",
   },
   // entry: scripts,
   // ファイルの出力設定
