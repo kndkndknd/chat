@@ -60,6 +60,7 @@ export const receiveEnter = (
     console.log("sinewave");
     sinewaveEmit(strings, io, state);
   } else if (strings === "STOP") {
+    console.log("stop");
     stopEmit(io, state);
   } else if (strings === "QUANTIZE") {
     state.stream.quantize = !state.stream.quantize;
@@ -89,6 +90,10 @@ export const receiveEnter = (
       });
       //putString(io, String(index), state)
     });
+  } else if (strings === "CLOCK") {
+    state.clockMode = !state.clockMode;
+    console.log(state.clockMode);
+    io.to(id).emit("clockModeFromServer", { clockMode: state.clockMode });
   }
   if (strings !== "STOP") {
     state.previous.text = strings;

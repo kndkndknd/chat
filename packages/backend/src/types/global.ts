@@ -107,6 +107,7 @@ export type cmdStateType = {
   bpm: {
     [key: string]: number;
   };
+  clockMode: boolean;
 };
 export type buffArrayType = {
   KICK: {

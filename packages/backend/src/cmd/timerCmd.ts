@@ -1,6 +1,7 @@
 import SocketIO from 'socket.io';
 import { cmdStateType } from '../types/global'
 import { receiveEnter } from './receiveEnter'
+import { stopEmit } from './stopEmit'
 
 export const timerCmd = (io: SocketIO.Server, state: cmdStateType, stringArr: string[], timeStampArr: string[]) => {
   let dt = new Date();
@@ -29,6 +30,8 @@ export const timerCmd = (io: SocketIO.Server, state: cmdStateType, stringArr: st
       const targetId = state.client[Math.floor(Math.random() * state.client.length)]
       if(Object.keys(state.current.cmd).includes(stringArr[stringArr.length - 1]) || Object.keys(state.current.stream).includes(stringArr[stringArr.length - 1])) {
         receiveEnter(cmdString, targetId, io, state)
+      } else if(stringArr[stringArr.length - 1] === 'STOP') {
+        stopEmit(io, state);
       } else {
         io.emit('stringsFromServer', {
           strings: cmdString,

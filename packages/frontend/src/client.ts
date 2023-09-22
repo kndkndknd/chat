@@ -29,11 +29,13 @@ import {cnvs, ctx, videoElement,} from './globalVariable'
 import {keyDown} from './textInput'
 
 import {newWindowReqType} from './types/global'
+import { enableClockMode, disableClockMode } from './clockMode';
 
 let start = false
 
 let darkFlag = false
 let cinemaFlag = false
+let clockModeId: number = 0;
 
 // let videoElement = <HTMLVideoElement>document.getElementById('video');
 let timelapseId: NodeJS.Timer
@@ -329,6 +331,19 @@ socket.on('quantizeFromServer', (data: {flag: boolean, bpm: number, bar: number,
     setTimeout(() => {
       erasePrint(ctx, cnvs)
     }, 800)
+  }
+})
+
+socket.on('clockModeFromServer', (data: {clockMode: boolean}) => {
+  console.log(data)
+  if(data.clockMode) {
+    if(clockModeId === 0) {
+      clockModeId = enableClockMode();
+    }  
+  } else {
+    if(clockModeId !== 0) {
+      clockModeId = disableClockMode(clockModeId);
+    }
   }
 })
 

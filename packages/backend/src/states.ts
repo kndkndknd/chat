@@ -114,6 +114,7 @@ export const states: cmdStateType = {
     url: "ws://chat.knd.cloud/ws/",
   },
   bpm: {},
+  clockMode: false
 };
 
 export let basisBufferSize = 8192;
