@@ -30,6 +30,7 @@ export function charProcess(
     io.emit("stringsFromServer", { strings: strings, timeout: false });
   } else if (character === "Escape") {
     const client: 'client' | 'sinewaveClient' = state.sinewaveMode ? "sinewaveClient" : "client";
+    console.log(client)
     stopEmit(io, state, 'all', client);
     strings = "";
   } else if (character === "BASS") {
