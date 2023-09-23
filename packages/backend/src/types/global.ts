@@ -15,6 +15,7 @@ export type cmdType = {
 
 export type cmdStateType = {
   client: Array<string>;
+  sinewaveClient: Array<string>;
   current: {
     cmd: {
       FEEDBACK: Array<string>; // 発音しているIDの配列にする
@@ -47,6 +48,14 @@ export type cmdStateType = {
       [key: string]: boolean;
     };
     RECORD: boolean;
+  };
+  sinewaveClientStatus: {
+    current: {
+      [key: string]: number;
+    };
+    previous: {
+      [key: string]: number;
+    };
   };
   cmd: {
     GAIN: {
@@ -108,6 +117,7 @@ export type cmdStateType = {
     [key: string]: number;
   };
   clockMode: boolean;
+  sinewaveMode: boolean;
 };
 export type buffArrayType = {
   KICK: {

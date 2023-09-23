@@ -27,7 +27,8 @@ export const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state:
 
   if(arrTypeArr[0] === 'number' && stringArr.length === 2) {
     // 送信先を指定したコマンド/SINEWAVE
-    const target = state.client[Number(stringArr[0])]
+    // 20230923 sinewave modeの動作を記載
+    const target =  state.sinewaveMode ? state.client[Number(stringArr[0])] : state.sinewaveClient[Number(stringArr[0])]
     console.log(target)
     if(arrTypeArr[1] === 'string') {
       cmdEmit(stringArr[1], io, state, target)

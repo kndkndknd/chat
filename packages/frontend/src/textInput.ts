@@ -35,7 +35,12 @@ export const keyDown = (
     } else {
       erasePrint(stx, strCnvs);
     }
-  } else if(character === 'Eisu' || character == 'Meta' || character === 'Shift') {
+  } else if(character === 'Eisu' 
+    || character == 'Meta' 
+    || character === 'Shift'
+    || character === 'Control'
+    || character === 'Alt'
+  ) {
     console.log(character + ' pressed')
   } else {
     if (character === " ") {
