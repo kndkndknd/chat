@@ -36,6 +36,7 @@ let start = false
 let darkFlag = false
 let cinemaFlag = false
 let clockModeId: number = 0;
+const clientMode = 'client'
 
 // let videoElement = <HTMLVideoElement>document.getElementById('video');
 let timelapseId: NodeJS.Timer
@@ -45,7 +46,7 @@ let stringsClient = '';
 let eListener = <HTMLElement> document.getElementById('wrapper')
 eListener.addEventListener('click', (()=>{
   if(!start) {
-   initialize()
+    initialize()
   }
 }), false);
 
@@ -112,7 +113,8 @@ socket.on('cmdFromServer', (cmd: {
     case 'SINEWAVE':
       // erasePrint(stx, strCnvs);
       erasePrint(ctx, cnvs);
-      textPrint(String(cmd.value) + 'Hz', ctx, cnvs);
+      const cmdString = cmd.flag ? String(cmd.value) + 'Hz' : 'STOP'
+      textPrint(cmdString, ctx, cnvs);
       console.log('debug2')
       // if(cmd.fade && cmd.portament && cmd.gain) {
         console.log('debug3')
@@ -171,14 +173,16 @@ socket.on('cmdFromServer', (cmd: {
   stringsClient = '';
 });
 
-socket.on('stopFromServer', (fadeOutVal) => {
-  stopCmd(fadeOutVal)
+socket.on('stopFromServer', (data: {fadeOutVal: number, target?: string}) => {
   erasePrint(ctx, cnvs)
-  // erasePrint(stx, strCnvs)
-  textPrint('STOP', ctx, cnvs)
-  setTimeout(()=> {
-    erasePrint(ctx, cnvs)
-  },800)
+  if(data.target !== undefined && (data.target === 'all' || data.target === clientMode)) {
+    stopCmd(data.fadeOutVal)
+    // erasePrint(stx, strCnvs)
+    textPrint('STOP', ctx, cnvs)
+    setTimeout(()=> {
+      erasePrint(ctx, cnvs)
+    },800)
+  }
 })
 
 socket.on('textFromServer', (data: {text: string}) => {

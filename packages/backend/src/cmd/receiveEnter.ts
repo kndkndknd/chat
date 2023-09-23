@@ -62,7 +62,11 @@ export const receiveEnter = (
     sinewaveEmit(strings, io, state);
   } else if (strings === "STOP") {
     console.log("stop");
-    stopEmit(io, state);
+    if(state.sinewaveMode) {
+      stopEmit(io, state, 'all', 'sinewaveClient');
+    } else {
+      stopEmit(io, state, 'all', 'all');
+    }
   } else if (strings === "QUANTIZE") {
     state.stream.quantize = !state.stream.quantize;
     for(let key in state.bpm) {

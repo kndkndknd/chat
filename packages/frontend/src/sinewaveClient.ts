@@ -25,6 +25,7 @@ let start = false
 let darkFlag = false
 let cinemaFlag = false
 let clockModeId: number = 0;
+const clientMode = 'sinewaveClient'
 
 // let videoElement = <HTMLVideoElement>document.getElementById('video');
 let timelapseId: NodeJS.Timer
@@ -121,14 +122,17 @@ socket.on('cmdFromServer', (cmd: {
   stringsClient = '';
 });
 
-socket.on('stopFromServer', (fadeOutVal) => {
-  stopCmd(fadeOutVal)
+socket.on('stopFromServer', (data: {fadeOutVal: number, target?: string}) => {
+  console.log(data)
   erasePrint(ctx, cnvs)
-  // erasePrint(stx, strCnvs)
-  textPrint('STOP', ctx, cnvs)
-  setTimeout(()=> {
-    erasePrint(ctx, cnvs)
-  },800)
+  if(data.target !== undefined && (data.target === 'all' || data.target === clientMode)) {
+    stopCmd(data.fadeOutVal)
+    // erasePrint(stx, strCnvs)
+    textPrint('STOP', ctx, cnvs)
+    setTimeout(()=> {
+      erasePrint(ctx, cnvs)
+    },800)
+  }
 })
 
 socket.on('textFromServer', (data: {text: string}) => {

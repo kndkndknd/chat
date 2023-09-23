@@ -16,7 +16,7 @@ export const sinewaveEmit = (frequencyStr: string, io: SocketIO.Server, state: c
     cmd: 'SINEWAVE',
     value: Number(frequencyStr),
     flag: true,
-    fade: 0,
+    fade: state.cmd.FADE.IN,
     portament: state.cmd.PORTAMENT,
     gain: state.cmd.GAIN.SINEWAVE
   }
@@ -37,7 +37,7 @@ export const sinewaveEmit = (frequencyStr: string, io: SocketIO.Server, state: c
             if(cmd.value === state.sinewaveClientStatus.current[id]) {
               targetId = id
               cmd.flag = false
-              cmd.fade = state.cmd.FADE.OUT
+              cmd.fade = state.cmd.FADE.IN
               delete state.sinewaveClientStatus.current[targetId]
             }
           }

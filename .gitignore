@@ -5,3 +5,5 @@ upload
 .yarn
 .env
 !.yarn/release/*
+
+.DS_Store
