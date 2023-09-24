@@ -8,6 +8,8 @@ dotenv.config();
 const ipaddress = process.env.DB_HOST;
 
 export const insertStream = async (type: string, io: SocketIO.Server) => {
+  console.log(ipaddress)
+
   if (type === "PLAYBACK") {
     await streams[type].forEach(async (stream: buffStateType) => {
       await setTimeout(async () => {

@@ -5,6 +5,7 @@ const clientConfig = {
   entry: {
     client: "./src/client.ts",
     snowLeopardClient: "./src/snowLeopardClient.js",
+    sinewaveClient: "./src/sinewaveClient.ts",
   },
   // entry: scripts,
   // ファイルの出力設定

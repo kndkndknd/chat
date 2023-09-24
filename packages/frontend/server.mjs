@@ -43,6 +43,12 @@ app.get("/snowleopard", (req, res) => {
   res.sendFile(path.join(__dirname, "assets", "snowleopard.html"));
 });
 
+// 20230923 sinewave client
+app.get("/sinewave", (req, res) => {
+  res.sendFile(path.join(__dirname, "assets", "sinewaveClient.html"));
+});
+
+
 app.use((err, req, res, next) => {
   console.log(err);
   res.status(500).send("Internal Server Error");

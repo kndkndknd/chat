@@ -38,6 +38,7 @@ export const states: cmdStateType = {
     METRONOME: {},
   },
   client: [],
+  sinewaveClient: [],
   current: {
     cmd: {
       FEEDBACK: [],
@@ -70,6 +71,10 @@ export const states: cmdStateType = {
       TIMELAPSE: false,
     },
     RECORD: false,
+  },
+  sinewaveClientStatus: {
+    current: {},
+    previous: {},
   },
   stream: {
     sampleRate: {
@@ -114,7 +119,8 @@ export const states: cmdStateType = {
     url: "ws://chat.knd.cloud/ws/",
   },
   bpm: {},
-  clockMode: false
+  clockMode: false,
+  sinewaveMode: false,
 };
 
 export let basisBufferSize = 8192;

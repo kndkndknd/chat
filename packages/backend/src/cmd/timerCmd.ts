@@ -30,8 +30,20 @@ export const timerCmd = (io: SocketIO.Server, state: cmdStateType, stringArr: st
       const targetId = state.client[Math.floor(Math.random() * state.client.length)]
       if(Object.keys(state.current.cmd).includes(stringArr[stringArr.length - 1]) || Object.keys(state.current.stream).includes(stringArr[stringArr.length - 1])) {
         receiveEnter(cmdString, targetId, io, state)
-      } else if(stringArr[stringArr.length - 1] === 'STOP') {
-        stopEmit(io, state);
+      } else if(stringArr[1] === 'STOP') {
+        if(stringArr.length === 2) {
+          const client = state.sinewaveMode ? 'sinewaveClient' : 'all'
+          stopEmit(io, state, 'all', client);
+        } else if(stringArr.length === 3) {
+          if(stringArr[2] === 'SINEWAVECLIENT') {
+            stopEmit(io, state, 'all', 'sinewaveClient');
+          } else if(stringArr[2] === 'CLIENT') {
+            stopEmit(io, state, 'all', 'client');
+          } else if(stringArr[2] === 'ALL') {
+            stopEmit(io, state, 'all', 'all');
+          }
+
+        }
       } else {
         io.emit('stringsFromServer', {
           strings: cmdString,

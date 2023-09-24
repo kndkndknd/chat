@@ -58,6 +58,8 @@ let windowWidth = window.innerWidth
 let windowHeight = window.innerHeight
 let timelapseId
 
+const clientMode = 'client'
+
 let stringsClient = '';
 
 let cnvsElement
@@ -158,14 +160,27 @@ switch(cmd.cmd){
 stringsClient = '';
 });
 
-socket.on('stopFromServer', (fadeOutVal) => {
-stopCmd(fadeOutVal)
-erasePrint(ctx, cnvs)
-// erasePrint(stx, strCnvs)
-textPrint('STOP', ctx, cnvs)
-setTimeout(()=> {
+socket.on('stopFromServer', (data) => {
   erasePrint(ctx, cnvs)
-},800)
+  if(data.target !== undefined && (data.target === 'all' || data.target === clientMode)) {
+    stopCmd(data.fadeOutVal)
+    // erasePrint(stx, strCnvs)
+    textPrint('STOP', ctx, cnvs)
+    setTimeout(()=> {
+      erasePrint(ctx, cnvs)
+    },800)
+  }
+})
+
+
+socket.on('stopFromServer', (data) => {
+  stopCmd(data.fadeOutVal)
+  erasePrint(ctx, cnvs)
+  // erasePrint(stx, strCnvs)
+  textPrint('STOP', ctx, cnvs)
+  setTimeout(()=> {
+    erasePrint(ctx, cnvs)
+  },800)
 })
 
 socket.on('textFromServer', (data) => {

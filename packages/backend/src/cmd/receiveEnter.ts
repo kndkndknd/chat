@@ -13,6 +13,7 @@ import { voiceEmit } from "./voiceEmit";
 import { chatPreparation } from "../stream/chatPreparation";
 
 import { millisecondsPerBar, secondsPerEighthNote} from './bpmCalc'
+import { putString } from "./putString";
 
 export const receiveEnter = (
   strings: string,
@@ -61,7 +62,11 @@ export const receiveEnter = (
     sinewaveEmit(strings, io, state);
   } else if (strings === "STOP") {
     console.log("stop");
-    stopEmit(io, state);
+    if(state.sinewaveMode) {
+      stopEmit(io, state, 'all', 'sinewaveClient');
+    } else {
+      stopEmit(io, state, 'all', 'all');
+    }
   } else if (strings === "QUANTIZE") {
     state.stream.quantize = !state.stream.quantize;
     for(let key in state.bpm) {
@@ -90,11 +95,26 @@ export const receiveEnter = (
       });
       //putString(io, String(index), state)
     });
+    // 20230923 sinewave Clientの表示
+    state.sinewaveClient.forEach((id, index) => {
+      console.log(id);
+      io.to(id).emit("stringsFromServer", {
+        strings: String(index) + '(sinewave)',
+        timeout: true,
+      });
+      //putString(io, String(index), state)
+    });
+
   } else if (strings === "CLOCK") {
     state.clockMode = !state.clockMode;
     console.log(state.clockMode);
     io.to(id).emit("clockModeFromServer", { clockMode: state.clockMode });
+  } else if ( strings === "MODE") {
+    state.sinewaveMode = !state.sinewaveMode
+    console.log(state.sinewaveMode)
+    putString(io, state.sinewaveMode ? "SINEWAVE MODE" : "NORMAL MODE", state)
   }
+
   if (strings !== "STOP") {
     state.previous.text = strings;
   }

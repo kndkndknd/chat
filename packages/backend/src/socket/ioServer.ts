@@ -30,19 +30,31 @@ export const ioServer = (httpserver: Http.Server<typeof Http.IncomingMessage, ty
   
   io.sockets.on('connection', (socket)=>{
     socket.on("connectFromClient", (data) => {
-      if(!states.stream.timelapse) states.stream.timelapse = true 
       let sockId = String(socket.id);
-      console.log('socket.on("connectFromClient", (data) => {data:' + data + ', id:' + sockId + '}')
-      if(!states.client.includes(sockId)) states.client.push(sockId)    
-      states.client = states.client.filter((id) => {
-        //console.log(io.sockets.adapter.rooms.has(id))
-        if(io.sockets.adapter.rooms.has(id)) {
-          return id
-        }
-      })
-      // METRONOMEは接続時に初期値を作る
-      states.cmd.METRONOME[sockId] = 1000
+      if(data === 'client') {
+        if(!states.stream.timelapse) states.stream.timelapse = true 
+        console.log('socket.on("connectFromClient", (data) => {data:' + data + ', id:' + sockId + '}')
+        if(!states.client.includes(sockId)) states.client.push(sockId)    
+        states.client = states.client.filter((id) => {
+          //console.log(io.sockets.adapter.rooms.has(id))
+          if(io.sockets.adapter.rooms.has(id)) {
+            return id
+          }
+        })
+        // METRONOMEは接続時に初期値を作る
+        states.cmd.METRONOME[sockId] = 1000  
+      } else if(data === 'sinewaveClient') {
+        console.log(sockId + ' is sinewaveClient')
+        if(!states.sinewaveClient.includes(sockId)) states.sinewaveClient.push(sockId)    
+        states.sinewaveClient = states.sinewaveClient.filter((id) => {
+          //console.log(io.sockets.adapter.rooms.has(id))
+          if(io.sockets.adapter.rooms.has(id)) {
+            return id
+          }
+        })
+      }
       console.log(states.client)
+      console.log(states.sinewaveClient)
       socket.emit('debugFromServer')
     });
     socket.on('charFromClient', (character) =>{
