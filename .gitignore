@@ -7,3 +7,9 @@ upload
 !.yarn/release/*
 
 .DS_Store
+
+
+packages/backend/dist
+packages/frontend/dist/*.js
+packages/frontend/dist/*.map
+packages/frontend/dist/*.js.*

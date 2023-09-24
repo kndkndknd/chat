@@ -186,8 +186,8 @@ export const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state:
     putString(io, stringArr[1] +  ' GAIN: ' + stringArr[2], state)
     // 動作確認用
 
-  } else if (stringArr[0] === 'FIND' && stringArr.length === 3) {
-    findStream(stringArr[1], stringArr[2], io);
+  // } else if (stringArr[0] === 'FIND' && stringArr.length === 3) {
+    // findStream(stringArr[1], stringArr[2], io);
   } else if (stringArr[0] === 'INSERT' && stringArr.length === 2 && Object.keys(state.stream.sampleRate).includes(stringArr[1])) {
     insertStream(stringArr[1], io);
   } else if (stringArr[0].includes(":")) {
