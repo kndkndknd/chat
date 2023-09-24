@@ -49,14 +49,6 @@ export type cmdStateType = {
     };
     RECORD: boolean;
   };
-  sinewaveClientStatus: {
-    current: {
-      [key: string]: number;
-    };
-    previous: {
-      [key: string]: number;
-    };
-  };
   cmd: {
     GAIN: {
       MASTER: number;
@@ -117,7 +109,6 @@ export type cmdStateType = {
     [key: string]: number;
   };
   clockMode: boolean;
-  sinewaveMode: boolean;
 };
 export type buffArrayType = {
   KICK: {

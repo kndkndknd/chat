@@ -39,7 +39,7 @@ let clockModeId: number = 0;
 const clientMode = 'client'
 
 // let videoElement = <HTMLVideoElement>document.getElementById('video');
-let timelapseId: NodeJS.Timer
+let timelapseId: number
 
 let stringsClient = '';
 
@@ -175,14 +175,13 @@ socket.on('cmdFromServer', (cmd: {
 
 socket.on('stopFromServer', (data: {fadeOutVal: number, target?: string}) => {
   erasePrint(ctx, cnvs)
-  if(data.target !== undefined && (data.target === 'all' || data.target === clientMode)) {
     stopCmd(data.fadeOutVal)
     // erasePrint(stx, strCnvs)
     textPrint('STOP', ctx, cnvs)
     setTimeout(()=> {
       erasePrint(ctx, cnvs)
     },800)
-  }
+
 })
 
 socket.on('textFromServer', (data: {text: string}) => {
@@ -413,7 +412,7 @@ export const initialize = async () => {
   
   start = true
   streamFlag.timelapse = true
-  timelapseId = setInterval(() => {
+  timelapseId = window.setInterval(() => {
     streamFlag.timelapse = true
   }, 60000)
 

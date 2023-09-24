@@ -62,11 +62,7 @@ export const receiveEnter = (
     sinewaveEmit(strings, io, state);
   } else if (strings === "STOP") {
     console.log("stop");
-    if(state.sinewaveMode) {
-      stopEmit(io, state, 'all', 'sinewaveClient');
-    } else {
-      stopEmit(io, state, 'all', 'all');
-    }
+    stopEmit(io, state, 'ALL');
   } else if (strings === "QUANTIZE") {
     state.stream.quantize = !state.stream.quantize;
     for(let key in state.bpm) {
@@ -109,10 +105,6 @@ export const receiveEnter = (
     state.clockMode = !state.clockMode;
     console.log(state.clockMode);
     io.to(id).emit("clockModeFromServer", { clockMode: state.clockMode });
-  } else if ( strings === "MODE") {
-    state.sinewaveMode = !state.sinewaveMode
-    console.log(state.sinewaveMode)
-    putString(io, state.sinewaveMode ? "SINEWAVE MODE" : "NORMAL MODE", state)
   }
 
   if (strings !== "STOP") {

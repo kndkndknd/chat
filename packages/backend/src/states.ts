@@ -72,10 +72,6 @@ export const states: cmdStateType = {
     },
     RECORD: false,
   },
-  sinewaveClientStatus: {
-    current: {},
-    previous: {},
-  },
   stream: {
     sampleRate: {
       CHAT: 44100,
@@ -120,7 +116,6 @@ export const states: cmdStateType = {
   },
   bpm: {},
   clockMode: false,
-  sinewaveMode: false,
 };
 
 export let basisBufferSize = 8192;

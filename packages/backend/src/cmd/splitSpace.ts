@@ -30,7 +30,9 @@ export const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state:
   if(arrTypeArr[0] === 'number' && stringArr.length === 2) {
     // 送信先を指定したコマンド/SINEWAVE
     // 20230923 sinewave modeの動作を記載
-    const target =  state.sinewaveMode ? state.client[Number(stringArr[0])] : state.sinewaveClient[Number(stringArr[0])]
+    const target =  state.client[Number(stringArr[0])]
+    console.log(state.client)
+    console.log(state.sinewaveClient)
     console.log(target)
     if(arrTypeArr[1] === 'string') {
       cmdEmit(stringArr[1], io, state, target)
@@ -95,6 +97,7 @@ export const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state:
     } else if(stringArr.length === 2 && stringArr[1] === 'STREAM'){
       state.previous.stream = state.current.stream
       Object.keys(state.current.stream).forEach(key => state.current.stream[key] = false);
+      putString(io, stringArr[0] + ' ' + stringArr[1], state)
     } else if(stringArr.length === 2 && Object.keys(state.current.cmd).includes(stringArr[1])) {
       state.previous.cmd[stringArr[1]] = state.current.cmd[stringArr[1]]
       state.current.cmd[stringArr[1]].forEach((cmdTarget) => {
@@ -153,11 +156,7 @@ export const splitSpace = (stringArr: Array<string>, io: SocketIO.Server, state:
       });
       state.current.sinewave = {}
     } else if(stringArr[1] === 'ALL') {
-      stopEmit(io, state, 'all', 'all')
-    } else if(stringArr[1] === 'SINEWAVECLIENT') {
-      stopEmit(io, state, 'all', 'sinewaveClient')
-    } else if(stringArr[1] === 'CLIENT') {
-      stopEmit(io, state, 'all', 'client')
+      stopEmit(io, state, 'ALL')
     }
 
   } else if(stringArr[0] === 'FADE') {

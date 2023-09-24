@@ -29,9 +29,9 @@ export function charProcess(
     strings = strings.slice(0, -1);
     io.emit("stringsFromServer", { strings: strings, timeout: false });
   } else if (character === "Escape") {
-    const client: 'client' | 'sinewaveClient' = state.sinewaveMode ? "sinewaveClient" : "client";
-    console.log(client)
-    stopEmit(io, state, 'all', client);
+    // const client: 'client' | 'sinewaveClient' = state.sinewaveMode ? "sinewaveClient" : "client";
+    // console.log(client)
+    stopEmit(io, state, 'ALL');
     strings = "";
   } else if (character === "BASS") {
     console.log(

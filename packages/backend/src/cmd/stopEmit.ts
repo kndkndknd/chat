@@ -1,7 +1,7 @@
 import SocketIO from 'socket.io'
 import { cmdStateType } from '../types/global'
 
-export const stopEmit = (io: SocketIO.Server, state: cmdStateType, target?: 'all' | 'STREAM' | 'CMD', client?: 'client' | 'sinewaveClient' | 'all') => {
+export const stopEmit = (io: SocketIO.Server, state: cmdStateType, target?: 'ALL' | 'STREAM' | 'CMD', client?: 'client' | 'sinewaveClient' | 'all') => {
   /*
   io.emit('stopFromServer', {
     target: target,
@@ -17,10 +17,9 @@ export const stopEmit = (io: SocketIO.Server, state: cmdStateType, target?: 'all
   }
 
   // current -> previous && current -> stop
-  if(client === undefined ||client === 'client' || client === 'all') {
     state.client.forEach((element) => {
       io.to(element).emit('stopFromServer', {
-        target: target === undefined ? 'all' : target,
+        target: target === undefined ? 'ALL' : target,
         fadeOutVal: state.cmd.FADE.OUT
       })
     })
@@ -30,20 +29,5 @@ export const stopEmit = (io: SocketIO.Server, state: cmdStateType, target?: 'all
     }
     state.previous.sinewave = state.current.sinewave
     state.current.sinewave = {}
-  }
-  if(client === undefined || client === 'sinewaveClient' || client === 'all') {
-    console.log('sinewaveClient stop')
-    state.sinewaveClient.forEach((element) => {
-      io.to(element).emit('stopFromServer', {
-        target: target === undefined ? 'all' : target,
-        fadeOutVal: state.cmd.FADE.OUT
-      })
-    })
-    for(let stream in state.current.stream) {
-      state.previous.stream[stream] = state.current.stream[stream]
-      state.current.stream[stream] = false
-    }
-    state.sinewaveClientStatus.previous = state.sinewaveClientStatus.current
-    state.sinewaveClientStatus.current = {}
-  }
+
 }
