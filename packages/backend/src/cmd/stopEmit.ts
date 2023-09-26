@@ -30,4 +30,9 @@ export const stopEmit = (io: SocketIO.Server, state: cmdStateType, target?: 'ALL
     state.previous.sinewave = state.current.sinewave
     state.current.sinewave = {}
 
+    for(let stream in state.current.stream) {
+      state.previous.stream[stream] = state.current.stream[stream]
+      state.current.stream[stream] = false
+    }
+
 }

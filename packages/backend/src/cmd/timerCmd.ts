@@ -32,8 +32,9 @@ export const timerCmd = (io: SocketIO.Server, state: cmdStateType, stringArr: st
         receiveEnter(cmdString, targetId, io, state)
       } else if(stringArr[1] === 'STOP') {
         if(stringArr.length === 2) {
-          const client = state.sinewaveMode ? 'sinewaveClient' : 'all'
-          stopEmit(io, state, 'all', client);
+          const client = 'all'
+          stopEmit(io, state, 'ALL', client);
+          /*
         } else if(stringArr.length === 3) {
           if(stringArr[2] === 'SINEWAVECLIENT') {
             stopEmit(io, state, 'all', 'sinewaveClient');
@@ -42,7 +43,7 @@ export const timerCmd = (io: SocketIO.Server, state: cmdStateType, stringArr: st
           } else if(stringArr[2] === 'ALL') {
             stopEmit(io, state, 'all', 'all');
           }
-
+          */
         }
       } else {
         io.emit('stringsFromServer', {

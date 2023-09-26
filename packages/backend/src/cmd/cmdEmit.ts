@@ -24,8 +24,8 @@ export const cmdEmit = (
   };
   switch (cmdStrings) {
     case "STOP":
-      const client = state.sinewaveMode ? 'all' : 'sinewaveClient';
-      stopEmit(io, state, 'all', client)
+      const client = 'all';
+      stopEmit(io, state, 'ALL', client)
       break;
     case "WHITENOISE":
     case "FEEDBACK":
