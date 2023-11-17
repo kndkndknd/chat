@@ -12,7 +12,7 @@ import { parameterChange } from "./parameterChange";
 import { voiceEmit } from "./voiceEmit";
 import { chatPreparation } from "../stream/chatPreparation";
 
-import { millisecondsPerBar, secondsPerEighthNote} from './bpmCalc'
+import { millisecondsPerBar, secondsPerEighthNote } from "./bpmCalc";
 import { putString } from "./putString";
 
 export const receiveEnter = (
@@ -62,24 +62,23 @@ export const receiveEnter = (
     sinewaveEmit(strings, io, state);
   } else if (strings === "STOP") {
     console.log("stop");
-    if(state.sinewaveMode) {
-      stopEmit(io, state, 'all', 'sinewaveClient');
+    if (state.sinewaveMode) {
+      stopEmit(io, state, "all", "sinewaveClient");
     } else {
-      stopEmit(io, state, 'all', 'all');
+      stopEmit(io, state, "all", "all");
     }
   } else if (strings === "QUANTIZE") {
     state.stream.quantize = !state.stream.quantize;
-    for(let key in state.bpm) {
-      const bar = millisecondsPerBar(state.bpm[key])
-      const eighthNote = secondsPerEighthNote(state.bpm[key])
-      io.to(key).emit('quantizeFromServer', {
-        flag : state.stream.quantize,
+    for (let key in state.bpm) {
+      const bar = millisecondsPerBar(state.bpm[key]);
+      const eighthNote = secondsPerEighthNote(state.bpm[key]);
+      io.to(key).emit("quantizeFromServer", {
+        flag: state.stream.quantize,
         bpm: state.bpm[key],
         bar: bar,
-        eighthNote: eighthNote
-      })
+        eighthNote: eighthNote,
+      });
     }
-
   } else if (strings === "TWICE" || strings === "HALF") {
     sinewaveChange(strings, io, state);
     // } else if (strings === 'PREVIOUS' || strings === 'PREV') {
@@ -88,7 +87,7 @@ export const receiveEnter = (
     parameterChange(parameterList[strings], io, state, { source: id });
   } else if (strings === "NO" || strings === "NUMBER") {
     state.client.forEach((id, index) => {
-      console.log(id);
+      // console.log(String(index) + ":" + id);
       io.to(id).emit("stringsFromServer", {
         strings: String(index),
         timeout: true,
@@ -99,20 +98,19 @@ export const receiveEnter = (
     state.sinewaveClient.forEach((id, index) => {
       console.log(id);
       io.to(id).emit("stringsFromServer", {
-        strings: String(index) + '(sinewave)',
+        strings: String(index) + "(sinewave)",
         timeout: true,
       });
       //putString(io, String(index), state)
     });
-
   } else if (strings === "CLOCK") {
     state.clockMode = !state.clockMode;
     console.log(state.clockMode);
     io.to(id).emit("clockModeFromServer", { clockMode: state.clockMode });
-  } else if ( strings === "MODE") {
-    state.sinewaveMode = !state.sinewaveMode
-    console.log(state.sinewaveMode)
-    putString(io, state.sinewaveMode ? "SINEWAVE MODE" : "NORMAL MODE", state)
+  } else if (strings === "MODE") {
+    state.sinewaveMode = !state.sinewaveMode;
+    console.log(state.sinewaveMode);
+    putString(io, state.sinewaveMode ? "SINEWAVE MODE" : "NORMAL MODE", state);
   }
 
   if (strings !== "STOP") {

@@ -21,7 +21,9 @@ function charProcess(character, strings, id, io, state) {
         io.emit("stringsFromServer", { strings: strings, timeout: false });
     }
     else if (character === "Escape") {
-        (0, stopEmit_1.stopEmit)(io, state);
+        const client = state.sinewaveMode ? "sinewaveClient" : "client";
+        console.log(client);
+        (0, stopEmit_1.stopEmit)(io, state, 'all', client);
         strings = "";
     }
     else if (character === "BASS") {

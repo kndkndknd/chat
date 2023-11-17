@@ -34,6 +34,7 @@ exports.states = {
         METRONOME: {},
     },
     client: [],
+    sinewaveClient: [],
     current: {
         cmd: {
             FEEDBACK: [],
@@ -66,6 +67,10 @@ exports.states = {
             TIMELAPSE: false,
         },
         RECORD: false,
+    },
+    sinewaveClientStatus: {
+        current: {},
+        previous: {},
     },
     stream: {
         sampleRate: {
@@ -110,6 +115,8 @@ exports.states = {
         url: "ws://chat.knd.cloud/ws/",
     },
     bpm: {},
+    clockMode: false,
+    sinewaveMode: false,
 };
 exports.basisBufferSize = 8192;
 exports.streams = {

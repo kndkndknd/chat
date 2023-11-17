@@ -9,6 +9,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const ipaddress = process.env.DB_HOST;
 const insertStream = async (type, io) => {
+    console.log(ipaddress);
     if (type === "PLAYBACK") {
         await states_1.streams[type].forEach(async (stream) => {
             await setTimeout(async () => {

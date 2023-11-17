@@ -12,6 +12,7 @@ const parameterChange_1 = require("./parameterChange");
 const voiceEmit_1 = require("./voiceEmit");
 const chatPreparation_1 = require("../stream/chatPreparation");
 const bpmCalc_1 = require("./bpmCalc");
+const putString_1 = require("./putString");
 const receiveEnter = (strings, id, io, state) => {
     //VOICE
     (0, voiceEmit_1.voiceEmit)(io, strings, state);
@@ -58,18 +59,24 @@ const receiveEnter = (strings, id, io, state) => {
         (0, sinewaveEmit_1.sinewaveEmit)(strings, io, state);
     }
     else if (strings === "STOP") {
-        (0, stopEmit_1.stopEmit)(io, state);
+        console.log("stop");
+        if (state.sinewaveMode) {
+            (0, stopEmit_1.stopEmit)(io, state, "all", "sinewaveClient");
+        }
+        else {
+            (0, stopEmit_1.stopEmit)(io, state, "all", "all");
+        }
     }
     else if (strings === "QUANTIZE") {
         state.stream.quantize = !state.stream.quantize;
         for (let key in state.bpm) {
             const bar = (0, bpmCalc_1.millisecondsPerBar)(state.bpm[key]);
             const eighthNote = (0, bpmCalc_1.secondsPerEighthNote)(state.bpm[key]);
-            io.to(key).emit('quantizeFromServer', {
+            io.to(key).emit("quantizeFromServer", {
                 flag: state.stream.quantize,
                 bpm: state.bpm[key],
                 bar: bar,
-                eighthNote: eighthNote
+                eighthNote: eighthNote,
             });
         }
     }
@@ -83,13 +90,32 @@ const receiveEnter = (strings, id, io, state) => {
     }
     else if (strings === "NO" || strings === "NUMBER") {
         state.client.forEach((id, index) => {
-            console.log(id);
+            // console.log(String(index) + ":" + id);
             io.to(id).emit("stringsFromServer", {
                 strings: String(index),
                 timeout: true,
             });
             //putString(io, String(index), state)
         });
+        // 20230923 sinewave Clientの表示
+        state.sinewaveClient.forEach((id, index) => {
+            console.log(id);
+            io.to(id).emit("stringsFromServer", {
+                strings: String(index) + "(sinewave)",
+                timeout: true,
+            });
+            //putString(io, String(index), state)
+        });
+    }
+    else if (strings === "CLOCK") {
+        state.clockMode = !state.clockMode;
+        console.log(state.clockMode);
+        io.to(id).emit("clockModeFromServer", { clockMode: state.clockMode });
+    }
+    else if (strings === "MODE") {
+        state.sinewaveMode = !state.sinewaveMode;
+        console.log(state.sinewaveMode);
+        (0, putString_1.putString)(io, state.sinewaveMode ? "SINEWAVE MODE" : "NORMAL MODE", state);
     }
     if (strings !== "STOP") {
         state.previous.text = strings;
