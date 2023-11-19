@@ -1,12 +1,12 @@
 import { io, Socket } from 'socket.io-client';
 const socket = io();
-import {canvasSizing, textPrint, erasePrint, showImage} from './imageEvent'
+import {canvasSizing, textPrint, erasePrint, showImage} from '../imageEvent'
 
 //import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate} from './webaudio'
 
-import {keyDown} from './textInput'
+import {keyDown} from '../textInput'
 
-import {cnvs, ctx, videoElement,} from './globalVariable'
+import {cnvs, ctx, videoElement,} from '../globalVariable'
 
 navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
 window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;

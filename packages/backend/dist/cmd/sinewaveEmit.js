@@ -9,7 +9,7 @@ const sinewaveEmit = (frequencyStr, io, state, target) => {
         cmd: 'SINEWAVE',
         value: Number(frequencyStr),
         flag: true,
-        fade: 0,
+        fade: state.cmd.FADE.IN,
         portament: state.cmd.PORTAMENT,
         gain: state.cmd.GAIN.SINEWAVE
     };

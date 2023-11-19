@@ -58,7 +58,8 @@ const receiveEnter = (strings, id, io, state) => {
         (0, sinewaveEmit_1.sinewaveEmit)(strings, io, state);
     }
     else if (strings === "STOP") {
-        (0, stopEmit_1.stopEmit)(io, state);
+        console.log("stop");
+        (0, stopEmit_1.stopEmit)(io, state, 'ALL');
     }
     else if (strings === "QUANTIZE") {
         state.stream.quantize = !state.stream.quantize;
@@ -90,6 +91,20 @@ const receiveEnter = (strings, id, io, state) => {
             });
             //putString(io, String(index), state)
         });
+        // 20230923 sinewave Clientの表示
+        state.sinewaveClient.forEach((id, index) => {
+            console.log(id);
+            io.to(id).emit("stringsFromServer", {
+                strings: String(index) + '(sinewave)',
+                timeout: true,
+            });
+            //putString(io, String(index), state)
+        });
+    }
+    else if (strings === "CLOCK") {
+        state.clockMode = !state.clockMode;
+        console.log(state.clockMode);
+        io.to(id).emit("clockModeFromServer", { clockMode: state.clockMode });
     }
     if (strings !== "STOP") {
         state.previous.text = strings;

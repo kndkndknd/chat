@@ -20,21 +20,35 @@ const ioServer = (httpserver) => {
     });
     io.sockets.on('connection', (socket) => {
         socket.on("connectFromClient", (data) => {
-            if (!states_1.states.stream.timelapse)
-                states_1.states.stream.timelapse = true;
             let sockId = String(socket.id);
-            console.log('socket.on("connectFromClient", (data) => {data:' + data + ', id:' + sockId + '}');
-            if (!states_1.states.client.includes(sockId))
-                states_1.states.client.push(sockId);
-            states_1.states.client = states_1.states.client.filter((id) => {
-                //console.log(io.sockets.adapter.rooms.has(id))
-                if (io.sockets.adapter.rooms.has(id)) {
-                    return id;
-                }
-            });
-            // METRONOMEは接続時に初期値を作る
-            states_1.states.cmd.METRONOME[sockId] = 1000;
+            if (data === 'client') {
+                if (!states_1.states.stream.timelapse)
+                    states_1.states.stream.timelapse = true;
+                console.log('socket.on("connectFromClient", (data) => {data:' + data + ', id:' + sockId + '}');
+                if (!states_1.states.client.includes(sockId))
+                    states_1.states.client.push(sockId);
+                states_1.states.client = states_1.states.client.filter((id) => {
+                    //console.log(io.sockets.adapter.rooms.has(id))
+                    if (io.sockets.adapter.rooms.has(id)) {
+                        return id;
+                    }
+                });
+                // METRONOMEは接続時に初期値を作る
+                states_1.states.cmd.METRONOME[sockId] = 1000;
+            }
+            else if (data === 'sinewaveClient') {
+                console.log(sockId + ' is sinewaveClient');
+                if (!states_1.states.sinewaveClient.includes(sockId))
+                    states_1.states.sinewaveClient.push(sockId);
+                states_1.states.sinewaveClient = states_1.states.sinewaveClient.filter((id) => {
+                    //console.log(io.sockets.adapter.rooms.has(id))
+                    if (io.sockets.adapter.rooms.has(id)) {
+                        return id;
+                    }
+                });
+            }
             console.log(states_1.states.client);
+            console.log(states_1.states.sinewaveClient);
             socket.emit('debugFromServer');
         });
         socket.on('charFromClient', (character) => {

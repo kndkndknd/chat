@@ -11,7 +11,8 @@ const cmdEmit = (cmdStrings, io, state, target) => {
     let cmd;
     switch (cmdStrings) {
         case "STOP":
-            (0, stopEmit_1.stopEmit)(io, state);
+            const client = 'all';
+            (0, stopEmit_1.stopEmit)(io, state, 'ALL', client);
             break;
         case "WHITENOISE":
         case "FEEDBACK":

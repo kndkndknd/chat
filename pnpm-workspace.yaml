@@ -3,3 +3,6 @@ frontend:
 
 backend:
   - 'packages/backend'
+
+proxy:
+  - 'packages/proxy'
