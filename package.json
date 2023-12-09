@@ -9,8 +9,7 @@
   },
   "scripts": {
     "backend": "pnpm -F \"backend\"",
-    "frontend": "pnpm -F \"frontend\"",
-    "proxy": "pnpm -F \"proxy\""
+    "frontend": "pnpm -F \"frontend\""
   },
   "dependencies": {
     "express": "4.18.2"
