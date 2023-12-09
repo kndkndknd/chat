@@ -1,0 +1,5 @@
+{
+  "name": "@types/chat",
+  "types": "src/index.d.ts",
+  "private": true
+}

@@ -1,0 +1,8 @@
+frontend:
+  - 'packages/frontend'
+
+backend:
+  - 'packages/backend'
+
+proxy:
+  - 'packages/proxy'
