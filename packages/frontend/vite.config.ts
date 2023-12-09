@@ -8,7 +8,7 @@ export default defineConfig({
         snowleopard: "./src/snowleopard/snowLeopardClient.js",
       },
       output: {
-        dir: "../build/client",
+        dir: "../backend/client",
         entryFileNames: "[name].js",
       },
     },
@@ -16,7 +16,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/socket.io": {
-        target: "ws://localhost:8000",
+        target: "ws://localhost:8088",
         ws: true,
       },
     },

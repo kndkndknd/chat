@@ -45,6 +45,8 @@ let cinemaFlag = false;
 let clockModeId: number = 0;
 const clientMode = "client";
 
+let clockBase = 0;
+
 // let videoElement = <HTMLVideoElement>document.getElementById('video');
 let timelapseId: number;
 
@@ -376,6 +378,17 @@ socket.on(
   }
 );
 
+socket.on("clockFromServer", (data: { clock: boolean; barLatency: number }) => {
+  if (data.clock) {
+    clockBase = Date.now();
+    clockModeId = enableClockMode(data.barLatency);
+  } else {
+    clockBase = 0;
+    clockModeId = disableClockMode(clockModeId);
+  }
+});
+
+/*
 socket.on("clockModeFromServer", (data: { clockMode: boolean }) => {
   console.log(data);
   if (data.clockMode) {
@@ -388,6 +401,7 @@ socket.on("clockModeFromServer", (data: { clockMode: boolean }) => {
     }
   }
 });
+*/
 
 // disconnect時、1秒後再接続
 socket.on("disconnect", () => {

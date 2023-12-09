@@ -26,11 +26,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const fs = __importStar(require("fs"));
 const express_1 = __importDefault(require("express"));
 const path = __importStar(require("path"));
 const serve_favicon_1 = __importDefault(require("serve-favicon"));
-const Http = __importStar(require("http"));
+const Https = __importStar(require("https"));
+//import * as Http from "http";
 const ioServer_1 = require("./socket/ioServer");
+const port = 8000;
 //https鍵読み込み
 /*
 const options = {
@@ -41,13 +44,16 @@ const options = {
 const app = (0, express_1.default)();
 app.use(express_1.default.static(path.join(__dirname, "../..", "build/client")));
 app.use((0, serve_favicon_1.default)(path.join(__dirname, "..", "lib/favicon.ico")));
-const port = 8000;
 //const httpsserver = Https.createServer(options,app).listen(port);
-const httpserver = Http.createServer(app).listen(port);
+const options = {
+    key: fs.readFileSync(path.join(__dirname, "../../../..", "keys/chat/privkey.pem")),
+    cert: fs.readFileSync(path.join(__dirname, "../../../..", "keys/chat/cert.pem")),
+};
+const httpserver = Https.createServer(options, app).listen(port);
 console.log(`Server listening on port ${port}`);
 app.get("/", function (req, res, next) {
     try {
-        res.sendFile(path.join(__dirname, "../../build/client/html", "client.html"));
+        res.sendFile(path.join(__dirname, "../../build/client/html", "index.html"));
     }
     catch (error) {
         console.log(error);

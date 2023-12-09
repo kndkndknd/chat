@@ -105,6 +105,25 @@ export const states: cmdStateType = {
       PLAYBACK: false,
       TIMELAPSE: false,
     },
+    randomraterange: {
+      CHAT: {
+        min: 5000,
+        max: 132300,
+      },
+      PLAYBACK: {
+        min: 5000,
+        max: 132300,
+      },
+      TIMELAPSE: {
+        min: 5000,
+        max: 132300,
+      },
+    },
+    randomratenote: {
+      CHAT: false,
+      PLAYBACK: false,
+      TIMELAPSE: false,
+    },
     quantize: false,
     loop: false,
     timelapse: false,

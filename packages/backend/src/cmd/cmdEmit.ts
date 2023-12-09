@@ -24,8 +24,8 @@ export const cmdEmit = (
   };
   switch (cmdStrings) {
     case "STOP":
-      const client = 'all';
-      stopEmit(io, state, 'ALL', client)
+      const client = "all";
+      stopEmit(io, state, "ALL", client);
       break;
     case "WHITENOISE":
     case "FEEDBACK":
@@ -70,7 +70,9 @@ export const cmdEmit = (
       }
       // io.to(targetId).emit('cmdFromServer', cmd)
       putCmd(io, targetId, cmd, state);
-      notTargetEmit(targetId, state.client, io);
+      if (target === undefined) {
+        notTargetEmit(targetId, state.client, io);
+      }
       break;
     case "CLICK":
       console.log(state.cmd.GAIN.CLICK);
@@ -87,7 +89,7 @@ export const cmdEmit = (
       }
       // io.to(targetId).emit('cmdFromServer', cmd)
       putCmd(io, targetId, cmd, state);
-      notTargetEmit(targetId, state.client, io);
+      // notTargetEmit(targetId, state.client, io);
       break;
     case "SIMULATE":
       console.log(state.cmd.GAIN.SIMULATE);

@@ -96,6 +96,15 @@ export type cmdStateType = {
     randomrate: {
       [key: string]: boolean;
     };
+    randomraterange: {
+      [key: string]: {
+        min: number;
+        max: number;
+      };
+    };
+    randomratenote: {
+      [key: string]: boolean;
+    };
     quantize: boolean;
     loop: boolean;
     timelapse: boolean;

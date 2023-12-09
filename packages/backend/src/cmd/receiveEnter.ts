@@ -6,13 +6,14 @@ import { streamEmit } from "../stream/streamEmit";
 import { cmdEmit } from "./cmdEmit";
 import { stopEmit } from "./stopEmit";
 import { splitSpace } from "./splitSpace";
+import { splitPlus } from "./splitPlus";
 import { sinewaveEmit } from "./sinewaveEmit";
 import { sinewaveChange } from "./sinewaveChange";
 import { parameterChange } from "./parameterChange";
 import { voiceEmit } from "./voiceEmit";
 import { chatPreparation } from "../stream/chatPreparation";
 
-import { millisecondsPerBar, secondsPerEighthNote} from './bpmCalc'
+import { millisecondsPerBar, secondsPerEighthNote } from "./bpmCalc";
 import { putString } from "./putString";
 
 export const receiveEnter = (
@@ -50,6 +51,8 @@ export const receiveEnter = (
     }
   } else if (strings.includes(" ") && strings.split(" ").length < 4) {
     splitSpace(strings.split(" "), io, state);
+  } else if (strings.includes("+")) {
+    splitPlus(strings.split("+"), io, state);
   } else if (streamList.includes(strings)) {
     console.log("in stream");
     state.current.stream[strings] = true;
@@ -59,23 +62,22 @@ export const receiveEnter = (
     cmdEmit(cmdList[strings], io, state);
   } else if (Number.isFinite(Number(strings))) {
     console.log("sinewave");
-    sinewaveEmit(strings, io, state);
+    sinewaveEmit(Number(strings), io, state);
   } else if (strings === "STOP") {
     console.log("stop");
-    stopEmit(io, state, 'ALL');
+    stopEmit(io, state, "ALL");
   } else if (strings === "QUANTIZE") {
     state.stream.quantize = !state.stream.quantize;
-    for(let key in state.bpm) {
-      const bar = millisecondsPerBar(state.bpm[key])
-      const eighthNote = secondsPerEighthNote(state.bpm[key])
-      io.to(key).emit('quantizeFromServer', {
-        flag : state.stream.quantize,
+    for (let key in state.bpm) {
+      const bar = millisecondsPerBar(state.bpm[key]);
+      const eighthNote = secondsPerEighthNote(state.bpm[key]);
+      io.to(key).emit("quantizeFromServer", {
+        flag: state.stream.quantize,
         bpm: state.bpm[key],
         bar: bar,
-        eighthNote: eighthNote
-      })
+        eighthNote: eighthNote,
+      });
     }
-
   } else if (strings === "TWICE" || strings === "HALF") {
     sinewaveChange(strings, io, state);
     // } else if (strings === 'PREVIOUS' || strings === 'PREV') {
@@ -95,16 +97,22 @@ export const receiveEnter = (
     state.sinewaveClient.forEach((id, index) => {
       console.log(id);
       io.to(id).emit("stringsFromServer", {
-        strings: String(index) + '(sinewave)',
+        strings: String(index) + "(sinewave)",
         timeout: true,
       });
       //putString(io, String(index), state)
     });
-
   } else if (strings === "CLOCK") {
+    /*
     state.clockMode = !state.clockMode;
     console.log(state.clockMode);
     io.to(id).emit("clockModeFromServer", { clockMode: state.clockMode });
+    */
+    io.emit("clockFromServer", {
+      clock: true,
+      // 暫定
+      barLatency: state.stream.latency.CHAT * 4,
+    });
   }
 
   if (strings !== "STOP") {
