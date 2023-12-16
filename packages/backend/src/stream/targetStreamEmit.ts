@@ -1,18 +1,16 @@
 import SocketIO from "socket.io";
 import { cmdStateType, buffStateType } from "../types/global";
-import { streams, states, basisBufferSize } from "../states";
+import { streams, basisBufferSize } from "../states";
+import { notTargetEmit } from "../cmd/notTargetEmit";
 
-export const streamEmit = (
+export const targetStreamEmit = (
   source: string,
   io: SocketIO.Server,
-  state: cmdStateType
+  state: cmdStateType,
+  targetId: string
 ) => {
-  // if(streams[source].length > 0) {
+  state.stream.target[source].push(targetId);
   state.current.stream[source] = true;
-  console.log(state.client);
-  console.log(source);
-  const targetId =
-    state.client[Math.floor(Math.random() * state.client.length)];
   let buff: buffStateType;
   if (source === "PLAYBACK") {
     if (streams[source].length > 0) {
@@ -39,18 +37,6 @@ export const streamEmit = (
       video: streams[source].video.shift(),
       duration: basisBufferSize / 44100,
     };
-    /*
-    } else if(source === 'TIMELAPSE') {
-      if(streams.TIMELAPSE.audio.length > 0 && streams.TIMELAPSE.video.length > 0) {
-        buff = {
-          target: source,
-          bufferSize: streams[source].bufferSize,
-          audio: streams[source].audio.shift(),
-          video: streams[source].video.shift(),
-          duration: streams[source].bufferSize / 44100
-        }
-      }
-      */
   } else {
     if (streams[source].audio.length > 0 || streams[source].video.length > 0) {
       if (!state.stream.random[source]) {
@@ -101,7 +87,7 @@ export const streamEmit = (
       io.to(targetId).emit("streamFromServer", stream);
     } else {
       const timeOutVal =
-        (Math.round(Math.random() * 16) * states.stream.latency[source]) / 4;
+        (Math.round(Math.random() * 16) * state.stream.latency[source]) / 4;
       setTimeout(() => {
         io.to(targetId).emit("streamFromServer", stream);
       }, timeOutVal);
@@ -109,9 +95,5 @@ export const streamEmit = (
   } else {
     console.log("no buffer");
   }
-  /*
-  } else {
-    io.emit('stringsFromServer',{strings: "NO BUFFER", timeout: true})
-  }
-  */
+  notTargetEmit(targetId, state.client, io);
 };
