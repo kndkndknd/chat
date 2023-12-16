@@ -15,6 +15,7 @@ import { chatPreparation } from "../stream/chatPreparation";
 
 import { millisecondsPerBar, secondsPerEighthNote } from "./bpmCalc";
 import { putString } from "./putString";
+import { recordEmit } from "../stream/recordEmit";
 
 export const receiveEnter = (
   strings: string,
@@ -34,6 +35,8 @@ export const receiveEnter = (
   if (strings === "CHAT") {
     chatPreparation(io, state);
   } else if (strings === "RECORD" || strings === "REC") {
+    recordEmit(io, state);
+    /*
     if (!state.current.RECORD) {
       state.current.RECORD = true;
       io.emit("recordReqFromServer", { target: "PLAYBACK", timeout: 10000 });
@@ -49,13 +52,13 @@ export const receiveEnter = (
     } else {
       state.current.RECORD = false;
     }
+    */
   } else if (strings.includes(" ") && strings.split(" ").length < 4) {
     splitSpace(strings.split(" "), io, state);
   } else if (strings.includes("+")) {
     splitPlus(strings.split("+"), io, state);
   } else if (streamList.includes(strings)) {
     console.log("in stream");
-    state.current.stream[strings] = true;
     streamEmit(strings, io, state);
   } else if (Object.keys(cmdList).includes(strings)) {
     console.log("in cmd");

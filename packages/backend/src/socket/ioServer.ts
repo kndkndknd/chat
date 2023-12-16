@@ -18,6 +18,7 @@ import { charProcess } from "../cmd/charProcess";
 import { stopEmit } from "../cmd/stopEmit";
 import { sinewaveEmit } from "../cmd/sinewaveEmit";
 import { streamEmit } from "../stream/streamEmit";
+import { targetStreamEmit } from "../stream/targetStreamEmit";
 import { states, chat_web } from "../states";
 import { DefaultEventsMap } from "socket.io/dist/typed-events";
 
@@ -84,7 +85,12 @@ export const ioServer = (
     socket.on("streamReqFromClient", (source: string) => {
       console.log(source);
       if (states.current.stream[source]) {
-        streamEmit(source, io, states);
+        if (states.stream.target[source].length > 0) {
+          console.log(`target stream: ${source}`);
+          targetStreamEmit(source, io, states, states.stream.target[source][0]);
+        } else {
+          streamEmit(source, io, states);
+        }
       }
     });
 

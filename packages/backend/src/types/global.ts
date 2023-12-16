@@ -89,6 +89,9 @@ export type cmdStateType = {
     glitch: {
       [key: string]: boolean;
     };
+    target: {
+      [key: string]: Array<string>;
+    };
     glitchSampleRate: number;
     latency: {
       [key: string]: number;

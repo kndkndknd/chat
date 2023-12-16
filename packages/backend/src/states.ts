@@ -94,6 +94,11 @@ export const states: cmdStateType = {
       PLAYBACK: false,
       TIMELAPSE: false,
     },
+    target: {
+      CHAT: [],
+      PLAYBACK: [],
+      TIMELAPSE: [],
+    },
     glitchSampleRate: 96000,
     latency: {
       CHAT: 1000,

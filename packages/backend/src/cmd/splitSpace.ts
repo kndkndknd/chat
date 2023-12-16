@@ -13,6 +13,8 @@ import { insertStream } from "../mongoAccess/insertStream";
 import { findStream } from "../mongoAccess/findStream";
 import { timerCmd } from "./timerCmd";
 import { stopEmit } from "./stopEmit";
+import { targetStreamEmit } from "../stream/targetStreamEmit";
+import { recordEmit } from "../stream/recordEmit";
 
 export const splitSpace = (
   stringArr: Array<string>,
@@ -38,8 +40,19 @@ export const splitSpace = (
     console.log(state.client);
     console.log(state.sinewaveClient);
     console.log(target);
-    if (arrTypeArr[1] === "string") {
+    if (
+      arrTypeArr[1] === "string" &&
+      Object.keys(cmdList).includes(stringArr[1])
+    ) {
       cmdEmit(stringArr[1], io, state, target);
+    } else if (
+      arrTypeArr[1] === "string" &&
+      streamList.includes(stringArr[1])
+    ) {
+      console.log("target stream");
+      targetStreamEmit(stringArr[1], io, state, target);
+    } else if (stringArr[1] === "RECORD" || stringArr[1] === "REC") {
+      recordEmit(io, state, target);
     } else if (arrTypeArr[1] === "number") {
       sinewaveEmit(Number(stringArr[1]), io, state, target);
     }
