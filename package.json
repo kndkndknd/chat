@@ -1,15 +1,16 @@
 {
   "name": "chat",
   "private": true,
-  "packageManager": "pnpm@8.7.0",
+  "packageManager": "pnpm@8.12.1",
   "engines": {
-    "pnpm": ">=8.0.0",
+    "pnpm": ">=8.12.0",
     "npm": "use pnpm",
     "yarn": "use pnpm"
   },
   "scripts": {
     "backend": "pnpm -F \"backend\"",
-    "frontend": "pnpm -F \"frontend\""
+    "frontend": "pnpm -F \"frontend\"",
+    "arduino": "pnpm -F \"arduino\""
   },
   "dependencies": {
     "express": "4.18.2"

@@ -121,6 +121,12 @@ export type cmdStateType = {
     [key: string]: number;
   };
   clockMode: boolean;
+  arduino: {
+    host: string;
+    port: number;
+    connected: boolean;
+    relay: "on" | "off";
+  };
 };
 export type buffArrayType = {
   KICK: {

@@ -1,29 +1,14 @@
 import * as fs from "fs";
-/*
-import * as child_process from "child_process";
-const exec = child_process.exec
-*/
-import * as os from "os";
-import * as util from "util";
-
 import { default as Express } from "express";
 import * as path from "path";
 import { default as favicon } from "serve-favicon";
-
 import * as Https from "https";
-//import * as Http from "http";
 import { ioServer } from "./socket/ioServer";
+import { states } from "./states";
+import { connectTest } from "./arduinoAccess/connectTest";
+// import { switchCtrl } from "./arduinoAccess/switch";
 
 const port = 8000;
-
-//https鍵読み込み
-/*
-const options = {
-  key: fs.readFileSync(path.join(__dirname,'../../..','keys/privkey.pem')),
-  cert: fs.readFileSync(path.join(__dirname,'../../..', 'keys/cert.pem'))
-}
-*/
-
 const app = Express();
 
 app.use(Express.static(path.join(__dirname, "..", "client")));
@@ -58,6 +43,10 @@ app.get("/snowleopard", function (req, res, next) {
     console.log(error);
     res.json({ success: false, message: "Something went wrong" });
   }
+});
+
+connectTest().then((result) => {
+  states.arduino.connected = result;
 });
 
 /*

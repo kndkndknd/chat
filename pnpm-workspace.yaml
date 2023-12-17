@@ -1,8 +1,10 @@
-frontend:
-  - 'packages/frontend'
+packages:
+  - "packages/*"
+# frontend:
+# - "packages/frontend"
 
-backend:
-  - 'packages/backend'
+# backend:
+# - "packages/backend"
 
-proxy:
-  - 'packages/proxy'
+# arduino:
+# - "packages/arduino"
