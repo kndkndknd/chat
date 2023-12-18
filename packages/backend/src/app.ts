@@ -4,8 +4,7 @@ import * as path from "path";
 import { default as favicon } from "serve-favicon";
 import * as Https from "https";
 import { ioServer } from "./socket/ioServer";
-import { states } from "./states";
-import { connectTest } from "./arduinoAccess/connectTest";
+// import { states } from "./states";
 // import { switchCtrl } from "./arduinoAccess/switch";
 
 const port = 8000;
@@ -43,10 +42,6 @@ app.get("/snowleopard", function (req, res, next) {
     console.log(error);
     res.json({ success: false, message: "Something went wrong" });
   }
-});
-
-connectTest().then((result) => {
-  states.arduino.connected = result;
 });
 
 /*
