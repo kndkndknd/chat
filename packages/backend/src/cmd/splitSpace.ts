@@ -15,6 +15,7 @@ import { timerCmd } from "./timerCmd";
 import { stopEmit } from "./stopEmit";
 import { targetStreamEmit } from "../stream/targetStreamEmit";
 import { recordEmit } from "../stream/recordEmit";
+import { connectTest, switchCramp } from "../arduinoAccess/arduinoAccess";
 
 export const splitSpace = (
   stringArr: Array<string>,
@@ -320,6 +321,20 @@ export const splitSpace = (
       })
     ) {
       timerCmd(io, state, stringArr, timeStampArr);
+    }
+  } else if (stringArr[0] === "SWITCH") {
+    if (stringArr[1] === "TEST") {
+      console.log("switch test");
+      connectTest().then((result) => {
+        console.log(result);
+        states.arduino.connected = result;
+        io.emit("stringsFromServer", {
+          strings: "SWITCH: " + String(states.arduino.connected),
+          timeout: true,
+        });
+      });
+    } else if (stringArr[1] === "CRAMP") {
+      switchCramp();
     }
   }
 };

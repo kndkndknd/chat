@@ -16,6 +16,7 @@ import { chatPreparation } from "../stream/chatPreparation";
 import { millisecondsPerBar, secondsPerEighthNote } from "./bpmCalc";
 import { putString } from "./putString";
 import { recordEmit } from "../stream/recordEmit";
+import { switchCtrl } from "../arduinoAccess/arduinoAccess";
 
 export const receiveEnter = (
   strings: string,
@@ -104,6 +105,16 @@ export const receiveEnter = (
         timeout: true,
       });
       //putString(io, String(index), state)
+    });
+  } else if (strings === "SWITCH") {
+    const switchState = state.arduino.relay === "on" ? "OFF" : "ON";
+    console.log(switchState);
+    io.emit("stringsFromServer", {
+      strings: "SWITCH " + switchState,
+      timeout: true,
+    });
+    switchCtrl().then((result) => {
+      console.log(result);
     });
   } else if (strings === "CLOCK") {
     /*
