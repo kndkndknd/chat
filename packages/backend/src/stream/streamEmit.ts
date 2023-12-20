@@ -52,6 +52,7 @@ export const streamEmit = (
       }
       */
   } else {
+    console.log(streams[source]);
     if (streams[source].audio.length > 0 || streams[source].video.length > 0) {
       if (!state.stream.random[source]) {
         buff = {

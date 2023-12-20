@@ -6,6 +6,8 @@ const streamEmit_1 = require("../stream/streamEmit");
 const sinewaveEmit_1 = require("./sinewaveEmit");
 const chatPreparation_1 = require("../stream/chatPreparation");
 const previousCmd = (io, state) => {
+    console.log(state.previous.sinewave);
+    console.log(state.previous.cmd);
     for (let cmd in state.previous.cmd) {
         state.previous.cmd[cmd].forEach((target) => {
             (0, cmdEmit_1.cmdEmit)(cmd, io, state, target);
@@ -23,7 +25,8 @@ const previousCmd = (io, state) => {
         }
     }
     for (let target in state.previous.sinewave) {
-        (0, sinewaveEmit_1.sinewaveEmit)(String(state.previous.sinewave[target]), io, state, target);
+        console.log(state.previous.sinewave[target]);
+        (0, sinewaveEmit_1.sinewaveEmit)(state.previous.sinewave[target], io, state, target);
     }
 };
 exports.previousCmd = previousCmd;

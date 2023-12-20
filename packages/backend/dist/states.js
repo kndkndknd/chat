@@ -90,6 +90,11 @@ exports.states = {
             PLAYBACK: false,
             TIMELAPSE: false,
         },
+        target: {
+            CHAT: [],
+            PLAYBACK: [],
+            TIMELAPSE: [],
+        },
         glitchSampleRate: 96000,
         latency: {
             CHAT: 1000,
@@ -97,6 +102,25 @@ exports.states = {
             TIMELAPSE: 1000,
         },
         randomrate: {
+            CHAT: false,
+            PLAYBACK: false,
+            TIMELAPSE: false,
+        },
+        randomraterange: {
+            CHAT: {
+                min: 5000,
+                max: 132300,
+            },
+            PLAYBACK: {
+                min: 5000,
+                max: 132300,
+            },
+            TIMELAPSE: {
+                min: 5000,
+                max: 132300,
+            },
+        },
+        randomratenote: {
             CHAT: false,
             PLAYBACK: false,
             TIMELAPSE: false,
@@ -112,6 +136,12 @@ exports.states = {
     },
     bpm: {},
     clockMode: false,
+    arduino: {
+        host: "localhost",
+        port: 5050,
+        connected: false,
+        relay: "off",
+    },
 };
 exports.basisBufferSize = 8192;
 exports.streams = {

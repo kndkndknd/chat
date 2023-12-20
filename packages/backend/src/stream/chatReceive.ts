@@ -57,5 +57,14 @@ export const chatReceive = (buffer: buffStateType, io: SocketIO.Server) => {
       // console.log(buffer.audio)
       console.log("TIMELAPSE.length:" + String(streams.TIMELAPSE.audio.length));
       break;
+    case "SHOT":
+      if (streams["SHOT"] === undefined || streams["SHOT"] === null) {
+        streams["SHOT"] = { audio: [], video: [], bufferSize: basisBufferSize };
+      }
+
+      streams["SHOT"].audio.push(buffer.audio);
+      streams["SHOT"].video.push(buffer.video);
+      console.log("SHOT.length:" + String(streams["SHOT"].audio.length));
+      break;
   }
 };

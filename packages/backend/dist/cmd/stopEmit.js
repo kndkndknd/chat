@@ -12,14 +12,17 @@ const stopEmit = (io, state, target, client) => {
     if (state.cmd.VOICE.length > 0) {
         state.cmd.VOICE.forEach((element) => {
             //      io.to(element).emit('voiceFromServer', "STOP")
-            io.to(element).emit('voiceFromServer', { text: 'STOP', lang: state.cmd.voiceLang });
+            io.to(element).emit("voiceFromServer", {
+                text: "STOP",
+                lang: state.cmd.voiceLang,
+            });
         });
     }
     // current -> previous && current -> stop
     state.client.forEach((element) => {
-        io.to(element).emit('stopFromServer', {
-            target: target === undefined ? 'ALL' : target,
-            fadeOutVal: state.cmd.FADE.OUT
+        io.to(element).emit("stopFromServer", {
+            target: target === undefined ? "ALL" : target,
+            fadeOutVal: state.cmd.FADE.OUT,
         });
     });
     for (let cmd in state.current.cmd) {
@@ -32,6 +35,9 @@ const stopEmit = (io, state, target, client) => {
         state.previous.stream[stream] = state.current.stream[stream];
         state.current.stream[stream] = false;
     }
+    Object.keys(state.stream.target).forEach((element) => {
+        state.stream.target[element] = [];
+    });
 };
 exports.stopEmit = stopEmit;
 //# sourceMappingURL=stopEmit.js.map

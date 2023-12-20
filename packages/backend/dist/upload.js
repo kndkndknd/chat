@@ -2,10 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.uploadStream = exports.pushStateStream = exports.pcm2arr = void 0;
 const states_1 = require("./states");
-const pcm = require('pcm');
-const fs = require('fs');
-const util = require('util');
-const exec = require('child_process').exec;
+const pcm = require("pcm");
+const fs = require("fs");
+const util = require("util");
+const exec = require("child_process").exec;
 var readDir = util.promisify(fs.readdir);
 var readFile = util.promisify(fs.readFile);
 var execPromise = util.promisify(exec);
@@ -26,7 +26,9 @@ const pcm2arr = (url) => {
             console.log("err");
             throw new Error(err);
         }
-        console.log('pcm.getPcmData(' + url + '), {stereo: true, sampleRate: 44100}, (sample, channel)=>{function}');
+        console.log("pcm.getPcmData(" +
+            url +
+            "), {stereo: true, sampleRate: 44100}, (sample, channel)=>{function}");
     });
     return rtnBuff;
 };
@@ -40,6 +42,7 @@ const pushStateStream = (streamName, states) => {
     states.stream.latency[streamName] = 1000;
     states.stream.random[streamName] = false;
     states.stream.randomrate[streamName] = false;
+    states.stream.target[streamName] = [];
 };
 exports.pushStateStream = pushStateStream;
 const uploadStream = async (stringArr, io) => {
@@ -86,7 +89,11 @@ const uploadStream = async (stringArr, io) => {
                 const streamName = stringArr[1];
                 let fSplit = f.split(".");
                 if (!(streamName in states_1.streams)) {
-                    states_1.streams[streamName] = { audio: [], video: [], bufferSize: states_1.basisBufferSize };
+                    states_1.streams[streamName] = {
+                        audio: [],
+                        video: [],
+                        bufferSize: states_1.basisBufferSize,
+                    };
                 }
                 let tmpBuff = new Float32Array(states_1.basisBufferSize);
                 let rtnBuff = [];
@@ -96,11 +103,35 @@ const uploadStream = async (stringArr, io) => {
                     case "mp4":
                         let sndConvert = "";
                         let imgConvert = "";
-                        sndConvert = 'ffmpeg -i ' + states_1.uploadParams.mediaDir + f + ' -vn -acodec aac ' + states_1.uploadParams.mediaDir + fSplit[0] + '.aac';
-                        imgConvert = 'ffmpeg -i ' + states_1.uploadParams.mediaDir + f + ' -r 5.4 -f image2 "' + states_1.uploadParams.mediaDir + fSplit[0] + '%06d.jpg"';
+                        sndConvert =
+                            "ffmpeg -i " +
+                                states_1.uploadParams.mediaDir +
+                                f +
+                                " -vn -acodec aac " +
+                                states_1.uploadParams.mediaDir +
+                                fSplit[0] +
+                                ".aac";
+                        imgConvert =
+                            "ffmpeg -i " +
+                                states_1.uploadParams.mediaDir +
+                                f +
+                                ' -r 5.4 -f image2 "' +
+                                states_1.uploadParams.mediaDir +
+                                fSplit[0] +
+                                '%06d.jpg"';
                         if (states_1.uploadParams.ss !== "FULL" && states_1.uploadParams.t !== "FULL") {
-                            sndConvert = sndConvert + ' -ss ' + states_1.uploadParams.ss + ' -t ' + states_1.uploadParams.t;
-                            imgConvert = imgConvert + ' -ss ' + states_1.uploadParams.ss + ' -t ' + states_1.uploadParams.t;
+                            sndConvert =
+                                sndConvert +
+                                    " -ss " +
+                                    states_1.uploadParams.ss +
+                                    " -t " +
+                                    states_1.uploadParams.t;
+                            imgConvert =
+                                imgConvert +
+                                    " -ss " +
+                                    states_1.uploadParams.ss +
+                                    " -t " +
+                                    states_1.uploadParams.t;
                         }
                         await execPromise(sndConvert);
                         await execPromise(imgConvert);
@@ -136,14 +167,16 @@ const uploadStream = async (stringArr, io) => {
                                 throw new Error(err);
                             }
                             // streams[streamName].push({audio:rtnBuff})
-                            console.log('pcm.getPcmData(' + streamName + '.aac, { stereo: true, sampleRate: 44100 })');
+                            console.log("pcm.getPcmData(" +
+                                streamName +
+                                ".aac, { stereo: true, sampleRate: 44100 })");
                             //                console.log(streams[streamName].audio.length);
                             execPromise("rm " + states_1.uploadParams.mediaDir + streamName + ".aac");
                         });
                         const files = await readDir(states_1.uploadParams.mediaDir);
                         let jpgs = [];
                         await files.forEach(async (file) => {
-                            if (file.includes(fSplit[0]) && file.includes('.jpg')) {
+                            if (file.includes(fSplit[0]) && file.includes(".jpg")) {
                                 await jpgs.push(file);
                             }
                         });
@@ -151,11 +184,14 @@ const uploadStream = async (stringArr, io) => {
                         // const jpgs = await readDir(uploadParams.mediaDir);
                         jpgs.forEach(async (element) => {
                             const img = await readFile(states_1.uploadParams.mediaDir + element);
-                            const base64str = await new Buffer(img).toString('base64');
+                            const base64str = await new Buffer(img).toString("base64");
                             // console.log(base64str)
-                            states_1.streams[streamName].video.push('data:image/jpeg;base64,' + String(base64str));
-                            await execPromise('rm ' + states_1.uploadParams.mediaDir + element);
-                            io.emit('stringsFromServer', { strings: "UPLOADED", timeout: true });
+                            states_1.streams[streamName].video.push("data:image/jpeg;base64," + String(base64str));
+                            await execPromise("rm " + states_1.uploadParams.mediaDir + element);
+                            io.emit("stringsFromServer", {
+                                strings: "UPLOADED",
+                                timeout: true,
+                            });
                         });
                         /*
                         if(streams[streamName].length === 0) {
@@ -206,15 +242,23 @@ const uploadStream = async (stringArr, io) => {
                                 console.log("err");
                                 throw new Error(err);
                             }
-                            console.log('pcm.getPcmData(' + f + ', { stereo: true, sampleRate: 44100 })');
-                            io.emit('stringsFromServer', { strings: "UPLOADED", timeout: true });
+                            console.log("pcm.getPcmData(" +
+                                f +
+                                ", { stereo: true, sampleRate: 44100 })");
+                            io.emit("stringsFromServer", {
+                                strings: "UPLOADED",
+                                timeout: true,
+                            });
                         });
                         states_1.streamList.push(streamName);
                         (0, exports.pushStateStream)(streamName, states_1.states);
                         break;
                     default:
                         console.log("not media file");
-                        io.emit('stringsFromServer', { strings: "NO MEDIA FILE", timeout: true });
+                        io.emit("stringsFromServer", {
+                            strings: "NO MEDIA FILE",
+                            timeout: true,
+                        });
                 }
             }
         }

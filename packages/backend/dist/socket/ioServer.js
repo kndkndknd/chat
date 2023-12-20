@@ -9,6 +9,7 @@ const charProcess_1 = require("../cmd/charProcess");
 const stopEmit_1 = require("../cmd/stopEmit");
 const sinewaveEmit_1 = require("../cmd/sinewaveEmit");
 const streamEmit_1 = require("../stream/streamEmit");
+const targetStreamEmit_1 = require("../stream/targetStreamEmit");
 const states_1 = require("../states");
 // face
 const states_2 = require("../states");
@@ -18,13 +19,17 @@ const ioServer = (httpserver) => {
     const io = new socket_io_1.Server(httpserver, {
         path: "/socket.io",
     });
-    io.sockets.on('connection', (socket) => {
+    io.sockets.on("connection", (socket) => {
         socket.on("connectFromClient", (data) => {
             let sockId = String(socket.id);
-            if (data === 'client') {
+            if (data === "client") {
                 if (!states_1.states.stream.timelapse)
                     states_1.states.stream.timelapse = true;
-                console.log('socket.on("connectFromClient", (data) => {data:' + data + ', id:' + sockId + '}');
+                console.log('socket.on("connectFromClient", (data) => {data:' +
+                    data +
+                    ", id:" +
+                    sockId +
+                    "}");
                 if (!states_1.states.client.includes(sockId))
                     states_1.states.client.push(sockId);
                 states_1.states.client = states_1.states.client.filter((id) => {
@@ -36,8 +41,8 @@ const ioServer = (httpserver) => {
                 // METRONOMEは接続時に初期値を作る
                 states_1.states.cmd.METRONOME[sockId] = 1000;
             }
-            else if (data === 'sinewaveClient') {
-                console.log(sockId + ' is sinewaveClient');
+            else if (data === "sinewaveClient") {
+                console.log(sockId + " is sinewaveClient");
                 if (!states_1.states.sinewaveClient.includes(sockId))
                     states_1.states.sinewaveClient.push(sockId);
                 states_1.states.sinewaveClient = states_1.states.sinewaveClient.filter((id) => {
@@ -49,28 +54,34 @@ const ioServer = (httpserver) => {
             }
             console.log(states_1.states.client);
             console.log(states_1.states.sinewaveClient);
-            socket.emit('debugFromServer');
+            socket.emit("debugFromServer");
         });
-        socket.on('charFromClient', (character) => {
+        socket.on("charFromClient", (character) => {
             strings = (0, charProcess_1.charProcess)(character, strings, socket.id, io, states_1.states);
         });
-        socket.on('chatFromClient', (buffer) => {
+        socket.on("chatFromClient", (buffer) => {
             console.log(states_1.states.current.stream);
             (0, chatReceive_1.chatReceive)(buffer, io);
         });
-        socket.on('streamReqFromClient', (source) => {
+        socket.on("streamReqFromClient", (source) => {
             console.log(source);
             if (states_1.states.current.stream[source]) {
-                (0, streamEmit_1.streamEmit)(source, io, states_1.states);
+                if (states_1.states.stream.target[source].length > 0) {
+                    console.log(`target stream: ${source}`);
+                    (0, targetStreamEmit_1.targetStreamEmit)(source, io, states_1.states, states_1.states.stream.target[source][0]);
+                }
+                else {
+                    (0, streamEmit_1.streamEmit)(source, io, states_1.states);
+                }
             }
         });
-        socket.on('connectFromCtrl', () => {
-            io.emit('gainFromServer', states_1.states.cmd.GAIN);
+        socket.on("connectFromCtrl", () => {
+            io.emit("gainFromServer", states_1.states.cmd.GAIN);
         });
-        socket.on('gainFromCtrl', (gain) => {
+        socket.on("gainFromCtrl", (gain) => {
             console.log(gain);
             states_1.states.cmd.GAIN[gain.target] = gain.val;
-            io.emit('gainFromServer', states_1.states.cmd.GAIN);
+            io.emit("gainFromServer", states_1.states.cmd.GAIN);
         });
         /*
         socket.on('orientationFromClient', (deviceorientation) => {
@@ -79,12 +90,14 @@ const ioServer = (httpserver) => {
         })
         */
         // face
-        socket.on('faceFromClient', (data) => {
+        socket.on("faceFromClient", (data) => {
             console.log(data);
             //cmdEmit("CLICK", io, states)
             if (data.detection) {
                 //if(!faceState.flag) faceState.flag = true
-                const speed = (data.box._x - states_2.faceState.previousFace.x) ^ 2 + (data.box._y - states_2.faceState.previousFace.y) ^ 2;
+                const speed = (data.box._x - states_2.faceState.previousFace.x) ^
+                    (2 + (data.box._y - states_2.faceState.previousFace.y)) ^
+                    2;
                 states_2.faceState.previousFace.x = data.box._x;
                 states_2.faceState.previousFace.y = data.box._y;
                 console.log(previousFace);
@@ -101,16 +114,16 @@ const ioServer = (httpserver) => {
                         }
                         break;
                     case "gluttony":
-                        console.log('whitenoise');
+                        console.log("whitenoise");
                         (0, cmdEmit_1.cmdEmit)("WHITENOISE", io, states_1.states);
                         break;
                     case "greed":
-                        console.log('click');
+                        console.log("click");
                         (0, cmdEmit_1.cmdEmit)("CLICK", io, states_1.states);
                         break;
                     case "envy":
                         if (!states_2.faceState.flag) {
-                            (0, sinewaveEmit_1.sinewaveEmit)(String(data.box._x + data.box._y), io, states_1.states);
+                            (0, sinewaveEmit_1.sinewaveEmit)(data.box._x + data.box._y, io, states_1.states);
                             /*
                             console.log('chat')
                             streamEmit("CHAT", io, states)
@@ -120,18 +133,18 @@ const ioServer = (httpserver) => {
                         break;
                     case "lust":
                         if (!states_2.faceState.flag) {
-                            console.log('bass');
+                            console.log("bass");
                             (0, cmdEmit_1.cmdEmit)("BASS", io, states_1.states);
                             states_2.faceState.flag = true;
                         }
                         break;
                     case "wrath":
-                        console.log('sinewave');
+                        console.log("sinewave");
                         // send sinewave(frequency: speed)
                         break;
                     case "pride":
                         if (!states_2.faceState.flag) {
-                            console.log('feedback');
+                            console.log("feedback");
                             (0, cmdEmit_1.cmdEmit)("FEEDBACK", io, states_1.states);
                             states_2.faceState.flag = true;
                         }
@@ -144,10 +157,10 @@ const ioServer = (httpserver) => {
                         }
                         break;
                 }
-                //io.to(states.client[0]).emit('squareFromServer', speed)  
+                //io.to(states.client[0]).emit('squareFromServer', speed)
             }
             else {
-                if (states_2.faceState.expression !== 'greed') {
+                if (states_2.faceState.expression !== "greed") {
                     (0, stopEmit_1.stopEmit)(io, states_1.states);
                 }
                 states_2.faceState.previousFace.x = 0;
@@ -155,7 +168,7 @@ const ioServer = (httpserver) => {
                 states_2.faceState.flag = false;
             }
         });
-        socket.on('expressionFromClient', (data) => {
+        socket.on("expressionFromClient", (data) => {
             console.log(data);
             states_2.faceState.expression = data;
             states_2.faceState.flag = false;
@@ -167,7 +180,7 @@ const ioServer = (httpserver) => {
             */
         });
         socket.on("disconnect", () => {
-            console.log('disconnect: ' + String(socket.id));
+            console.log("disconnect: " + String(socket.id));
             let sockId = String(socket.id);
             states_1.states.client = states_1.states.client.filter((id) => {
                 if (io.sockets.adapter.rooms.has(id) && id !== sockId) {

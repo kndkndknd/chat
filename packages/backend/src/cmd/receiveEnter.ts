@@ -15,7 +15,7 @@ import { chatPreparation } from "../stream/chatPreparation";
 
 import { millisecondsPerBar, secondsPerEighthNote } from "./bpmCalc";
 import { putString } from "./putString";
-import { recordEmit } from "../stream/recordEmit";
+import { recordEmit, shotEmit } from "../stream/recordEmit";
 import { switchCtrl } from "../arduinoAccess/arduinoAccess";
 
 export const receiveEnter = (
@@ -127,6 +127,9 @@ export const receiveEnter = (
       // 暫定
       barLatency: state.stream.latency.CHAT * 4,
     });
+  } else if (strings === "SHOT") {
+    const target = state.client[0];
+    shotEmit(io, state, target);
   }
 
   if (strings !== "STOP") {

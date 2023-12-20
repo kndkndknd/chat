@@ -31,18 +31,12 @@ const express_1 = __importDefault(require("express"));
 const path = __importStar(require("path"));
 const serve_favicon_1 = __importDefault(require("serve-favicon"));
 const Https = __importStar(require("https"));
-//import * as Http from "http";
 const ioServer_1 = require("./socket/ioServer");
+// import { states } from "./states";
+// import { switchCtrl } from "./arduinoAccess/switch";
 const port = 8000;
-//https鍵読み込み
-/*
-const options = {
-  key: fs.readFileSync(path.join(__dirname,'../../..','keys/privkey.pem')),
-  cert: fs.readFileSync(path.join(__dirname,'../../..', 'keys/cert.pem'))
-}
-*/
 const app = (0, express_1.default)();
-app.use(express_1.default.static(path.join(__dirname, "../..", "build/client")));
+app.use(express_1.default.static(path.join(__dirname, "..", "client")));
 app.use((0, serve_favicon_1.default)(path.join(__dirname, "..", "lib/favicon.ico")));
 //const httpsserver = Https.createServer(options,app).listen(port);
 const options = {
@@ -53,7 +47,7 @@ const httpserver = Https.createServer(options, app).listen(port);
 console.log(`Server listening on port ${port}`);
 app.get("/", function (req, res, next) {
     try {
-        res.sendFile(path.join(__dirname, "../../build/client/html", "index.html"));
+        res.sendFile(path.join(__dirname, "..", "client/html", "index.html"));
     }
     catch (error) {
         console.log(error);
@@ -62,7 +56,7 @@ app.get("/", function (req, res, next) {
 });
 app.get("/snowleopard", function (req, res, next) {
     try {
-        res.sendFile(path.join(__dirname, "../client/static", "snowLeopard.html"));
+        res.sendFile(path.join(__dirname, "..", "client/html", "snowLeopard.html"));
     }
     catch (error) {
         console.log(error);

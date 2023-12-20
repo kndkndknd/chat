@@ -220,7 +220,7 @@ socket.on(
   "recordReqFromServer",
   (data: { target: string; timeout: number }) => {
     recordReq(data);
-    textPrint("RECORD", ctx, cnvs);
+    textPrint("SHOT", ctx, cnvs);
     setTimeout(() => {
       erasePrint(ctx, cnvs);
     }, data.timeout);

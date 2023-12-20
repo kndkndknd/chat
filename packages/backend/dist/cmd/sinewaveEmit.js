@@ -6,15 +6,20 @@ const notTargetEmit_1 = require("./notTargetEmit");
 const sinewaveEmit = (frequencyStr, io, state, target) => {
     // サイン波の処理
     let cmd = {
-        cmd: 'SINEWAVE',
+        cmd: "SINEWAVE",
         value: Number(frequencyStr),
         flag: true,
         fade: state.cmd.FADE.IN,
         portament: state.cmd.PORTAMENT,
-        gain: state.cmd.GAIN.SINEWAVE
+        gain: state.cmd.GAIN.SINEWAVE,
     };
-    state.previous.sinewave = state.current.sinewave;
-    let targetId = 'initial';
+    if (target !== undefined) {
+        state.previous.sinewave[target] = state.current.sinewave[target];
+    }
+    else {
+        state.previous.sinewave = state.current.sinewave;
+    }
+    let targetId = "initial";
     if (target) {
         targetId = target;
         if (Object.keys(state.current.sinewave).includes(targetId)) {
@@ -57,7 +62,7 @@ const sinewaveEmit = (frequencyStr, io, state, target) => {
                 }
             }
             // 同じ周波数の音を出している端末がない場合
-            if (targetId === 'initial') {
+            if (targetId === "initial") {
                 for (let i = 0; i < state.client.length; i++) {
                     if (Object.keys(state.current.sinewave).includes(state.client[i])) {
                         continue;
@@ -66,7 +71,7 @@ const sinewaveEmit = (frequencyStr, io, state, target) => {
                         targetId = state.client[i];
                     }
                 }
-                if (targetId === 'initial') {
+                if (targetId === "initial") {
                     targetId = Object.keys(state.current.sinewave)[Math.floor(Math.random() * Object.keys(state.current.sinewave).length)];
                 }
                 state.current.sinewave[targetId] = cmd.value;
@@ -78,7 +83,9 @@ const sinewaveEmit = (frequencyStr, io, state, target) => {
     // io.to(targetId).emit('cmdFromServer', cmd)
     (0, putCmd_1.putCmd)(io, targetId, cmd, state);
     //io.emit('cmdFromServer', cmd)
-    (0, notTargetEmit_1.notTargetEmit)(targetId, state.client, io);
+    if (target === undefined) {
+        (0, notTargetEmit_1.notTargetEmit)(targetId, state.client, io);
+    }
 };
 exports.sinewaveEmit = sinewaveEmit;
 //# sourceMappingURL=sinewaveEmit.js.map
