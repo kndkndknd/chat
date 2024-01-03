@@ -10,6 +10,11 @@ upload
 
 
 packages/backend/dist
+packages/backend/static/assets/*
+packages/backend/static/html/index.html
+packages/backend/static/*js*
 packages/frontend/dist/*.js
 packages/frontend/dist/*.map
 packages/frontend/dist/*.js.*
+
+packages/arduino/dist/*

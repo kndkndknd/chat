@@ -5,10 +5,10 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: "./html/index.html",
-        snowleopard: "./src/snowleopard/snowLeopardClient.js",
+        // snowleopard: "./src/snowleopard/snowLeopardClient.js",
       },
       output: {
-        dir: "../backend/client",
+        dir: "../backend/static",
         entryFileNames: "[name].js",
       },
     },
@@ -16,7 +16,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/socket.io": {
-        target: "ws://localhost:8088",
+        target: "ws://localhost:8888",
         ws: true,
       },
     },
