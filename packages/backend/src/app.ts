@@ -10,7 +10,7 @@ import { ioServer } from "./socket/ioServer";
 const port = 8000;
 const app = Express();
 
-app.use(Express.static(path.join(__dirname, "..", "client")));
+app.use(Express.static(path.join(__dirname, "..", "static")));
 app.use(favicon(path.join(__dirname, "..", "lib/favicon.ico")));
 
 //const httpsserver = Https.createServer(options,app).listen(port);
@@ -28,7 +28,7 @@ console.log(`Server listening on port ${port}`);
 
 app.get("/", function (req, res, next) {
   try {
-    res.sendFile(path.join(__dirname, "..", "client/html", "index.html"));
+    res.sendFile(path.join(__dirname, "..", "static", "html", "index.html"));
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Something went wrong" });
@@ -37,7 +37,10 @@ app.get("/", function (req, res, next) {
 
 app.get("/snowleopard", function (req, res, next) {
   try {
-    res.sendFile(path.join(__dirname, "..", "client/html", "snowLeopard.html"));
+    console.log("snowleopard");
+    res.sendFile(
+      path.join(__dirname, "..", "static", "html", "snowLeopard.html")
+    );
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Something went wrong" });

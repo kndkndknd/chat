@@ -36,7 +36,7 @@ const ioServer_1 = require("./socket/ioServer");
 // import { switchCtrl } from "./arduinoAccess/switch";
 const port = 8000;
 const app = (0, express_1.default)();
-app.use(express_1.default.static(path.join(__dirname, "..", "client")));
+app.use(express_1.default.static(path.join(__dirname, "..", "static")));
 app.use((0, serve_favicon_1.default)(path.join(__dirname, "..", "lib/favicon.ico")));
 //const httpsserver = Https.createServer(options,app).listen(port);
 const options = {
@@ -47,7 +47,7 @@ const httpserver = Https.createServer(options, app).listen(port);
 console.log(`Server listening on port ${port}`);
 app.get("/", function (req, res, next) {
     try {
-        res.sendFile(path.join(__dirname, "..", "client/html", "index.html"));
+        res.sendFile(path.join(__dirname, "..", "static", "html", "index.html"));
     }
     catch (error) {
         console.log(error);
@@ -56,7 +56,8 @@ app.get("/", function (req, res, next) {
 });
 app.get("/snowleopard", function (req, res, next) {
     try {
-        res.sendFile(path.join(__dirname, "..", "client/html", "snowLeopard.html"));
+        console.log("snowleopard");
+        res.sendFile(path.join(__dirname, "..", "static", "html", "snowLeopard.html"));
     }
     catch (error) {
         console.log(error);
