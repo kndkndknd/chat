@@ -9,7 +9,6 @@
     "start": "node dist/app.js"
   },
   "devDependencies": {
-    "@types/socket.io": "3.0.2",
     "dotenv": "16.3.1"
   },
   "dependencies": {
