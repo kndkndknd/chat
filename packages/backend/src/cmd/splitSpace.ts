@@ -54,9 +54,12 @@ export const splitSpace = (
       // ) {
       //   console.log("target stream");
       //   targetStreamEmit(stringArr[1], io, state, target);
+    } else if (arrTypeArr[1] === "number" && stringArr.length == 2) {
+      sinewaveEmit(Number(stringArr[1]), io, state, target);
     } else if (stringArr[1] === "RECORD" || stringArr[1] === "REC") {
       console.log(stringArr);
       if (stringArr.length == 2) {
+        console.log("debug record", stringArr);
         recordEmit(io, state, target);
       } else if (stringArr[2] === "AS" && stringArr.length === 4) {
         console.log("debug", stringArr);
@@ -64,8 +67,14 @@ export const splitSpace = (
       } else {
         console.log("test", stringArr);
       }
-    } else if (arrTypeArr[1] === "number" && stringArr.length == 2) {
-      sinewaveEmit(Number(stringArr[1]), io, state, target);
+    } else if (streamList.includes(stringArr[1])) {
+      console.log("target stream");
+      state.stream.target[stringArr[1]] = [target];
+      streamEmit(stringArr[1], io, state);
+    } else if (stringArr[1] === "CHAT") {
+      console.log("target chat");
+      state.stream.target[stringArr[1]] = [target];
+      chatPreparation(io, state);
     }
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
     // RANDOMのみRATEとSTREAMがあるので個別処理

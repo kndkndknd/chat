@@ -38,6 +38,7 @@ export const chatReceive = (
           chunk.video = glitchStream(chunk.video);
         }
         console.log(states.client);
+        console.log(io.sockets.adapter.rooms);
         const targetId = pickupStreamTarget(states, buffer.source, from);
         // const targetId =
         //   states.client[Math.floor(Math.random() * states.client.length)];

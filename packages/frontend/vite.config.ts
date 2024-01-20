@@ -12,6 +12,7 @@ export default defineConfig({
         entryFileNames: "[name].js",
       },
     },
+    sourcemap: true,
   },
   server: {
     proxy: {

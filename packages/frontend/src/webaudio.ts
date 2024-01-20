@@ -179,6 +179,7 @@ const onAudioProcess = (e: AudioProcessingEvent) => {
     streamFlag.chat = false;
   }
   if (streamFlag.record) {
+    console.log("record");
     let bufferData = {
       source: "PLAYBACK",
       video: toBase64(),
@@ -191,6 +192,7 @@ const onAudioProcess = (e: AudioProcessingEvent) => {
     socket.emit("chatFromClient", bufferData);
   }
   if (streamFlag.other !== "") {
+    console.log(streamFlag.other);
     let bufferData = {
       source: streamFlag.other,
       video: toBase64(),
@@ -364,11 +366,12 @@ export const click = (gain: number, frequency?: number) => {
 };
 
 export const chatReq = () => {
-  textPrint("chat req", ctx, cnvs);
+  // textPrint("chat req", ctx, cnvs);
   streamFlag.chat = true;
 };
 
 export const recordReq = (recordReq: { source: string; timeout: number }) => {
+  console.log(recordReq);
   switch (recordReq.source) {
     case "PLAYBACK":
       streamFlag.record = true;
@@ -377,6 +380,7 @@ export const recordReq = (recordReq: { source: string; timeout: number }) => {
       }, recordReq.timeout);
       break;
     default:
+      console.log("other");
       streamFlag.other = recordReq.source;
       setTimeout(() => {
         streamFlag.other = "";

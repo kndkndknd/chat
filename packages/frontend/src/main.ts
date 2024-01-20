@@ -211,7 +211,7 @@ socket.on("textFromServer", (data: { text: string }) => {
 
 socket.on("chatReqFromServer", () => {
   chatReq();
-  textPrint("chatrequest", ctx, cnvs);
+  // textPrint("chatrequest", ctx, cnvs);
   setTimeout(() => {
     erasePrint(ctx, cnvs);
   }, 1000);
