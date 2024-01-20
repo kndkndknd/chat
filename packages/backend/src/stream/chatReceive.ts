@@ -8,8 +8,8 @@ import { pickupStreamTarget } from "./pickupStreamTarget";
 
 export const chatReceive = (
   buffer: buffStateType,
-  io: SocketIO.Server,
-  from: string
+  io: SocketIO.Server
+  // from: string
 ) => {
   switch (buffer.source) {
     case "CHAT":
@@ -37,9 +37,11 @@ export const chatReceive = (
         if (states.stream.glitch[buffer.source] && chunk.video) {
           chunk.video = glitchStream(chunk.video);
         }
-        console.log(states.client);
-        console.log(io.sockets.adapter.rooms);
-        const targetId = pickupStreamTarget(states, buffer.source, from);
+        // console.log(states.client);
+        // console.log(io.sockets.adapter.rooms);
+        console.log(io.sockets.adapter.rooms.size);
+        // console.log(io.sockets.adapter.rooms.get(buffer.from));
+        const targetId = pickupStreamTarget(states, buffer.source, buffer.from);
         // const targetId =
         //   states.client[Math.floor(Math.random() * states.client.length)];
         console.log("chatReceive targetId: ", targetId);

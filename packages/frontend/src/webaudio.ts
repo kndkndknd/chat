@@ -20,6 +20,7 @@ let metronomeIntervId: number;
 // const ctx  = <CanvasRenderingContext2D>cnvs.getContext('2d');
 
 const socket: Socket = io();
+let socketId: string;
 
 let audioContext: AudioContext;
 let masterGain: GainNode;
@@ -174,6 +175,10 @@ const onAudioProcess = (e: AudioProcessingEvent) => {
     };
     e.inputBuffer.copyFromChannel(bufferData.audio, 0);
     // console.log(bufferData.audio)
+    // console.log("socket.id(chatFromClient)", socket.id);
+    if (socketId !== "") {
+      bufferData["from"] = socketId;
+    }
     socket.emit("chatFromClient", bufferData);
     console.log("chatFromClient");
     streamFlag.chat = false;
@@ -365,9 +370,12 @@ export const click = (gain: number, frequency?: number) => {
   clickGain.gain.setTargetAtTime(0, currentTime, 0.03);
 };
 
-export const chatReq = () => {
+export const chatReq = (id: string) => {
   // textPrint("chat req", ctx, cnvs);
   streamFlag.chat = true;
+  if (id !== undefined && id) {
+    socketId = id;
+  }
 };
 
 export const recordReq = (recordReq: { source: string; timeout: number }) => {

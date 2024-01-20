@@ -208,7 +208,7 @@ socket.on("textFromServer", (data: { text: string }) => {
 });
 
 socket.on("chatReqFromServer", () => {
-  chatReq();
+  chatReq(String(socket.id));
   setTimeout(() => {
     erasePrint(ctx, cnvs);
   }, 1000);
@@ -243,7 +243,7 @@ socket.on(
       showImage(data.video, ctx);
     }
     setTimeout(() => {
-      chatReq();
+      chatReq(String(socket.id));
     }, (data.bufferSize / data.sampleRate) * 1000);
   }
 );

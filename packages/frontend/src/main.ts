@@ -210,7 +210,7 @@ socket.on("textFromServer", (data: { text: string }) => {
 });
 
 socket.on("chatReqFromServer", () => {
-  chatReq();
+  chatReq(String(socket.id));
   // textPrint("chatrequest", ctx, cnvs);
   setTimeout(() => {
     erasePrint(ctx, cnvs);
@@ -241,13 +241,14 @@ socket.on(
     duration: number;
   }) => {
     console.log("chatFromServer");
-    console.log(data.audio);
+    console.log("socket.id(socket.on): " + String(socket.id));
+    // console.log(data.audio);
     playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize);
     if (data.video) {
       showImage(data.video, ctx);
     }
     setTimeout(() => {
-      chatReq();
+      chatReq(String(socket.id));
     }, (data.bufferSize / data.sampleRate) * 1000);
   }
 );

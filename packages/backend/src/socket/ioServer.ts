@@ -71,12 +71,16 @@ export const ioServer = (
       socket.emit("debugFromServer");
     });
     socket.on("charFromClient", (character) => {
+      console.log("socket.id: " + String(socket.id));
+      console.log("client: " + states.client);
       strings = charProcess(character, strings, socket.id, io, states);
     });
 
     socket.on("chatFromClient", (buffer: buffStateType) => {
-      console.log("debug chatFromClient", states.current.stream);
-      chatReceive(buffer, io, socket.id);
+      // console.log("debug chatFromClient", states.current.stream);
+      // console.log("socket.id: " + String(socket.id));
+      if (buffer.from === undefined) buffer.from = String(socket.id);
+      chatReceive(buffer, io);
     });
 
     socket.on("streamReqFromClient", (source: string) => {
@@ -86,7 +90,8 @@ export const ioServer = (
         //   console.log(`target stream: ${source}`);
         //   targetStreamEmit(source, io, states, states.stream.target[source][0]);
         // } else {
-        streamEmit(source, io, states, socket.id);
+        // console.log("socket.id: " + String(socket.id) + ", source: " + source);
+        streamEmit(source, io, states, String(socket.id));
         // }
       }
     });

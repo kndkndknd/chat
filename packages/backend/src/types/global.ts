@@ -4,6 +4,7 @@ export type buffStateType = {
   video: string;
   bufferSize: number;
   duration: number;
+  from?: string;
 };
 
 export type cmdType = {

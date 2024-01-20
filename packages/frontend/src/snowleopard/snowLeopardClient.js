@@ -1,5 +1,7 @@
 import { io, Socket } from "socket.io-client";
 const socket = io();
+let socketId = "";
+
 import { canvasSizing, textPrint, erasePrint, showImage } from "../imageEvent";
 
 //import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate} from './webaudio'
@@ -203,6 +205,7 @@ socket.on("textFromServer", (data) => {
 });
 
 socket.on("chatReqFromServer", () => {
+  socketId = String(socket.id);
   chatReq();
   setTimeout(() => {
     erasePrint(ctx, cnvs);
@@ -219,6 +222,7 @@ socket.on("recordReqFromServer", (data) => {
 
 // CHATのみ向けにする
 socket.on("chatFromServer", (data) => {
+  socketId = String(socket.id);
   console.log(data.audio);
   playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize);
   if (data.video) {
@@ -578,6 +582,11 @@ const onAudioProcess = (e) => {
       bufferSize: bufferSize,
       duration: e.inputBuffer.duration,
     };
+    if (socketId === "") {
+      bufferData["from"] = socketId;
+    } else {
+      bufferData["from"] = String(socket.id);
+    }
     e.inputBuffer.copyFromChannel(bufferData.audio, 0);
     console.log(bufferData.video);
     socket.emit("chatFromClient", bufferData);

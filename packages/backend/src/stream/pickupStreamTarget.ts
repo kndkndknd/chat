@@ -18,11 +18,17 @@ export const pickupStreamTarget = (
     //       });
     // console.log("filtered targetArr", targetArr);
 
-    // const testArr = states.stream.target[stream].filter((id) => {
-    //   return id !== from;
-    // });
+    // const targetArr = states.stream.target[stream];
+    const targetArr =
+      stream === "CHAT"
+        ? states.stream.target[stream].filter((id) => {
+            console.log(id !== from);
+            return id !== from;
+          })
+        : states.stream.target[stream];
+    console.log("from", from);
     // console.log("testArr", testArr);
-    const targetArr = states.stream.target[stream];
+    // const targetArr = states.stream.target[stream];
 
     // fromを除外した結果targetがなくなればfromを返す、あればtargetの中からランダムに返す
     if (targetArr.length > 0) {
