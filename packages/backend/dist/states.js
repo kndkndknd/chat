@@ -1,14 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.uploadParams = exports.parameterList = exports.streamList = exports.cmdList = exports.chat_web = exports.streams = exports.basisBufferSize = exports.states = exports.faceState = void 0;
-exports.faceState = {
-    flag: false,
-    previousFace: {
-        x: 0,
-        y: 0,
-    },
-    expression: "no expression",
-};
+exports.uploadParams = exports.parameterList = exports.streamList = exports.cmdList = exports.chat_web = exports.streams = exports.basisBufferSize = exports.states = void 0;
 exports.states = {
     cmd: {
         GAIN: {

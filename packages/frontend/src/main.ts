@@ -211,6 +211,7 @@ socket.on("textFromServer", (data: { text: string }) => {
 
 socket.on("chatReqFromServer", () => {
   chatReq();
+  textPrint("chatrequest", ctx, cnvs);
   setTimeout(() => {
     erasePrint(ctx, cnvs);
   }, 1000);
@@ -218,9 +219,9 @@ socket.on("chatReqFromServer", () => {
 
 socket.on(
   "recordReqFromServer",
-  (data: { target: string; timeout: number }) => {
+  (data: { source: string; timeout: number }) => {
     recordReq(data);
-    textPrint("SHOT", ctx, cnvs);
+    textPrint("RECORD", ctx, cnvs);
     setTimeout(() => {
       erasePrint(ctx, cnvs);
     }, data.timeout);
@@ -239,6 +240,7 @@ socket.on(
     bufferSize: number;
     duration: number;
   }) => {
+    console.log("chatFromServer");
     console.log(data.audio);
     playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize);
     if (data.video) {

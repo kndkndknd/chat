@@ -1,18 +1,24 @@
 import SocketIO from "socket.io";
 import { cmdStateType, buffStateType } from "../types/global";
 import { streams, states, basisBufferSize } from "../states";
+import { pickupStreamTarget } from "./pickupStreamTarget";
 
 export const streamEmit = (
   source: string,
   io: SocketIO.Server,
-  state: cmdStateType
+  state: cmdStateType,
+  from?: string
 ) => {
   // if(streams[source].length > 0) {
   state.current.stream[source] = true;
   console.log(state.client);
   console.log(source);
   const targetId =
-    state.client[Math.floor(Math.random() * state.client.length)];
+    from === undefined
+      ? pickupStreamTarget(state, source)
+      : pickupStreamTarget(state, source, from);
+  // const targetId =
+  //   state.client[Math.floor(Math.random() * state.client.length)];
   let buff: buffStateType;
   if (source === "PLAYBACK") {
     if (streams[source].length > 0) {
@@ -33,7 +39,7 @@ export const streamEmit = (
       audioBuff[i] = 1.0;
     }
     buff = {
-      target: source,
+      source: source,
       bufferSize: basisBufferSize,
       audio: audioBuff,
       video: streams[source].video.shift(),
@@ -56,7 +62,7 @@ export const streamEmit = (
     if (streams[source].audio.length > 0 || streams[source].video.length > 0) {
       if (!state.stream.random[source]) {
         buff = {
-          target: source,
+          source: source,
           bufferSize: streams[source].bufferSize,
           audio: streams[source].audio.shift(),
           video: streams[source].video.shift(),
@@ -66,7 +72,7 @@ export const streamEmit = (
         streams[source].video.push(buff.video);
       } else {
         buff = {
-          target: source,
+          source: source,
           bufferSize: streams[source].bufferSize,
           audio:
             streams[source].audio[

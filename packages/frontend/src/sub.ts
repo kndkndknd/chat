@@ -216,7 +216,7 @@ socket.on("chatReqFromServer", () => {
 
 socket.on(
   "recordReqFromServer",
-  (data: { target: string; timeout: number }) => {
+  (data: { source: string; timeout: number }) => {
     recordReq(data);
     textPrint("RECORD", ctx, cnvs);
     setTimeout(() => {

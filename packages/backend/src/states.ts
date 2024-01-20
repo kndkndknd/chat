@@ -1,18 +1,5 @@
 import { cmdStateType, sevenSinsType } from "./types/global";
 
-export const faceState: {
-  flag: boolean;
-  previousFace: { x: number; y: number };
-  expression: sevenSinsType;
-} = {
-  flag: false,
-  previousFace: {
-    x: 0,
-    y: 0,
-  },
-  expression: "no expression",
-};
-
 export const states: cmdStateType = {
   cmd: {
     GAIN: {

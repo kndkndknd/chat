@@ -13,9 +13,10 @@ import { insertStream } from "../mongoAccess/insertStream";
 import { findStream } from "../mongoAccess/findStream";
 import { timerCmd } from "./timerCmd";
 import { stopEmit } from "./stopEmit";
-import { targetStreamEmit } from "../stream/targetStreamEmit";
-import { recordEmit } from "../stream/recordEmit";
+import { recordEmit, recordAsOtherEmit } from "../stream/recordEmit";
 import { connectTest, switchCramp } from "../arduinoAccess/arduinoAccess";
+import { chatPreparation } from "../stream/chatPreparation";
+import { streamEmit } from "../stream/streamEmit";
 
 export const splitSpace = (
   stringArr: Array<string>,
@@ -34,7 +35,7 @@ export const splitSpace = (
   // console.log(arrTypeArr)
   // console.log(stringArr)
 
-  if (arrTypeArr[0] === "number" && stringArr.length === 2) {
+  if (arrTypeArr[0] === "number") {
     // 送信先を指定したコマンド/SINEWAVE
     // 20230923 sinewave modeの動作を記載
     const target = state.client[Number(stringArr[0])];
@@ -43,18 +44,27 @@ export const splitSpace = (
     console.log(target);
     if (
       arrTypeArr[1] === "string" &&
-      Object.keys(cmdList).includes(stringArr[1])
+      Object.keys(cmdList).includes(stringArr[1]) &&
+      stringArr.length == 2
     ) {
-      cmdEmit(stringArr[1], io, state, target);
-    } else if (
-      arrTypeArr[1] === "string" &&
-      streamList.includes(stringArr[1])
-    ) {
-      console.log("target stream");
-      targetStreamEmit(stringArr[1], io, state, target);
+      cmdEmit(cmdList[stringArr[1]], io, state, target);
+      // } else if (
+      //   arrTypeArr[1] === "string" &&
+      //   streamList.includes(stringArr[1])
+      // ) {
+      //   console.log("target stream");
+      //   targetStreamEmit(stringArr[1], io, state, target);
     } else if (stringArr[1] === "RECORD" || stringArr[1] === "REC") {
-      recordEmit(io, state, target);
-    } else if (arrTypeArr[1] === "number") {
+      console.log(stringArr);
+      if (stringArr.length == 2) {
+        recordEmit(io, state, target);
+      } else if (stringArr[2] === "AS" && stringArr.length === 4) {
+        console.log("debug", stringArr);
+        recordAsOtherEmit(io, state, stringArr[3], target);
+      } else {
+        console.log("test", stringArr);
+      }
+    } else if (arrTypeArr[1] === "number" && stringArr.length == 2) {
       sinewaveEmit(Number(stringArr[1]), io, state, target);
     }
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
@@ -336,5 +346,34 @@ export const splitSpace = (
     } else if (stringArr[1] === "CRAMP") {
       switchCramp();
     }
+  } else if (stringArr[1] === "CHAT" || streamList.includes(stringArr[1])) {
+    console.log("route", stringArr);
+    const targetArr = stringArr[0].split("-");
+    if (
+      targetArr.length > 1 &&
+      targetArr.every((el) => {
+        return !isNaN(Number(el)) && el !== "";
+      })
+    ) {
+      console.log("targetArr", targetArr);
+      const targetIdArr = targetArr.map((el) => {
+        return state.client[Number(el)];
+      });
+      console.log("targetIdArr", targetIdArr);
+      state.stream.target[stringArr[1]] = targetIdArr;
+      console.log(state.stream.target);
+      if (stringArr[1] === "CHAT") {
+        console.log("debug");
+        chatPreparation(io, state);
+      } else {
+        streamEmit(stringArr[1], io, state);
+      }
+    }
+  } else if (
+    stringArr[0] === "RECORD" &&
+    stringArr[1] === "AS" &&
+    stringArr.length === 3
+  ) {
+    recordAsOtherEmit(io, state, stringArr[2]);
   }
 };

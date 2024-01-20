@@ -1,5 +1,5 @@
 export type buffStateType = {
-  target: string;
+  source: string;
   audio: Float32Array;
   video: string;
   bufferSize: number;

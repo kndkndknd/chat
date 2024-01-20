@@ -50,6 +50,7 @@ export const pcm2arr = (url) => {
 };
 
 export const pushStateStream = (streamName: string, states: cmdStateType) => {
+  streamList.push(streamName);
   states.current.stream[streamName] = false;
   states.previous.stream[streamName] = false;
   states.stream.sampleRate[streamName] = 44100;
@@ -245,7 +246,7 @@ export const uploadStream = async (stringArr, io) => {
             */
             console.log("video file");
             //コマンド、パラメータにUPLOAD対象を追加
-            streamList.push(streamName);
+            // streamList.push(streamName);
             pushStateStream(streamName, states);
             break;
           case "aac":
@@ -282,7 +283,7 @@ export const uploadStream = async (stringArr, io) => {
                 });
               }
             );
-            streamList.push(streamName);
+            // streamList.push(streamName);
             pushStateStream(streamName, states);
             break;
           default:

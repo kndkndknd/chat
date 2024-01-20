@@ -46,7 +46,7 @@ const receiveEnter = (strings, id, io, state) => {
         }
         */
     }
-    else if (strings.includes(" ") && strings.split(" ").length < 4) {
+    else if (strings.includes(" ") /*&& strings.split(" ").length < 4*/) {
         (0, splitSpace_1.splitSpace)(strings.split(" "), io, state);
     }
     else if (strings.includes("+")) {
@@ -130,10 +130,6 @@ const receiveEnter = (strings, id, io, state) => {
             // 暫定
             barLatency: state.stream.latency.CHAT * 4,
         });
-    }
-    else if (strings === "SHOT") {
-        const target = state.client[0];
-        (0, recordEmit_1.shotEmit)(io, state, target);
     }
     if (strings !== "STOP") {
         state.previous.text = strings;

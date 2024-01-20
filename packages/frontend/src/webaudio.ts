@@ -7,7 +7,7 @@ export let streamFlag = {
   record: false,
   timelapse: false,
   simulate: false,
-  shot: false,
+  other: "",
 };
 
 let simsGain = 1;
@@ -166,7 +166,7 @@ const onAudioProcess = (e: AudioProcessingEvent) => {
   const bufferSize = 8192;
   if (streamFlag.chat) {
     let bufferData = {
-      target: "CHAT",
+      source: "CHAT",
       video: toBase64(),
       audio: new Float32Array(bufferSize),
       bufferSize: bufferSize,
@@ -175,11 +175,12 @@ const onAudioProcess = (e: AudioProcessingEvent) => {
     e.inputBuffer.copyFromChannel(bufferData.audio, 0);
     // console.log(bufferData.audio)
     socket.emit("chatFromClient", bufferData);
+    console.log("chatFromClient");
     streamFlag.chat = false;
   }
   if (streamFlag.record) {
     let bufferData = {
-      target: "PLAYBACK",
+      source: "PLAYBACK",
       video: toBase64(),
       audio: new Float32Array(bufferSize),
       bufferSize: bufferSize,
@@ -189,9 +190,9 @@ const onAudioProcess = (e: AudioProcessingEvent) => {
     console.log(bufferData);
     socket.emit("chatFromClient", bufferData);
   }
-  if (streamFlag.shot) {
+  if (streamFlag.other !== "") {
     let bufferData = {
-      target: "SHOT",
+      source: streamFlag.other,
       video: toBase64(),
       audio: new Float32Array(bufferSize),
       bufferSize: bufferSize,
@@ -363,21 +364,22 @@ export const click = (gain: number, frequency?: number) => {
 };
 
 export const chatReq = () => {
+  textPrint("chat req", ctx, cnvs);
   streamFlag.chat = true;
 };
 
-export const recordReq = (recordReq: { target: string; timeout: number }) => {
-  switch (recordReq.target) {
+export const recordReq = (recordReq: { source: string; timeout: number }) => {
+  switch (recordReq.source) {
     case "PLAYBACK":
       streamFlag.record = true;
       setTimeout(() => {
         streamFlag.record = false;
       }, recordReq.timeout);
       break;
-    case "SHOT":
-      streamFlag.shot = true;
+    default:
+      streamFlag.other = recordReq.source;
       setTimeout(() => {
-        streamFlag.shot = false;
+        streamFlag.other = "";
       }, recordReq.timeout);
       break;
   }
