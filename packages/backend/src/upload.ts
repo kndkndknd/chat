@@ -115,12 +115,18 @@ export const uploadStream = async (stringArr, io) => {
         switch (fSplit[1].toLowerCase()) {
           case "mov":
           case "mp4":
+          case "m4v":
+          case "webm":
             let sndConvert = "";
             let imgConvert = "";
+            const ss = Math.floor(Math.random() * 100);
             sndConvert =
               "ffmpeg -i " +
               uploadParams.mediaDir +
               f +
+              // " -ss " +
+              // String(ss) +
+              // " -t 0:00:30" +
               " -vn -acodec aac " +
               uploadParams.mediaDir +
               fSplit[0] +
@@ -129,6 +135,9 @@ export const uploadStream = async (stringArr, io) => {
               "ffmpeg -i " +
               uploadParams.mediaDir +
               f +
+              // " -ss " +
+              // String(ss) +
+              // " -t 0:00:30" +
               ' -r 5.4 -f image2 "' +
               uploadParams.mediaDir +
               fSplit[0] +

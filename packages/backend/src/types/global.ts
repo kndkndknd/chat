@@ -166,6 +166,16 @@ export type buffArrayType = {
     index: number;
   };
 };
+
+export type CmdType = {
+  cmd: string;
+  property?: string;
+  value?: number;
+  flag?: boolean;
+  fade?: number;
+  gain?: number;
+};
+
 /*
 
 export type cmdStateType = {

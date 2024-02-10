@@ -310,6 +310,10 @@ export const sinewave = (
 
 export const whitenoise = (flag: boolean, fade: number, gain: number) => {
   const currentTime = audioContext.currentTime;
+
+  console.log("currentTime", currentTime);
+  console.log("fade", fade);
+  console.log("gain", gain);
   if (flag) {
     noiseGain.gain.setTargetAtTime(gain, currentTime, fade);
   } else {

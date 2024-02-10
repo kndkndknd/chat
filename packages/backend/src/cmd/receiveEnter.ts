@@ -14,7 +14,7 @@ import { voiceEmit } from "./voiceEmit";
 import { chatPreparation } from "../stream/chatPreparation";
 
 import { millisecondsPerBar, secondsPerEighthNote } from "./bpmCalc";
-import { putString } from "./putString";
+// import { putString } from "./putString";
 import { recordEmit } from "../stream/recordEmit";
 import { switchCtrl } from "../arduinoAccess/arduinoAccess";
 

@@ -4,8 +4,10 @@ import * as path from "path";
 import { default as favicon } from "serve-favicon";
 import * as Https from "https";
 import { ioServer } from "./socket/ioServer";
+import { spawn } from "child_process";
 // import { states } from "./states";
 // import { switchCtrl } from "./arduinoAccess/switch";
+import { networkInterfaces } from "os";
 
 const port = 8000;
 const app = Express();
@@ -24,7 +26,15 @@ const options = {
 };
 
 const httpserver = Https.createServer(options, app).listen(port);
-console.log(`Server listening on port ${port}`);
+
+function getIpAddress() {
+  const nets = networkInterfaces();
+  const net = nets["en0"]?.find((v) => v.family == "IPv4");
+  return !!net ? net.address : null;
+}
+
+const host = getIpAddress();
+console.log(`Server listening on ${host}:${port}`);
 
 app.get("/", function (req, res, next) {
   try {
