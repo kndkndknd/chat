@@ -18,6 +18,9 @@ var readDir = util.promisify(fs.readdir);
 var readFile = util.promisify(fs.readFile);
 var execPromise = util.promisify(exec);
 
+import { getFilePath } from "./stream/upload/getFilePath"
+import { getDuration } from "./stream/upload/getDuration"
+
 export const pcm2arr = (url) => {
   let tmpBuff = new Float32Array(basisBufferSize);
   let rtnBuff = [];
@@ -65,6 +68,12 @@ export const pushStateStream = (streamName: string, states: cmdStateType) => {
 export const uploadStream = async (stringArr, io) => {
   //  let ss = "00:00:00"
   //  let t = "00:00:20"
+  const f = <string>await getFilePath(stringArr[1])
+  if(f === "") {
+    return
+  }
+  const duration = await getDuration(uploadParams.mediaDir + f);
+
   switch (stringArr.length) {
     case 4:
       if (stringArr[3].includes(":")) {
@@ -84,15 +93,19 @@ export const uploadStream = async (stringArr, io) => {
           uploadParams.ss = "00:" + stringArr[2];
         }
       } else if (stringArr[2] === "FULL") {
-        uploadParams.t = "FULL";
-        uploadParams.ss = "FULL";
+        uploadParams.t = String(duration);
+        uploadParams.ss = "0:00:00";
       }
       break;
     case 2:
+      if(duration < 20) {
+        uploadParams.t = String(duration)
+      }
       break;
   }
   //fileImport(fname,libDir,statusImport,ss,t);
   try {
+    /*
     const files = await readDir(uploadParams.mediaDir);
     // mediaDir内を順番にファイル名スキャン
     for (let i = 0; i <= files.length; i++) {
@@ -100,7 +113,10 @@ export const uploadStream = async (stringArr, io) => {
       //ドット区切りがあり、ドット区切りの手前がstringArr[1]と同じ場合
       if (f != undefined && f.split(".")[0] === stringArr[1]) {
         console.log(f);
-        const streamName = stringArr[1];
+    */
+
+        // const streamName = stringArr[1];
+        const streamName = stringArr[1]
         let fSplit = f.split(".");
         if (!(streamName in streams)) {
           streams[streamName] = {
@@ -302,9 +318,9 @@ export const uploadStream = async (stringArr, io) => {
               timeout: true,
             });
         }
-      }
+      // }
     }
-    console.log(files);
+    // console.log(files);
   } catch (e) {
     console.error(e);
   }
