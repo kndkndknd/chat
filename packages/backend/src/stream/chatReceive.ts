@@ -1,10 +1,10 @@
 import SocketIO from "socket.io";
-import { cmdStateType, buffStateType } from "../types/global";
-import { streams, states, basisBufferSize } from "../states";
-import { glitchStream } from "./glitchStream";
-import { pushStateStream } from "../upload";
-import { pickupTarget } from "../route";
-import { pickupStreamTarget } from "./pickupStreamTarget";
+import { cmdStateType, buffStateType } from "../types/global.js";
+import { streams, states, basisBufferSize } from "../states.js";
+import { glitchStream } from "./glitchStream.js";
+import { pushStateStream } from "./pushStateStream.js";
+// import { pickupTarget } from "../route";
+import { pickupStreamTarget } from "./pickupStreamTarget.js";
 
 export const chatReceive = (
   buffer: buffStateType,

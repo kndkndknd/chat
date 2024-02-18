@@ -1,22 +1,22 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global";
-import { cmdList, streamList, parameterList } from "../states";
+import { cmdStateType } from "../types/global.js";
+import { cmdList, streamList, parameterList } from "../states.js";
 
-import { streamEmit } from "../stream/streamEmit";
-import { cmdEmit } from "./cmdEmit";
-import { stopEmit } from "./stopEmit";
-import { splitSpace } from "./splitSpace";
-import { splitPlus } from "./splitPlus";
-import { sinewaveEmit } from "./sinewaveEmit";
-import { sinewaveChange } from "./sinewaveChange";
-import { parameterChange } from "./parameterChange";
-import { voiceEmit } from "./voiceEmit";
-import { chatPreparation } from "../stream/chatPreparation";
+import { streamEmit } from "../stream/streamEmit.js";
+import { cmdEmit } from "./cmdEmit.js";
+import { stopEmit } from "./stopEmit.js";
+import { splitSpace } from "./splitSpace.js";
+import { splitPlus } from "./splitPlus.js";
+import { sinewaveEmit } from "./sinewaveEmit.js";
+import { sinewaveChange } from "./sinewaveChange.js";
+import { parameterChange } from "./parameterChange.js";
+import { voiceEmit } from "./voiceEmit.js";
+import { chatPreparation } from "../stream/chatPreparation.js";
 
-import { millisecondsPerBar, secondsPerEighthNote } from "./bpmCalc";
+import { millisecondsPerBar, secondsPerEighthNote } from "./bpmCalc.js";
 // import { putString } from "./putString";
-import { recordEmit } from "../stream/recordEmit";
-import { switchCtrl } from "../arduinoAccess/arduinoAccess";
+import { recordEmit } from "../stream/recordEmit.js";
+import { switchCtrl } from "../arduinoAccess/arduinoAccess.js";
 
 export const receiveEnter = (
   strings: string,

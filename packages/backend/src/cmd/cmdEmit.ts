@@ -1,12 +1,12 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global";
-import { cmdList } from "../states";
+import { cmdStateType } from "../types/global.js";
+import { cmdList } from "../states.js";
 
-import { stopEmit } from "./stopEmit";
-import { putCmd } from "./putCmd";
-import { notTargetEmit } from "./notTargetEmit";
-import { previousCmd } from "./previousCmd";
-import { pickupCmdTarget } from "./pickupCmdTarget";
+import { stopEmit } from "./stopEmit.js";
+import { putCmd } from "./putCmd.js";
+import { notTargetEmit } from "./notTargetEmit.js";
+import { previousCmd } from "./previousCmd.js";
+import { pickupCmdTarget } from "./pickupCmdTarget.js";
 
 export const cmdEmit = (
   cmdStrings: string,

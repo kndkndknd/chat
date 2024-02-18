@@ -6,12 +6,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.findStream = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 const states_1 = require("../states");
-const upload_1 = require("../upload");
+const pushStateStream_1 = require("../stream/pushStateStream");
 dotenv_1.default.config();
 const ipaddress = process.env.DB_HOST;
-const findStream = async (key, value = 'UNDEFINED', io) => {
+const findStream = async (key, value = "UNDEFINED", io) => {
     const queryParams = new URLSearchParams({
-        [key]: value
+        [key]: value,
     });
     const res = await fetch(`http://${ipaddress}:3000/api/stream?${queryParams}`);
     // .then(response => {
@@ -19,7 +19,7 @@ const findStream = async (key, value = 'UNDEFINED', io) => {
     // })
     const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
     let i = 1;
-    let str = '';
+    let str = "";
     while (true) {
         const { done, value } = await reader.read();
         if (done) {
@@ -38,13 +38,13 @@ const findStream = async (key, value = 'UNDEFINED', io) => {
 };
 exports.findStream = findStream;
 const pushStream = (streamArray) => {
-    const type = 'FIND';
+    const type = "FIND";
     // const type = streamArray[0].type
     states_1.streams[type] = {
         audio: [],
         video: [],
         index: [],
-        bufferSize: 8192
+        bufferSize: 8192,
     };
     streamArray.forEach((element, index) => {
         /*
@@ -52,7 +52,7 @@ const pushStream = (streamArray) => {
         console.log(element.audio.buffer)
         const audio = new Float32Array(element.audio.buffer)
         */
-        const audio = new Uint8Array([...atob(element.audio)].map(c => c.charCodeAt(0))).buffer;
+        const audio = new Uint8Array([...atob(element.audio)].map((c) => c.charCodeAt(0))).buffer;
         console.log(audio);
         states_1.streams[type].audio.push(audio);
         states_1.streams[type].video.push(element.video);
@@ -60,6 +60,6 @@ const pushStream = (streamArray) => {
     });
     console.log(states_1.streams[type].audio[0]);
     states_1.streamList.push(type);
-    (0, upload_1.pushStateStream)(type, states_1.states);
+    (0, pushStateStream_1.pushStateStream)(type, states_1.states);
 };
 //# sourceMappingURL=findStream.js.map

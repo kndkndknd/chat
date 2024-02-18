@@ -1,7 +1,7 @@
 import SocketIO from "socket.io";
-import { cmdStateType, buffStateType } from "../types/global";
-import { streams, states, basisBufferSize } from "../states";
-import { pickupStreamTarget } from "./pickupStreamTarget";
+import { cmdStateType, buffStateType } from "../types/global.js";
+import { streams, states, basisBufferSize } from "../states.js";
+import { pickupStreamTarget } from "./pickupStreamTarget.js";
 
 export const streamEmit = (
   source: string,

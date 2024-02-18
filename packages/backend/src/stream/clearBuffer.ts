@@ -1,15 +1,21 @@
-import { streams } from "../states";
+import { streams } from "../states.js";
 
 export const clearBuffer = (source?: string) => {
-  if(source === "BUFFER" || source === undefined){
-    for(let stream in streams){
-      if(stream !== "CHAT" && stream !== "EMPTY" && stream !== "KICK" && stream !== "SNARE" && stream !== "HAT")){
-        streams[key].audio = [];
-        streams[key].video = [];
+  if (source === "BUFFER" || source === undefined) {
+    for (let stream in streams) {
+      if (
+        stream !== "CHAT" &&
+        stream !== "EMPTY" &&
+        stream !== "KICK" &&
+        stream !== "SNARE" &&
+        stream !== "HAT"
+      ) {
+        streams[stream].audio = [];
+        streams[stream].video = [];
       }
     }
-  } else if(streamList.includes(source)){
-    streams[stringArr[1]].audio = [];
-    streams[stringArr[1]].video = [];
+  } else if (Object.keys(streams).includes(source)) {
+    streams[source].audio = [];
+    streams[source].video = [];
   }
-}
+};

@@ -1,9 +1,15 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global";
+import { cmdStateType } from "../types/global.js";
 // import { putString } from './putString'
-import { cmdList, streamList, parameterList, states, streams } from "../states";
-import { putCmd } from "./putCmd";
-import { stringEmit } from "../socket/ioEmit";
+import {
+  cmdList,
+  streamList,
+  parameterList,
+  states,
+  streams,
+} from "../states.js";
+import { putCmd } from "./putCmd.js";
+import { stringEmit } from "../socket/ioEmit.js";
 
 export const parameterChange = (
   param: string,

@@ -1,4 +1,4 @@
-import { cmdList } from "../states";
+import { cmdList } from "../states.js";
 
 interface Cmd {
   cmd: string;

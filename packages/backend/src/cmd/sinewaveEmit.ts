@@ -1,8 +1,8 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global";
-import { putCmd } from "./putCmd";
-import { notTargetEmit } from "./notTargetEmit";
-import { pickupCmdTarget } from "./pickupCmdTarget";
+import { cmdStateType } from "../types/global.js";
+import { putCmd } from "./putCmd.js";
+// import { notTargetEmit } from "./notTargetEmit";
+import { pickupCmdTarget } from "./pickupCmdTarget.js";
 
 export const sinewaveEmit = (
   frequencyStr: number,

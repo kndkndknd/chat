@@ -1,11 +1,11 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global";
+import { cmdStateType } from "../types/global.js";
 
-import { receiveEnter } from "./receiveEnter";
+import { receiveEnter } from "./receiveEnter.js";
 
-import { stopEmit } from "./stopEmit";
+import { stopEmit } from "./stopEmit.js";
 
-import { metronomeBpmSet } from "./metronomeBpmSet";
+import { metronomeBpmSet } from "./metronomeBpmSet.js";
 
 export function charProcess(
   character: string,
@@ -31,7 +31,7 @@ export function charProcess(
   } else if (character === "Escape") {
     // const client: 'client' | 'sinewaveClient' = state.sinewaveMode ? "sinewaveClient" : "client";
     // console.log(client)
-    stopEmit(io, state, 'ALL', 'all');
+    stopEmit(io, state, "ALL", "all");
     strings = "";
   } else if (character === "BASS") {
     console.log(

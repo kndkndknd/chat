@@ -1,13 +1,13 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global";
-import { cmdEmit } from "./cmdEmit";
-import { sinewaveEmit } from "./sinewaveEmit";
-import { chatPreparation } from "../stream/chatPreparation";
-import { streamEmit } from "../stream/streamEmit";
-import { stopEmit } from "./stopEmit";
-import { cmdList, streamList, parameterList } from "../states";
-import { sinewaveChange } from "./sinewaveChange";
-import { parameterChange } from "./parameterChange";
+import { cmdStateType } from "../types/global.js";
+import { cmdEmit } from "./cmdEmit.js";
+import { sinewaveEmit } from "./sinewaveEmit.js";
+import { chatPreparation } from "../stream/chatPreparation.js";
+import { streamEmit } from "../stream/streamEmit.js";
+import { stopEmit } from "./stopEmit.js";
+import { cmdList, streamList, parameterList } from "../states.js";
+import { sinewaveChange } from "./sinewaveChange.js";
+import { parameterChange } from "./parameterChange.js";
 
 export const splitPlus = (
   stringArr: Array<string>,

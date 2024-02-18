@@ -1,9 +1,15 @@
 import SocketIO from "socket.io";
-import { cmdList, streamList, parameterList, states, streams } from "../states";
+import {
+  cmdList,
+  streamList,
+  parameterList,
+  states,
+  streams,
+} from "../states.js";
 // import { putString } from "../cmd/putString";
 import dotenv from "dotenv";
-import { buffStateType } from "../types/global";
-import { stringEmit } from "../socket/ioEmit";
+import { buffStateType } from "../types/global.js";
+import { stringEmit } from "../socket/ioEmit.js";
 dotenv.config();
 
 const ipaddress = process.env.DB_HOST;

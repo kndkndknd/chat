@@ -1,8 +1,8 @@
-import { cmdList, streamList } from "../../states";
-import { cmdEmit } from "../cmdEmit";
-import { recordEmit } from "../../stream/recordEmit";
-import { sinewaveEmit } from "../sinewaveEmit";
-import { streamEmit } from "../../stream/streamEmit";
+import { cmdList, streamList } from "../../states.js";
+import { cmdEmit } from "../cmdEmit.js";
+import { recordEmit } from "../../stream/recordEmit.js";
+import { sinewaveEmit } from "../sinewaveEmit.js";
+import { streamEmit } from "../../stream/streamEmit.js";
 
 export const numTarget = (
   stringArr: Array<string>,

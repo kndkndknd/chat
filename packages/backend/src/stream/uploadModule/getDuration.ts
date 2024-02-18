@@ -1,6 +1,6 @@
 import { spawn } from "child_process";
 
-const ffprobeGetDuration = async (filePath: string) => {
+const ffprobeGetDuration = async (filePath) => {
   return new Promise((resolve, reject) => {
     const child = spawn(
       "ffprobe",
@@ -27,7 +27,8 @@ const ffprobeGetDuration = async (filePath: string) => {
   });
 };
 
-export const getDuration = async (filePath: string) => {
+export const getDuration = async (mediaDirPath: string, file: string) => {
+  const filePath = mediaDirPath + "/" + file;
   try {
     const formatResult = <string>await ffprobeGetDuration(filePath);
     console.log("result");

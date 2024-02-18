@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.cmdSelect = exports.pickCmdTarget = exports.pickupTarget = exports.roomEmit = exports.selectOtherClient = void 0;
-function selectOtherClient(rooms, source) {
+export function selectOtherClient(rooms, source) {
     let targetArr = [];
     for (let id in rooms) {
         targetArr.push(String(source));
@@ -17,8 +14,7 @@ function selectOtherClient(rooms, source) {
     }
     return targetID;
 }
-exports.selectOtherClient = selectOtherClient;
-function roomEmit(io, func, arg, target) {
+export function roomEmit(io, func, arg, target) {
     for (let key in target) {
         if (key in io.sockets.adapter.rooms) {
             io.to(key).emit(func, arg);
@@ -28,8 +24,7 @@ function roomEmit(io, func, arg, target) {
         }
     }
 }
-exports.roomEmit = roomEmit;
-function pickupTarget(io, list, sourceId) {
+export function pickupTarget(io, list, sourceId) {
     let idArr = [];
     let idStrArr = [];
     if (io.sockets.adapter.rooms !== undefined) {
@@ -48,8 +43,7 @@ function pickupTarget(io, list, sourceId) {
     }
     return idArr;
 }
-exports.pickupTarget = pickupTarget;
-function pickCmdTarget(idHsh, cmd, room = "all") {
+export function pickCmdTarget(idHsh, cmd, room = "all") {
     let targetArr = { "id": [], "No": [], "cmd": [], "timestamp": [], "noneId": [], "targetId": "none", "duplicate": "none" };
     //console.log(cmd)
     for (let strId in idHsh) {
@@ -83,8 +77,7 @@ function pickCmdTarget(idHsh, cmd, room = "all") {
     }
     return targetArr.targetId;
 }
-exports.pickCmdTarget = pickCmdTarget;
-function cmdSelect(strings, statusList) {
+export function cmdSelect(strings, statusList) {
     let cmd = { cmd: "" };
     let nowFlag = false;
     for (let key in statusList["cmd"]["list"]) {
@@ -103,5 +96,4 @@ function cmdSelect(strings, statusList) {
     }
     return { cmd: cmd, flag: nowFlag };
 }
-exports.cmdSelect = cmdSelect;
 //# sourceMappingURL=route.js.map

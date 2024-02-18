@@ -1,4 +1,4 @@
-import { cmdStateType, sevenSinsType } from "./types/global";
+import { cmdStateType, sevenSinsType } from "./types/global.js";
 
 export const states: cmdStateType = {
   cmd: {
@@ -209,7 +209,7 @@ export const parameterList = {
 };
 
 export const uploadParams = {
-  mediaDir: "./upload/",
+  mediaDir: "chat_upload",
   ss: "00:00:00",
   t: "00:00:20",
 };

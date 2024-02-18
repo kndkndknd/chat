@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.stopEmit = void 0;
-const stopEmit = (io, state, target, client) => {
+export const stopEmit = (io, state, target, client) => {
     /*
     io.emit('stopFromServer', {
       target: target,
@@ -39,5 +36,4 @@ const stopEmit = (io, state, target, client) => {
         state.stream.target[element] = [];
     });
 };
-exports.stopEmit = stopEmit;
 //# sourceMappingURL=stopEmit.js.map

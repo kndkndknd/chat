@@ -1,28 +1,34 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global";
-import { cmdList, streamList, parameterList, states, streams } from "../states";
-import { cmdEmit } from "./cmdEmit";
-import { uploadStream } from "../upload";
-import { sinewaveEmit } from "./sinewaveEmit";
-import { parameterChange } from "./parameterChange";
+import { cmdStateType } from "../types/global.js";
+import {
+  cmdList,
+  streamList,
+  parameterList,
+  states,
+  streams,
+} from "../states.js";
+import { cmdEmit } from "./cmdEmit.js";
+import { uploadStream } from "../stream/uploadModule/uploadStream.js";
+import { sinewaveEmit } from "./sinewaveEmit.js";
+import { parameterChange } from "./parameterChange.js";
 
-import { putCmd } from "./putCmd";
+import { putCmd } from "./putCmd.js";
 // import { putString } from "./putString";
 
-import { insertStream } from "../mongoAccess/insertStream";
-import { findStream } from "../mongoAccess/findStream";
-import { timerCmd } from "./timerCmd";
-import { stopEmit } from "./stopEmit";
-import { recordEmit, recordAsOtherEmit } from "../stream/recordEmit";
-import { connectTest, switchCramp } from "../arduinoAccess/arduinoAccess";
-import { chatPreparation } from "../stream/chatPreparation";
-import { streamEmit } from "../stream/streamEmit";
-import { helpPrint } from "./help";
-import { numTarget } from "./splitSpace/numTarget";
-import { fadeCmd } from "./splitSpace/fadeCmd";
-import { stringEmit } from "../socket/ioEmit";
+import { insertStream } from "../mongoAccess/insertStream.js";
+// import { findStream } from "../mongoAccess/findStream";
+import { timerCmd } from "./timerCmd.js";
+import { stopEmit } from "./stopEmit.js";
+import { recordEmit, recordAsOtherEmit } from "../stream/recordEmit.js";
+import { connectTest, switchCramp } from "../arduinoAccess/arduinoAccess.js";
+import { chatPreparation } from "../stream/chatPreparation.js";
+import { streamEmit } from "../stream/streamEmit.js";
+import { helpPrint } from "./help.js";
+import { numTarget } from "./splitSpace/numTarget.js";
+import { fadeCmd } from "./splitSpace/fadeCmd.js";
+import { stringEmit } from "../socket/ioEmit.js";
 
-export const splitSpace = (
+export const splitSpace = async (
   stringArr: Array<string>,
   io: SocketIO.Server,
   state: cmdStateType
@@ -299,7 +305,8 @@ export const splitSpace = (
       );
     }
   } else if (stringArr[0] === "UPLOAD" && stringArr.length == 2) {
-    uploadStream(stringArr, io);
+    const uploadResult = await uploadStream(stringArr);
+    stringEmit(io, uploadResult, true);
   } else if (
     stringArr[0] === "GAIN" &&
     stringArr.length === 3 &&
