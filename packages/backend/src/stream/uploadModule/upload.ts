@@ -1,3 +1,6 @@
+import SocketIO from "socket.io";
+import * as path from "path";
+
 import {
   streams,
   cmdList,
@@ -6,9 +9,9 @@ import {
   states,
   uploadParams,
   basisBufferSize,
-} from "./states";
-import SocketIO from "socket.io";
-import { cmdStateType } from "./types/global";
+} from "../../states";
+// import { cmdStateType } from "../../types/global";
+import { pushStateStream } from "../pushStateStream";
 
 const pcm = require("pcm");
 const fs = require("fs");
@@ -18,9 +21,15 @@ var readDir = util.promisify(fs.readdir);
 var readFile = util.promisify(fs.readFile);
 var execPromise = util.promisify(exec);
 
+const mediaDirPath = path.join(
+  __dirname,
+  "../../../../../..",
+  uploadParams.mediaDir
+);
+
 export const pcm2arr = (url) => {
   let tmpBuff = new Float32Array(basisBufferSize);
-  let rtnBuff = [];
+  let rtnBuff: Array<Float32Array> = [];
   var i = 0;
   pcm.getPcmData(
     url,
@@ -49,18 +58,18 @@ export const pcm2arr = (url) => {
   return rtnBuff;
 };
 
-export const pushStateStream = (streamName: string, states: cmdStateType) => {
-  streamList.push(streamName);
-  states.current.stream[streamName] = false;
-  states.previous.stream[streamName] = false;
-  states.stream.sampleRate[streamName] = 44100;
-  states.stream.glitch[streamName] = false;
-  states.stream.grid[streamName] = false;
-  states.stream.latency[streamName] = 1000;
-  states.stream.random[streamName] = false;
-  states.stream.randomrate[streamName] = false;
-  states.stream.target[streamName] = [];
-};
+// export const pushStateStream = (streamName: string, states: cmdStateType) => {
+//   streamList.push(streamName);
+//   states.current.stream[streamName] = false;
+//   states.previous.stream[streamName] = false;
+//   states.stream.sampleRate[streamName] = 44100;
+//   states.stream.glitch[streamName] = false;
+//   states.stream.grid[streamName] = false;
+//   states.stream.latency[streamName] = 1000;
+//   states.stream.random[streamName] = false;
+//   states.stream.randomrate[streamName] = false;
+//   states.stream.target[streamName] = [];
+// };
 
 export const uploadStream = async (stringArr, io) => {
   //  let ss = "00:00:00"
@@ -92,8 +101,9 @@ export const uploadStream = async (stringArr, io) => {
       break;
   }
   //fileImport(fname,libDir,statusImport,ss,t);
+  console.log(mediaDirPath);
   try {
-    const files = await readDir(uploadParams.mediaDir);
+    const files = await readDir(mediaDirPath);
     // mediaDir内を順番にファイル名スキャン
     for (let i = 0; i <= files.length; i++) {
       let f = files[i];
@@ -115,22 +125,28 @@ export const uploadStream = async (stringArr, io) => {
         switch (fSplit[1].toLowerCase()) {
           case "mov":
           case "mp4":
+          case "m4v":
+          case "webm":
             let sndConvert = "";
             let imgConvert = "";
             sndConvert =
               "ffmpeg -i " +
-              uploadParams.mediaDir +
+              mediaDirPath +
+              "/" +
               f +
               " -vn -acodec aac " +
-              uploadParams.mediaDir +
+              mediaDirPath +
+              "/" +
               fSplit[0] +
               ".aac";
             imgConvert =
               "ffmpeg -i " +
-              uploadParams.mediaDir +
+              mediaDirPath +
+              "/" +
               f +
               ' -r 5.4 -f image2 "' +
-              uploadParams.mediaDir +
+              mediaDirPath +
+              "/" +
               fSplit[0] +
               '%06d.jpg"';
             if (uploadParams.ss !== "FULL" && uploadParams.t !== "FULL") {
@@ -152,7 +168,7 @@ export const uploadStream = async (stringArr, io) => {
 
             // let j = 0
             await pcm.getPcmData(
-              uploadParams.mediaDir + streamName + ".aac",
+              mediaDirPath + "/" + streamName + ".aac",
               { stereo: true, sampleRate: 22050 },
               function (sample, channel) {
                 tmpBuff[i] = sample;
@@ -160,7 +176,7 @@ export const uploadStream = async (stringArr, io) => {
                 if (i === basisBufferSize) {
                   // rtnBuff.push(tmpBuff);
                   //console.log(tmpBuff)
-                  console.log("push audio buff");
+                  // console.log("push audio buff");
                   streams[streamName].audio.push(tmpBuff);
                   /*
                   if(streams[streamName].length === 0) {
@@ -192,13 +208,11 @@ export const uploadStream = async (stringArr, io) => {
                     ".aac, { stereo: true, sampleRate: 44100 })"
                 );
                 //                console.log(streams[streamName].audio.length);
-                execPromise(
-                  "rm " + uploadParams.mediaDir + streamName + ".aac"
-                );
+                execPromise("rm " + mediaDirPath + "/" + streamName + ".aac");
               }
             );
-            const files = await readDir(uploadParams.mediaDir);
-            let jpgs = [];
+            const files = await readDir(mediaDirPath);
+            let jpgs: Array<string> = [];
             await files.forEach(async (file) => {
               if (file.includes(fSplit[0]) && file.includes(".jpg")) {
                 await jpgs.push(file);
@@ -207,13 +221,13 @@ export const uploadStream = async (stringArr, io) => {
             // console.log(jpgs)
             // const jpgs = await readDir(uploadParams.mediaDir);
             jpgs.forEach(async (element) => {
-              const img = await readFile(uploadParams.mediaDir + element);
+              const img = await readFile(mediaDirPath + "/" + element);
               const base64str = await new Buffer(img).toString("base64");
               // console.log(base64str)
               streams[streamName].video.push(
                 "data:image/jpeg;base64," + String(base64str)
               );
-              await execPromise("rm " + uploadParams.mediaDir + element);
+              await execPromise("rm " + mediaDirPath + "/" + element);
               io.emit("stringsFromServer", {
                 strings: "UPLOADED",
                 timeout: true,
@@ -247,7 +261,7 @@ export const uploadStream = async (stringArr, io) => {
             console.log("video file");
             //コマンド、パラメータにUPLOAD対象を追加
             // streamList.push(streamName);
-            pushStateStream(streamName, states);
+            pushStateStream(streamName, states, true);
             break;
           case "aac":
           case "m4a":
@@ -256,7 +270,7 @@ export const uploadStream = async (stringArr, io) => {
           case "aif":
           case "aiff":
             await pcm.getPcmData(
-              uploadParams.mediaDir + f,
+              mediaDirPath + "/" + f,
               { stereo: true, sampleRate: 22050 },
               function (sample, channel) {
                 tmpBuff[i] = sample;
@@ -284,7 +298,7 @@ export const uploadStream = async (stringArr, io) => {
               }
             );
             // streamList.push(streamName);
-            pushStateStream(streamName, states);
+            pushStateStream(streamName, states, true);
             break;
           default:
             console.log("not media file");

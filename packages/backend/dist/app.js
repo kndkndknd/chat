@@ -31,11 +31,16 @@ const express_1 = __importDefault(require("express"));
 const path = __importStar(require("path"));
 const serve_favicon_1 = __importDefault(require("serve-favicon"));
 const Https = __importStar(require("https"));
-const ioServer_1 = require("./socket/ioServer");
+const ioServer_js_1 = require("./socket/ioServer.js");
 // import { states } from "./states";
 // import { switchCtrl } from "./arduinoAccess/switch";
+const os_1 = require("os");
 const port = 8000;
 const app = (0, express_1.default)();
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+// const __dirname = import.meta.dirname;
+// console.log(__dirname);
 app.use(express_1.default.static(path.join(__dirname, "..", "static")));
 app.use((0, serve_favicon_1.default)(path.join(__dirname, "..", "lib/favicon.ico")));
 //const httpsserver = Https.createServer(options,app).listen(port);
@@ -44,7 +49,13 @@ const options = {
     cert: fs.readFileSync(path.join(__dirname, "../../../..", "keys/chat/cert.pem")),
 };
 const httpserver = Https.createServer(options, app).listen(port);
-console.log(`Server listening on port ${port}`);
+function getIpAddress() {
+    const nets = (0, os_1.networkInterfaces)();
+    const net = nets["en0"]?.find((v) => v.family == "IPv4");
+    return !!net ? net.address : null;
+}
+const host = getIpAddress();
+console.log(`Server listening on ${host}:${port}`);
 app.get("/", function (req, res, next) {
     try {
         res.sendFile(path.join(__dirname, "..", "static", "html", "index.html"));
@@ -57,7 +68,7 @@ app.get("/", function (req, res, next) {
 app.get("/snowleopard", function (req, res, next) {
     try {
         console.log("snowleopard");
-        res.sendFile(path.join(__dirname, "..", "static", "html", "snowLeopard.html"));
+        res.sendFile(path.join(__dirname, "..", "static", "html", "snowleopard.html"));
     }
     catch (error) {
         console.log(error);
@@ -77,5 +88,5 @@ const socketOptions = {
 };
 */
 // const io = new Server(httpsserver, socketOptions)
-(0, ioServer_1.ioServer)(httpserver);
+(0, ioServer_js_1.ioServer)(httpserver);
 //# sourceMappingURL=app.js.map

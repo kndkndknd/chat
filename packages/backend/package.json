@@ -3,17 +3,21 @@
   "packageManager": "pnpm@8.12.1",
   "private": true,
   "scripts": {
-    "backend": "ts-node src/app.ts",
     "dev": "ts-node src/app.ts",
+    "backend": "node --loader ts-node/esm src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js"
   },
   "devDependencies": {
+    "@types/sharp": "0.32.0",
     "dotenv": "16.3.1"
   },
   "dependencies": {
+    "axios": "1.6.7",
+    "googleapis": "133.0.0",
     "pcm": "1.0.3",
     "serve-favicon": "2.5.0",
+    "sharp": "0.33.2",
     "socket.io": "4.7.2"
   }
 }

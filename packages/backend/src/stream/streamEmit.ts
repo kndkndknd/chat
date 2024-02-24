@@ -26,9 +26,10 @@ export const streamEmit = (
         buff = streams[source].shift();
         streams[source].push(buff);
       } else {
+        const index = Math.floor(Math.random() * streams[source].length);
+        console.log("random ", index);
         // RANDOM
-        buff =
-          streams[source][Math.floor(Math.random() * streams[source].length)];
+        buff = streams[source][index];
       }
     } else {
       io.emit("stringsFromServer", { strings: "NO BUFFER", timeout: true });

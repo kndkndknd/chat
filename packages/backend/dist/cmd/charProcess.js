@@ -1,13 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.charProcess = void 0;
-const receiveEnter_1 = require("./receiveEnter");
-const stopEmit_1 = require("./stopEmit");
-const metronomeBpmSet_1 = require("./metronomeBpmSet");
+const receiveEnter_js_1 = require("./receiveEnter.js");
+const stopEmit_js_1 = require("./stopEmit.js");
+const metronomeBpmSet_js_1 = require("./metronomeBpmSet.js");
 function charProcess(character, strings, id, io, state) {
     //console.log(character)
     if (character === "Enter") {
-        (0, receiveEnter_1.receiveEnter)(strings, id, io, state);
+        (0, receiveEnter_js_1.receiveEnter)(strings, id, io, state);
         strings = "";
     }
     else if (character === "Tab" ||
@@ -23,7 +23,7 @@ function charProcess(character, strings, id, io, state) {
     else if (character === "Escape") {
         // const client: 'client' | 'sinewaveClient' = state.sinewaveMode ? "sinewaveClient" : "client";
         // console.log(client)
-        (0, stopEmit_1.stopEmit)(io, state, 'ALL', 'all');
+        (0, stopEmit_js_1.stopEmit)(io, state, "ALL", "all");
         strings = "";
     }
     else if (character === "BASS") {
@@ -46,7 +46,7 @@ function charProcess(character, strings, id, io, state) {
         io.emit("stringFromServer", { strings: strings, timeout: false });
     }
     else if (character === " " && strings === "") {
-        (0, metronomeBpmSet_1.metronomeBpmSet)(io, state, id);
+        (0, metronomeBpmSet_js_1.metronomeBpmSet)(io, state, id);
     }
     else if (character === "Shift") {
     }

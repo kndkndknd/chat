@@ -1,7 +1,8 @@
 import SocketIO from "socket.io";
 import { cmdStateType } from "../types/global";
 import { putCmd } from "./putCmd";
-import { notTargetEmit } from "./notTargetEmit";
+// import { notTargetEmit } from "./notTargetEmit";
+import { pickupCmdTarget } from "./pickupCmdTarget";
 
 export const sinewaveEmit = (
   frequencyStr: number,
@@ -31,7 +32,28 @@ export const sinewaveEmit = (
   } else {
     state.previous.sinewave = state.current.sinewave;
   }
-  let targetId = "initial";
+  let targetIdArr =
+    target !== undefined
+      ? pickupCmdTarget(state, "SINEWAVE", target)
+      : pickupCmdTarget(state, "SINEWAVE");
+  console.log(targetIdArr);
+
+  targetIdArr.forEach((id) => {
+    if (!Object.keys(state.current.sinewave).includes(id)) {
+      cmd.flag = true;
+      cmd.fade = state.cmd.FADE.IN;
+      state.current.sinewave[id] == cmd.value;
+    } else if (state.current.sinewave[id] !== cmd.value) {
+      cmd.flag = true;
+      cmd.fade = 0;
+      state.current.sinewave[id] = cmd.value;
+    } else {
+      cmd.flag = false;
+      cmd.fade = state.cmd.FADE.OUT;
+      delete state.current.sinewave[id];
+    }
+  });
+  /*
   if (target) {
     targetId = target;
     if (Object.keys(state.current.sinewave).includes(targetId)) {
@@ -89,12 +111,12 @@ export const sinewaveEmit = (
       }
     }
   }
+  */
   console.log(state.current.sinewave);
-  console.log(targetId);
-  // io.to(targetId).emit('cmdFromServer', cmd)
-  putCmd(io, targetId, cmd, state);
-  //io.emit('cmdFromServer', cmd)
-  if (target === undefined) {
-    notTargetEmit(targetId, state.client, io);
-  }
+  console.log(targetIdArr);
+  putCmd(io, targetIdArr, cmd, state);
+  // putCmd(io, targetId, cmd, state);
+  // if (target === undefined) {
+  //   notTargetEmit(targetId, state.client, io);
+  // }
 };

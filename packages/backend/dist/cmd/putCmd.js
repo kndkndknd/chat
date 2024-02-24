@@ -1,8 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.putCmd = void 0;
-const putCmd = (io, id, cmd, state) => {
-    io.to(id).emit('cmdFromServer', cmd);
+const putCmd = (io, idArr, cmd, state) => {
+    idArr.forEach((id) => {
+        io.to(id).emit("cmdFromServer", cmd);
+    });
     /*
     if(state.cmd.VOICE.length > 0) {
       state.cmd.VOICE.forEach((element) => {

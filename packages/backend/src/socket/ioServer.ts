@@ -1,25 +1,25 @@
 import { Server, Socket } from "socket.io";
 import * as Http from "http";
 
-import { statusList, pathList, statusClient } from "../statusList";
+// import { statusList, pathList, statusClient } from "../statusList";
 import { chatReceive } from "../stream/chatReceive";
 
 import { buffStateType } from "../types/global";
 
-import {
-  selectOtherClient,
-  roomEmit,
-  pickupTarget,
-  pickCmdTarget,
-  cmdSelect,
-} from "../route";
-import { cmdEmit } from "../cmd/cmdEmit";
+// import {
+//   selectOtherClient,
+//   roomEmit,
+//   pickupTarget,
+//   pickCmdTarget,
+//   cmdSelect,
+// } from "../route";
+// import { cmdEmit } from "../cmd/cmdEmit";
 import { charProcess } from "../cmd/charProcess";
-import { stopEmit } from "../cmd/stopEmit";
-import { sinewaveEmit } from "../cmd/sinewaveEmit";
+// import { stopEmit } from "../cmd/stopEmit";
+// import { sinewaveEmit } from "../cmd/sinewaveEmit";
 import { streamEmit } from "../stream/streamEmit";
 import { states, chat_web } from "../states";
-import { DefaultEventsMap } from "socket.io/dist/typed-events";
+// import { DefaultEventsMap } from "socket.io/dist/typed-events";
 
 let strings = "";
 const previousFace = { x: 0, y: 0 };
@@ -116,7 +116,7 @@ export const ioServer = (
         }
       });
       console.log(states.client);
-      io.emit("statusFromServer", statusList);
+      // io.emit("statusFromServer", statusList);
     });
   });
 };
