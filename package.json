@@ -11,7 +11,7 @@
     "backend": "pnpm -F \"backend\"",
     "frontend": "pnpm -F \"frontend\"",
     "arduino": "pnpm -F \"arduino\"",
-    "glitch": "pnpm -F \"glitch\""
+    "snowleopard": "pnpm -F \"snowleopard\""
   },
   "dependencies": {
     "express": "4.18.2"

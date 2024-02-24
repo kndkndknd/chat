@@ -1,4 +1,7 @@
-export const putCmd = (io, idArr, cmd, state) => {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.putCmd = void 0;
+const putCmd = (io, idArr, cmd, state) => {
     idArr.forEach((id) => {
         io.to(id).emit("cmdFromServer", cmd);
     });
@@ -10,4 +13,5 @@ export const putCmd = (io, idArr, cmd, state) => {
     }
     */
 };
+exports.putCmd = putCmd;
 //# sourceMappingURL=putCmd.js.map

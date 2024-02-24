@@ -7,6 +7,7 @@ import {
   textPrint,
   erasePrint,
   showImage,
+  emojiState,
 } from "./imageEvent";
 
 import {
@@ -79,7 +80,7 @@ socket.on(
   (data: { strings: string; timeout: boolean }) => {
     // erasePrint(stx, strCnvs);
     erasePrint(ctx, cnvs);
-    console.log(data);
+    console.log("stringsFromServer", data);
     stringsClient = data.strings;
     textPrint(stringsClient, ctx, cnvs);
     if (data.timeout) {
@@ -391,6 +392,14 @@ socket.on("clockFromServer", (data: { clock: boolean; barLatency: number }) => {
   }
 });
 
+socket.on("emojiFromServer", (data: { state: boolean; text: string }) => {
+  textPrint(data.text, ctx, cnvs);
+  setTimeout(() => {
+    erasePrint(ctx, cnvs);
+  }, 500);
+  emojiState(data.state);
+});
+
 /*
 socket.on("clockModeFromServer", (data: { clockMode: boolean }) => {
   console.log(data);
@@ -405,6 +414,15 @@ socket.on("clockModeFromServer", (data: { clockMode: boolean }) => {
   }
 });
 */
+const videoPlayer = <HTMLVideoElement>document.getElementById("video2");
+socket.on("bufferFromServer", (data) => {
+  const uint8Array = new Uint8Array(data);
+  const blob = new Blob([uint8Array]);
+  const url = URL.createObjectURL(blob);
+  // videoElement.src = url;
+  videoPlayer.src = url;
+  textPrint("buffer", ctx, cnvs);
+});
 
 // disconnect時、1秒後再接続
 socket.on("disconnect", () => {

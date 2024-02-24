@@ -1,15 +1,10 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global.js";
+
+import { cmdStateType } from "../types/global";
 // import { putString } from './putString'
-import {
-  cmdList,
-  streamList,
-  parameterList,
-  states,
-  streams,
-} from "../states.js";
-import { putCmd } from "./putCmd.js";
-import { stringEmit } from "../socket/ioEmit.js";
+import { cmdList, streamList, parameterList, states, streams } from "../states";
+import { putCmd } from "./putCmd";
+import { stringEmit } from "../socket/ioEmit";
 
 export const parameterChange = (
   param: string,
@@ -75,11 +70,16 @@ export const parameterChange = (
       break;
     case "GLITCH":
       if (arg && arg.property) {
-        state.stream.glitch[arg.source] = !state.stream.glitch[arg.source];
+        state.stream.glitch[arg.property] = !state.stream.glitch[arg.property];
         // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(state.stream.glitch[arg.source]), timeout: true})
+        // console.log(arg.property, state.stream.glitch);
+        // console.log(
+        //   `GLITCH ${arg.property}: ${state.stream.glitch[arg.property]}`
+        // );
         stringEmit(
           io,
-          "GLITCH: " + String(state.stream.glitch[arg.source])
+          `GLITCH ${arg.property}: ${state.stream.glitch[arg.property]}`,
+          true
           // state
         );
       } else {
@@ -91,7 +91,7 @@ export const parameterChange = (
           state.stream.glitch[source] = flag;
         }
         // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(state.stream.glitch.CHAT), timeout: true})
-        stringEmit(io, "GLITCH: " + String(state.stream.glitch.CHAT));
+        stringEmit(io, "GLITCH: " + String(state.stream.glitch.CHAT), true);
       }
       break;
     case "GRID":
@@ -191,25 +191,28 @@ export const parameterChange = (
       }
       break;
     case "RANDOM":
-      if (arg && arg.source) {
-        state.stream.random[arg.source] = !state.stream.random[arg.source];
-        // io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random[arg.source]), timeout: true})
-        stringEmit(
-          io,
-          "RANDOM: " + String(state.stream.random[arg.source])
-          // state
-        );
-      } else {
-        let flag = false;
-        if (Object.values(states.stream.random).includes(false)) {
-          flag = true;
-        }
-        for (let target in state.stream.random) {
-          state.stream.random[target] = flag;
-        }
-        //io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random.CHAT), timeout: true})
-        stringEmit(io, "RANDOM: " + String(state.stream.random.CHAT));
+      // if (arg && arg.source) {
+      //   state.stream.random[arg.source] = !state.stream.random[arg.source];
+      //   // io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random[arg.source]), timeout: true})
+      //   stringEmit(
+      //     io,
+      //     "RANDOM: " + String(state.stream.random[arg.source])
+      //     // state
+      //   );
+      // } else {
+      let flag = false;
+      console.log(Object.values(states.stream.random));
+      if (Object.values(states.stream.random).includes(false)) {
+        flag = true;
       }
+      for (let target in state.stream.random) {
+        console.log(target, flag);
+        state.stream.random[target] = flag;
+      }
+      //io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random.CHAT), timeout: true})
+      stringEmit(io, "RANDOM: " + String(state.stream.random.CHAT));
+      // }
+      console.log(state.stream.random);
       break;
     case "VOICE":
       if (arg && arg.source) {

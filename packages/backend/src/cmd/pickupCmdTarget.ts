@@ -1,4 +1,4 @@
-import { cmdList } from "../states.js";
+import { cmdList } from "../states";
 
 interface Cmd {
   cmd: string;
@@ -19,7 +19,7 @@ export const pickupCmdTarget = (
     cmdString === "SINEWAVE" ? "SINEWAVE" : (cmdString as keyof typeof cmdList);
 
   if (target !== undefined && target) {
-    return target;
+    return [target];
   } else {
     switch (cmd) {
       case "CLICK":
@@ -33,7 +33,7 @@ export const pickupCmdTarget = (
             state.client[Math.floor(Math.random() * state.client.length)],
           ];
         } else {
-          return state.current.cmd[cmd];
+          return [state.current.cmd[cmd]];
         }
         break;
       case "SINEWAVE":
@@ -45,7 +45,7 @@ export const pickupCmdTarget = (
         } else {
           if (value !== undefined) {
             // 同じ周波数の音を出している端末がある場合 （同じ音を出している全部が対象になるべきでは？）
-            let sameFreqArr = [];
+            let sameFreqArr: string[] = [];
             for (let id in state.current.sinewave) {
               if (value === state.current.sinewave[id]) {
                 sameFreqArr.push(id);

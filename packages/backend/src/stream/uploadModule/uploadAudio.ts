@@ -1,7 +1,7 @@
 // const pcm = require("pcm");
 import { execa } from "execa";
-import { awaitGetPcmData } from "./getPcmData.js";
-import { pushStateStream } from "../pushStateStream.js";
+import { awaitGetPcmData } from "./getPcmData";
+import { pushStateStream } from "../pushStateStream";
 
 import {
   streams,
@@ -11,7 +11,7 @@ import {
   states,
   uploadParams,
   basisBufferSize,
-} from "../../states.js";
+} from "../../states";
 // import { pushStateStream } from "../pushStateStream.js";
 
 export const uploadAudio = async (f: string, mediaDirPath: string) => {

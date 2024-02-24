@@ -1,4 +1,7 @@
-export function selectOtherClient(rooms, source) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.cmdSelect = exports.pickCmdTarget = exports.pickupTarget = exports.roomEmit = exports.selectOtherClient = void 0;
+function selectOtherClient(rooms, source) {
     let targetArr = [];
     for (let id in rooms) {
         targetArr.push(String(source));
@@ -14,7 +17,8 @@ export function selectOtherClient(rooms, source) {
     }
     return targetID;
 }
-export function roomEmit(io, func, arg, target) {
+exports.selectOtherClient = selectOtherClient;
+function roomEmit(io, func, arg, target) {
     for (let key in target) {
         if (key in io.sockets.adapter.rooms) {
             io.to(key).emit(func, arg);
@@ -24,7 +28,8 @@ export function roomEmit(io, func, arg, target) {
         }
     }
 }
-export function pickupTarget(io, list, sourceId) {
+exports.roomEmit = roomEmit;
+function pickupTarget(io, list, sourceId) {
     let idArr = [];
     let idStrArr = [];
     if (io.sockets.adapter.rooms !== undefined) {
@@ -43,7 +48,8 @@ export function pickupTarget(io, list, sourceId) {
     }
     return idArr;
 }
-export function pickCmdTarget(idHsh, cmd, room = "all") {
+exports.pickupTarget = pickupTarget;
+function pickCmdTarget(idHsh, cmd, room = "all") {
     let targetArr = { "id": [], "No": [], "cmd": [], "timestamp": [], "noneId": [], "targetId": "none", "duplicate": "none" };
     //console.log(cmd)
     for (let strId in idHsh) {
@@ -77,7 +83,8 @@ export function pickCmdTarget(idHsh, cmd, room = "all") {
     }
     return targetArr.targetId;
 }
-export function cmdSelect(strings, statusList) {
+exports.pickCmdTarget = pickCmdTarget;
+function cmdSelect(strings, statusList) {
     let cmd = { cmd: "" };
     let nowFlag = false;
     for (let key in statusList["cmd"]["list"]) {
@@ -96,4 +103,5 @@ export function cmdSelect(strings, statusList) {
     }
     return { cmd: cmd, flag: nowFlag };
 }
+exports.cmdSelect = cmdSelect;
 //# sourceMappingURL=route.js.map

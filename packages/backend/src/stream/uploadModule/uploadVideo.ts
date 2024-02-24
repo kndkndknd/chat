@@ -1,18 +1,10 @@
 import * as fs from "fs";
 import { execa } from "execa";
 
-import {
-  streams,
-  cmdList,
-  streamList,
-  parameterList,
-  states,
-  uploadParams,
-  basisBufferSize,
-} from "../../states.js";
+import { streams, states, basisBufferSize } from "../../states";
 
-import { awaitGetPcmData } from "./getPcmData.js";
-import { pushStateStream } from "../pushStateStream.js";
+import { awaitGetPcmData } from "./getPcmData";
+import { pushStateStream } from "../pushStateStream";
 
 // import SocketIO from "socket.io";
 // import { cmdStateType } from "../..//types/global.js";

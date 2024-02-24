@@ -1,5 +1,8 @@
-import { putCmd } from "./putCmd.js";
-export const sinewaveChange = (cmdStrings, io, state, value) => {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.sinewaveChange = void 0;
+const putCmd_js_1 = require("./putCmd.js");
+const sinewaveChange = (cmdStrings, io, state, value) => {
     if (cmdStrings === "TWICE") {
         for (let id in state.current.sinewave) {
             state.previous.sinewave[id] = state.current.sinewave[id];
@@ -12,7 +15,7 @@ export const sinewaveChange = (cmdStrings, io, state, value) => {
                 portament: state.cmd.PORTAMENT,
                 gain: state.cmd.GAIN.SINEWAVE,
             };
-            putCmd(io, [id], cmd, state);
+            (0, putCmd_js_1.putCmd)(io, [id], cmd, state);
             // io.to(id).emit('cmdFromServer', cmd)
         }
     }
@@ -29,8 +32,9 @@ export const sinewaveChange = (cmdStrings, io, state, value) => {
                 gain: state.cmd.GAIN.SINEWAVE,
             };
             //io.to(id).emit('cmdFromServer', cmd)
-            putCmd(io, [id], cmd, state);
+            (0, putCmd_js_1.putCmd)(io, [id], cmd, state);
         }
     }
 };
+exports.sinewaveChange = sinewaveChange;
 //# sourceMappingURL=sinewaveChange.js.map

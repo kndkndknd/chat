@@ -1,23 +1,26 @@
-import { streamList, parameterList, states, streams, } from "../states.js";
-import { cmdEmit } from "./cmdEmit.js";
-import { uploadStream } from "../stream/uploadModule/uploadStream.js";
-import { sinewaveEmit } from "./sinewaveEmit.js";
-import { parameterChange } from "./parameterChange.js";
-import { putCmd } from "./putCmd.js";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.splitSpace = void 0;
+const states_js_1 = require("../states.js");
+const cmdEmit_js_1 = require("./cmdEmit.js");
+const upload_1 = require("../stream/uploadModule/upload");
+const sinewaveEmit_js_1 = require("./sinewaveEmit.js");
+const parameterChange_js_1 = require("./parameterChange.js");
+const putCmd_js_1 = require("./putCmd.js");
 // import { putString } from "./putString";
-import { insertStream } from "../mongoAccess/insertStream.js";
+const insertStream_js_1 = require("../mongoAccess/insertStream.js");
 // import { findStream } from "../mongoAccess/findStream";
-import { timerCmd } from "./timerCmd.js";
-import { stopEmit } from "./stopEmit.js";
-import { recordAsOtherEmit } from "../stream/recordEmit.js";
-import { connectTest, switchCramp } from "../arduinoAccess/arduinoAccess.js";
-import { chatPreparation } from "../stream/chatPreparation.js";
-import { streamEmit } from "../stream/streamEmit.js";
-import { helpPrint } from "./help.js";
-import { numTarget } from "./splitSpace/numTarget.js";
-import { fadeCmd } from "./splitSpace/fadeCmd.js";
-import { stringEmit } from "../socket/ioEmit.js";
-export const splitSpace = async (stringArr, io, state) => {
+const timerCmd_js_1 = require("./timerCmd.js");
+const stopEmit_js_1 = require("./stopEmit.js");
+const recordEmit_js_1 = require("../stream/recordEmit.js");
+const arduinoAccess_js_1 = require("../arduinoAccess/arduinoAccess.js");
+const chatPreparation_js_1 = require("../stream/chatPreparation.js");
+const streamEmit_js_1 = require("../stream/streamEmit.js");
+const help_js_1 = require("./help.js");
+const numTarget_js_1 = require("./splitSpace/numTarget.js");
+const fadeCmd_js_1 = require("./splitSpace/fadeCmd.js");
+const ioEmit_js_1 = require("../socket/ioEmit.js");
+const splitSpace = async (stringArr, io, state) => {
     const arrTypeArr = stringArr.map((string) => {
         if (/^([1-9]\d*|0)(\.\d+)?$/.test(string)) {
             return "number";
@@ -32,33 +35,33 @@ export const splitSpace = async (stringArr, io, state) => {
     // console.log(arrTypeArr)
     // console.log(stringArr)
     if (arrTypeArr[0] === "number") {
-        numTarget(stringArr, arrTypeArr, io, state);
+        (0, numTarget_js_1.numTarget)(stringArr, arrTypeArr, io, state);
     }
     else if (stringArr[0] === "HELP") {
-        helpPrint(stringArr.toSpliced(0, 1), io);
+        (0, help_js_1.helpPrint)(stringArr.toSpliced(0, 1), io);
     }
     else if (stringArr[0] === "CLEAR") {
         if (stringArr[1] === "BUFFER") {
-            for (let stream in streams) {
+            for (let stream in states_js_1.streams) {
                 if (stream !== "CHAT" &&
                     stream !== "EMPTY" &&
                     stream !== "KICK" &&
                     stream !== "SNARE" &&
                     stream !== "HAT") {
-                    streams[stream].audio = [];
-                    streams[stream].video = [];
+                    states_js_1.streams[stream].audio = [];
+                    states_js_1.streams[stream].video = [];
                 }
             }
         }
-        else if (streamList.includes(stringArr[1])) {
-            streams[stringArr[1]].audio = [];
-            streams[stringArr[1]].video = [];
+        else if (states_js_1.streamList.includes(stringArr[1])) {
+            states_js_1.streams[stringArr[1]].audio = [];
+            states_js_1.streams[stringArr[1]].video = [];
         }
     }
     else if (stringArr[0] === "FADE") {
-        fadeCmd(stringArr[1], io, state);
+        (0, fadeCmd_js_1.fadeCmd)(stringArr[1], io, state);
     }
-    else if (Object.keys(parameterList).includes(stringArr[0])) {
+    else if (Object.keys(states_js_1.parameterList).includes(stringArr[0])) {
         // RANDOMのみRATEとSTREAMがあるので個別処理
         if (stringArr[0] === "RANDOM") {
             if (stringArr[1] === "RATE") {
@@ -69,7 +72,7 @@ export const splitSpace = async (stringArr, io, state) => {
                         state.stream.randomrate[key] = !state.stream.randomrate[key];
                     }
                     // io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM: ' + String(state.stream.randomrate.CHAT), timeout: true})
-                    stringEmit(io, "SAMPLERATE RANDOM: " + String(state.stream.randomrate.CHAT)
+                    (0, ioEmit_js_1.stringEmit)(io, "SAMPLERATE RANDOM: " + String(state.stream.randomrate.CHAT)
                     // state
                     );
                 }
@@ -78,7 +81,7 @@ export const splitSpace = async (stringArr, io, state) => {
                     state.stream.randomrate[stringArr[2]] =
                         !state.stream.randomrate[stringArr[2]];
                     //io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(state.stream.randomrate[stringArr[2]]), timeout: true})
-                    stringEmit(io, "SAMPLERATE RANDOM(" +
+                    (0, ioEmit_js_1.stringEmit)(io, "SAMPLERATE RANDOM(" +
                         stringArr[2] +
                         "): " +
                         String(state.stream.randomrate[stringArr[2]])
@@ -115,7 +118,7 @@ export const splitSpace = async (stringArr, io, state) => {
                             !state.stream.randomratenote[key];
                     }
                     // io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM: ' + String(state.stream.randomrate.CHAT), timeout: true})
-                    stringEmit(io, "SAMPLERATE RANDOM(NOTE): " +
+                    (0, ioEmit_js_1.stringEmit)(io, "SAMPLERATE RANDOM(NOTE): " +
                         String(state.stream.randomratenote.CHAT)
                     // state
                     );
@@ -128,11 +131,11 @@ export const splitSpace = async (stringArr, io, state) => {
             console.log("debt");
             if (stringArr[1] === "JA" || stringArr[1] === "JP") {
                 state.cmd.voiceLang = "ja-JP";
-                stringEmit(io, "VOICE: ja-JP");
+                (0, ioEmit_js_1.stringEmit)(io, "VOICE: ja-JP");
             }
             else if (stringArr[1] === "EN" || stringArr[1] === "US") {
                 state.cmd.voiceLang = "en-US";
-                stringEmit(io, "VOICE: en-US");
+                (0, ioEmit_js_1.stringEmit)(io, "VOICE: en-US");
             }
         }
         else {
@@ -158,22 +161,22 @@ export const splitSpace = async (stringArr, io, state) => {
                     argVal = Number(stringArr[2]);
                 }
             }
-            parameterChange(parameterList[stringArr[0]], io, state, {
+            (0, parameterChange_js_1.parameterChange)(states_js_1.parameterList[stringArr[0]], io, state, {
                 value: argVal,
                 property: argProp,
             });
-            stringEmit(io, stringArr[0] + " " + stringArr[1]);
+            (0, ioEmit_js_1.stringEmit)(io, stringArr[0] + " " + stringArr[1]);
         }
     }
     else if (stringArr[0] === "ALL") {
         if (arrTypeArr[1] === "string") {
             state.client.forEach((target) => {
-                cmdEmit(stringArr[1], io, state, target);
+                (0, cmdEmit_js_1.cmdEmit)(stringArr[1], io, state, target);
             });
         }
         else if (arrTypeArr[1] === "number") {
             state.client.forEach((target) => {
-                sinewaveEmit(Number(stringArr[1]), io, state, target);
+                (0, sinewaveEmit_js_1.sinewaveEmit)(Number(stringArr[1]), io, state, target);
             });
         }
     }
@@ -182,12 +185,12 @@ export const splitSpace = async (stringArr, io, state) => {
             Object.keys(state.current.stream).includes(stringArr[1])) {
             state.previous.stream[stringArr[1]] = state.current.stream[stringArr[1]];
             state.current.stream[stringArr[1]] = false;
-            stringEmit(io, stringArr[0] + " " + stringArr[1]);
+            (0, ioEmit_js_1.stringEmit)(io, stringArr[0] + " " + stringArr[1]);
         }
         else if (stringArr.length === 2 && stringArr[1] === "STREAM") {
             state.previous.stream = state.current.stream;
             Object.keys(state.current.stream).forEach((key) => (state.current.stream[key] = false));
-            stringEmit(io, stringArr[0] + " " + stringArr[1]);
+            (0, ioEmit_js_1.stringEmit)(io, stringArr[0] + " " + stringArr[1]);
         }
         else if (stringArr.length === 2 &&
             Object.keys(state.current.cmd).includes(stringArr[1])) {
@@ -200,7 +203,7 @@ export const splitSpace = async (stringArr, io, state) => {
                 if (stringArr[1] === "WHITENOISE" || stringArr[1] === "FEEDBACK") {
                     cmd.fade = state.cmd.FADE.OUT;
                 }
-                putCmd(io, cmdTarget, cmd, state);
+                (0, putCmd_js_1.putCmd)(io, cmdTarget, cmd, state);
             });
             state.current.cmd[stringArr[1]] = [];
         }
@@ -215,7 +218,7 @@ export const splitSpace = async (stringArr, io, state) => {
                     portament: state.cmd.PORTAMENT,
                     gain: state.cmd.GAIN.SINEWAVE,
                 };
-                putCmd(io, [target], sinewaveCmd, state);
+                (0, putCmd_js_1.putCmd)(io, [target], sinewaveCmd, state);
             });
             state.current.sinewave = {};
         }
@@ -231,7 +234,7 @@ export const splitSpace = async (stringArr, io, state) => {
                     if (cmdTarget === "WHITENOISE" || cmdTarget === "FEEDBACK") {
                         cmd.fade = state.cmd.FADE.OUT;
                     }
-                    putCmd(io, target, cmd, state);
+                    (0, putCmd_js_1.putCmd)(io, target, cmd, state);
                     state.current.cmd[cmdTarget] = [];
                 });
             });
@@ -244,12 +247,12 @@ export const splitSpace = async (stringArr, io, state) => {
                     portament: state.cmd.PORTAMENT,
                     gain: state.cmd.GAIN.SINEWAVE,
                 };
-                putCmd(io, [key], sinewaveCmd, state);
+                (0, putCmd_js_1.putCmd)(io, [key], sinewaveCmd, state);
             });
             state.current.sinewave = {};
         }
         else if (stringArr[1] === "ALL") {
-            stopEmit(io, state, "ALL");
+            (0, stopEmit_js_1.stopEmit)(io, state, "ALL");
         }
     }
     else if (stringArr[0] === "FADE") {
@@ -262,7 +265,7 @@ export const splitSpace = async (stringArr, io, state) => {
                 state.cmd.FADE[stringArr[1]] = 0;
             }
             // io.emit('stringsFromServer',{strings: 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), timeout: true})
-            stringEmit(io, "FADE " + stringArr[1] + ": " + String(state.cmd.FADE[stringArr[1]])
+            (0, ioEmit_js_1.stringEmit)(io, "FADE " + stringArr[1] + ": " + String(state.cmd.FADE[stringArr[1]])
             // state
             );
         }
@@ -275,14 +278,15 @@ export const splitSpace = async (stringArr, io, state) => {
             else {
                 state.cmd.FADE[stringArr[1]] = 0;
             }
-            stringEmit(io, "FADE " + stringArr[1] + ": " + String(state.cmd.FADE[stringArr[1]])
+            (0, ioEmit_js_1.stringEmit)(io, "FADE " + stringArr[1] + ": " + String(state.cmd.FADE[stringArr[1]])
             // state
             );
         }
     }
     else if (stringArr[0] === "UPLOAD" && stringArr.length == 2) {
-        const uploadResult = await uploadStream(stringArr);
-        stringEmit(io, uploadResult, true);
+        // const uploadResult = await uploadStream(stringArr);
+        (0, upload_1.uploadStream)(stringArr, io);
+        // stringEmit(io, uploadResult, true);
     }
     else if (stringArr[0] === "GAIN" &&
         stringArr.length === 3 &&
@@ -290,7 +294,7 @@ export const splitSpace = async (stringArr, io, state) => {
         arrTypeArr[2] === "number") {
         state.cmd.GAIN[stringArr[1]] = Number(stringArr[2]);
         console.log(state.cmd.GAIN);
-        stringEmit(io, stringArr[1] + " GAIN: " + stringArr[2]);
+        (0, ioEmit_js_1.stringEmit)(io, stringArr[1] + " GAIN: " + stringArr[2]);
         // 動作確認用
         // } else if (stringArr[0] === 'FIND' && stringArr.length === 3) {
         // findStream(stringArr[1], stringArr[2], io);
@@ -298,17 +302,17 @@ export const splitSpace = async (stringArr, io, state) => {
     else if (stringArr[0] === "INSERT") {
         if (stringArr[1] === "HELP") {
         }
-        else if (streamList.includes(stringArr[1])) {
+        else if (states_js_1.streamList.includes(stringArr[1])) {
             if (stringArr.length === 4 &&
                 arrTypeArr[3] === "number" &&
                 stringArr[3].length === 8) {
-                insertStream(stringArr[1], io, stringArr[2], stringArr[3]);
+                (0, insertStream_js_1.insertStream)(stringArr[1], io, stringArr[2], stringArr[3]);
             }
-            insertStream(stringArr[1], io);
+            (0, insertStream_js_1.insertStream)(stringArr[1], io);
         }
         if (stringArr.length === 2 &&
             Object.keys(state.stream.sampleRate).includes(stringArr[1])) {
-            insertStream(stringArr[1], io);
+            (0, insertStream_js_1.insertStream)(stringArr[1], io);
         }
     }
     else if (stringArr[0].includes(":")) {
@@ -316,26 +320,26 @@ export const splitSpace = async (stringArr, io, state) => {
         if (timeStampArr.every((item) => {
             return !isNaN(Number(item));
         })) {
-            timerCmd(io, state, stringArr, timeStampArr);
+            (0, timerCmd_js_1.timerCmd)(io, state, stringArr, timeStampArr);
         }
     }
     else if (stringArr[0] === "SWITCH") {
         if (stringArr[1] === "TEST") {
             console.log("switch test");
-            connectTest().then((result) => {
+            (0, arduinoAccess_js_1.connectTest)().then((result) => {
                 console.log(result);
-                states.arduino.connected = result;
+                states_js_1.states.arduino.connected = result;
                 io.emit("stringsFromServer", {
-                    strings: "SWITCH: " + String(states.arduino.connected),
+                    strings: "SWITCH: " + String(states_js_1.states.arduino.connected),
                     timeout: true,
                 });
             });
         }
         else if (stringArr[1] === "CRAMP") {
-            switchCramp();
+            (0, arduinoAccess_js_1.switchCramp)();
         }
     }
-    else if (stringArr[1] === "CHAT" || streamList.includes(stringArr[1])) {
+    else if (stringArr[1] === "CHAT" || states_js_1.streamList.includes(stringArr[1])) {
         console.log("route", stringArr);
         const targetArr = stringArr[0].split("-");
         if (targetArr.length > 1 &&
@@ -351,17 +355,18 @@ export const splitSpace = async (stringArr, io, state) => {
             console.log(state.stream.target);
             if (stringArr[1] === "CHAT") {
                 console.log("debug");
-                chatPreparation(io, state);
+                (0, chatPreparation_js_1.chatPreparation)(io, state);
             }
             else {
-                streamEmit(stringArr[1], io, state);
+                (0, streamEmit_js_1.streamEmit)(stringArr[1], io, state);
             }
         }
     }
     else if (stringArr[0] === "RECORD" &&
         stringArr[1] === "AS" &&
         stringArr.length === 3) {
-        recordAsOtherEmit(io, state, stringArr[2]);
+        (0, recordEmit_js_1.recordAsOtherEmit)(io, state, stringArr[2]);
     }
 };
+exports.splitSpace = splitSpace;
 //# sourceMappingURL=splitSpace.js.map

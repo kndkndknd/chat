@@ -6,6 +6,7 @@ export const stringEmit = (
   timeout?: boolean,
   target?: string
 ) => {
+  console.log(strings);
   if (timeout === undefined) timeout = true;
   if (target === undefined) {
     io.emit("stringsFromServer", {

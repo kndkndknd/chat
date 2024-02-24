@@ -1,9 +1,9 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global.js";
-import { cmdEmit } from "./cmdEmit.js";
-import { streamEmit } from "../stream/streamEmit.js";
-import { sinewaveEmit } from "./sinewaveEmit.js";
-import { chatPreparation } from "../stream/chatPreparation.js";
+import { cmdStateType } from "../types/global";
+import { cmdEmit } from "./cmdEmit";
+import { streamEmit } from "../stream/streamEmit";
+import { sinewaveEmit } from "./sinewaveEmit";
+import { chatPreparation } from "../stream/chatPreparation";
 
 export const previousCmd = (io: SocketIO.Server, state: cmdStateType) => {
   console.log(state.previous.sinewave);

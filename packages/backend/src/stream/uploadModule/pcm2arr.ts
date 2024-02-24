@@ -8,7 +8,7 @@ import {
   states,
   uploadParams,
   basisBufferSize,
-} from "../../states.js";
+} from "../../states";
 
 export const pcm2arr = (url) => {
   let tmpBuff = new Float32Array(basisBufferSize);

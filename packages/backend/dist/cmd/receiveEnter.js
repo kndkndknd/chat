@@ -1,31 +1,34 @@
-import { cmdList, streamList, parameterList } from "../states.js";
-import { streamEmit } from "../stream/streamEmit.js";
-import { cmdEmit } from "./cmdEmit.js";
-import { stopEmit } from "./stopEmit.js";
-import { splitSpace } from "./splitSpace.js";
-import { splitPlus } from "./splitPlus.js";
-import { sinewaveEmit } from "./sinewaveEmit.js";
-import { sinewaveChange } from "./sinewaveChange.js";
-import { parameterChange } from "./parameterChange.js";
-import { voiceEmit } from "./voiceEmit.js";
-import { chatPreparation } from "../stream/chatPreparation.js";
-import { millisecondsPerBar, secondsPerEighthNote } from "./bpmCalc.js";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.receiveEnter = void 0;
+const states_js_1 = require("../states.js");
+const streamEmit_js_1 = require("../stream/streamEmit.js");
+const cmdEmit_js_1 = require("./cmdEmit.js");
+const stopEmit_js_1 = require("./stopEmit.js");
+const splitSpace_js_1 = require("./splitSpace.js");
+const splitPlus_js_1 = require("./splitPlus.js");
+const sinewaveEmit_js_1 = require("./sinewaveEmit.js");
+const sinewaveChange_js_1 = require("./sinewaveChange.js");
+const parameterChange_js_1 = require("./parameterChange.js");
+const voiceEmit_js_1 = require("./voiceEmit.js");
+const chatPreparation_js_1 = require("../stream/chatPreparation.js");
+const bpmCalc_js_1 = require("./bpmCalc.js");
 // import { putString } from "./putString";
-import { recordEmit } from "../stream/recordEmit.js";
-import { switchCtrl } from "../arduinoAccess/arduinoAccess.js";
-export const receiveEnter = (strings, id, io, state) => {
+const recordEmit_js_1 = require("../stream/recordEmit.js");
+const arduinoAccess_js_1 = require("../arduinoAccess/arduinoAccess.js");
+const receiveEnter = (strings, id, io, state) => {
     //VOICE
-    voiceEmit(io, strings, state);
+    (0, voiceEmit_js_1.voiceEmit)(io, strings, state);
     /*
     if(strings === 'INSERT') {
       const result = postMongo()
     }
     */
     if (strings === "CHAT") {
-        chatPreparation(io, state);
+        (0, chatPreparation_js_1.chatPreparation)(io, state);
     }
     else if (strings === "RECORD" || strings === "REC") {
-        recordEmit(io, state);
+        (0, recordEmit_js_1.recordEmit)(io, state);
         /*
         if (!state.current.RECORD) {
           state.current.RECORD = true;
@@ -45,32 +48,32 @@ export const receiveEnter = (strings, id, io, state) => {
         */
     }
     else if (strings.includes(" ") /*&& strings.split(" ").length < 4*/) {
-        splitSpace(strings.split(" "), io, state);
+        (0, splitSpace_js_1.splitSpace)(strings.split(" "), io, state);
     }
     else if (strings.includes("+")) {
-        splitPlus(strings.split("+"), io, state);
+        (0, splitPlus_js_1.splitPlus)(strings.split("+"), io, state);
     }
-    else if (streamList.includes(strings)) {
+    else if (states_js_1.streamList.includes(strings)) {
         console.log("in stream");
-        streamEmit(strings, io, state);
+        (0, streamEmit_js_1.streamEmit)(strings, io, state);
     }
-    else if (Object.keys(cmdList).includes(strings)) {
+    else if (Object.keys(states_js_1.cmdList).includes(strings)) {
         console.log("in cmd");
-        cmdEmit(cmdList[strings], io, state);
+        (0, cmdEmit_js_1.cmdEmit)(states_js_1.cmdList[strings], io, state);
     }
     else if (Number.isFinite(Number(strings))) {
         console.log("sinewave");
-        sinewaveEmit(Number(strings), io, state);
+        (0, sinewaveEmit_js_1.sinewaveEmit)(Number(strings), io, state);
     }
     else if (strings === "STOP") {
         console.log("stop");
-        stopEmit(io, state, "ALL");
+        (0, stopEmit_js_1.stopEmit)(io, state, "ALL");
     }
     else if (strings === "QUANTIZE") {
         state.stream.quantize = !state.stream.quantize;
         for (let key in state.bpm) {
-            const bar = millisecondsPerBar(state.bpm[key]);
-            const eighthNote = secondsPerEighthNote(state.bpm[key]);
+            const bar = (0, bpmCalc_js_1.millisecondsPerBar)(state.bpm[key]);
+            const eighthNote = (0, bpmCalc_js_1.secondsPerEighthNote)(state.bpm[key]);
             io.to(key).emit("quantizeFromServer", {
                 flag: state.stream.quantize,
                 bpm: state.bpm[key],
@@ -80,12 +83,12 @@ export const receiveEnter = (strings, id, io, state) => {
         }
     }
     else if (strings === "TWICE" || strings === "HALF") {
-        sinewaveChange(strings, io, state);
+        (0, sinewaveChange_js_1.sinewaveChange)(strings, io, state);
         // } else if (strings === 'PREVIOUS' || strings === 'PREV') {
         // previousCmd(io, state)
     }
-    else if (Object.keys(parameterList).includes(strings)) {
-        parameterChange(parameterList[strings], io, state, { source: id });
+    else if (Object.keys(states_js_1.parameterList).includes(strings)) {
+        (0, parameterChange_js_1.parameterChange)(states_js_1.parameterList[strings], io, state, { source: id });
     }
     else if (strings === "NO" || strings === "NUMBER") {
         state.client.forEach((id, index) => {
@@ -113,7 +116,7 @@ export const receiveEnter = (strings, id, io, state) => {
             strings: "SWITCH " + switchState,
             timeout: true,
         });
-        switchCtrl().then((result) => {
+        (0, arduinoAccess_js_1.switchCtrl)().then((result) => {
             console.log(result);
         });
     }
@@ -133,4 +136,5 @@ export const receiveEnter = (strings, id, io, state) => {
         state.previous.text = strings;
     }
 };
+exports.receiveEnter = receiveEnter;
 //# sourceMappingURL=receiveEnter.js.map

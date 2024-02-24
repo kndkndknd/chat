@@ -1,4 +1,7 @@
-export const states = {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.helpList = exports.uploadParams = exports.parameterList = exports.streamList = exports.cmdList = exports.chat_web = exports.streams = exports.basisBufferSize = exports.states = void 0;
+exports.states = {
     cmd: {
         GAIN: {
             MASTER: 1.0,
@@ -132,35 +135,35 @@ export const states = {
         relay: "off",
     },
 };
-export let basisBufferSize = 8192;
-export const streams = {
+exports.basisBufferSize = 8192;
+exports.streams = {
     CHAT: [],
     KICK: {
         audio: [],
         video: [],
-        bufferSize: basisBufferSize,
+        bufferSize: exports.basisBufferSize,
     },
     SNARE: {
         audio: [],
         video: [],
-        bufferSize: basisBufferSize,
+        bufferSize: exports.basisBufferSize,
     },
     HAT: {
         audio: [],
         video: [],
-        bufferSize: basisBufferSize,
+        bufferSize: exports.basisBufferSize,
     },
     SILENCE: {
         audio: [],
         video: [],
-        bufferSize: basisBufferSize,
+        bufferSize: exports.basisBufferSize,
     },
     PLAYBACK: [],
     TIMELAPSE: {
         audio: [],
         video: [],
         index: 0,
-        bufferSize: basisBufferSize,
+        bufferSize: exports.basisBufferSize,
     },
     INTERNET: {
         audio: [],
@@ -173,8 +176,8 @@ export const streams = {
         index: [],
     },
 };
-export const chat_web = true;
-export const cmdList = {
+exports.chat_web = true;
+exports.cmdList = {
     FEEDBACK: "FEEDBACK",
     FEED: "FEEDBACK",
     WHITENOISE: "WHITENOISE",
@@ -187,8 +190,8 @@ export const cmdList = {
     PREVIOUS: "PREVIOUS",
     PREV: "PREVIOUS",
 };
-export let streamList = ["PLAYBACK", "TIMELAPSE", "EMPTY"];
-export const parameterList = {
+exports.streamList = ["PLAYBACK", "TIMELAPSE", "EMPTY"];
+exports.parameterList = {
     PORTAMENT: "PORTAMENT",
     PORT: "PORTAMENT",
     SAMPLERATE: "SAMPLERATE",
@@ -199,12 +202,12 @@ export const parameterList = {
     VOICE: "VOICE",
     RANDOM: "RANDOM",
 };
-export const uploadParams = {
+exports.uploadParams = {
     mediaDir: "chat_upload",
     ss: "00:00:00",
     t: "00:00:20",
 };
-export const helpList = {
+exports.helpList = {
     FEEDBACK: "マイクで拾った音をそのPCから再生するので、ほとんどの場合フィードバックが起こる",
     WHITENOISE: "ホワイトノイズを再生する",
     CLICK: "クリックを再生する",

@@ -1,9 +1,9 @@
 import SocketIO from "socket.io";
-import { cmdStateType, CmdType } from "../../types/global.js";
-import { cmdList } from "../../states.js";
-import { stringEmit } from "../../socket/ioEmit.js";
-import { pickupCmdTarget } from "../pickupCmdTarget.js";
-import { putCmd } from "../putCmd.js";
+import { cmdStateType, CmdType } from "../../types/global";
+import { cmdList } from "../../states";
+import { stringEmit } from "../../socket/ioEmit";
+import { pickupCmdTarget } from "../pickupCmdTarget";
+import { putCmd } from "../putCmd";
 
 export const fadeCmd = (
   cmdString: string,

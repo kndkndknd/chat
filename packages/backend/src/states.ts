@@ -1,4 +1,4 @@
-import { cmdStateType, sevenSinsType } from "./types/global.js";
+import { cmdStateType, sevenSinsType } from "./types/global";
 
 export const states: cmdStateType = {
   cmd: {
@@ -133,6 +133,7 @@ export const states: cmdStateType = {
     connected: false,
     relay: "off",
   },
+  emoji: false,
 };
 
 export let basisBufferSize = 8192;
@@ -236,3 +237,5 @@ export const helpList = {
   INSERT:
     "自宅のサーバのDBにPLAYBACK等を保存する INSERT (STREAM名) (場所) (日付)の形式で実行する",
 };
+
+export const streamApiUrl: string = "http://127.0.0.1:8088/getLiveStream";

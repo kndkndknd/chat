@@ -1,14 +1,8 @@
 import SocketIO from "socket.io";
 import dotenv from "dotenv";
-import {
-  cmdList,
-  streamList,
-  parameterList,
-  states,
-  streams,
-} from "../states.js";
+import { cmdList, streamList, parameterList, states, streams } from "../states";
 // import { stringEmit } from "../socket/ioEmit.js";
-import { pushStateStream } from "../stream/pushStateStream.js";
+import { pushStateStream } from "../stream/pushStateStream";
 
 dotenv.config();
 
@@ -28,29 +22,41 @@ export const findStream = async (
   io: SocketIO.Server
 ) => {
   const queryParams = new URLSearchParams({
-    [key]: value,
+    name: "20230527",
+    type: "PLAYBACK",
+    location: "ftarri",
   });
-  const res = await fetch(`http://${ipaddress}:3000/api/stream?${queryParams}`);
+  const res = fetch(`http://${ipaddress}:3030/find?${queryParams}`)
+    .then((response) => response.body)
+    .then((body) => {
+      // const reader = body?.getReader();
+      console.log(body);
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+    });
   // .then(response => {
   //   const reader = response.body.getReader();
 
-  // })
-  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
-  let i = 1;
-  let str = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      const result: Array<streamInterface> = JSON.parse(str);
-      // const audio = new Float32Array(result[0].audio.buffer);
-      pushStream(result);
-      // console.log(result[0].audio)
-      console.log(i);
-      return;
-    }
-    str = str + value;
-    i++;
-  }
+  // // })
+  // const resBody = <ReadableStream<Uint8Array>>res.body;
+  // const reader = resBody.pipeThrough(new TextDecoderStream()).getReader();
+  // let i = 1;
+  // let str = "";
+  // const result: Array<streamInterface> = JSON.parse(str);
+  // while (true) {
+  //   const { done, value } = await reader.read();
+  //   if (done) {
+  //     const
+  //     // const audio = new Float32Array(result[0].audio.buffer);
+  //     // pushStream(result);
+  //     // console.log(result[0].audio)
+  //     console.log(i);
+  //     return;
+  //   }
+  //   str = str + value;
+  //   i++;
+  // }
 
   //  console.log(res.length)
 

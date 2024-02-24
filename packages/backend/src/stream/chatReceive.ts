@@ -1,12 +1,12 @@
 import SocketIO from "socket.io";
-import { cmdStateType, buffStateType } from "../types/global.js";
-import { streams, states, basisBufferSize } from "../states.js";
-import { glitchStream } from "./glitchStream.js";
-import { pushStateStream } from "./pushStateStream.js";
+import { cmdStateType, buffStateType } from "../types/global";
+import { streams, states, basisBufferSize } from "../states";
+import { glitchStream } from "./glitchStream";
+import { pushStateStream } from "./pushStateStream";
 // import { pickupTarget } from "../route";
-import { pickupStreamTarget } from "./pickupStreamTarget.js";
+import { pickupStreamTarget } from "./pickupStreamTarget";
 
-export const chatReceive = (
+export const chatReceive = async (
   buffer: buffStateType,
   io: SocketIO.Server
   // from: string
@@ -35,7 +35,8 @@ export const chatReceive = (
           //          console.log(chunk.sampleRate)
         }
         if (states.stream.glitch[buffer.source] && chunk.video) {
-          chunk.video = glitchStream(chunk.video);
+          chunk.video = await glitchStream(chunk.video);
+          console.log("glitch", chunk.video.slice(0, 50));
         }
         // console.log(states.client);
         // console.log(io.sockets.adapter.rooms);

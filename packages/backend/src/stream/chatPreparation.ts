@@ -1,6 +1,6 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global.js";
-import { pickupStreamTarget } from "./pickupStreamTarget.js";
+import { cmdStateType } from "../types/global";
+import { pickupStreamTarget } from "./pickupStreamTarget";
 
 export const chatPreparation = (io: SocketIO.Server, state: cmdStateType) => {
   console.log(state.current.stream.CHAT);

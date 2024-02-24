@@ -1,4 +1,4 @@
-import { cmdStateType } from "../types/global.js";
+import { cmdStateType } from "../types/global";
 
 export const pickupStreamTarget = (
   states: cmdStateType,

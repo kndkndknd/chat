@@ -1,8 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.parameterChange = void 0;
 // import { putString } from './putString'
-import { states, } from "../states.js";
-import { putCmd } from "./putCmd.js";
-import { stringEmit } from "../socket/ioEmit.js";
-export const parameterChange = (param, io, state, arg) => {
+const states_js_1 = require("../states.js");
+const putCmd_js_1 = require("./putCmd.js");
+const ioEmit_js_1 = require("../socket/ioEmit.js");
+const parameterChange = (param, io, state, arg) => {
     switch (param) {
         case "PORTAMENT":
             if (arg && arg.value && isFinite(Number(arg.value))) {
@@ -17,7 +20,7 @@ export const parameterChange = (param, io, state, arg) => {
                 }
             }
             // io.emit('stringsFromServer',{strings: 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', timeout: true})
-            stringEmit(io, "PORTAMENT: " + String(state.cmd.PORTAMENT) + "sec");
+            (0, ioEmit_js_1.stringEmit)(io, "PORTAMENT: " + String(state.cmd.PORTAMENT) + "sec");
             break;
         case "SAMPLERATE":
             let sampleRate = 44100;
@@ -47,7 +50,7 @@ export const parameterChange = (param, io, state, arg) => {
                 console.log("hit source");
                 state.stream.sampleRate[arg.property] = sampleRate;
                 // io.emit('stringsFromServer',{strings: 'SampleRate: ' + String(state.stream.sampleRate[arg.source]) + 'Hz', timeout: true})
-                stringEmit(io, "SampleRate: " + String(state.stream.sampleRate[arg.property]) + "Hz"
+                (0, ioEmit_js_1.stringEmit)(io, "SampleRate: " + String(state.stream.sampleRate[arg.property]) + "Hz"
                 // state
                 );
             }
@@ -57,7 +60,7 @@ export const parameterChange = (param, io, state, arg) => {
                     state.stream.sampleRate[source] = sampleRate;
                 }
                 // io.emit('stringsFromServer',{strings: 'SampleRate: ' + String(state.stream.sampleRate.CHAT) + 'Hz', timeout: true})
-                stringEmit(io, "SampleRate: " + String(state.stream.sampleRate.CHAT) + "Hz"
+                (0, ioEmit_js_1.stringEmit)(io, "SampleRate: " + String(state.stream.sampleRate.CHAT) + "Hz"
                 // state
                 );
             }
@@ -66,27 +69,27 @@ export const parameterChange = (param, io, state, arg) => {
             if (arg && arg.property) {
                 state.stream.glitch[arg.source] = !state.stream.glitch[arg.source];
                 // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(state.stream.glitch[arg.source]), timeout: true})
-                stringEmit(io, "GLITCH: " + String(state.stream.glitch[arg.source])
+                (0, ioEmit_js_1.stringEmit)(io, "GLITCH: " + String(state.stream.glitch[arg.source])
                 // state
                 );
             }
             else {
                 let flag = false;
-                if (Object.values(states.stream.glitch).includes(false)) {
+                if (Object.values(states_js_1.states.stream.glitch).includes(false)) {
                     flag = true;
                 }
                 for (let source in state.stream.glitch) {
                     state.stream.glitch[source] = flag;
                 }
                 // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(state.stream.glitch.CHAT), timeout: true})
-                stringEmit(io, "GLITCH: " + String(state.stream.glitch.CHAT));
+                (0, ioEmit_js_1.stringEmit)(io, "GLITCH: " + String(state.stream.glitch.CHAT));
             }
             break;
         case "GRID":
             if (arg && arg.property) {
                 state.stream.grid[arg.property] = !state.stream.grid[arg.property];
                 // io.emit('stringsFromServer',{strings: 'GRID: ' + String(state.stream.grid[arg.property]) + '(' + arg.property + ')', timeout: true})
-                stringEmit(io, "GRID: " +
+                (0, ioEmit_js_1.stringEmit)(io, "GRID: " +
                     String(state.stream.grid[arg.property]) +
                     "(" +
                     arg.property +
@@ -96,14 +99,14 @@ export const parameterChange = (param, io, state, arg) => {
             }
             else {
                 let flag = false;
-                if (Object.values(states.stream.grid).includes(false)) {
+                if (Object.values(states_js_1.states.stream.grid).includes(false)) {
                     flag = true;
                 }
                 for (let source in state.stream.grid) {
                     state.stream.grid[source] = flag;
                 }
                 // io.emit('stringsFromServer',{strings: 'GRID: ' + String(state.stream.grid.CHAT), timeout: true})
-                stringEmit(io, "GRID: " + String(state.stream.grid.CHAT));
+                (0, ioEmit_js_1.stringEmit)(io, "GRID: " + String(state.stream.grid.CHAT));
             }
             break;
         case "BPM":
@@ -113,7 +116,7 @@ export const parameterChange = (param, io, state, arg) => {
                     // propertyがSTREAMを指定している場合
                     if (Object.keys(state.stream.latency).includes(arg.property)) {
                         state.stream.latency[arg.property] = latency;
-                        stringEmit(io, "BPM: " + String(arg.value) + "(" + arg.property + ")"
+                        (0, ioEmit_js_1.stringEmit)(io, "BPM: " + String(arg.value) + "(" + arg.property + ")"
                         // state
                         );
                         // propertyが端末番号を指定している場合
@@ -122,7 +125,7 @@ export const parameterChange = (param, io, state, arg) => {
                         const target = state.client[Number(arg.property)];
                         if (Object.keys(state.cmd.METRONOME).includes(target)) {
                             state.cmd.METRONOME[target] = latency;
-                            stringEmit(io, "BPM: " + String(arg.value) + "(client " + arg.property + ")"
+                            (0, ioEmit_js_1.stringEmit)(io, "BPM: " + String(arg.value) + "(client " + arg.property + ")"
                             // state
                             );
                         }
@@ -133,7 +136,7 @@ export const parameterChange = (param, io, state, arg) => {
                                 gain: state.cmd.GAIN.METRONOME,
                                 value: latency,
                             };
-                            putCmd(io, [target], cmd, state);
+                            (0, putCmd_js_1.putCmd)(io, [target], cmd, state);
                         }
                     }
                     // io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value)  + '(' + arg.property + ')', timeout: true})
@@ -153,10 +156,10 @@ export const parameterChange = (param, io, state, arg) => {
                                 gain: state.cmd.GAIN.METRONOME,
                                 value: latency,
                             };
-                            putCmd(io, [target], cmd, state);
+                            (0, putCmd_js_1.putCmd)(io, [target], cmd, state);
                         });
                     }
-                    stringEmit(io, "BPM: " + String(arg.value));
+                    (0, ioEmit_js_1.stringEmit)(io, "BPM: " + String(arg.value));
                     // io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value), timeout: true})
                 }
             }
@@ -165,20 +168,20 @@ export const parameterChange = (param, io, state, arg) => {
             if (arg && arg.source) {
                 state.stream.random[arg.source] = !state.stream.random[arg.source];
                 // io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random[arg.source]), timeout: true})
-                stringEmit(io, "RANDOM: " + String(state.stream.random[arg.source])
+                (0, ioEmit_js_1.stringEmit)(io, "RANDOM: " + String(state.stream.random[arg.source])
                 // state
                 );
             }
             else {
                 let flag = false;
-                if (Object.values(states.stream.random).includes(false)) {
+                if (Object.values(states_js_1.states.stream.random).includes(false)) {
                     flag = true;
                 }
                 for (let target in state.stream.random) {
                     state.stream.random[target] = flag;
                 }
                 //io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random.CHAT), timeout: true})
-                stringEmit(io, "RANDOM: " + String(state.stream.random.CHAT));
+                (0, ioEmit_js_1.stringEmit)(io, "RANDOM: " + String(state.stream.random.CHAT));
             }
             break;
         case "VOICE":
@@ -204,9 +207,10 @@ export const parameterChange = (param, io, state, arg) => {
                     flag = true;
                 }
                 // io.emit('stringsFromServer',{strings: 'VOICE: ' + String(flag), timeout: true})
-                stringEmit(io, "VOICE: " + String(flag));
+                (0, ioEmit_js_1.stringEmit)(io, "VOICE: " + String(flag));
             }
             break;
     }
 };
+exports.parameterChange = parameterChange;
 //# sourceMappingURL=parameterChange.js.map

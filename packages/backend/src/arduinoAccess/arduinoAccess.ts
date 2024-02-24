@@ -1,4 +1,4 @@
-import { states } from "../states.js";
+import { states } from "../states";
 
 export const connectTest = async () => {
   const requestUrl = `http://${states.arduino.host}:${states.arduino.port}/test`;

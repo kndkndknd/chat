@@ -1,8 +1,8 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global.js";
-import { putCmd } from "./putCmd.js";
+import { cmdStateType } from "../types/global";
+import { putCmd } from "./putCmd";
 // import { notTargetEmit } from "./notTargetEmit";
-import { pickupCmdTarget } from "./pickupCmdTarget.js";
+import { pickupCmdTarget } from "./pickupCmdTarget";
 
 export const sinewaveEmit = (
   frequencyStr: number,
@@ -36,6 +36,7 @@ export const sinewaveEmit = (
     target !== undefined
       ? pickupCmdTarget(state, "SINEWAVE", target)
       : pickupCmdTarget(state, "SINEWAVE");
+  console.log(targetIdArr);
 
   targetIdArr.forEach((id) => {
     if (!Object.keys(state.current.sinewave).includes(id)) {

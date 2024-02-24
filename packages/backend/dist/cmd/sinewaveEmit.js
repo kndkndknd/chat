@@ -1,7 +1,10 @@
-import { putCmd } from "./putCmd.js";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.sinewaveEmit = void 0;
+const putCmd_js_1 = require("./putCmd.js");
 // import { notTargetEmit } from "./notTargetEmit";
-import { pickupCmdTarget } from "./pickupCmdTarget.js";
-export const sinewaveEmit = (frequencyStr, io, state, target) => {
+const pickupCmdTarget_js_1 = require("./pickupCmdTarget.js");
+const sinewaveEmit = (frequencyStr, io, state, target) => {
     // サイン波の処理
     let cmd = {
         cmd: "SINEWAVE",
@@ -18,8 +21,8 @@ export const sinewaveEmit = (frequencyStr, io, state, target) => {
         state.previous.sinewave = state.current.sinewave;
     }
     let targetIdArr = target !== undefined
-        ? pickupCmdTarget(state, "SINEWAVE", target)
-        : pickupCmdTarget(state, "SINEWAVE");
+        ? (0, pickupCmdTarget_js_1.pickupCmdTarget)(state, "SINEWAVE", target)
+        : (0, pickupCmdTarget_js_1.pickupCmdTarget)(state, "SINEWAVE");
     targetIdArr.forEach((id) => {
         if (!Object.keys(state.current.sinewave).includes(id)) {
             cmd.flag = true;
@@ -98,10 +101,11 @@ export const sinewaveEmit = (frequencyStr, io, state, target) => {
     */
     console.log(state.current.sinewave);
     console.log(targetIdArr);
-    putCmd(io, targetIdArr, cmd, state);
+    (0, putCmd_js_1.putCmd)(io, targetIdArr, cmd, state);
     // putCmd(io, targetId, cmd, state);
     // if (target === undefined) {
     //   notTargetEmit(targetId, state.client, io);
     // }
 };
+exports.sinewaveEmit = sinewaveEmit;
 //# sourceMappingURL=sinewaveEmit.js.map

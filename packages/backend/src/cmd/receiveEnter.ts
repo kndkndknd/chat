@@ -1,22 +1,22 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global.js";
-import { cmdList, streamList, parameterList } from "../states.js";
 
-import { streamEmit } from "../stream/streamEmit.js";
-import { cmdEmit } from "./cmdEmit.js";
-import { stopEmit } from "./stopEmit.js";
-import { splitSpace } from "./splitSpace.js";
-import { splitPlus } from "./splitPlus.js";
-import { sinewaveEmit } from "./sinewaveEmit.js";
-import { sinewaveChange } from "./sinewaveChange.js";
-import { parameterChange } from "./parameterChange.js";
-import { voiceEmit } from "./voiceEmit.js";
-import { chatPreparation } from "../stream/chatPreparation.js";
-
-import { millisecondsPerBar, secondsPerEighthNote } from "./bpmCalc.js";
+import { cmdStateType } from "../types/global";
+import { cmdList, streamList, parameterList } from "../states";
+import { streamEmit } from "../stream/streamEmit";
+import { cmdEmit } from "./cmdEmit";
+import { stopEmit } from "./stopEmit";
+import { splitSpace } from "./splitSpace";
+import { splitPlus } from "./splitPlus";
+import { sinewaveEmit } from "./sinewaveEmit";
+import { sinewaveChange } from "./sinewaveChange";
+import { parameterChange } from "./parameterChange";
+import { voiceEmit } from "./voiceEmit";
+import { chatPreparation } from "../stream/chatPreparation";
+import { millisecondsPerBar, secondsPerEighthNote } from "./bpmCalc";
 // import { putString } from "./putString";
-import { recordEmit } from "../stream/recordEmit.js";
-import { switchCtrl } from "../arduinoAccess/arduinoAccess.js";
+import { recordEmit } from "../stream/recordEmit";
+import { switchCtrl } from "../arduinoAccess/arduinoAccess";
+import { stringEmit } from "../socket/ioEmit";
 
 export const receiveEnter = (
   strings: string,
@@ -127,6 +127,28 @@ export const receiveEnter = (
       // 暫定
       barLatency: state.stream.latency.CHAT * 4,
     });
+  } else if (strings === "FUSEJI" || strings === "EMOJI") {
+    state.emoji = !state.emoji;
+    io.emit("emojiFromServer", {
+      state: state.emoji,
+      text: "Emoji " + state.emoji,
+    });
+    // stringEmit(io, "EMOJI " + state.emoji, true);
+
+    /*
+  } else if (strings === "LIVESTREAM" || strings === "SOMEWHERE") {
+    //仮
+    const liveStreamUrl = "https://www.showroom-live.com/r/officialJKT48";
+    getLiveBuffer(liveStreamUrl).then((buffer) => {
+      try {
+        // 仮
+        console.log("emitBuffer", buffer);
+        io.emit("bufferFromServer", buffer);
+      } catch (err) {
+        console.error(err);
+      }
+    });
+*/
   }
 
   if (strings !== "STOP") {

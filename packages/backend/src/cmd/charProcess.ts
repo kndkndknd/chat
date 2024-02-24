@@ -1,11 +1,9 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global.js";
-
-import { receiveEnter } from "./receiveEnter.js";
-
-import { stopEmit } from "./stopEmit.js";
-
-import { metronomeBpmSet } from "./metronomeBpmSet.js";
+import { cmdStateType } from "../types/global";
+import { receiveEnter } from "./receiveEnter";
+import { stopEmit } from "./stopEmit";
+import { metronomeBpmSet } from "./metronomeBpmSet";
+import { stringEmit } from "../socket/ioEmit";
 
 export function charProcess(
   character: string,
@@ -57,7 +55,13 @@ export function charProcess(
   } else if (character === "Shift") {
   } else if (character != undefined) {
     strings = strings + character;
-    io.emit("stringsFromServer", { strings: strings, timeout: false });
+    // if (!state.emoji) {
+    stringEmit(io, strings, false);
+    // io.emit("stringsFromServer", { strings: strings, timeout: false });
+    // } else {
+    // stringEmit(io, emoji.random().emoji, false);
+    // io.emit("stringsFromServer", { strings: strings, timeout: false });
+    // }
   }
   console.log(strings);
   return strings;

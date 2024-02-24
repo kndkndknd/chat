@@ -1,32 +1,27 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global.js";
-import {
-  cmdList,
-  streamList,
-  parameterList,
-  states,
-  streams,
-} from "../states.js";
-import { cmdEmit } from "./cmdEmit.js";
-import { uploadStream } from "../stream/uploadModule/uploadStream.js";
-import { sinewaveEmit } from "./sinewaveEmit.js";
-import { parameterChange } from "./parameterChange.js";
+import { cmdStateType } from "../types/global";
+import { cmdList, streamList, parameterList, states, streams } from "../states";
+import { cmdEmit } from "./cmdEmit";
+import { uploadStream } from "../stream/uploadModule/upload";
+import { sinewaveEmit } from "./sinewaveEmit";
+import { parameterChange } from "./parameterChange";
 
-import { putCmd } from "./putCmd.js";
+import { putCmd } from "./putCmd";
 // import { putString } from "./putString";
 
-import { insertStream } from "../mongoAccess/insertStream.js";
-// import { findStream } from "../mongoAccess/findStream";
-import { timerCmd } from "./timerCmd.js";
-import { stopEmit } from "./stopEmit.js";
-import { recordEmit, recordAsOtherEmit } from "../stream/recordEmit.js";
-import { connectTest, switchCramp } from "../arduinoAccess/arduinoAccess.js";
-import { chatPreparation } from "../stream/chatPreparation.js";
-import { streamEmit } from "../stream/streamEmit.js";
-import { helpPrint } from "./help.js";
-import { numTarget } from "./splitSpace/numTarget.js";
-import { fadeCmd } from "./splitSpace/fadeCmd.js";
-import { stringEmit } from "../socket/ioEmit.js";
+import { insertStream } from "../mongoAccess/insertStream";
+import { findStream } from "../mongoAccess/findStream";
+import { timerCmd } from "./timerCmd";
+import { stopEmit } from "./stopEmit";
+import { recordEmit, recordAsOtherEmit } from "../stream/recordEmit";
+import { connectTest, switchCramp } from "../arduinoAccess/arduinoAccess";
+import { chatPreparation } from "../stream/chatPreparation";
+import { streamEmit } from "../stream/streamEmit";
+import { helpPrint } from "./help";
+import { numTarget } from "./splitSpace/numTarget";
+import { fadeCmd } from "./splitSpace/fadeCmd";
+import { stringEmit } from "../socket/ioEmit";
+import { getLiveStream } from "../stream/getLiveStream";
 
 export const splitSpace = async (
   stringArr: Array<string>,
@@ -183,7 +178,7 @@ export const splitSpace = async (
         value: argVal,
         property: argProp,
       });
-      stringEmit(io, stringArr[0] + " " + stringArr[1]);
+      // stringEmit(io, stringArr[0] + " " + stringArr[1]);
     }
   } else if (stringArr[0] === "ALL") {
     if (arrTypeArr[1] === "string") {
@@ -305,8 +300,9 @@ export const splitSpace = async (
       );
     }
   } else if (stringArr[0] === "UPLOAD" && stringArr.length == 2) {
-    const uploadResult = await uploadStream(stringArr);
-    stringEmit(io, uploadResult, true);
+    // const uploadResult = await uploadStream(stringArr);
+    uploadStream(stringArr, io);
+    // stringEmit(io, uploadResult, true);
   } else if (
     stringArr[0] === "GAIN" &&
     stringArr.length === 3 &&
@@ -321,7 +317,8 @@ export const splitSpace = async (
     // } else if (stringArr[0] === 'FIND' && stringArr.length === 3) {
     // findStream(stringArr[1], stringArr[2], io);
   } else if (stringArr[0] === "INSERT") {
-    if (stringArr[1] === "HELP") {
+    if (stringArr[1] === "HELP" || stringArr[1] === "?") {
+      stringEmit(io, `INSERT (STREAM) (PLACE) (YYYMMDD)`, false);
     } else if (streamList.includes(stringArr[1])) {
       if (
         stringArr.length === 4 &&
@@ -329,16 +326,22 @@ export const splitSpace = async (
         stringArr[3].length === 8
       ) {
         insertStream(stringArr[1], io, stringArr[2], stringArr[3]);
+      } else {
+        stringEmit(io, `INSERT (STREAM) (PLACE) (YYYMMDD)`, false);
       }
-      insertStream(stringArr[1], io);
+      // insertStream(stringArr[1], io);
     }
 
+    /*
     if (
       stringArr.length === 2 &&
       Object.keys(state.stream.sampleRate).includes(stringArr[1])
     ) {
       insertStream(stringArr[1], io);
     }
+    */
+  } else if (stringArr[0] === "FIND") {
+    findStream("test", "test", io);
   } else if (stringArr[0].includes(":")) {
     let timeStampArr = stringArr[0].split(":");
     if (
@@ -362,7 +365,10 @@ export const splitSpace = async (
     } else if (stringArr[1] === "CRAMP") {
       switchCramp();
     }
-  } else if (stringArr[1] === "CHAT" || streamList.includes(stringArr[1])) {
+  } else if (
+    stringArr[1] === "CHAT" ||
+    (streamList.includes(stringArr[1]) && stringArr[0] !== "GET")
+  ) {
     console.log("route", stringArr);
     const targetArr = stringArr[0].split("-");
     if (
@@ -391,5 +397,13 @@ export const splitSpace = async (
     stringArr.length === 3
   ) {
     recordAsOtherEmit(io, state, stringArr[2]);
+  } else if (stringArr[0] === "GET" && stringArr[1] === "LIVESTREAM") {
+    const result = await getLiveStream("LIVESTREAM");
+    console.log("get livestream", result);
+    if (result) {
+      stringEmit(io, "GET LIVESTREAM: SUCCESS");
+    } else {
+      stringEmit(io, "GET LIVESTREAM: FAILED");
+    }
   }
 };

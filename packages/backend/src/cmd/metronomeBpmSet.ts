@@ -1,5 +1,6 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global.js";
+
+import { cmdStateType } from "../types/global";
 // import { putCmd } from './putCmd'
 
 const metronomeArr: number[] = [];

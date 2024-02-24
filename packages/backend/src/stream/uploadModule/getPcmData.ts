@@ -2,7 +2,7 @@
 import { execa } from "execa";
 // https://github.com/jhurliman/node-pcmを自分のに合わせて作成
 
-import { streams, basisBufferSize } from "../../states.js";
+import { streams, basisBufferSize } from "../../states";
 
 // export const getPcmData = (filePath, streamName, options): any => {
 //   var outputStr = "";

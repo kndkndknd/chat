@@ -1,5 +1,5 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global.js";
+import { cmdStateType } from "../types/global";
 
 export const stopEmit = (
   io: SocketIO.Server,

@@ -17,21 +17,21 @@ import {
   states,
   uploadParams,
   basisBufferSize,
-} from "../../states.js";
+} from "../../states";
 // import SocketIO from "socket.io";
-import { cmdStateType } from "../..//types/global.js";
+// import { cmdStateType } from "../..//types/global.js";
 
-import { getFilePath } from "./getFilePath.js";
-import { getDuration } from "./getDuration.js";
-import { durationPattern } from "./durationPattern.js";
-import { uploadVideo } from "./uploadVideo.js";
-import { uploadAudio } from "./uploadAudio.js";
+import { getFilePath } from "./getFilePath";
+import { getDuration } from "./getDuration";
+import { durationPattern } from "./durationPattern";
+import { uploadVideo } from "./uploadVideo";
+import { uploadAudio } from "./uploadAudio";
 
 export const uploadStream = async (stringArr) => {
   //  let ss = "00:00:00"
   //  let t = "00:00:20"
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = path.dirname(__filename);
+  // const __filename = fileURLToPath(import.meta.url);
+  // const __dirname = path.dirname(__filename);
 
   const mediaDirPath = path.join(
     __dirname,

@@ -2,7 +2,12 @@ import { io, Socket } from "socket.io-client";
 const socket = io();
 let socketId = "";
 
-import { canvasSizing, textPrint, erasePrint, showImage } from "../imageEvent";
+import {
+  canvasSizing,
+  textPrint,
+  erasePrint,
+  showImage,
+} from "../imageEventSnowLeopard";
 
 //import {initAudio, initAudioStream, sinewave, whitenoise, feedback, bass, click, chatReq, playAudioStream, stopCmd, recordReq, streamFlag, simulate} from './webaudio'
 

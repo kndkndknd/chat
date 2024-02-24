@@ -1,7 +1,7 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global.js";
-import { streamList, states } from "../states.js";
-import { pushStateStream } from "./pushStateStream.js";
+import { cmdStateType } from "../types/global";
+import { streamList, states } from "../states";
+import { pushStateStream } from "./pushStateStream";
 
 export const recordEmit = (
   io: SocketIO.Server,

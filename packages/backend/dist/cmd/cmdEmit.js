@@ -1,26 +1,29 @@
-import { cmdList } from "../states.js";
-import { stopEmit } from "./stopEmit.js";
-import { putCmd } from "./putCmd.js";
-import { notTargetEmit } from "./notTargetEmit.js";
-import { previousCmd } from "./previousCmd.js";
-import { pickupCmdTarget } from "./pickupCmdTarget.js";
-export const cmdEmit = (cmdStrings, io, state, target) => {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.cmdEmit = void 0;
+const states_js_1 = require("../states.js");
+const stopEmit_js_1 = require("./stopEmit.js");
+const putCmd_js_1 = require("./putCmd.js");
+const notTargetEmit_js_1 = require("./notTargetEmit.js");
+const previousCmd_js_1 = require("./previousCmd.js");
+const pickupCmdTarget_js_1 = require("./pickupCmdTarget.js");
+const cmdEmit = (cmdStrings, io, state, target) => {
     let targetId = "";
     let cmd;
     switch (cmdStrings) {
         case "STOP":
             const client = "all";
-            stopEmit(io, state, "ALL", client);
+            (0, stopEmit_js_1.stopEmit)(io, state, "ALL", client);
             break;
         case "WHITENOISE":
         case "FEEDBACK":
         case "BASS":
             const targetIdArr = target
-                ? pickupCmdTarget(state, cmdStrings, target)
-                : pickupCmdTarget(state, cmdStrings);
+                ? (0, pickupCmdTarget_js_1.pickupCmdTarget)(state, cmdStrings, target)
+                : (0, pickupCmdTarget_js_1.pickupCmdTarget)(state, cmdStrings);
             const cmdKey = cmdStrings;
             cmd = {
-                cmd: cmdList[cmdKey],
+                cmd: states_js_1.cmdList[cmdKey],
                 gain: state.cmd.GAIN[cmdKey],
             };
             if (state.current.cmd[cmd.cmd].filter((id) => targetIdArr.includes(id))
@@ -41,7 +44,7 @@ export const cmdEmit = (cmdStrings, io, state, target) => {
                     targetIdArr,
                 ];
             }
-            putCmd(io, targetIdArr, cmd, state);
+            (0, putCmd_js_1.putCmd)(io, targetIdArr, cmd, state);
             /*
             state.previous.cmd[cmd.cmd] = state.current.cmd[cmd.cmd];
             if (target) {
@@ -100,10 +103,10 @@ export const cmdEmit = (cmdStrings, io, state, target) => {
             }
             */
             const targeIdArr = target !== undefined
-                ? pickupCmdTarget(state, cmdStrings, target)
-                : pickupCmdTarget(state, cmdStrings);
+                ? (0, pickupCmdTarget_js_1.pickupCmdTarget)(state, cmdStrings, target)
+                : (0, pickupCmdTarget_js_1.pickupCmdTarget)(state, cmdStrings);
             // io.to(targetId).emit('cmdFromServer', cmd)
-            putCmd(io, targeIdArr, cmd, state);
+            (0, putCmd_js_1.putCmd)(io, targeIdArr, cmd, state);
             // notTargetEmit(targetId, state.client, io);
             break;
         case "SIMULATE":
@@ -119,8 +122,8 @@ export const cmdEmit = (cmdStrings, io, state, target) => {
                 targetId =
                     state.client[Math.floor(Math.random() * state.client.length)];
             }
-            putCmd(io, [targetId], cmd, state);
-            notTargetEmit(targetId, state.client, io);
+            (0, putCmd_js_1.putCmd)(io, [targetId], cmd, state);
+            (0, notTargetEmit_js_1.notTargetEmit)(targetId, state.client, io);
             break;
         case "METRONOME":
             cmd = {
@@ -161,14 +164,14 @@ export const cmdEmit = (cmdStrings, io, state, target) => {
                     cmd.value = state.cmd.METRONOME[target];
                 }
             }
-            putCmd(io, [target], cmd, state);
-            notTargetEmit(target, state.client, io);
+            (0, putCmd_js_1.putCmd)(io, [target], cmd, state);
+            (0, notTargetEmit_js_1.notTargetEmit)(target, state.client, io);
             console.log("metronome");
             break;
         case "PREVIOUS":
         case "PREV":
             console.log("previous");
-            previousCmd(io, state);
+            (0, previousCmd_js_1.previousCmd)(io, state);
             break;
         /*
         case 'RECORD':
@@ -185,4 +188,5 @@ export const cmdEmit = (cmdStrings, io, state, target) => {
     }
     cmdStrings = "";
 };
+exports.cmdEmit = cmdEmit;
 //# sourceMappingURL=cmdEmit.js.map

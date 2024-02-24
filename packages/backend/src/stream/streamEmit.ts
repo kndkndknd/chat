@@ -1,7 +1,7 @@
 import SocketIO from "socket.io";
-import { cmdStateType, buffStateType } from "../types/global.js";
-import { streams, states, basisBufferSize } from "../states.js";
-import { pickupStreamTarget } from "./pickupStreamTarget.js";
+import { cmdStateType, buffStateType } from "../types/global";
+import { streams, states, basisBufferSize } from "../states";
+import { pickupStreamTarget } from "./pickupStreamTarget";
 
 export const streamEmit = (
   source: string,
@@ -26,9 +26,10 @@ export const streamEmit = (
         buff = streams[source].shift();
         streams[source].push(buff);
       } else {
+        const index = Math.floor(Math.random() * streams[source].length);
+        console.log("random ", index);
         // RANDOM
-        buff =
-          streams[source][Math.floor(Math.random() * streams[source].length)];
+        buff = streams[source][index];
       }
     } else {
       io.emit("stringsFromServer", { strings: "NO BUFFER", timeout: true });

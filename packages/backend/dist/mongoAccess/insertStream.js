@@ -1,13 +1,19 @@
-import { streams, } from "../states.js";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.insertStream = void 0;
+const states_js_1 = require("../states.js");
 // import { putString } from "../cmd/putString";
-import dotenv from "dotenv";
-dotenv.config();
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const ipaddress = process.env.DB_HOST;
-export const insertStream = async (type, io, place, date) => {
+const insertStream = async (type, io, place, date) => {
     try {
         console.log(ipaddress);
         if (type === "PLAYBACK") {
-            await streams[type].forEach(async (stream) => {
+            await states_js_1.streams[type].forEach(async (stream) => {
                 await setTimeout(async () => {
                     const audio = btoa(String.fromCharCode(...new Uint8Array(stream.audio)));
                     if (place !== undefined && date !== undefined) {
@@ -24,9 +30,9 @@ export const insertStream = async (type, io, place, date) => {
             });
         }
         else {
-            streams[type].audio.forEach(async (audio, index) => {
+            states_js_1.streams[type].audio.forEach(async (audio, index) => {
                 await setTimeout(async () => {
-                    const video = streams[type].video[index];
+                    const video = states_js_1.streams[type].video[index];
                     const audioStr = btoa(String.fromCharCode(...new Uint8Array(audio)));
                     if (place !== undefined && date !== undefined) {
                         await postStream(type, video, audioStr, io, place, date);
@@ -46,6 +52,7 @@ export const insertStream = async (type, io, place, date) => {
         console.log(error);
     }
 };
+exports.insertStream = insertStream;
 const postStream = async (type, video, audio, io, place, date) => {
     const body = {
         type: type,

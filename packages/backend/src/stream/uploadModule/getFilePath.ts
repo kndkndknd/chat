@@ -15,7 +15,7 @@ import {
   states,
   uploadParams,
   basisBufferSize,
-} from "../../states.js";
+} from "../../states";
 
 export const getFilePath = async (fileString, mediaDirPath) => {
   console.log(uploadParams);
