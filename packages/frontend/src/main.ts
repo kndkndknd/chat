@@ -117,7 +117,14 @@ socket.on(
       case "WHITENOISE":
         // erasePrint(stx, strCnvs);
         erasePrint(ctx, cnvs);
-        textPrint("WHITENOISE", ctx, cnvs);
+        if(cmd.flag) {
+          textPrint(cmd.cmd, ctx, cnvs);          
+        } else {
+          textPrint(`STOP ${cmd.cmd}`, ctx, cnvs)
+          setTimeout(() => {
+            erasePrint(ctx, cnvs);
+          }, 500);
+        }
         // if(cmd.fade && cmd.gain)
         whitenoise(cmd.flag, cmd.fade, cmd.gain);
         if (cinemaFlag) {
@@ -130,10 +137,16 @@ socket.on(
         // erasePrint(stx, strCnvs);
         erasePrint(ctx, cnvs);
         const cmdString = cmd.flag ? String(cmd.value) + "Hz" : "STOP";
-        textPrint(cmdString, ctx, cnvs);
-        console.log("debug2");
+        if(cmd.flag) {
+          textPrint(cmdString, ctx, cnvs);          
+        } else {
+          textPrint(`STOP ${cmdString}`, ctx, cnvs)
+          setTimeout(() => {
+            erasePrint(ctx, cnvs);
+          }, 500);
+        }
+        // textPrint(cmdString, ctx, cnvs);
         // if(cmd.fade && cmd.portament && cmd.gain) {
-        console.log("debug3");
         sinewave(cmd.flag, cmd.value, cmd.fade, cmd.portament, cmd.gain);
         if (cinemaFlag) {
           setTimeout(() => {
@@ -144,7 +157,15 @@ socket.on(
       case "FEEDBACK":
         // erasePrint(stx, strCnvs);
         erasePrint(ctx, cnvs);
-        textPrint("FEEDBACK", ctx, cnvs);
+        // textPrint("FEEDBACK", ctx, cnvs);
+        if(cmd.flag) {
+          textPrint(cmd.cmd, ctx, cnvs);          
+        } else {
+          textPrint(`STOP ${cmd.cmd}`, ctx, cnvs)
+          setTimeout(() => {
+            erasePrint(ctx, cnvs);
+          }, 500);
+        }
         // if(cmd.fade && cmd.gain)
         feedback(cmd.flag, cmd.fade, cmd.gain);
         if (cinemaFlag) {
@@ -158,7 +179,14 @@ socket.on(
         bass(cmd.flag, cmd.gain);
         // erasePrint(stx, strCnvs);
         erasePrint(ctx, cnvs);
-        textPrint("BASS", ctx, cnvs);
+        if(cmd.flag) {
+          textPrint(cmd.cmd, ctx, cnvs);          
+        } else {
+          textPrint(`STOP ${cmd.cmd}`, ctx, cnvs)
+          setTimeout(() => {
+            erasePrint(ctx, cnvs);
+          }, 500);
+        }
         if (cinemaFlag) {
           setTimeout(() => {
             erasePrint(ctx, cnvs);

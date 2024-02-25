@@ -20,6 +20,7 @@ import { streamEmit } from "../stream/streamEmit";
 import { helpPrint } from "./help";
 import { numTarget } from "./splitSpace/numTarget";
 import { fadeCmd } from "./splitSpace/fadeCmd";
+import { splitStop } from "./splitSpace/splitStop"
 import { stringEmit } from "../socket/ioEmit";
 import { getLiveStream } from "../stream/getLiveStream";
 
@@ -62,8 +63,9 @@ export const splitSpace = async (
       streams[stringArr[1]].audio = [];
       streams[stringArr[1]].video = [];
     }
+  // } else if (stringArr[0] === "FADE" && Object.keys(cmdList).includes(stringArr[1])) {
   } else if (stringArr[0] === "FADE") {
-    fadeCmd(stringArr[1], io, state);
+    fadeCmd(stringArr,arrTypeArr, io, state);
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
     // RANDOMのみRATEとSTREAMがあるので個別処理
     if (stringArr[0] === "RANDOM") {
@@ -191,114 +193,8 @@ export const splitSpace = async (
       });
     }
   } else if (stringArr[0] === "STOP") {
-    if (
-      stringArr.length === 2 &&
-      Object.keys(state.current.stream).includes(stringArr[1])
-    ) {
-      state.previous.stream[stringArr[1]] = state.current.stream[stringArr[1]];
-      state.current.stream[stringArr[1]] = false;
-      stringEmit(io, stringArr[0] + " " + stringArr[1]);
-    } else if (stringArr.length === 2 && stringArr[1] === "STREAM") {
-      state.previous.stream = state.current.stream;
-      Object.keys(state.current.stream).forEach(
-        (key) => (state.current.stream[key] = false)
-      );
-      stringEmit(io, stringArr[0] + " " + stringArr[1]);
-    } else if (
-      stringArr.length === 2 &&
-      Object.keys(state.current.cmd).includes(stringArr[1])
-    ) {
-      state.previous.cmd[stringArr[1]] = state.current.cmd[stringArr[1]];
-      state.current.cmd[stringArr[1]].forEach((cmdTarget) => {
-        const cmd: { cmd: string; flag: boolean; fade?: number } = {
-          cmd: cmdTarget,
-          flag: false,
-        };
-
-        if (stringArr[1] === "WHITENOISE" || stringArr[1] === "FEEDBACK") {
-          cmd.fade = state.cmd.FADE.OUT;
-        }
-        putCmd(io, cmdTarget, cmd, state);
-      });
-      state.current.cmd[stringArr[1]] = [];
-    } else if (stringArr.length === 2 && stringArr[1] === "SINEWAVE") {
-      state.previous.sinewave = state.current.sinewave;
-      Object.keys(state.current.sinewave).forEach((target) => {
-        const sinewaveCmd = {
-          cmd: "SINEWAVE",
-          value: state.current.sinewave[target],
-          flag: false,
-          fade: state.cmd.FADE.IN,
-          portament: state.cmd.PORTAMENT,
-          gain: state.cmd.GAIN.SINEWAVE,
-        };
-        putCmd(io, [target], sinewaveCmd, state);
-      });
-      state.current.sinewave = {};
-    } else if (stringArr.length === 2 && stringArr[1] === "CMD") {
-      state.previous.cmd = state.current.cmd;
-      state.previous.sinewave = state.current.sinewave;
-      Object.keys(state.current.cmd).forEach((cmdTarget) => {
-        state.current.cmd[cmdTarget].forEach((target) => {
-          const cmd: { cmd: string; flag: boolean; fade?: number } = {
-            cmd: cmdTarget,
-            flag: false,
-          };
-
-          if (cmdTarget === "WHITENOISE" || cmdTarget === "FEEDBACK") {
-            cmd.fade = state.cmd.FADE.OUT;
-          }
-          putCmd(io, target, cmd, state);
-          state.current.cmd[cmdTarget] = [];
-        });
-      });
-      Object.keys(state.current.sinewave).forEach((key) => {
-        const sinewaveCmd = {
-          cmd: "SINEWAVE",
-          value: state.current.sinewave[key],
-          flag: false,
-          fade: state.cmd.FADE.IN,
-          portament: state.cmd.PORTAMENT,
-          gain: state.cmd.GAIN.SINEWAVE,
-        };
-        putCmd(io, [key], sinewaveCmd, state);
-      });
-      state.current.sinewave = {};
-    } else if (stringArr[1] === "ALL") {
-      stopEmit(io, state, "ALL");
-    }
-  } else if (stringArr[0] === "FADE") {
-    if (
-      (stringArr[1] === "IN" || stringArr[1] === "OUT") &&
-      stringArr.length === 2
-    ) {
-      if (state.cmd.FADE[stringArr[1]] === 0) {
-        state.cmd.FADE[stringArr[1]] = 5;
-      } else {
-        state.cmd.FADE[stringArr[1]] = 0;
-      }
-      // io.emit('stringsFromServer',{strings: 'FADE ' + stringArr[1] +  ': ' + String(state.cmd.FADE[stringArr[1]]), timeout: true})
-      stringEmit(
-        io,
-        "FADE " + stringArr[1] + ": " + String(state.cmd.FADE[stringArr[1]])
-        // state
-      );
-    } else if (
-      stringArr.length === 3 &&
-      (stringArr[1] === "IN" || stringArr[1] === "OUT") &&
-      arrTypeArr[2] === "number"
-    ) {
-      if (state.cmd.FADE[stringArr[1]] !== Number(stringArr[2])) {
-        state.cmd.FADE[stringArr[1]] = Number(stringArr[2]);
-      } else {
-        state.cmd.FADE[stringArr[1]] = 0;
-      }
-      stringEmit(
-        io,
-        "FADE " + stringArr[1] + ": " + String(state.cmd.FADE[stringArr[1]])
-        // state
-      );
-    }
+    splitStop(stringArr, state, io)
+  // } else if (stringArr[0] === "FADE") {
   } else if (stringArr[0] === "UPLOAD" && stringArr.length == 2) {
     // const uploadResult = await uploadStream(stringArr);
     uploadStream(stringArr, io);
