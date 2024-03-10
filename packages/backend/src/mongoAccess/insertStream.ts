@@ -48,13 +48,15 @@ export const insertStream = async (
         }, 1000);
       });
 
-      await io.emit("stringsFromServer", {
-        strings: "INSERT DONE",
-        timeout: true,
-      });
+      stringEmit(io, "INSERT DONE", true);
+      // await io.emit("stringsFromServer", {
+      //   strings: "INSERT DONE",
+      //   timeout: true,
+      // });
     }
   } catch (error) {
     console.log(error);
+    stringEmit(io, "INSERT ERROR", true);
   }
 };
 

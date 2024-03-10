@@ -13,7 +13,8 @@ export const cmdEmit = (
   cmdStrings: string,
   io: SocketIO.Server,
   state: cmdStateType,
-  target?: string
+  target?: string,
+  flag?: boolean
 ) => {
   let targetId = "";
   let cmd: {
@@ -57,9 +58,14 @@ export const cmdEmit = (
         cmd.fade = state.cmd.FADE.IN;
         state.current.cmd[cmd.cmd] = [
           ...state.current.cmd[cmd.cmd],
-          targetIdArr,
+          ...targetIdArr,
         ];
+        console.log(`current ${cmd.cmd}`, state.current.cmd[cmd.cmd]);
       }
+      if (flag !== undefined) cmd.flag = flag;
+
+      console.log("flag", flag);
+      console.log("cmd", cmd);
       putCmd(io, targetIdArr, cmd, state);
       /*
       state.previous.cmd[cmd.cmd] = state.current.cmd[cmd.cmd];

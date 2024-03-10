@@ -6,8 +6,9 @@ import { sinewaveEmit } from "./sinewaveEmit";
 import { chatPreparation } from "../stream/chatPreparation";
 
 export const previousCmd = (io: SocketIO.Server, state: cmdStateType) => {
-  console.log(state.previous.sinewave);
-  console.log(state.previous.cmd);
+  console.log("previous sinewave", state.previous.sinewave);
+  console.log("previous cmd", state.previous.cmd);
+  console.log("previous stream", state.previous.stream);
   for (let cmd in state.previous.cmd) {
     state.previous.cmd[cmd].forEach((target) => {
       cmdEmit(cmd, io, state, target);

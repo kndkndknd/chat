@@ -17,6 +17,7 @@ import { millisecondsPerBar, secondsPerEighthNote } from "./bpmCalc";
 import { recordEmit } from "../stream/recordEmit";
 import { switchCtrl } from "../arduinoAccess/arduinoAccess";
 import { stringEmit } from "../socket/ioEmit";
+import { previousCmd } from "./previousCmd";
 
 export const receiveEnter = (
   strings: string,
@@ -84,8 +85,8 @@ export const receiveEnter = (
     }
   } else if (strings === "TWICE" || strings === "HALF") {
     sinewaveChange(strings, io, state);
-    // } else if (strings === 'PREVIOUS' || strings === 'PREV') {
-    // previousCmd(io, state)
+  } else if (strings === "PREVIOUS" || strings === "PREV") {
+    previousCmd(io, state);
   } else if (Object.keys(parameterList).includes(strings)) {
     parameterChange(parameterList[strings], io, state, { source: id });
   } else if (strings === "NO" || strings === "NUMBER") {

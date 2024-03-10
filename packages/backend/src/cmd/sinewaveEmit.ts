@@ -36,13 +36,14 @@ export const sinewaveEmit = (
     target !== undefined
       ? pickupCmdTarget(state, "SINEWAVE", target)
       : pickupCmdTarget(state, "SINEWAVE");
-  console.log(targetIdArr);
+  console.log("targetArr", targetIdArr);
 
   targetIdArr.forEach((id) => {
+    console.log("id", id);
     if (!Object.keys(state.current.sinewave).includes(id)) {
       cmd.flag = true;
       cmd.fade = state.cmd.FADE.IN;
-      state.current.sinewave[id] == cmd.value;
+      state.current.sinewave[id] = cmd.value;
     } else if (state.current.sinewave[id] !== cmd.value) {
       cmd.flag = true;
       cmd.fade = 0;
@@ -112,8 +113,8 @@ export const sinewaveEmit = (
     }
   }
   */
-  console.log(state.current.sinewave);
-  console.log(targetIdArr);
+  console.log("current sinewave", state.current.sinewave);
+  // console.log(targetIdArr);
   putCmd(io, targetIdArr, cmd, state);
   // putCmd(io, targetId, cmd, state);
   // if (target === undefined) {

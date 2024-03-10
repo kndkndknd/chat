@@ -35,8 +35,10 @@ export const stopEmit = (
     state.previous.cmd[cmd] = state.current.cmd[cmd];
     state.current.cmd[cmd] = [];
   }
+  console.log("current sinewave", state.previous.sinewave);
   state.previous.sinewave = state.current.sinewave;
   state.current.sinewave = {};
+  console.log("previous sinewave", state.previous.sinewave);
 
   for (let stream in state.current.stream) {
     state.previous.stream[stream] = state.current.stream[stream];

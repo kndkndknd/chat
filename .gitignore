@@ -16,5 +16,7 @@ packages/backend/static/*js*
 packages/frontend/dist/*.js
 packages/frontend/dist/*.map
 packages/frontend/dist/*.js.*
+packages/frontend/src/*.js
+
 
 packages/arduino/dist/*

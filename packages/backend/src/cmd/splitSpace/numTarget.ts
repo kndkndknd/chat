@@ -15,13 +15,14 @@ export const numTarget = (
   // 20230923 sinewave modeの動作を記載
   const target = state.client[Number(stringArr[0])];
   console.log(state.client);
-  console.log(state.sinewaveClient);
   console.log(target);
   if (
     arrTypeArr[1] === "string" &&
     Object.keys(cmdList).includes(stringArr[1])
   ) {
-    cmdEmit(stringArr[1], io, state, target);
+    console.log("currend cmd", state.current.cmd[stringArr[1]]);
+    const flag = !state.current.cmd[stringArr[1]].includes(target);
+    cmdEmit(stringArr[1], io, state, target, flag);
   } else if (arrTypeArr[1] === "string" && streamList.includes(stringArr[1])) {
     console.log("target stream");
     streamEmit(stringArr[1], io, state, target);
