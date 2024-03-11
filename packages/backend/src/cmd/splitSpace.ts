@@ -13,16 +13,18 @@ import { insertStream } from "../mongoAccess/insertStream";
 import { findStream } from "../mongoAccess/findStream";
 import { timerCmd } from "./timerCmd";
 import { stopEmit } from "./stopEmit";
+import { numTarget } from "./splitSpace/numTarget";
+import { fadeCmd } from "./splitSpace/fadeCmd";
+import { splitStop } from "./splitSpace/splitStop";
+import { solo } from "./splitSpace/solo";
+
 import { recordEmit, recordAsOtherEmit } from "../stream/recordEmit";
-import { connectTest, switchCramp } from "../arduinoAccess/arduinoAccess";
 import { chatPreparation } from "../stream/chatPreparation";
 import { streamEmit } from "../stream/streamEmit";
 import { helpPrint } from "./help";
-import { numTarget } from "./splitSpace/numTarget";
-import { fadeCmd } from "./splitSpace/fadeCmd";
-import { splitStop } from "./splitSpace/splitStop"
 import { stringEmit } from "../socket/ioEmit";
 import { getLiveStream } from "../stream/getLiveStream";
+import { connectTest, switchCramp } from "../arduinoAccess/arduinoAccess";
 
 export const splitSpace = async (
   stringArr: Array<string>,
@@ -45,6 +47,8 @@ export const splitSpace = async (
     numTarget(stringArr, arrTypeArr, io, state);
   } else if (stringArr[0] === "HELP") {
     helpPrint(stringArr.toSpliced(0, 1), io);
+  } else if (stringArr[1] === "SOLO") {
+    solo(stringArr, arrTypeArr, state, io);
   } else if (stringArr[0] === "CLEAR") {
     if (stringArr[1] === "BUFFER") {
       for (let stream in streams) {
@@ -63,9 +67,9 @@ export const splitSpace = async (
       streams[stringArr[1]].audio = [];
       streams[stringArr[1]].video = [];
     }
-  // } else if (stringArr[0] === "FADE" && Object.keys(cmdList).includes(stringArr[1])) {
+    // } else if (stringArr[0] === "FADE" && Object.keys(cmdList).includes(stringArr[1])) {
   } else if (stringArr[0] === "FADE") {
-    fadeCmd(stringArr,arrTypeArr, io, state);
+    fadeCmd(stringArr, arrTypeArr, io, state);
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
     // RANDOMのみRATEとSTREAMがあるので個別処理
     if (stringArr[0] === "RANDOM") {
@@ -193,8 +197,8 @@ export const splitSpace = async (
       });
     }
   } else if (stringArr[0] === "STOP") {
-    splitStop(stringArr, state, io)
-  // } else if (stringArr[0] === "FADE") {
+    splitStop(stringArr, state, io);
+    // } else if (stringArr[0] === "FADE") {
   } else if (stringArr[0] === "UPLOAD" && stringArr.length == 2) {
     // const uploadResult = await uploadStream(stringArr);
     uploadStream(stringArr, io);
