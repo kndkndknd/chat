@@ -12,14 +12,16 @@ interface Cmd {
 export const pickupCmdTarget = (
   state,
   cmdString: string,
-  target?: string,
-  value?: number
+  option?: {
+    target?: string;
+    value?: number;
+  }
 ) => {
   const cmd =
     cmdString === "SINEWAVE" ? "SINEWAVE" : (cmdString as keyof typeof cmdList);
 
-  if (target !== undefined && target) {
-    return [target];
+  if (option !== undefined && option.target !== undefined && option.target) {
+    return [option.target];
   } else {
     switch (cmd) {
       case "CLICK":
@@ -43,11 +45,11 @@ export const pickupCmdTarget = (
             state.client[Math.floor(Math.random() * state.client.length)],
           ];
         } else {
-          if (value !== undefined) {
+          if (option.value !== undefined) {
             // 同じ周波数の音を出している端末がある場合 （同じ音を出している全部が対象になるべきでは？）
             let sameFreqArr: string[] = [];
             for (let id in state.current.sinewave) {
-              if (value === state.current.sinewave[id]) {
+              if (option.value === state.current.sinewave[id]) {
                 sameFreqArr.push(id);
                 delete state.current.sinewave[id]; //これをここでやるべきか（副作用？）
               }
@@ -64,6 +66,8 @@ export const pickupCmdTarget = (
             return unsoundArr.length > 0
               ? [unsoundArr[Math.floor(Math.random() * unsoundArr.length)]]
               : [state.client[Math.floor(Math.random() * state.client.length)]];
+          } else {
+            return ["target is undefined"];
           }
         }
     }

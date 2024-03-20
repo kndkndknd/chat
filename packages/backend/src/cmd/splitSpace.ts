@@ -262,8 +262,6 @@ export const splitSpace = async (
           timeout: true,
         });
       });
-    } else if (stringArr[1] === "CRAMP") {
-      switchCramp();
     }
   } else if (
     stringArr[1] === "CHAT" ||
@@ -297,13 +295,36 @@ export const splitSpace = async (
     stringArr.length === 3
   ) {
     recordAsOtherEmit(io, state, stringArr[2]);
-  } else if (stringArr[0] === "GET" && stringArr[1] === "LIVESTREAM") {
-    const result = await getLiveStream("LIVESTREAM");
-    console.log("get livestream", result);
-    if (result) {
-      stringEmit(io, "GET LIVESTREAM: SUCCESS");
+  } else if (stringArr[0] === "GET") {
+    stringEmit(io, "........", true);
+    if (stringArr[1] === "LIVESTREAM") {
+      if (stringArr.length === 2) {
+        const result = await getLiveStream("LIVESTREAM");
+        console.log("get livestream", result);
+        if (result) {
+          stringEmit(io, "GET LIVESTREAM: SUCCESS");
+        } else {
+          stringEmit(io, "GET LIVESTREAM: FAILED");
+        }
+      } else {
+        const qWord = stringArr.slice(2).join(" ");
+        console.log("qWord", qWord);
+        const result = await getLiveStream("LIVESTREAM", qWord);
+        console.log("get livestream", result);
+        if (result) {
+          stringEmit(io, "GET LIVESTREAM: SUCCESS");
+        } else {
+          stringEmit(io, "GET LIVESTREAM: FAILED");
+        }
+      }
     } else {
-      stringEmit(io, "GET LIVESTREAM: FAILED");
+      const result = await getLiveStream(stringArr[1]);
+      console.log("get livestream as ", stringArr[1], result);
+      if (result) {
+        stringEmit(io, "GET LIVESTREAM: SUCCESS");
+      } else {
+        stringEmit(io, "GET LIVESTREAM: FAILED");
+      }
     }
   }
 };

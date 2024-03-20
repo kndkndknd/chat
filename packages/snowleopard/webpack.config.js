@@ -32,22 +32,22 @@ const clientConfig = {
         ],
         exclude: /node_modules|bower_components/,
       },
-      {
-        test: /\.mjs$/, // .mjsファイルにマッチする
-        exclude: /(node_modules|bower_components)/, // これらのディレクトリを除外
-        use: {
-          loader: "babel-loader", // Babelを使用してトランスパイル
-          options: {
-            presets: ["@babel/preset-env"], // 使用するプリセット
-          },
-        },
-      },
-      {
-        //拡張子.tsの場合
-        test: /\.(ts|tsx)?$/,
-        use: "ts-loader",
-        exclude: /node_modules|bower_components/,
-      },
+      // {
+      //   test: /\.mjs$/, // .mjsファイルにマッチする
+      //   exclude: /(node_modules|bower_components)/, // これらのディレクトリを除外
+      //   use: {
+      //     loader: "babel-loader", // Babelを使用してトランスパイル
+      //     options: {
+      //       presets: ["@babel/preset-env"], // 使用するプリセット
+      //     },
+      //   },
+      // },
+      // {
+      //   //拡張子.tsの場合
+      //   test: /\.(ts|tsx)?$/,
+      //   use: "ts-loader",
+      //   exclude: /node_modules|bower_components/,
+      // },
     ],
   },
   resolve: {

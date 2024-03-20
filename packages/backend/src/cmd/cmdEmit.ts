@@ -34,7 +34,7 @@ export const cmdEmit = (
     case "FEEDBACK":
     case "BASS":
       const targetIdArr = target
-        ? pickupCmdTarget(state, cmdStrings, target)
+        ? pickupCmdTarget(state, cmdStrings, { target: target })
         : pickupCmdTarget(state, cmdStrings);
       const cmdKey = cmdStrings as keyof typeof cmdList;
       cmd = {
@@ -127,7 +127,7 @@ export const cmdEmit = (
       */
       const targeIdArr =
         target !== undefined
-          ? pickupCmdTarget(state, cmdStrings, target)
+          ? pickupCmdTarget(state, cmdStrings, { target: target })
           : pickupCmdTarget(state, cmdStrings);
       // io.to(targetId).emit('cmdFromServer', cmd)
       putCmd(io, targeIdArr, cmd, state);

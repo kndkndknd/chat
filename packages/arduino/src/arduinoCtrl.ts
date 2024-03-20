@@ -1,8 +1,14 @@
-import { default as Express } from "express";
+import { time } from "console";
+import { default as Express, Request, Response } from "express";
 import * as Http from "http";
 import { Board, Led } from "johnny-five";
 
 const port = 5050;
+
+interface CrampParams {
+  freq: number;
+  timeout: number;
+}
 
 const app = Express();
 const httpserver = Http.createServer(app).listen(port);
@@ -61,17 +67,28 @@ app.get("/off", function (req, res) {
   res.json({ success: true });
 });
 
-app.get("/cramp", function (req, res) {
+// app.post("/cramp", function (req, res) {
+app.get("/cramp", function (req: Request, res: Response) {
+  const unknownParams = req.query as unknown;
+  const { freq, timeout } = unknownParams as CrampParams;
+  // const { freq, timeout } = queryParams;
+  console.log("timeout:", timeout);
+  console.log("freq:", freq);
+
+  // console.log("cramp");
+  // console.log(req);
+  // const param = req.body;
+  // console.log(param);
   relay.on();
   const interval = setInterval(() => {
     relay.off();
     setTimeout(() => {
       relay.on();
-    }, 100);
-  }, 200);
+    }, freq);
+  }, freq * 2);
   setTimeout(() => {
     clearInterval(interval);
     relay.off();
-  }, 3000);
+  }, timeout);
   res.json({ success: true });
 });

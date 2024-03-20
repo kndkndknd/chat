@@ -19,7 +19,7 @@ export const pickupStreamTarget = (
     // console.log("filtered targetArr", targetArr);
 
     // const targetArr = states.stream.target[stream];
-    const targetArr =
+    let targetArr =
       stream === "CHAT"
         ? states.stream.target[stream].filter((id) => {
             console.log(id !== from);
@@ -32,6 +32,11 @@ export const pickupStreamTarget = (
 
     // fromを除外した結果targetがなくなればfromを返す、あればtargetの中からランダムに返す
     if (targetArr.length > 0) {
+      if (states.arduino.connected) {
+        console.log("push arduino");
+        targetArr = [...targetArr, ...targetArr];
+        targetArr.push("arduino");
+      }
       const targetId = targetArr[Math.floor(Math.random() * targetArr.length)];
       console.log("targetId", targetId);
       return targetId;
@@ -42,6 +47,13 @@ export const pickupStreamTarget = (
   } else {
     // targetがなければランダムに返す
     console.log("random");
-    return states.client[Math.floor(Math.random() * states.client.length)];
+    let targetArr = states.client;
+    if (states.arduino.connected) {
+      targetArr = [...targetArr, ...targetArr, ...targetArr];
+      console.log("push arduino");
+      targetArr.push("arduino");
+    }
+
+    return targetArr[Math.floor(Math.random() * targetArr.length)];
   }
 };

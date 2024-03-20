@@ -141,7 +141,9 @@ socket.on("cmdFromServer", (cmd) => {
     case "FEEDBACK":
       // erasePrint(stx, strCnvs);
       erasePrint(ctx, cnvs);
-      textPrint("FEEDBACK", ctx, cnvs);
+      if (cmd.flag) {
+        textPrint("FEEDBACK", ctx, cnvs);
+      }
       // if(cmd.fade && cmd.gain)
       feedback(cmd.flag, cmd.fade, cmd.gain);
       break;
@@ -150,7 +152,9 @@ socket.on("cmdFromServer", (cmd) => {
       bass(cmd.flag, cmd.gain);
       // erasePrint(stx, strCnvs);
       erasePrint(ctx, cnvs);
-      textPrint("BASS", ctx, cnvs);
+      if (cmd.flag) {
+        textPrint("BASS", ctx, cnvs);
+      }
       break;
     case "CLICK":
       // if(cmd.gain)

@@ -403,17 +403,27 @@ export const recordReq = (recordReq: { source: string; timeout: number }) => {
 
 //video record/play ここまで
 
-export const stopCmd = (fade: number) => {
+export const stopCmd = (fade: number, except?: string) => {
   const currentTime = audioContext.currentTime;
-  bassGain.gain.setValueAtTime(0, 0);
-  feedbackGain.gain.setTargetAtTime(0, currentTime, fade);
-  noiseGain.gain.setTargetAtTime(0, currentTime, fade);
-  oscGain.gain.setTargetAtTime(0, currentTime, fade);
-  simulateGain.gain.setTargetAtTime(0, currentTime, fade);
-  streamFlag.simulate = false;
-  if (metronomeIntervId) {
+  if (except !== "BASS") {
+    bassGain.gain.setValueAtTime(0, 0);
+  }
+  if (except !== "FEEDBACK") {
+    feedbackGain.gain.setTargetAtTime(0, currentTime, fade);
+  }
+  if (except !== "WHITENOISE") {
+    noiseGain.gain.setTargetAtTime(0, currentTime, fade);
+  }
+  if (except !== "SINEWAVE") {
+    oscGain.gain.setTargetAtTime(0, currentTime, fade);
+  }
+  if (except !== "SIMULATE") {
+    simulateGain.gain.setTargetAtTime(0, currentTime, fade);
+  }
+  if (metronomeIntervId && except !== "METRONOME") {
     clearInterval(metronomeIntervId);
   }
+  streamFlag.simulate = false;
 };
 
 export const simulate = (gain: number) => {

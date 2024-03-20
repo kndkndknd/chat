@@ -8,7 +8,7 @@ import { streams, basisBufferSize, states, streamApiUrl } from "../states";
 import { putVideoStream } from "./uploadModule/putVideoStream";
 import { pushStateStream } from "./pushStateStream";
 
-export const getLiveStream = async (stream) => {
+export const getLiveStream = async (stream: string, qWord?: string) => {
   if (!Object.keys(streams).includes(stream)) {
     streams[stream] = {
       video: [],
@@ -17,11 +17,31 @@ export const getLiveStream = async (stream) => {
     };
     pushStateStream(stream, states);
   }
-  const response = await axios.get(streamApiUrl);
-  console.log(response.data);
-  const streamData = <{ dirPath: string; fileName: string; audio: boolean }[]>(
-    response.data
-  );
+  states.stream.random[stream] = true;
+
+  let streamData: { dirPath: string; fileName: string; audio: boolean }[];
+  if (qWord !== undefined && qWord !== null) {
+    const response = await axios.post("http://127.0.0.1:8088/liveStream", {
+      qWord: qWord,
+    });
+    console.log(response.data);
+    streamData = response.data;
+  } else {
+    if (stream === "LIVESTREAM") {
+      const response = await axios.get(streamApiUrl);
+      console.log(response.data);
+      streamData = response.data;
+    } else {
+      const response = await axios.post("http://127.0.0.1:8088/liveStream", {
+        qWord: stream,
+      });
+      console.log(response.data);
+      streamData = response.data;
+    }
+  }
+  // const streamData = <{ dirPath: string; fileName: string; audio: boolean }[]>(
+  //   response.data
+  // );
 
   try {
     for (let i = 0; i < streamData.length; i++) {
@@ -75,12 +95,14 @@ export const getLiveStream = async (stream) => {
         }
       }
     }
+    /*
     const removeResult = await removeFile(streamData[0].dirPath);
     if (removeResult === "success") {
       console.log("remove files");
     } else {
       console.log("remove files error");
     }
+    */
 
     return await true;
   } catch (err) {

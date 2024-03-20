@@ -34,8 +34,8 @@ export const sinewaveEmit = (
   }
   let targetIdArr =
     target !== undefined
-      ? pickupCmdTarget(state, "SINEWAVE", target)
-      : pickupCmdTarget(state, "SINEWAVE");
+      ? pickupCmdTarget(state, "SINEWAVE", { value: frequencyStr, target })
+      : pickupCmdTarget(state, "SINEWAVE", { value: frequencyStr });
   console.log("targetArr", targetIdArr);
 
   targetIdArr.forEach((id) => {

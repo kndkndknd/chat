@@ -80,7 +80,7 @@ export const ioServer = (
       // console.log("debug chatFromClient", states.current.stream);
       // console.log("socket.id: " + String(socket.id));
       if (buffer.from === undefined) buffer.from = String(socket.id);
-      chatReceive(buffer, io);
+      chatReceive(io, buffer);
     });
 
     socket.on("streamReqFromClient", (source: string) => {

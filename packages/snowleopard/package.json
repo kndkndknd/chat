@@ -1,12 +1,9 @@
 {
   "name": "snowleopard",
-  "packageManager": "pnpm@8.12.1",
   "private": true,
   "version": "0.0.0",
   "scripts": {
-    "dev": "vite",
     "build": "webpack --mode production",
-    "preview": "vite preview",
     "snow": "webpack --mode production",
     "snowleopard": "webpack --mode production"
   },
