@@ -129,11 +129,13 @@ export const states: cmdStateType = {
   clockMode: false,
   arduino: {
     host: "localhost",
+    // host: "192.168.15.166",
     port: 5050,
     connected: false,
     relay: "off",
   },
   emoji: false,
+  timer: true,
 };
 
 export let basisBufferSize = 8192;

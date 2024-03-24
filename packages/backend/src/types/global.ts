@@ -129,6 +129,7 @@ export type cmdStateType = {
     relay: "on" | "off";
   };
   emoji: boolean;
+  timer: boolean;
 };
 export type buffArrayType = {
   KICK: {

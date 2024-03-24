@@ -10,14 +10,19 @@ export const connectTest = async () => {
     `http://${states.arduino.host}:${states.arduino.port}/test`
   );
   */
-  const response = await fetch(requestUrl);
-  console.log(response);
-  const data = await response.json();
-  if (data.success) {
-    console.log("Arduino connected");
-    return true;
-  } else {
-    console.log("Arduino not connected");
+  try {
+    const response = await fetch(requestUrl);
+    console.log(response);
+    const data = await response.json();
+    if (data.success) {
+      console.log("Arduino connected");
+      return true;
+    } else {
+      console.log("Arduino not connected");
+      return false;
+    }
+  } catch (e) {
+    console.log("fetch error", e);
     return false;
   }
 };
@@ -27,11 +32,16 @@ export const switchCtrl = async () => {
   let relay: "on" | "off" = states.arduino.relay === "on" ? "off" : "on";
   const requestUrl = `http://${states.arduino.host}:${states.arduino.port}/${relay}`;
   console.log(requestUrl);
-  const response = await fetch(requestUrl);
-  const data = await response.json();
-  states.arduino.relay = data.success ? relay : states.arduino.relay;
-  console.log(data.success);
-  return data.success;
+  try {
+    const response = await fetch(requestUrl);
+    const data = await response.json();
+    states.arduino.relay = data.success ? relay : states.arduino.relay;
+    console.log(data.success);
+    return data.success;
+  } catch (e) {
+    console.log("fetch error", e);
+    return false;
+  }
 };
 
 export const switchCramp = async () => {
