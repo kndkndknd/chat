@@ -173,11 +173,13 @@ export const streams = {
     audio: [],
     video: [],
     index: 0,
+    bufferSize: basisBufferSize
   },
   EMPTY: {
     audio: [],
     video: [],
     index: [],
+    buffeSize: basisBufferSize
   },
 };
 

@@ -24,6 +24,7 @@ import { streamEmit } from "../stream/streamEmit";
 import { helpPrint } from "./help";
 import { stringEmit } from "../socket/ioEmit";
 import { getLiveStream } from "../stream/getLiveStream";
+import { getTimeLine } from "./splitSpace/getTimeLine"
 import { connectTest, switchCramp } from "../arduinoAccess/arduinoAccess";
 
 export const splitSpace = async (
@@ -295,8 +296,8 @@ export const splitSpace = async (
     stringArr.length === 3
   ) {
     recordAsOtherEmit(io, state, stringArr[2]);
-  } else if (stringArr[0] === "GET") {
-    stringEmit(io, "........", true);
+  } else if (stringArr[0] === "GET" || stringArr[0] === "YOUTUBE") {
+    stringEmit(io, `GETTING ${stringArr[1]}...`, true);
     if (stringArr[1] === "LIVESTREAM") {
       if (stringArr.length === 2) {
         const result = await getLiveStream("LIVESTREAM");
@@ -326,5 +327,17 @@ export const splitSpace = async (
         stringEmit(io, "GET LIVESTREAM: FAILED");
       }
     }
+  } else if (stringArr[0] === "TWITTER" || stringArr[0] === "X") {
+    const result = await getTimeLine(stringArr, io, state)
+    if (result) {
+      //stringEmit(io, "GET TIMELINE: SUCCESS");
+    } else {
+      stringEmit(io, "GET TIMELINE: FAILED");
+    }
+  } else if (stringArr[0] === "GAIN" && Object.keys(state.cmd.GAIN).includes(stringArr[1])) {
+    if(stringArr.length === 3 &&arrTypeArr[2] === "number") {
+      state.cmd.GAIN[stringArr[1]] = Number(stringArr[2])
+    }
+    stringEmit(io, `${stringArr[1]} GAIN: ${String(state.cmd.GAIN[stringArr[1]])}`, true)
   }
 };

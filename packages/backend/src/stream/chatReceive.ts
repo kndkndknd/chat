@@ -8,6 +8,8 @@ import { pickupStreamTarget } from "./pickupStreamTarget";
 import { chat } from "googleapis/build/src/apis/chat";
 import { switchCramp } from "../arduinoAccess/arduinoAccess";
 
+let index = 0
+
 export const chatReceive = async (
   io: SocketIO.Server,
   buffer?: buffStateType
