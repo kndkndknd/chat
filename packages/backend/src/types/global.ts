@@ -178,6 +178,15 @@ export type CmdType = {
   gain?: number;
 };
 
+export type StreamsType = {
+  [key: string] : {
+    audio: Array<Float32Array>;
+    video: Array<string>;
+    index: number;
+    bufferSize: number;
+  }
+}
+
 /*
 
 export type cmdStateType = {

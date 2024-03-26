@@ -1,4 +1,4 @@
-import { cmdStateType, sevenSinsType } from "./types/global";
+import { StreamsType, cmdStateType, sevenSinsType } from "./types/global";
 
 export const states: cmdStateType = {
   cmd: {
@@ -140,8 +140,9 @@ export const states: cmdStateType = {
 
 export let basisBufferSize = 8192;
 
-export const streams = {
-  CHAT: [],
+export const chats = []
+
+export const oneshots = {
   KICK: {
     audio: [],
     video: [],
@@ -162,7 +163,15 @@ export const streams = {
     video: [],
     bufferSize: basisBufferSize,
   },
-  PLAYBACK: [],
+}
+
+export const streams: StreamsType = {
+  PLAYBACK: {
+    audio: [],
+    video: [],
+    index: 0,
+    bufferSize: basisBufferSize,
+  },
   TIMELAPSE: {
     audio: [],
     video: [],
@@ -178,8 +187,8 @@ export const streams = {
   EMPTY: {
     audio: [],
     video: [],
-    index: [],
-    buffeSize: basisBufferSize
+    index: 0,
+    bufferSize: basisBufferSize
   },
 };
 

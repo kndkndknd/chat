@@ -20,21 +20,7 @@ export const streamEmit = (
   // const targetId =
   //   state.client[Math.floor(Math.random() * state.client.length)];
   let buff: buffStateType;
-  if (source === "PLAYBACK") {
-    if (streams[source].length > 0) {
-      if (!state.stream.random[source]) {
-        buff = streams[source].shift();
-        streams[source].push(buff);
-      } else {
-        const index = Math.floor(Math.random() * streams[source].length);
-        console.log("random ", index);
-        // RANDOM
-        buff = streams[source][index];
-      }
-    } else {
-      io.emit("stringsFromServer", { strings: "NO BUFFER", timeout: true });
-    }
-  } else if (source === "EMPTY") {
+  if (source === "EMPTY") {
     let audioBuff = new Float32Array(basisBufferSize);
     for (let i = 0; i < basisBufferSize; i++) {
       audioBuff[i] = 1.0;
@@ -62,15 +48,17 @@ export const streamEmit = (
     console.log(streams[source]);
     if (streams[source].audio.length > 0 || streams[source].video.length > 0) {
       if (!state.stream.random[source]) {
+        
         buff = {
           source: source,
           bufferSize: streams[source].bufferSize,
-          audio: streams[source].audio.shift(),
-          video: streams[source].video.shift(),
+          audio: streams[source].audio.length > streams[source].index ? streams[source].audio[streams[source].index] : new Float32Array(streams[source].bufferSize),
+          video: streams[source].video.length > streams[source].index ? streams[source].video[streams[source].index] : "",
           duration: streams[source].bufferSize / 44100,
         };
-        streams[source].audio.push(buff.audio);
-        streams[source].video.push(buff.video);
+        streams[source].index = streams[source].index >= streams[source].audio.length - 1 ? streams[source].index + 1 : 0
+        // streams[source].audio.push(buff.audio);
+        // streams[source].video.push(buff.video);
       } else {
         buff = {
           source: source,
