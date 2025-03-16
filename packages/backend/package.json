@@ -6,7 +6,8 @@
     "dev": "ts-node src/app.ts",
     "backend": "node --loader ts-node/esm src/app.ts",
     "build": "tsc",
-    "start": "node dist/app.js"
+    "start": "node dist/app.js",
+    "test": "vitest"
   },
   "devDependencies": {
     "@types/sharp": "0.32.0",

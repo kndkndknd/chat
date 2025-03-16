@@ -593,13 +593,15 @@ function Setup() {
 // let quantizerCurrentTime: number = 0;
 let eighthNoteSec: number = 0;
 
-export const quantize = (bar: number, beat: number, stream: string) => {
+export const quantize = (bar: number, beat?: number, stream?: string) => {
   console.log("bar", bar);
   console.log("streamFlag: ", frontState.streamFlag);
-  frontState.quantize.flag = true;
-  frontState.quantize.bar = bar;
-  frontState.quantize.beat = beat;
-  frontState.quantize.stream = stream;
+  // frontState.quantize.flag = true;
+  // frontState.quantize.bar = bar;
+  // frontState.quantize.beat =
+  //   beat !== undefined ? beat : frontState.quantize.beat;
+  // frontState.quantize.stream =
+  //   stream !== undefined ? stream : frontState.quantize.stream;
 
   frontState.quantize.interval = window.setInterval(() => {
     if (frontState.quantize.stream === "all") {
@@ -677,6 +679,11 @@ export const initQuantizePlay = (
       setTimeout(() => {
         // streamPlay(data.source === "CHAT" ? "CHAT" : "STREAM", id, data);
         console.log("streamPlay, debug initQuantizePlay");
+        if (data.source === "CHAT") {
+          chatReq(String(id));
+        } else {
+          socket.emit("streamReqFromClient", data.source);
+        }
       }, note - currentTimeDiff * 1000);
       break;
     }
@@ -700,35 +707,59 @@ export const quantizePlay = (
   id
 ) => {
   console.log("streamPlay, debug quantizePlay");
-  // playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize);
-  // if (data.video) {
-  //   showImage(data.video, ctx);
-  //   setTimeout(() => {
-  //     erasePrint(ctx, cnvs);
-  //   }, 300);
-  // } else if (data.source !== undefined) {
-  //   textPrint(data.source.toLowerCase(), ctx, cnvs);
-  // }
+  const beat =
+    frontState.quantize.beat === 0
+      ? Math.pow(2, Math.floor(Math.random() * 6))
+      : frontState.quantize.beat;
+  for (let i = 0; i <= beat; i++) {
+    setTimeout(() => {
+      if (frontState.streamFlag[data.source]) {
+        playAudioStream(
+          data.audio,
+          data.sampleRate,
+          data.glitch,
+          data.bufferSize
+        );
+        if (data.video) {
+          showImage(data.video, ctx);
+          setTimeout(() => {
+            erasePrint(ctx, cnvs);
+          }, 300);
+        } else if (data.source !== undefined) {
+          textPrint(data.source.toLowerCase(), ctx, cnvs);
+        }
+      }
+    }, (frontState.quantize.bar / beat) * i);
+  }
   if (data.source === "CHAT") {
     chatReq(String(id));
   } else {
     socket.emit("streamReqFromClient", data.source);
   }
-  // streamPlay(data.source === "CHAT" ? "CHAT" : "STREAM", id, data);
-
-  // const beat =
-  //   frontState.quantize.beat === 0
-  //     ? Math.pow(2, Math.floor(Math.random() * 5))
-  //     : frontState.quantize.beat;
-  // if (beat >= 16) {
-  //   const note = frontState.quantize.bar / beat;
-  //   for (let i = 1; i <= beat / 4; i++) {
-  //     setTimeout(() => {
-  //       streamPlay(data.source === "CHAT" ? "CHAT" : "STREAM", id, data);
-  //     }, note * i);
-  //   }
-  // }
+  // if (frontState.recLatency) {
+  //   setTimeout(() => {
+  //     if (data.source === "CHAT") {
+  //       chatReq(String(id));
+  //     } else {
+  //       socket.emit("streamReqFromClient", data.source);
+  //     }
+  //   }, (data.bufferSize / data.sampleRate) * 1000);
 };
+
+// streamPlay(data.source === "CHAT" ? "CHAT" : "STREAM", id, data);
+
+// const beat =
+//   frontState.quantize.beat === 0
+//     ? Math.pow(2, Math.floor(Math.random() * 5))
+//     : frontState.quantize.beat;
+// if (beat >= 16) {
+//   const note = frontState.quantize.bar / beat;
+//   for (let i = 1; i <= beat / 4; i++) {
+//     setTimeout(() => {
+//       streamPlay(data.source === "CHAT" ? "CHAT" : "STREAM", id, data);
+//     }, note * i);
+//   }
+// }
 
 export const streamPlay = (
   type: "CHAT" | "STREAM",

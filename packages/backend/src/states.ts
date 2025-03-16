@@ -1,9 +1,11 @@
 import {
   StreamsType,
-  cmdLogType,
+  // cmdLogType,
   cmdStateType,
   sevenSinsType,
 } from "../../types/global";
+
+import { LogType } from "../../types/log_schedule";
 
 export const states: cmdStateType = {
   cmd: {
@@ -302,4 +304,4 @@ export const helpList = {
 
 export const streamApiUrl: string = "http://127.0.0.1:8088/getLiveStream";
 
-export const cmdLog: cmdLogType = [];
+export const cmdLog: LogType[] = [];

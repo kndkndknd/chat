@@ -1,5 +1,5 @@
 import { cmdLog } from "../states";
-import { getDateTimeString } from "../util/getDateTimeString";
+import { getDateTimeString } from "../../../util/getDateTimeString";
 
 export const cmdLogging = (strings: string) => {
   const { yyyy, mm, dd, hh, mi, ss, ms } = getDateTimeString();

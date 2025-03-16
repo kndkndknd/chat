@@ -342,6 +342,6 @@ export type newWindowReqType = {
   left: number;
 };
 
-export type cmdLogType = {
-  [key: string]: string;
-}[];
+// export type cmdLogType = {
+//   [key: string]: string;
+// }[];

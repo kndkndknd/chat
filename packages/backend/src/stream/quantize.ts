@@ -12,11 +12,12 @@ export const quantizeCmd = (
   bpm?: number,
   flag?: boolean
 ) => {
+  console.log("quantize state", state.stream.quantize);
   const quantizeObj = {
     flag: true,
     stream: streamTarget,
-    bpm: 0,
-    bar: 0,
+    bpm: 60,
+    bar: 4000,
     beat: beat,
   };
   if (bpm !== undefined) {
@@ -37,7 +38,7 @@ export const quantizeCmd = (
   console.log(
     "quantizedClient",
     Object.keys(state.stream.quantize.flag.client).filter((element) => {
-      state.stream.quantize.flag.client[element];
+      return state.stream.quantize.flag.client[element];
     })
   );
   if (flag !== undefined) {
@@ -87,12 +88,12 @@ export const quantizeCmd = (
     }
   } else if (
     Object.keys(state.stream.quantize.flag.client).filter((element) => {
-      state.stream.quantize.flag.client[element];
+      return state.stream.quantize.flag.client[element];
     }).length >
     Object.keys(state.client).length / 2
   ) {
     // どっちもallかつ過半数がtrue => すべてfalse
-    console.log("test");
+    console.log("test false");
     quantizeObj.flag = false;
     for (let key in state.stream.quantize.flag.client) {
       state.stream.quantize.flag.client[key] = quantizeObj.flag;
@@ -101,6 +102,13 @@ export const quantizeCmd = (
       state.stream.quantize.flag.stream[key] = quantizeObj.flag;
     }
   } else {
+    console.log("test true");
+    console.log(
+      Object.keys(state.stream.quantize.flag.client).filter((element) => {
+        return state.stream.quantize.flag.client[element] === true;
+      })
+    );
+    console.log(state.stream.quantize.flag.client);
     // どっちもallかつ過半数がfalse => すべてtrue
     quantizeObj.flag = true;
     for (let key in state.stream.quantize.flag.client) {
@@ -131,14 +139,17 @@ const averageBPM = (
       Object.keys(stateBPM[streamTarget]).forEach((element) => {
         bpm += stateBPM[streamTarget][element];
       });
+      console.log("debug bpm: ", bpm);
       bpm = bpm / Object.keys(stateBPM[streamTarget]).length;
+      console.log("client all bpm: ", bpm);
     }
   } else {
     if (clientTarget !== "all") {
       Object.keys(stateBPM).forEach((element) => {
-        bpm += element[clientTarget];
+        bpm += stateBPM[element][clientTarget];
       });
       bpm = bpm / Object.keys(stateBPM).length;
+      // console.log("debug bpm: ", bpm);
     } else {
       let denominator = 0;
       Object.keys(stateBPM).forEach((streamElement) => {

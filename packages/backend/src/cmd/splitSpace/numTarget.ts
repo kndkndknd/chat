@@ -8,6 +8,8 @@ import { millisecondsPerBar } from "../bpmCalc";
 import { notTargetEmit } from "../notTargetEmit";
 import { stringEmit } from "../../socket/ioEmit";
 import { chatPreparation } from "../../stream/chatPreparation";
+// import { quantizeCmd } from "../../stream/quantize";
+import { splitQuantize } from "../splitSpace/splitQuantize";
 
 export const numTarget = (
   stringArr: Array<string>,
@@ -64,38 +66,7 @@ export const numTarget = (
       }
     }
   } else if (stringArr[1] === "QUANTIZE") {
-    const bar = millisecondsPerBar(state.bpm[target]);
-    if (stringArr.length === 2) {
-      if (Object.keys(state.stream.quantize).includes(target)) {
-        state.stream.quantize[target] = 1;
-
-        io.to(target).emit("quantizeFromServer", {
-          flag: false,
-          bpm: state.bpm[target],
-          bar: bar,
-          beat: 1,
-        });
-      } else {
-        state.stream.quantize[target] = Math.floor(Math.random() * 9);
-        io.to(target).emit("quantizeFromServer", {
-          flag: true,
-          bpm: state.bpm[target],
-          bar: bar,
-          beat: state.stream.quantize[target],
-        });
-      }
-    } else if (
-      stringArr.length === 3 &&
-      /^([1-9]\d*|0)(\.\d+)?$/.test(stringArr[2])
-    ) {
-      state.stream.quantize[target] = Number(stringArr[2]);
-      io.to(target).emit("quantizeFromServer", {
-        flag: true,
-        bpm: state.bpm[target],
-        bar: bar,
-        beat: state.stream.quantize[target],
-      });
-    }
+    splitQuantize(io, state, stringArr.slice(1), arrTypeArr.slice(1), target);
   } else {
     stringEmit(io, "not cmd", true, target);
   }

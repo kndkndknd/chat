@@ -131,22 +131,28 @@ export const parameterChange = (
           if (Object.keys(state.stream.latency).includes(arg.property)) {
             state.stream.latency[arg.property] = latency;
             // state.cmd.METRONOME = {};
-            stringEmit(
-              io,
-              "BPM: " + String(arg.value) + "(" + arg.property + ")"
-              // state
-            );
+            io.emit("bpmFromServer", { bpm: arg.value, bar: bar });
+
+            // stringEmit(
+            //   io,
+            //   "BPM: " + String(arg.value) + "(" + arg.property + ")"
+            //   // state
+            // );
             // propertyが端末番号を指定している場合
           } else if (/^([1-9]\d*|0)(\.\d+)?$/.test(arg.property)) {
             const target = Object.keys(state.client)[Number(arg.property)];
             if (Object.keys(state.cmd.METRONOME).includes(target)) {
               state.cmd.METRONOME[target] = latency;
               state.bpm[target] = arg.value;
-              stringEmit(
-                io,
-                "BPM: " + String(arg.value) + "(client " + arg.property + ")"
-                // state
-              );
+              io.to(target).emit("bpmFromServer", {
+                bpm: arg.value,
+                bar: bar,
+              });
+              // stringEmit(
+              //   io,
+              //   "BPM: " + String(arg.value) + "(client " + arg.property + ")"
+              //   // state
+              // );
             }
             if (state.current.cmd.METRONOME.includes(target)) {
               const cmd: {

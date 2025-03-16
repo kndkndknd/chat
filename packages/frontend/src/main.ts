@@ -30,6 +30,7 @@ import {
   stopQuantize,
   initQuantizePlay,
   streamPlay,
+  quantizePlay,
 } from "./webaudio";
 
 import { cmdFromServer } from "./cmd";
@@ -189,7 +190,7 @@ socket.on(
     position?: { top: number; left: number; width: number; height: number };
     target?: string;
   }) => {
-    // console.log("chatFromServer");
+    console.log("chatFromServer");
     if (
       frontState.quantize.flag &&
       (frontState.quantize.stream === "all" ||
@@ -206,7 +207,7 @@ socket.on(
       };
       // data.source = "CHAT";
       frontState.streamChunk.CHAT = chunk;
-      initQuantizePlay(chunk, socket.id);
+      // initQuantizePlay(chunk, socket.id);
     } else {
       if (data.floating === undefined || !data.floating) {
         streamPlay("CHAT", socket.id, data);
@@ -304,6 +305,55 @@ socket.on(
   }) => {
     if (data.flag) {
       console.log(data);
+      frontState.quantize.flag = true;
+      frontState.quantize.bar = data.bar;
+      frontState.quantize.beat =
+        data.beat !== undefined ? data.beat : frontState.quantize.beat;
+      frontState.quantize.stream =
+        data.stream !== undefined ? data.stream : frontState.quantize.stream;
+      if (
+        frontState.streamFlag[data.stream] &&
+        frontState.streamChunk[data.stream] !== undefined &&
+        frontState.streamChunk[data.stream].autdio !== undefined
+      ) {
+        quantizePlay(
+          {
+            source: data.stream,
+            video:
+              frontState.streamChunk[data.stream].video === undefined
+                ? ""
+                : frontState.streamChunk[data.stream].video,
+            audio: frontState.streamChunk[data.stream].audio,
+            sampleRate: frontState.streamChunk[data.stream].sampleRate,
+            glitch: frontState.streamChunk[data.stream].glitch,
+            bufferSize: frontState.streamChunk[data.stream].bufferSize,
+          },
+          socket.id
+        );
+      } else if (data.stream === "all") {
+        for (let key in frontState.streamFlag) {
+          if (
+            frontState.streamFlag[key] &&
+            frontState.streamChunk[key] !== undefined &&
+            frontState.streamChunk[key].autdio !== undefined
+          ) {
+            quantizePlay(
+              {
+                source: key,
+                video:
+                  frontState.streamChunk[key].video === undefined
+                    ? ""
+                    : frontState.streamChunk[key].video,
+                audio: frontState.streamChunk[key].audio,
+                sampleRate: frontState.streamChunk[key].sampleRate,
+                glitch: frontState.streamChunk[key].glitch,
+                bufferSize: frontState.streamChunk[key].bufferSize,
+              },
+              socket.id
+            );
+          }
+        }
+      }
       quantize(data.bar, data.beat, data.stream);
       textPrint(
         `QUANTIZE(BPM:${String(data.bpm)},Beat:${String(data.beat)})`,
@@ -345,6 +395,10 @@ socket.on("bpmFromServer", (data: { bpm: number; bar: number }) => {
   console.log("bpmFromServer", data);
   frontState.metronome.fournote = data.bar / 4;
   frontState.quantize.bar = data.bar;
+  if (frontState.quantize.flag) {
+    stopQuantize();
+    quantize(data.bar, frontState.quantize.beat);
+  }
 });
 
 /*

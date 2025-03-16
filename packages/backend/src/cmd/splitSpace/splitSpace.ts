@@ -17,7 +17,6 @@ import { stringEmit } from "../../socket/ioEmit";
 
 import { insertStream } from "../../mongoAccess/insertStream";
 import { findStream } from "../../mongoAccess/findStream";
-import { timerCmd } from "../timerCmd";
 import { stopEmit } from "../stopEmit";
 import { numTarget } from "./numTarget";
 import { fadeCmd } from "./fadeCmd";
@@ -42,6 +41,11 @@ import { modulationByBPM } from "./modulationByBPM";
 
 import { putLogFile } from "../../logging/putLogFile";
 import { text } from "stream/consumers";
+import { splitQuantize } from "./splitQuantize";
+
+import { scheduleSplitCmd } from "../../schedule/scheduleSplitCmd";
+import { getScheduleFromSplitSpace } from "../../schedule/getScheduleFromSplitSpace";
+import { deleteLog } from "../../logging/deleteLog";
 
 export const splitSpace = async (
   stringArr: Array<string>,
@@ -286,16 +290,7 @@ export const splitSpace = async (
   } else if (stringArr[0] === "FIND") {
     findStream("test", "test", io);
   } else if (stringArr[0].includes(":")) {
-    voiceEmit(io, stringArr.join(" "), source, state);
-
-    let timeStampArr = stringArr[0].split(":");
-    if (
-      timeStampArr.every((item) => {
-        return !isNaN(Number(item));
-      })
-    ) {
-      timerCmd(io, state, stringArr, timeStampArr);
-    }
+    scheduleSplitCmd(stringArr, source, io);
   } else if (stringArr[0] === "SWITCH" || stringArr[0] === "ARDUINO") {
     if (stringArr[1] === "TEST") {
       console.log("switch test");
@@ -457,14 +452,29 @@ export const splitSpace = async (
     });
   } else if (stringArr[0] === "LOG") {
     if (stringArr[1] === "FILE") {
-      const result = putLogFile();
-      console.log(result);
+      const result = await putLogFile();
+      if (result) {
+        stringEmit(io, "LOG: PUT SUCCESS");
+      } else {
+        stringEmit(io, "LOG: PUT FAILED");
+      }
+
+      // console.log(result);
       // if(result) {
       //   stringEmit(io, "LOG: SUCCESS");
       // } else {
       //   stringEmit(io, "LOG: FAILED");
       // }
+    } else if (stringArr[1] === "IMPORT") {
+      const result = getScheduleFromSplitSpace(stringArr, io);
+      if (!result) {
+        stringEmit(io, "LOG: IMPORT FAILED");
+      }
+    } else if (stringArr[1] === "CLEAR") {
+      deleteLog();
     }
+  } else if (stringArr[0] === "QUANTIZE") {
+    splitQuantize(io, state, stringArr, arrTypeArr);
   } else {
     stringEmit(io, stringArr.join(" "), false);
     if (state.cmd.VOICE.length > 0) {

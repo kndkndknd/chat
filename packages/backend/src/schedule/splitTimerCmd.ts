@@ -1,9 +1,9 @@
 import SocketIO from "socket.io";
 import { cmdStateType } from "../../../types/global";
-import { receiveEnter } from "./receiveEnter";
-import { stopEmit } from "./stopEmit";
+import { execSchedule } from "./execSchedule";
 
-export const timerCmd = (
+// exec 'HH:MM:SS cmd' or 'MM:SS cmd' from splitSpace.ts
+export const splitTimerCmd = (
   io: SocketIO.Server,
   state: cmdStateType,
   stringArr: string[],
@@ -37,7 +37,7 @@ export const timerCmd = (
   if (timerVal > 0 && timerVal < 10800000) {
     console.log("absolute time", timerVal);
     setTimeout(() => {
-      timerExec(state, io, cmdString, stringArr);
+      execSchedule(io, cmdString);
     }, timerVal);
   } else {
     const timerValue =
@@ -49,39 +49,7 @@ export const timerCmd = (
           1000;
     console.log("relative time", timerValue);
     setTimeout(() => {
-      timerExec(state, io, cmdString, stringArr);
+      execSchedule(io, cmdString);
     }, timerValue);
-  }
-};
-
-const timerExec = (state, io, cmdString, stringArr) => {
-  const targetId = Object.keys(state.client)[
-    Math.floor(Math.random() * Object.keys(state.client).length)
-  ];
-  if (
-    Object.keys(state.current.cmd).includes(stringArr[stringArr.length - 1]) ||
-    Object.keys(state.current.stream).includes(stringArr[stringArr.length - 1])
-  ) {
-    receiveEnter(cmdString, targetId, io, state);
-  } else if (stringArr[1] === "STOP") {
-    if (stringArr.length === 2) {
-      const client = "all";
-      stopEmit(io, state, "", "ALL", client);
-      /*
-} else if(stringArr.length === 3) {
-  if(stringArr[2] === 'SINEWAVECLIENT') {
-    stopEmit(io, state, 'all', 'sinewaveClient');
-  } else if(stringArr[2] === 'CLIENT') {
-    stopEmit(io, state, 'all', 'client');
-  } else if(stringArr[2] === 'ALL') {
-    stopEmit(io, state, 'all', 'all');
-  }
-  */
-    }
-  } else {
-    io.emit("stringsFromServer", {
-      strings: cmdString,
-      timeout: false,
-    });
   }
 };
