@@ -11,23 +11,17 @@ export const execSchedule = (io: SocketIO.Server, cmdString) => {
   const stringArr = cmdString.split(" ");
   if (
     Object.keys(states.current.cmd).includes(stringArr[stringArr.length - 1]) ||
-    Object.keys(states.current.stream).includes(stringArr[stringArr.length - 1])
+    Object.keys(states.current.stream).includes(
+      stringArr[stringArr.length - 1]
+    ) ||
+    /^([1-9]\d*|0)(\.\d+)?$/.test(stringArr[stringArr.length - 1])
   ) {
     receiveEnter(cmdString, targetId, io, states);
   } else if (stringArr[0] === "STOP") {
     if (stringArr.length === 1) {
-      const client = "all";
-      stopEmit(io, states, "", "ALL", client);
-      /*
-} else if(stringArr.length === 3) {
-  if(stringArr[2] === 'SINEWAVECLIENT') {
-    stopEmit(io, state, 'all', 'sinewaveClient');
-  } else if(stringArr[2] === 'CLIENT') {
-    stopEmit(io, state, 'all', 'client');
-  } else if(stringArr[2] === 'ALL') {
-    stopEmit(io, state, 'all', 'all');
-  }
-  */
+      console.log("stoop", stringArr);
+      // const client = "all";
+      stopEmit(io, states, "", "ALL");
     }
   } else {
     io.emit("stringsFromServer", {

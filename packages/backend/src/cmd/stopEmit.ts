@@ -26,7 +26,7 @@ export const stopEmit = (
   //     });
   //   });
   // }
-  if (source !== undefined) {
+  if (source !== undefined && source !== "") {
     voiceEmit(io, "STOP", source, state);
   }
 
@@ -80,7 +80,7 @@ export const stopEmit = (
   Object.keys(state.stream.target).forEach((element) => {
     state.stream.target[element] = [];
   });
-  console.log("client", state.client);
-  console.log("hls", state.hls);
-  console.log("previous", state.previous);
+  // console.log("client", state.client);
+  // console.log("hls", state.hls);
+  // console.log("previous", state.previous);
 };
