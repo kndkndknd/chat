@@ -1,4 +1,3 @@
-import { states } from "../states";
 import { voiceEmit } from "../cmd/voiceEmit";
 import { splitTimerCmd } from "./splitTimerCmd";
 import SocketIO from "socket.io";
@@ -9,7 +8,7 @@ export const scheduleSplitCmd = async (
   source: string,
   io: SocketIO.Server
 ) => {
-  voiceEmit(io, stringArr.join(" "), source, states);
+  voiceEmit(io, stringArr.join(" "), source);
 
   let timeStampArr = stringArr[0].split(":");
   if (
@@ -17,6 +16,6 @@ export const scheduleSplitCmd = async (
       return !isNaN(Number(item));
     })
   ) {
-    splitTimerCmd(io, states, stringArr, timeStampArr);
+    splitTimerCmd(io, stringArr, timeStampArr);
   }
 };

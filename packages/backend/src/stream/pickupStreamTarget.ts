@@ -1,34 +1,30 @@
-import { cmdStateType } from "../../../types/global";
+import { streamState, clientState } from "../states";
 
-export const pickupStreamTarget = (
-  states: cmdStateType,
-  stream: string,
-  from?: string
-): string => {
-  console.log("states.stream.target", states.stream.target[stream]);
-  if (states.stream.target[stream].length > 1) {
+export const pickupStreamTarget = (stream: string, from?: string): string => {
+  console.log("streamState.target", streamState.target[stream]);
+  if (streamState.target[stream].length > 1) {
     // from以外のtargetがあればFromを除外した配列を返し、fromがなければtarget全体を返す
     // const targetArr =
     //   from === undefined
-    //     ? states.stream.target[stream]
-    //     : states.stream.target[stream].filter((id) => {
+    //     ? streamState.target[stream]
+    //     : streamState.target[stream].filter((id) => {
     //         console.log("from", from);
     //         console.log("id", id);
     //         return id === from;
     //       });
     // console.log("filtered targetArr", targetArr);
 
-    // const targetArr = states.stream.target[stream];
+    // const targetArr = streamState.target[stream];
     let targetArr =
       stream === "CHAT"
-        ? states.stream.target[stream].filter((id) => {
+        ? streamState.target[stream].filter((id) => {
             console.log(id !== from);
             return id !== from;
           })
-        : states.stream.target[stream];
+        : streamState.target[stream];
     console.log("from", from);
     // console.log("testArr", testArr);
-    // const targetArr = states.stream.target[stream];
+    // const targetArr = streamState.target[stream];
     console.log("targetArr(target ari)", targetArr);
     // fromを除外した結果targetがなくなればfromを返す、あればtargetの中からランダムに返す
     if (targetArr.length > 0) {
@@ -44,13 +40,13 @@ export const pickupStreamTarget = (
       console.log("from");
       return from;
     }
-  } else if (states.stream.target[stream].length === 1) {
-    console.log("targetArr(1)", states.stream.target[stream]);
-    return states.stream.target[stream][0];
+  } else if (streamState.target[stream].length === 1) {
+    console.log("targetArr(1)", streamState.target[stream]);
+    return streamState.target[stream][0];
   } else {
     // targetがなければランダムに返す
     console.log("random");
-    let targetArr = states.streamClient;
+    let targetArr = clientState.streamClient;
     console.log("targetArr", targetArr);
     // if (states.arduino.connected) {
     //   targetArr = [...targetArr, ...targetArr, ...targetArr];

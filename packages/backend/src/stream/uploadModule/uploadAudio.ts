@@ -3,18 +3,11 @@
 import { promiseGetPcmData } from "./getPcmData";
 import { pushStateStream } from "../pushStateStream";
 
-import {
-  streams,
-  cmdList,
-  streamList,
-  parameterList,
-  states,
-  uploadParams,
-} from "../../states";
+import { streams, streamState } from "../../states";
 // import { pushStateStream } from "../pushStateStream.js";
 
 export const uploadAudio = async (f: string, mediaDirPath: string) => {
-  let tmpBuff = new Float32Array(states.stream.basisBufferSize);
+  let tmpBuff = new Float32Array(streamState.basisBufferSize);
   let rtnBuff = [];
   let i = 0;
   const fSplit = f.split(".");
@@ -23,7 +16,7 @@ export const uploadAudio = async (f: string, mediaDirPath: string) => {
   const option = { stereo: true, sampleRate: 22050 };
   console.log("debug start2");
   try {
-    await pushStateStream(fSplit[0], states);
+    await pushStateStream(fSplit[0]);
     // const result = <boolean>await getPcmData(filePath, fSplit[0], option);
     const result = <Float32Array[]>(
       await promiseGetPcmData(filePath, 8192, option)

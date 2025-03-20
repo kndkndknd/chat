@@ -1,18 +1,19 @@
 import SocketIO from "socket.io";
 
-import { cmdStateType } from "../../../types/global";
+import { quantizeStateType } from "../../../types/global";
 import { millisecondsPerBar } from "../cmd/bpmCalc";
+import { quantizeObjType } from "../../../types/quantizeType";
+import { clientState, quantizeState } from "../states";
 
 export const quantizeCmd = (
-  io: SocketIO.Server,
-  state: cmdStateType,
+  // io: SocketIO.Server,
   streamTarget: string,
   clientTarget: string,
   beat: number,
   bpm?: number,
   flag?: boolean
-) => {
-  console.log("quantize state", state.stream.quantize);
+): quantizeObjType => {
+  console.log("quantize state", quantizeState);
   const quantizeObj = {
     flag: true,
     stream: streamTarget,
@@ -27,95 +28,89 @@ export const quantizeCmd = (
     if (
       streamTarget !== "all" &&
       clientTarget !== "all" &&
-      state.stream.quantize.bpm[streamTarget] !== undefined
+      quantizeState.bpm[streamTarget] !== undefined
     ) {
-      quantizeObj.bpm = state.stream.quantize.bpm[streamTarget][clientTarget];
+      quantizeObj.bpm = quantizeState.bpm[streamTarget][clientTarget];
     } else {
-      quantizeObj.bpm = averageBPM(streamTarget, clientTarget, state);
+      quantizeObj.bpm = averageBPM(streamTarget, clientTarget, quantizeState);
     }
   }
   quantizeObj.bar = millisecondsPerBar(quantizeObj.bpm);
-  console.log(
-    "quantizedClient",
-    Object.keys(state.stream.quantize.flag.client).filter((element) => {
-      return state.stream.quantize.flag.client[element];
-    })
-  );
   if (flag !== undefined) {
     quantizeObj.flag = flag;
     if (clientTarget === "all") {
-      for (let key in state.stream.quantize.flag.client) {
-        state.stream.quantize.flag.client[key] = flag;
+      for (let key in quantizeState.flag.client) {
+        quantizeState.flag.client[key] = flag;
       }
     } else {
-      state.stream.quantize.flag.client[clientTarget] = flag;
+      quantizeState.flag.client[clientTarget] = flag;
     }
     if (streamTarget === "all") {
-      for (let key in state.stream.quantize.flag.stream) {
-        state.stream.quantize.flag.stream[key] = flag;
+      for (let key in quantizeState.flag.stream) {
+        quantizeState.flag.stream[key] = flag;
       }
     } else {
-      state.stream.quantize.flag.stream[streamTarget] = flag;
+      quantizeState.flag.stream[streamTarget] = flag;
     }
   } else if (clientTarget !== "all") {
-    if (state.stream.quantize.flag.client[clientTarget] !== undefined) {
-      quantizeObj.flag = !state.stream.quantize.flag.client[clientTarget];
+    if (quantizeState.flag.client[clientTarget] !== undefined) {
+      quantizeObj.flag = !quantizeState.flag.client[clientTarget];
     } else {
       quantizeObj.flag = true;
     }
-    state.stream.quantize.flag.client[clientTarget] = quantizeObj.flag;
+    quantizeState.flag.client[clientTarget] = quantizeObj.flag;
     if (streamTarget !== "all") {
-      if (state.stream.quantize.flag.stream[streamTarget] !== undefined) {
-        quantizeObj.flag = !state.stream.quantize.flag.stream[streamTarget];
+      if (quantizeState.flag.stream[streamTarget] !== undefined) {
+        quantizeObj.flag = !quantizeState.flag.stream[streamTarget];
       } else {
         quantizeObj.flag = true;
       }
-      state.stream.quantize.flag.stream[streamTarget] = quantizeObj.flag;
+      quantizeState.flag.stream[streamTarget] = quantizeObj.flag;
     } else {
-      for (let key in state.stream.quantize.flag.stream) {
-        state.stream.quantize.flag.stream[key] = quantizeObj.flag;
+      for (let key in quantizeState.flag.stream) {
+        quantizeState.flag.stream[key] = quantizeObj.flag;
       }
     }
   } else if (streamTarget !== "all") {
     // clientTarget==='all'しかない
-    if (state.stream.quantize.flag.stream[streamTarget] !== undefined) {
-      quantizeObj.flag = !state.stream.quantize.flag.stream[streamTarget];
+    if (quantizeState.flag.stream[streamTarget] !== undefined) {
+      quantizeObj.flag = !quantizeState.flag.stream[streamTarget];
     } else {
       quantizeObj.flag = true;
     }
-    for (let key in state.stream.quantize.flag.client) {
-      state.stream.quantize.flag.client[key] = quantizeObj.flag;
+    for (let key in quantizeState.flag.client) {
+      quantizeState.flag.client[key] = quantizeObj.flag;
     }
   } else if (
-    Object.keys(state.stream.quantize.flag.client).filter((element) => {
-      return state.stream.quantize.flag.client[element];
+    Object.keys(quantizeState.flag.client).filter((element) => {
+      return quantizeState.flag.client[element];
     }).length >
-    Object.keys(state.client).length / 2
+    Object.keys(clientState.client).length / 2
   ) {
     // どっちもallかつ過半数がtrue => すべてfalse
     console.log("test false");
     quantizeObj.flag = false;
-    for (let key in state.stream.quantize.flag.client) {
-      state.stream.quantize.flag.client[key] = quantizeObj.flag;
+    for (let key in quantizeState.flag.client) {
+      quantizeState.flag.client[key] = quantizeObj.flag;
     }
-    for (let key in state.stream.quantize.flag.stream) {
-      state.stream.quantize.flag.stream[key] = quantizeObj.flag;
+    for (let key in quantizeState.flag.stream) {
+      quantizeState.flag.stream[key] = quantizeObj.flag;
     }
   } else {
     console.log("test true");
     console.log(
-      Object.keys(state.stream.quantize.flag.client).filter((element) => {
-        return state.stream.quantize.flag.client[element] === true;
+      Object.keys(quantizeState.flag.client).filter((element) => {
+        return quantizeState.flag.client[element] === true;
       })
     );
-    console.log(state.stream.quantize.flag.client);
+    console.log(quantizeState.flag.client);
     // どっちもallかつ過半数がfalse => すべてtrue
     quantizeObj.flag = true;
-    for (let key in state.stream.quantize.flag.client) {
-      state.stream.quantize.flag.client[key] = quantizeObj.flag;
+    for (let key in quantizeState.flag.client) {
+      quantizeState.flag.client[key] = quantizeObj.flag;
     }
-    for (let key in state.stream.quantize.flag.stream) {
-      state.stream.quantize.flag.stream[key] = quantizeObj.flag;
+    for (let key in quantizeState.flag.stream) {
+      quantizeState.flag.stream[key] = quantizeObj.flag;
     }
   }
   console.log("quantizeObj", quantizeObj);
@@ -125,10 +120,10 @@ export const quantizeCmd = (
 const averageBPM = (
   streamTarget: string,
   clientTarget: string,
-  state: cmdStateType
+  quantizeState: quantizeStateType
 ) => {
   let bpm = 0;
-  const stateBPM = state.stream.quantize.bpm;
+  const stateBPM = quantizeState.bpm;
   console.log("stateBPM", stateBPM);
   if (streamTarget !== "all") {
     if (clientTarget !== "all") {

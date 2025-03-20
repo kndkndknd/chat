@@ -1,16 +1,9 @@
 const pcm = require("pcm");
 
-import {
-  streams,
-  cmdList,
-  streamList,
-  parameterList,
-  states,
-  uploadParams,
-} from "../../states";
+import { streamState } from "../../states";
 
 export const pcm2arr = (url) => {
-  let tmpBuff = new Float32Array(states.stream.basisBufferSize);
+  let tmpBuff = new Float32Array(streamState.basisBufferSize);
   let rtnBuff = <Array<Float32Array>>[];
   var i = 0;
   pcm.getPcmData(
@@ -19,9 +12,9 @@ export const pcm2arr = (url) => {
     function (sample, channel) {
       tmpBuff[i] = sample;
       i++;
-      if (i === states.stream.basisBufferSize) {
+      if (i === streamState.basisBufferSize) {
         rtnBuff.push(tmpBuff);
-        tmpBuff = new Float32Array(states.stream.basisBufferSize);
+        tmpBuff = new Float32Array(streamState.basisBufferSize);
         i = 0;
       }
     },

@@ -1,10 +1,11 @@
 import SocketIO from "socket.io";
 import { cmdStateType } from "../../../../types/global";
 import {
-  cmdList,
+  clientState,
+  cmdState,
+  streamState,
   streamList,
   parameterList,
-  states,
   streams,
 } from "../../states";
 import { cmdEmit } from "../cmdEmit";
@@ -46,34 +47,30 @@ import { splitQuantize } from "./splitQuantize";
 import { scheduleSplitCmd } from "../../schedule/scheduleSplitCmd";
 import { getScheduleFromSplitSpace } from "../../schedule/getScheduleFromSplitSpace";
 import { deleteLog } from "../../logging/deleteLog";
+import { getTypeArr } from "./getTypeArr";
+import { splitRandomRate } from "./splitRandomRate";
+import { splitModulation } from "./splitModulation";
+import { splitArduino } from "./splitArduino";
 
 export const splitSpace = async (
   stringArr: Array<string>,
   io: SocketIO.Server,
-  state: cmdStateType,
+  // state: cmdStateType,
   source?: string
 ) => {
-  const arrTypeArr = stringArr.map((string) => {
-    if (/^([1-9]\d*|0)(\.\d+)?$/.test(string)) {
-      return "number";
-    } else if (/^[A-Za-z]*$/.test(string)) {
-      return "string";
-    } else {
-      return "other";
-    }
-  });
+  const arrTypeArr = getTypeArr(stringArr);
   // console.log(arrTypeArr)
   // console.log(stringArr)
 
   if (arrTypeArr[0] === "number") {
-    numTarget(stringArr, arrTypeArr, io, state);
+    numTarget(stringArr, arrTypeArr, io);
     if (stringArr[1] !== "VOICE") {
-      voiceEmit(io, stringArr.slice(1).join(" "), source, state);
+      voiceEmit(io, stringArr.slice(1).join(" "), source);
     }
   } else if (stringArr[0] === "HELP") {
     helpPrint(stringArr.slice(1), io);
   } else if (stringArr[1] === "SOLO") {
-    solo(stringArr, arrTypeArr, state, io);
+    solo(stringArr, arrTypeArr, io);
   } else if (stringArr[0] === "CLEAR") {
     if (stringArr[1] === "BUFFER") {
       for (let stream in streams) {
@@ -98,104 +95,23 @@ export const splitSpace = async (
     }
     // } else if (stringArr[0] === "FADE" && Object.keys(cmdList).includes(stringArr[1])) {
   } else if (stringArr[0] === "FADE") {
-    fadeCmd(stringArr, arrTypeArr, io, state);
-    voiceEmit(io, stringArr.join(" "), source, state);
+    fadeCmd(stringArr, arrTypeArr, io);
+    voiceEmit(io, stringArr.join(" "), source);
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
     // RANDOMのみRATEとSTREAMがあるので個別処理
     if (stringArr[0] === "RANDOM") {
-      if (stringArr[1] === "RATE") {
-        // SAMPLERATEのランダマイズ
-        console.log("random rate");
-        if (stringArr.length === 2) {
-          for (let key in state.stream.randomrate) {
-            state.stream.randomrate[key] = !state.stream.randomrate[key];
-          }
-          // io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM: ' + String(state.stream.randomrate.CHAT), timeout: true})
-          stringEmit(
-            io,
-            "SAMPLERATE RANDOM: " + String(state.stream.randomrate.CHAT)
-            // state
-          );
-        } else if (
-          stringArr.length === 3 &&
-          Object.keys(state.stream.randomrate).includes(stringArr[2])
-        ) {
-          state.stream.randomrate[stringArr[2]] =
-            !state.stream.randomrate[stringArr[2]];
-          //io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(state.stream.randomrate[stringArr[2]]), timeout: true})
-          stringEmit(
-            io,
-            "SAMPLERATE RANDOM(" +
-              stringArr[2] +
-              "): " +
-              String(state.stream.randomrate[stringArr[2]])
-            // state
-          );
-        } else if (stringArr.length === 3 && stringArr[2].includes("-")) {
-          const rateRangeArr = stringArr[2].split("-");
-          // rateRangeArrが2つの数字で構成されているか確認
-          if (
-            rateRangeArr.length === 2 &&
-            rateRangeArr.every((item) => {
-              return !isNaN(Number(item));
-            })
-          ) {
-            if (
-              Number(rateRangeArr[0]) >= 4000 &&
-              Number(rateRangeArr[1]) <= 132300
-            ) {
-              for (let key in state.stream.randomraterange) {
-                state.stream.randomraterange[key].min = Number(rateRangeArr[0]);
-                state.stream.randomraterange[key].max = Number(rateRangeArr[1]);
-              }
-            } else {
-              stringEmit(io, "OUT RATE RANGE: 4000-132300", true);
-            }
-          }
-        } else if (
-          stringArr.length === 4 &&
-          Object.keys(state.stream.randomrate).includes(stringArr[2])
-        ) {
-          const rateRangeArr = stringArr[3].split("-");
-          if (
-            rateRangeArr.length === 2 &&
-            rateRangeArr.every((item) => {
-              return !isNaN(Number(item));
-            })
-          ) {
-            state.stream.randomraterange[stringArr[2]].min = Number(
-              rateRangeArr[0]
-            );
-            state.stream.randomraterange[stringArr[2]].max = Number(
-              rateRangeArr[1]
-            );
-          }
-        } else if (stringArr.length === 3 && stringArr[2] === "NOTE") {
-          for (let key in state.stream.randomratenote) {
-            state.stream.randomratenote[key] =
-              !state.stream.randomratenote[key];
-          }
-          // io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM: ' + String(state.stream.randomrate.CHAT), timeout: true})
-          stringEmit(
-            io,
-            "SAMPLERATE RANDOM(NOTE): " +
-              String(state.stream.randomratenote.CHAT)
-            // state
-          );
-        }
-        console.log(state.stream.randomrate);
-      }
+      splitRandomRate(stringArr, io);
     } else if (stringArr[0] === "VOICE") {
       //  } else if (stringArr[0] === 'VOICE' && stringArr.length === 2 && arrTypeArr[1] === 'string') {
       if (stringArr[1] === "JA" || stringArr[1] === "JP") {
-        state.cmd.voiceLang = "ja-JP";
+        cmdState.voiceLang = "ja-JP";
         stringEmit(io, "VOICE: ja-JP");
       } else if (stringArr[1] === "EN" || stringArr[1] === "US") {
-        state.cmd.voiceLang = "en-US";
+        cmdState.voiceLang = "en-US";
         stringEmit(io, "VOICE: en-US");
       } else {
         const voiceText = stringArr.slice(1).join(" ");
-        voiceEmit(io, voiceText, "all", state);
+        voiceEmit(io, voiceText, "all");
       }
     } else {
       let argVal: number;
@@ -219,31 +135,31 @@ export const splitSpace = async (
           argVal = Number(stringArr[2]);
         }
       }
-      parameterChange(parameterList[stringArr[0]], io, state, {
+      parameterChange(parameterList[stringArr[0]], io, {
         value: argVal,
         property: argProp,
       });
       // stringEmit(io, stringArr[0] + " " + stringArr[1]);
     }
   } else if (stringArr[0] === "ALL") {
-    voiceEmit(io, stringArr.join(" "), source, state);
+    voiceEmit(io, stringArr.join(" "), source);
 
     if (arrTypeArr[1] === "string") {
-      Object.keys(state.client).forEach((target) => {
-        cmdEmit(stringArr[1], io, state, target);
+      Object.keys(clientState.client).forEach((target) => {
+        cmdEmit(stringArr[1], io, target);
       });
     } else if (arrTypeArr[1] === "number") {
-      Object.keys(state.client).forEach((target) => {
-        sinewaveEmit(Number(stringArr[1]), io, state, target);
+      Object.keys(clientState.client).forEach((target) => {
+        sinewaveEmit(Number(stringArr[1]), io, target);
       });
     }
   } else if (stringArr[0] === "STOP") {
-    voiceEmit(io, stringArr.join(" "), source, state);
+    voiceEmit(io, stringArr.join(" "), source);
 
-    splitStop(stringArr, state, io);
+    splitStop(stringArr, io);
     // } else if (stringArr[0] === "FADE") {
   } else if (stringArr[0] === "UPLOAD" && stringArr.length == 2) {
-    voiceEmit(io, stringArr.join(" "), source, state);
+    voiceEmit(io, stringArr.join(" "), source);
 
     // const uploadResult = await uploadStream(stringArr);
     // uploadStream(stringArr, io);
@@ -253,11 +169,11 @@ export const splitSpace = async (
   } else if (
     stringArr[0] === "GAIN" &&
     stringArr.length === 3 &&
-    Object.keys(state.cmd.GAIN).includes(stringArr[1]) &&
+    Object.keys(cmdState.GAIN).includes(stringArr[1]) &&
     arrTypeArr[2] === "number"
   ) {
-    state.cmd.GAIN[stringArr[1]] = Number(stringArr[2]);
-    console.log(state.cmd.GAIN);
+    cmdState.GAIN[stringArr[1]] = Number(stringArr[2]);
+    console.log(cmdState.GAIN);
     stringEmit(io, stringArr[1] + " GAIN: " + stringArr[2]);
     // 動作確認用
 
@@ -292,33 +208,7 @@ export const splitSpace = async (
   } else if (stringArr[0].includes(":")) {
     scheduleSplitCmd(stringArr, source, io);
   } else if (stringArr[0] === "SWITCH" || stringArr[0] === "ARDUINO") {
-    if (stringArr[1] === "TEST") {
-      console.log("switch test");
-      connectTest().then((result) => {
-        console.log(result);
-        states.arduino.connected = result;
-        io.emit("stringsFromServer", {
-          strings: `${stringArr[0]}: ${String(states.arduino.connected)}`,
-          timeout: true,
-        });
-      });
-    } else if (stringArr[1] === "ADDRESS") {
-      if (stringArr.length > 2) {
-        state.arduino.host = stringArr[2];
-      }
-      io.emit("stringsFromServer", {
-        // strings: "SWITCH HOST: " + states.arduino.host,
-        strings: `${stringArr[0]} HOST: ${String(states.arduino.host)}`,
-        timeout: true,
-      });
-    } else if (stringArr[1] === "FALSE") {
-      states.arduino.connected = false;
-      io.emit("stringsFromServer", {
-        // strings: "SWITCH: " + String(states.arduino.connected),
-        strings: `${stringArr[0]}: ${String(states.arduino.connected)}`,
-        timeout: true,
-      });
-    }
+    splitArduino(stringArr, io);
   } else if (
     stringArr[1] === "CHAT" ||
     (streamList.includes(stringArr[1]) && stringArr[0] !== "GET")
@@ -333,16 +223,16 @@ export const splitSpace = async (
     ) {
       console.log("targetArr", targetArr);
       const targetIdArr = targetArr.map((el) => {
-        return Object.keys(state.client)[Number(el)];
+        return Object.keys(clientState.client)[Number(el)];
       });
       console.log("targetIdArr", targetIdArr);
-      state.stream.target[stringArr[1]] = targetIdArr;
-      console.log(state.stream.target);
+      streamState.target[stringArr[1]] = targetIdArr;
+      console.log(streamState.target);
       if (stringArr[1] === "CHAT") {
         console.log("debug");
-        chatPreparation(io, state);
+        chatPreparation(io);
       } else {
-        streamEmit(stringArr[1], io, state);
+        streamEmit(stringArr[1], io);
       }
     }
   } else if (
@@ -350,7 +240,7 @@ export const splitSpace = async (
     stringArr[1] === "AS" &&
     stringArr.length === 3
   ) {
-    recordAsOtherEmit(io, state, stringArr[2]);
+    recordAsOtherEmit(io, stringArr[2]);
   } else if (stringArr[0] === "GET" || stringArr[0] === "YOUTUBE") {
     stringEmit(io, `GETTING ${stringArr.slice(1).join(" ")}...`, true);
     if (stringArr[1] === "LIVESTREAM") {
@@ -383,7 +273,7 @@ export const splitSpace = async (
       }
     }
   } else if (stringArr[0] === "TWITTER" || stringArr[0] === "X") {
-    const result = await getTimeLine(stringArr, io, state);
+    const result = await getTimeLine(stringArr, io);
     if (result) {
       //stringEmit(io, "GET TIMELINE: SUCCESS");
     } else {
@@ -391,14 +281,14 @@ export const splitSpace = async (
     }
   } else if (
     stringArr[0] === "GAIN" &&
-    Object.keys(state.cmd.GAIN).includes(stringArr[1])
+    Object.keys(cmdState.GAIN).includes(stringArr[1])
   ) {
     if (stringArr.length === 3 && arrTypeArr[2] === "number") {
-      state.cmd.GAIN[stringArr[1]] = Number(stringArr[2]);
+      cmdState.GAIN[stringArr[1]] = Number(stringArr[2]);
     }
     stringEmit(
       io,
-      `${stringArr[1]} GAIN: ${String(state.cmd.GAIN[stringArr[1]])}`,
+      `${stringArr[1]} GAIN: ${String(cmdState.GAIN[stringArr[1]])}`,
       true
     );
   } else if (stringArr[0] === "SCENARIO" || stringArr[0] === "START") {
@@ -428,30 +318,19 @@ export const splitSpace = async (
     (stringArr[0] === "BUFFERSIZE" && arrTypeArr[1] === "number")
   ) {
     const input = Number(stringArr[1]);
-    state.stream.basisBufferSize = bufferSizeChange(input);
-    stringEmit(io, `BufferSize: ${state.stream.basisBufferSize}`);
+    streamState.basisBufferSize = bufferSizeChange(input);
+    stringEmit(io, `BufferSize: ${streamState.basisBufferSize}`);
   } else if (
     arrTypeArr[1] === "number" &&
     (stringArr[0] === "MODULATION" || stringArr[0] === "MOD")
   ) {
-    const freqArr =
-      stringArr.length === 3 && arrTypeArr[2] === "number"
-        ? modulationByBPM(
-            Number(stringArr[1]),
-            Number(stringArr[2]),
-            state.cmdClient
-          )
-        : modulationByBPM(
-            Number(stringArr[1]),
-            Object.values(state.bpm).reduce((acc, val) => acc + val, 0) /
-              Object.values(state.bpm).length,
-            state.cmdClient
-          );
-    freqArr.forEach((freq, index) => {
-      sinewaveEmit(freq, io, state, state.cmdClient[index]);
-    });
+    splitModulation(stringArr, arrTypeArr, io);
   } else if (stringArr[0] === "LOG") {
-    if (stringArr[1] === "FILE") {
+    if (
+      stringArr[1] === "FILE" ||
+      stringArr[1] === "PUT" ||
+      stringArr[1] === "EXPORT"
+    ) {
       const result = await putLogFile();
       if (result) {
         stringEmit(io, "LOG: PUT SUCCESS");
@@ -474,12 +353,18 @@ export const splitSpace = async (
       deleteLog();
     }
   } else if (stringArr[0] === "QUANTIZE") {
-    splitQuantize(io, state, stringArr, arrTypeArr);
+    console.log("debug quantize");
+    const quantizeObj = splitQuantize(stringArr, arrTypeArr);
+    if (quantizeObj === "quantize failed") {
+      stringEmit(io, "QUANTIZE: FAILED");
+    } else {
+      io.emit("quantizeFromServer", quantizeObj);
+    }
   } else {
     stringEmit(io, stringArr.join(" "), false);
-    if (state.cmd.VOICE.length > 0) {
+    if (cmdState.VOICE.length > 0) {
       console.log("voiceEmit split space");
-      voiceEmit(io, stringArr.join(" "), "scenario", state);
+      voiceEmit(io, stringArr.join(" "), "scenario");
     }
   }
 };

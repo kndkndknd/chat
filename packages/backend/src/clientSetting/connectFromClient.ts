@@ -1,4 +1,12 @@
-import { states } from "../states";
+// import { cmdSelect } from "../route";
+import {
+  clientState,
+  streamState,
+  arduinoState,
+  bpmState,
+  quantizeState,
+  cmdState,
+} from "../states";
 import { floatingPosition } from "./floatingPosition";
 
 export const connectFromClient = (data, socket, io) => {
@@ -8,10 +16,10 @@ export const connectFromClient = (data, socket, io) => {
   console.log("urlPathName", data.urlPathName);
   if (data.urlPathName.includes("pi")) {
     console.log("aruidino host is " + ipAddress);
-    states.arduino.host = ipAddress;
+    arduinoState.host = ipAddress;
   }
   if (data.clientMode === "client") {
-    if (!states.stream.timelapse) states.stream.timelapse = true;
+    if (!streamState.timelapse) streamState.timelapse = true;
     console.log(
       'socket.on("connectFromClient", (data) => {data:' +
         data +
@@ -19,9 +27,9 @@ export const connectFromClient = (data, socket, io) => {
         sockId +
         "}"
     );
-    if (!Object.keys(states.client).includes(sockId))
+    if (!Object.keys(clientState.client).includes(sockId))
       if (data.urlPathName.includes("project")) {
-        states.client[sockId] = {
+        clientState.client[sockId] = {
           ipAddress,
           stream: true,
           urlPathName: data.urlPathName,
@@ -42,7 +50,7 @@ export const connectFromClient = (data, socket, io) => {
         // };
         const position = floatingPosition(sockId);
 
-        states.client[sockId] = {
+        clientState.client[sockId] = {
           ipAddress,
           stream: true,
           urlPathName: data.urlPathName,
@@ -51,31 +59,31 @@ export const connectFromClient = (data, socket, io) => {
         };
       }
     if (!data.urlPathName.includes("exc")) {
-      if (!Object.keys(states.cmdClient).includes(sockId)) {
-        states.cmdClient.push(sockId);
+      if (!Object.keys(clientState.cmdClient).includes(sockId)) {
+        clientState.cmdClient.push(sockId);
       }
-      if (!Object.keys(states.streamClient).includes(sockId)) {
-        states.streamClient.push(sockId);
+      if (!Object.keys(clientState.streamClient).includes(sockId)) {
+        clientState.streamClient.push(sockId);
       }
     }
 
-    if (!Object.keys(states.bpm).includes(sockId)) {
-      states.bpm[sockId] = 60;
+    if (!Object.keys(bpmState.client).includes(sockId)) {
+      bpmState.client[sockId] = 60;
     }
 
     // METRONOMEは接続時に初期値を作る
-    states.cmd.METRONOME[sockId] = 1000;
+    cmdState.METRONOME[sockId] = 1000;
 
     // QUANTIZE
-    states.stream.quantize.flag.client[sockId] = false;
-    for (let key in states.stream.quantize.bpm) {
-      states.stream.quantize.bpm[key][sockId] = 60;
+    quantizeState.flag.client[sockId] = false;
+    for (let key in quantizeState.bpm) {
+      quantizeState.bpm[key][sockId] = 60;
     }
-    for (let key in states.stream.quantize.beat) {
-      states.stream.quantize.beat[key][sockId] = 0;
+    for (let key in quantizeState.beat) {
+      quantizeState.beat[key][sockId] = 0;
     }
 
-    console.log(states.client);
+    console.log(clientState.client);
     return true;
     // } else if (data.clientMode === "sinewaveClient") {
     //   console.log(sockId + " is sinewaveClient");
@@ -89,11 +97,11 @@ export const connectFromClient = (data, socket, io) => {
     //   });
   } else if (data.clientMode === "noStream") {
     // METRONOMEは接続時に初期値を作る
-    states.cmd.METRONOME[sockId] = 1000;
+    cmdState.METRONOME[sockId] = 1000;
     console.log(sockId + " is noStream Client");
     const position = floatingPosition(sockId);
 
-    states.client[sockId] = {
+    clientState.client[sockId] = {
       ipAddress,
       stream: false,
       urlPathName: data.urlPathName,

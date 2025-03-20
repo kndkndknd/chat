@@ -1,23 +1,25 @@
-import { states } from "../states";
+import { clientState } from "../states";
 
 export const floatingPosition = (
   socketId
 ): { top: number; left: number; width: number; height: number } => {
-  if (states.client[socketId] === undefined) {
+  if (clientState.client[socketId] === undefined) {
     const projectionPosition =
-      Object.keys(states.client).filter((id) => states.client[id].projection)
-        .length > 0
-        ? states.client[
-            Object.keys(states.client).filter(
-              (id) => states.client[id].projection
+      Object.keys(clientState.client).filter(
+        (id) => clientState.client[id].projection
+      ).length > 0
+        ? clientState.client[
+            Object.keys(clientState.client).filter(
+              (id) => clientState.client[id].projection
             )[0]
           ].position
         : { top: 0, left: 0, width: 1920, height: 1080 };
     const sizeRandomize = Math.random();
     const aspect = projectionPosition.height / projectionPosition.width;
     switch (
-      Object.keys(states.client).filter((id) => !states.client[id].projection)
-        .length
+      Object.keys(clientState.client).filter(
+        (id) => !clientState.client[id].projection
+      ).length
     ) {
       case 1:
         const top1 = Math.floor(
@@ -69,6 +71,6 @@ export const floatingPosition = (
         return { top, left, width, height };
     }
   } else {
-    return states.client[socketId].position;
+    return clientState.client[socketId].position;
   }
 };

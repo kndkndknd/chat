@@ -1,23 +1,23 @@
-import { states } from "../states";
+import { sampleRateState } from "../states";
 
 export const sampleRateRandomize = (stream: string) => {
-  const max = states.stream.randomraterange[stream].max;
-  const min = states.stream.randomraterange[stream].min;
-  if (states.stream.randomratemode === "random") {
+  const max = sampleRateState.randomraterange[stream].max;
+  const min = sampleRateState.randomraterange[stream].min;
+  if (sampleRateState.randomratemode === "random") {
     const freq =
-      states.stream.randomraterange[stream].min +
+      sampleRateState.randomraterange[stream].min +
       Math.random() *
-        (states.stream.randomraterange[stream].max -
-          states.stream.randomraterange[stream].min);
+        (sampleRateState.randomraterange[stream].max -
+          sampleRateState.randomraterange[stream].min);
     console.log("sampleRateRandomize: ", freq);
     return freq;
-  } else if (states.stream.randomratemode === "diatonic") {
+  } else if (sampleRateState.randomratemode === "diatonic") {
     const baseFreq = 5512.5;
     const minMultiple = Math.ceil(
-      states.stream.randomraterange[stream].min / baseFreq
+      sampleRateState.randomraterange[stream].min / baseFreq
     );
     const maxMultiple = Math.floor(
-      states.stream.randomraterange[stream].max / baseFreq
+      sampleRateState.randomraterange[stream].max / baseFreq
     );
     if (minMultiple > maxMultiple) {
       throw new Error("minFreq > maxFreq");
@@ -27,7 +27,7 @@ export const sampleRateRandomize = (stream: string) => {
       Math.floor(Math.random() * (maxMultiple - minMultiple + 1)) + minMultiple;
     return baseFreq * randomMultiple;
     // return 5512.5 + Math.floor(Math.random() * 20) * 5512.5;
-  } else if (states.stream.randomratemode === "serial") {
+  } else if (sampleRateState.randomratemode === "serial") {
     const baseFrequency = 5512.5; // 基準となる倍数
     let noteNumber = 1; // 音階の数
 

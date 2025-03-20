@@ -1,5 +1,5 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../../../types/global";
+import { previousState } from "../states";
 import { receiveEnter } from "./receiveEnter";
 import { stopEmit } from "./stopEmit";
 import { metronomeBpmSet } from "./metronomeBpmSet";
@@ -14,12 +14,11 @@ export function charProcess(
   character: string,
   strings: string,
   id: string,
-  io: SocketIO.Server,
-  state: cmdStateType
+  io: SocketIO.Server
 ) {
   //console.log(character)
   if (character === "Enter") {
-    receiveEnter(strings, id, io, state);
+    receiveEnter(strings, id, io);
     resetCmdLogNum();
     strings = "";
   } else if (character === "ArrowUp" || character === "ArrowDown") {
@@ -41,7 +40,7 @@ export function charProcess(
     // const client: 'client' | 'sinewaveClient' = state.sinewaveMode ? "sinewaveClient" : "client";
     // console.log(client)
     cmdLogging("STOP");
-    stopEmit(io, state, id, "ALL");
+    stopEmit(io, id, "ALL");
     strings = "";
   } else if (character === "BASS") {
     cmdLogging("BASS");
@@ -49,22 +48,22 @@ export function charProcess(
       "io.to(" + id + ').emit("cmdFromSever",{"cmd":"BASS","property":"LOW"})'
     );
     io.to(id).emit("cmdFromServer", { cmd: "BASS", property: "LOW" });
-    state.previous.text = "BASS";
+    previousState.text = "BASS";
   } else if (character === "BASSS") {
     console.log(
       "io.to(" + id + ').emit("cmdFromSever",{"cmd":"BASS","property":"HIGH"})'
     );
     io.to(id).emit("cmdFromServer", { cmd: "BASS", property: "HIGH" });
-    state.previous.text = "BASSS";
+    previousState.text = "BASSS";
   } else if (character === "ArrowDown") {
     strings = "";
   } else if (character === "ArrowUp") {
     console.log("up arrow");
-    console.log(state.previous.text);
-    strings = state.previous.text;
+    console.log(previousState.text);
+    strings = previousState.text;
     io.emit("stringFromServer", { strings: strings, timeout: false });
   } else if (character === " " && strings === "") {
-    metronomeBpmSet(io, state, id);
+    metronomeBpmSet(io, id);
   } else if (character === "Shift") {
   } else if (character != undefined) {
     strings = strings + character;

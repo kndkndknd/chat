@@ -1,17 +1,12 @@
 import SocketIO from "socket.io";
-
-import { cmdStateType } from "../../../types/global";
+import { clientState, cmdState } from "../states";
 import { stringEmit } from "../socket/ioEmit";
 // import { putCmd } from './putCmd'
 
 const metronomeArr: number[] = [];
 
-export const metronomeBpmSet = (
-  io: SocketIO.Server,
-  state: cmdStateType,
-  sourceId: string
-) => {
-  if (Object.keys(state.client).includes(sourceId)) {
+export const metronomeBpmSet = (io: SocketIO.Server, sourceId: string) => {
+  if (Object.keys(clientState.client).includes(sourceId)) {
     if (metronomeArr.length === 3) {
       const interval1 = metronomeArr[1] - metronomeArr[0];
       const interval2 = metronomeArr[2] - metronomeArr[1];
@@ -24,10 +19,12 @@ export const metronomeBpmSet = (
       // for (let target in state.cmd.METRONOME) {
       //   state.cmd.METRONOME[target] = latency;
       // }
-      state.cmd.METRONOME[sourceId] = latency;
-      const targetIndex = Object.keys(state.client).map((element, index) => {
-        if (element === sourceId) return index;
-      });
+      cmdState.METRONOME[sourceId] = latency;
+      const targetIndex = Object.keys(clientState.client).map(
+        (element, index) => {
+          if (element === sourceId) return index;
+        }
+      );
 
       stringEmit(
         io,

@@ -1,7 +1,6 @@
 import SocketIO from "socket.io";
 import { cmdStateType } from "../../../types/global";
 import { receiveEnter } from "../cmd/receiveEnter";
-import { states } from "../states";
 
 export const execScenario = async (
   scenario: {
@@ -35,7 +34,7 @@ export const execScenario = async (
     for (let i = 0; i < timetableArr.length; i++) {
       setTimeout(() => {
         console.log("scenario", timetableArr[i].time, timetableArr[i].cmd);
-        receiveEnter(timetableArr[i].cmd, "scenario", io, states);
+        receiveEnter(timetableArr[i].cmd, "scenario", io);
       }, timetableArr[i].time);
     }
   } else if (scenario.format === "absolute") {
@@ -57,7 +56,7 @@ export const execScenario = async (
       if (now.getTime() - execTime.getTime() < 0) {
         setTimeout(() => {
           console.log(scenario[key]);
-          receiveEnter(scenario[key], "all", io, states);
+          receiveEnter(scenario[key], "all", io);
         }, execTime.getTime() - now.getTime());
       }
     }

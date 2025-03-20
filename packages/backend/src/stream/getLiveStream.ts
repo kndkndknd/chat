@@ -4,7 +4,7 @@ import { spawn } from "child_process";
 import axios from "axios";
 const pcm = require("pcm");
 
-import { streams, states, streamApiUrl } from "../states";
+import { streams, streamApiUrl, streamState } from "../states";
 import { putVideoStream } from "./uploadModule/putVideoStream";
 import { pushStateStream } from "./pushStateStream";
 
@@ -15,12 +15,12 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
       streams[streamName] = {
         video: [],
         audio: [],
-        bufferSize: states.stream.basisBufferSize,
+        bufferSize: streamState.basisBufferSize,
         index: 0,
       };
-      pushStateStream(stream, states);
+      pushStateStream(stream);
     }
-    states.stream.random[stream] = true;
+    streamState.random[stream] = true;
 
     let streamData: { dirPath: string; fileName: string; audio: boolean }[];
     if (qWord !== undefined && qWord !== null) {
@@ -61,7 +61,7 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
       }
 
       if (audioInfo) {
-        let tmpBuff = new Float32Array(states.stream.basisBufferSize);
+        let tmpBuff = new Float32Array(streamState.basisBufferSize);
         let buffIndex = 0;
 
         await pcm.getPcmData(
@@ -70,9 +70,9 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
           function (sample, channel) {
             tmpBuff[buffIndex] = sample;
             buffIndex++;
-            if (buffIndex === states.stream.basisBufferSize) {
+            if (buffIndex === streamState.basisBufferSize) {
               streams[streamName].audio.push(tmpBuff);
-              tmpBuff = new Float32Array(states.stream.basisBufferSize);
+              tmpBuff = new Float32Array(streamState.basisBufferSize);
               buffIndex = 0;
             }
           },
@@ -90,8 +90,8 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
         );
       } else {
         for (let j = 0; j < streams[stream].video.length; j++) {
-          const float32Array = new Float32Array(states.stream.basisBufferSize);
-          for (let k = 0; k < states.stream.basisBufferSize; k++) {
+          const float32Array = new Float32Array(streamState.basisBufferSize);
+          for (let k = 0; k < streamState.basisBufferSize; k++) {
             float32Array[k] = 0;
           }
         }

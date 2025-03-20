@@ -1,6 +1,6 @@
 import SocketIO from "socket.io";
 import dotenv from "dotenv";
-import { cmdList, streamList, parameterList, states, streams } from "../states";
+import { cmdList, streamList, parameterList, streams } from "../states";
 // import { stringEmit } from "../socket/ioEmit.js";
 import { pushStateStream } from "../stream/pushStateStream";
 
@@ -89,5 +89,5 @@ const pushStream = (streamArray: Array<streamInterface>) => {
   });
   console.log(streams[type].audio[0]);
   streamList.push(type);
-  pushStateStream(type, states);
+  pushStateStream(type);
 };

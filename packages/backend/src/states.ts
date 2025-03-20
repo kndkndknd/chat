@@ -2,194 +2,229 @@ import {
   StreamsType,
   // cmdLogType,
   cmdStateType,
-  sevenSinsType,
+  streamStateType,
+  sampleRateStateType,
+  glitchStateType,
+  quantizeStateType,
+  // sevenSinsType,
+  clientStateType,
+  currentStateType,
+  previousStateType,
+  webStateType,
+  bpmStateType,
+  flagStateType,
+  arduinoStateType,
+  formStateType,
 } from "../../types/global";
 
 import { LogType } from "../../types/log_schedule";
 
-export const states: cmdStateType = {
-  cmd: {
-    GAIN: {
-      MASTER: 1.0,
-      SINEWAVE: 0.4,
-      FEEDBACK: 1,
-      WHITENOISE: 1.0,
-      CLICK: 0.9,
-      BASS: 1.5,
-      CHAT: 1.5,
-      GLITCH: 2,
-      SIMULATE: 1.0,
-      METRONOME: 0.9,
-    },
-    FADE: {
-      IN: 0,
-      OUT: 0,
-    },
-    SINEWAVE: {},
-    PORTAMENT: 0,
-    VOICE: [],
-    voiceLang: "en-US",
-    METRONOME: {},
+export const cmdState: cmdStateType = {
+  GAIN: {
+    MASTER: 1.0,
+    SINEWAVE: 0.4,
+    FEEDBACK: 1,
+    WHITENOISE: 1.0,
+    CLICK: 0.9,
+    BASS: 1.5,
+    CHAT: 1.5,
+    GLITCH: 2,
+    SIMULATE: 1.0,
+    METRONOME: 0.9,
   },
+  FADE: {
+    IN: 0,
+    OUT: 0,
+  },
+  SINEWAVE: {},
+  PORTAMENT: 0,
+  VOICE: [],
+  voiceLang: "en-US",
+  METRONOME: {},
+};
+
+export const clientState: clientStateType = {
   client: {},
   cmdClient: [],
   streamClient: [],
   sinewaveClient: [],
-  current: {
-    cmd: {
-      FEEDBACK: [],
-      WHITENOISE: [],
-      CLICK: [],
-      BASS: [],
-      METRONOME: [],
-    },
-    sinewave: {},
-    stream: {
-      CHAT: false,
-      PLAYBACK: false,
-      TIMELAPSE: false,
-    },
-    RECORD: false,
+};
+
+export const streamState: streamStateType = {
+  basisBufferSize: 8192,
+  random: {
+    CHAT: false,
+    PLAYBACK: false,
+    TIMELAPSE: false,
   },
-  form: {
-    hls: {
-      knd: "KND",
+  grid: {
+    CHAT: false,
+    PLAYBACK: false,
+    TIMELAPSE: false,
+  },
+  target: {
+    CHAT: [],
+    PLAYBACK: [],
+    TIMELAPSE: [],
+  },
+  latency: {
+    CHAT: 1000,
+    PLAYBACK: 1000,
+    TIMELAPSE: 1000,
+  },
+  loop: false,
+  timelapse: false,
+  floating: false,
+};
+
+export const sampleRateState: sampleRateStateType = {
+  sampleRate: {
+    CHAT: 44100,
+    PLAYBACK: 44100,
+    TIMELAPSE: 44100,
+    EMPTY: 44100,
+  },
+  randomrate: {
+    CHAT: false,
+    PLAYBACK: false,
+    TIMELAPSE: false,
+  },
+  randomratemode: "random",
+  randomratekey: "A",
+  randomraterange: {
+    CHAT: {
+      min: 4300,
+      max: 132300,
     },
-    cmd: {
-      ノイズ: "WHITENOISE",
-      サイン波: "SINEWAVE",
-      クリック: "CLICK",
-      フィードバック: "FEEDBACK",
-      ハウリング: "FEEDBACK",
-      発振: "FEEDBACK",
-      チャット: "CHAT",
-      話: "CHAT",
-      録: "RECORD",
-      再生: "PLAYBACK",
-      振り返: "TIMELAPSE",
-      振返: "TIMELAPSE",
-      前: "PREVIOUS",
-      低音: "BASS",
-      ベース: "BASS",
-      止: "STOP",
-      ストップ: "STOP",
-      停止: "STOP",
+    PLAYBACK: {
+      min: 4300,
+      max: 132300,
+    },
+    TIMELAPSE: {
+      min: 4300,
+      max: 132300,
     },
   },
-  hls: [],
-  previous: {
-    text: "",
-    cmd: {
-      FEEDBACK: [],
-      WHITENOISE: [],
-      CLICK: [],
-      BASS: [],
-      METRONOME: [],
-    },
-    sinewave: {},
-    stream: {
-      CHAT: false,
-      PLAYBACK: false,
-      TIMELAPSE: false,
-    },
-    RECORD: false,
+  randomratenote: {
+    CHAT: false,
+    PLAYBACK: false,
+    TIMELAPSE: false,
   },
+};
+
+export const glitchState: glitchStateType = {
+  glitch: {
+    CHAT: false,
+    PLAYBACK: false,
+    TIMELAPSE: false,
+  },
+  glitchSampleRate: 96000,
+};
+
+export const quantizeState: quantizeStateType = {
+  flag: {
+    client: {},
+    stream: {},
+  },
+  bpm: {
+    CHAT: {},
+    PLAYBACK: {},
+    TIMELAPSE: {},
+  },
+  beat: {
+    CHAT: {},
+    PLAYBACK: {},
+    TIMELAPSE: {},
+  },
+};
+
+export const currentState: currentStateType = {
+  cmd: {
+    FEEDBACK: [],
+    WHITENOISE: [],
+    CLICK: [],
+    BASS: [],
+    METRONOME: [],
+  },
+  sinewave: {},
   stream: {
-    basisBufferSize: 8192,
-    sampleRate: {
-      CHAT: 44100,
-      PLAYBACK: 44100,
-      TIMELAPSE: 44100,
-      EMPTY: 44100,
-    },
-    random: {
-      CHAT: false,
-      PLAYBACK: false,
-      TIMELAPSE: false,
-    },
-    grid: {
-      CHAT: false,
-      PLAYBACK: false,
-      TIMELAPSE: false,
-    },
-    glitch: {
-      CHAT: false,
-      PLAYBACK: false,
-      TIMELAPSE: false,
-    },
-    target: {
-      CHAT: [],
-      PLAYBACK: [],
-      TIMELAPSE: [],
-    },
-    glitchSampleRate: 96000,
-    latency: {
-      CHAT: 1000,
-      PLAYBACK: 1000,
-      TIMELAPSE: 1000,
-    },
-    randomrate: {
-      CHAT: false,
-      PLAYBACK: false,
-      TIMELAPSE: false,
-    },
-    randomratemode: "random",
-    randomratekey: "A",
-    randomraterange: {
-      CHAT: {
-        min: 4300,
-        max: 132300,
-      },
-      PLAYBACK: {
-        min: 4300,
-        max: 132300,
-      },
-      TIMELAPSE: {
-        min: 4300,
-        max: 132300,
-      },
-    },
-    randomratenote: {
-      CHAT: false,
-      PLAYBACK: false,
-      TIMELAPSE: false,
-    },
-    quantize: {
-      flag: {
-        client: {},
-        stream: {},
-      },
-      bpm: {
-        CHAT: {},
-        PLAYBACK: {},
-        TIMELAPSE: {},
-      },
-      beat: {
-        CHAT: {},
-        PLAYBACK: {},
-        TIMELAPSE: {},
-      },
-    },
-    loop: false,
-    timelapse: false,
-    floating: false,
+    CHAT: false,
+    PLAYBACK: false,
+    TIMELAPSE: false,
   },
-  web: {
-    flag: false,
-    type: "websocket",
-    url: "ws://chat.knd.cloud/ws/",
+  RECORD: false,
+};
+
+export const previousState: previousStateType = {
+  text: "",
+  cmd: {
+    FEEDBACK: [],
+    WHITENOISE: [],
+    CLICK: [],
+    BASS: [],
+    METRONOME: [],
   },
-  bpm: {},
+  sinewave: {},
+  stream: {
+    CHAT: false,
+    PLAYBACK: false,
+    TIMELAPSE: false,
+  },
+  RECORD: false,
+};
+
+export const webState: webStateType = {
+  flag: false,
+  type: "websocket",
+  url: "ws://chat.knd.cloud/ws/",
+};
+
+export const bpmState: bpmStateType = {
+  client: {},
+  stream: {},
+  METRONOME: 60,
+  MODULATION: 1,
+};
+
+export const flagState: flagStateType = {
   clockMode: false,
-  arduino: {
-    host: "localhost",
-    port: 5050,
-    connected: false,
-    relay: "off",
-  },
   emoji: false,
   timer: true,
 };
+export const arduinoState: arduinoStateType = {
+  host: "localhost",
+  port: 5050,
+  connected: false,
+  relay: "off",
+};
+
+export const formState: formStateType = {
+  hls: {
+    knd: "KND",
+  },
+  cmd: {
+    ノイズ: "WHITENOISE",
+    サイン波: "SINEWAVE",
+    クリック: "CLICK",
+    フィードバック: "FEEDBACK",
+    ハウリング: "FEEDBACK",
+    発振: "FEEDBACK",
+    チャット: "CHAT",
+    話: "CHAT",
+    録: "RECORD",
+    再生: "PLAYBACK",
+    振り返: "TIMELAPSE",
+    振返: "TIMELAPSE",
+    前: "PREVIOUS",
+    低音: "BASS",
+    ベース: "BASS",
+    止: "STOP",
+    ストップ: "STOP",
+    停止: "STOP",
+  },
+};
+
+export const hlsState: string[] = [];
 
 export const chats = [];
 
@@ -197,22 +232,22 @@ export const oneshots = {
   KICK: {
     audio: [],
     video: [],
-    bufferSize: states.stream.basisBufferSize,
+    bufferSize: streamState.basisBufferSize,
   },
   SNARE: {
     audio: [],
     video: [],
-    bufferSize: states.stream.basisBufferSize,
+    bufferSize: streamState.basisBufferSize,
   },
   HAT: {
     audio: [],
     video: [],
-    bufferSize: states.stream.basisBufferSize,
+    bufferSize: streamState.basisBufferSize,
   },
   SILENCE: {
     audio: [],
     video: [],
-    bufferSize: states.stream.basisBufferSize,
+    bufferSize: streamState.basisBufferSize,
   },
 };
 
@@ -221,25 +256,25 @@ export const streams: StreamsType = {
     audio: [],
     video: [],
     index: 0,
-    bufferSize: states.stream.basisBufferSize,
+    bufferSize: streamState.basisBufferSize,
   },
   TIMELAPSE: {
     audio: [],
     video: [],
     index: 0,
-    bufferSize: states.stream.basisBufferSize,
+    bufferSize: streamState.basisBufferSize,
   },
   INTERNET: {
     audio: [],
     video: [],
     index: 0,
-    bufferSize: states.stream.basisBufferSize,
+    bufferSize: streamState.basisBufferSize,
   },
   EMPTY: {
     audio: [],
     video: [],
     index: 0,
-    bufferSize: states.stream.basisBufferSize,
+    bufferSize: streamState.basisBufferSize,
   },
 };
 

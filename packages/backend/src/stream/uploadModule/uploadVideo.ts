@@ -2,7 +2,7 @@ import * as fs from "fs";
 // import { execa } from "execa";
 import { spawn } from "child_process";
 
-import { streams, states } from "../../states";
+import { streams, streamState } from "../../states";
 
 import { promiseGetPcmData } from "./getPcmData";
 import { promiseGetImageData } from "./getImageData";
@@ -21,14 +21,14 @@ import { get } from "http";
 // var execPromise = util.promisify(exec);
 
 export const uploadVideo = async (f: string, durationArr, mediaDirPath) => {
-  let tmpBuff = new Float32Array(states.stream.basisBufferSize);
+  let tmpBuff = new Float32Array(streamState.basisBufferSize);
   let rtnBuff = [];
   let i = 0;
   const fSplit = f.split(".");
   const fName = fSplit[0];
 
   try {
-    await pushStateStream(fName, states);
+    await pushStateStream(fName);
 
     await durationArr.forEach(async (duration) => {
       const getPcmOption = {

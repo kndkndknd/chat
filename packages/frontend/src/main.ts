@@ -28,7 +28,6 @@ import {
   gainChange,
   quantize,
   stopQuantize,
-  initQuantizePlay,
   streamPlay,
   quantizePlay,
 } from "./webaudio";
@@ -207,7 +206,6 @@ socket.on(
       };
       // data.source = "CHAT";
       frontState.streamChunk.CHAT = chunk;
-      // initQuantizePlay(chunk, socket.id);
     } else {
       if (data.floating === undefined || !data.floating) {
         streamPlay("CHAT", socket.id, data);
@@ -241,7 +239,6 @@ socket.on(
         frontState.quantize.stream === data.source)
     ) {
       frontState.streamChunk[data.source] = data;
-      initQuantizePlay(data, socket.id);
     } else {
       if (data.floating === undefined || !data.floating) {
         streamPlay("STREAM", socket.id, data, cinemaFlag);

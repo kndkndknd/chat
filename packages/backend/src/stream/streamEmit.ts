@@ -1,6 +1,13 @@
 import SocketIO from "socket.io";
-import { cmdStateType, buffStateType } from "../../../types/global";
-import { streams, states } from "../states";
+import { buffStateType } from "../../../types/global";
+import {
+  streams,
+  currentState,
+  streamState,
+  glitchState,
+  sampleRateState,
+  clientState,
+} from "../states";
 import { pickupStreamTarget } from "./pickupStreamTarget";
 import { switchCramp } from "../arduinoAccess/arduinoAccess";
 import { glitchStream } from "./glitchStream";
@@ -9,32 +16,31 @@ import { sampleRateRandomize } from "./sampleRateRandomize";
 export const streamEmit = async (
   source: string,
   io: SocketIO.Server,
-  state: cmdStateType,
   from?: string
 ) => {
   // if(streams[source].length > 0) {
-  state.current.stream[source] = true;
+  currentState.stream[source] = true;
   // console.log(state.client);
   // console.log(source);
-  console.log(`debug ${source} targetArr`, state.stream.target[source]);
+  console.log(`debug ${source} targetArr`, streamState.target[source]);
   const targetId =
     from === undefined
-      ? pickupStreamTarget(state, source)
-      : pickupStreamTarget(state, source, from);
+      ? pickupStreamTarget(source)
+      : pickupStreamTarget(source, from);
   // const targetId =
   //   state.client[Math.floor(Math.random() * state.client.length)];
   let buff: buffStateType;
   if (source === "EMPTY") {
-    let audioBuff = new Float32Array(states.stream.basisBufferSize);
-    for (let i = 0; i < states.stream.basisBufferSize; i++) {
+    let audioBuff = new Float32Array(streamState.basisBufferSize);
+    for (let i = 0; i < streamState.basisBufferSize; i++) {
       audioBuff[i] = 1.0;
     }
     buff = {
       source: source,
-      bufferSize: states.stream.basisBufferSize,
+      bufferSize: streamState.basisBufferSize,
       audio: audioBuff,
       video: streams[source].video.shift(),
-      duration: states.stream.basisBufferSize / 44100,
+      duration: streamState.basisBufferSize / 44100,
     };
     /*
     } else if(source === 'TIMELAPSE') {
@@ -53,7 +59,7 @@ export const streamEmit = async (
     console.log("audio length:", streams[source].audio.length);
     console.log("video length:", streams[source].audio.length);
     if (streams[source].audio.length > 0 || streams[source].video.length > 0) {
-      if (!state.stream.random[source]) {
+      if (!streamState.random[source]) {
         buff = {
           source: source,
           bufferSize: streams[source].bufferSize,
@@ -107,38 +113,39 @@ export const streamEmit = async (
   if (buff) {
     const stream = {
       source: source,
-      sampleRate: state.stream.glitch[source]
-        ? state.stream.glitchSampleRate
-        : state.stream.sampleRate[source], // glicthがtrueならサンプルレートを切替
-      glitch: state.stream.glitch[source] ? state.stream.glitch[source] : false,
+      sampleRate: glitchState.glitch[source]
+        ? glitchState.glitchSampleRate[source]
+        : sampleRateState.sampleRate[source], // glicthがtrueならサンプルレートを切替
+      glitch: glitchState.glitch[source] ? glitchState.glitch[source] : false,
       ...buff,
     };
-    if (state.stream.glitch[source] && stream.video.length > 0) {
+    if (glitchState.glitch[source] && stream.video.length > 0) {
       stream.video = await glitchStream(stream.video);
     }
 
-    if (state.stream.randomrate[source]) {
+    if (sampleRateState.randomrate[source]) {
       stream.sampleRate =
-        states.stream.randomraterange[source].min +
+        sampleRateState.randomraterange[source].min +
         Math.floor(
           Math.random() *
-            (states.stream.randomraterange[source].max -
-              states.stream.randomraterange[source].min)
+            (sampleRateState.randomraterange[source].max -
+              sampleRateState.randomraterange[source].min)
         );
 
       // stream.sampleRate = sampleRateRandomize(source);
       // console.log("samplerate", stream.sampleRate);
     }
-
+    // console.log("stream", stream);
+    console.log("sampleRateState", sampleRateState);
     if (!stream.video) console.log("not video");
-    if (!state.stream.grid[source]) {
+    if (!streamState.grid[source]) {
       // io.to(targetId).emit("streamFromServer", stream);
       ioEmitStreamFromServer(io, stream, targetId, source);
     } else {
       const timeOutVal =
-        (Math.round(Math.random() * 16) * states.stream.latency[source]) / 4;
+        (Math.round(Math.random() * 16) * streamState.latency[source]) / 4;
       setTimeout(() => {
-        if (state.current.stream[source]) {
+        if (currentState.stream[source]) {
           ioEmitStreamFromServer(io, stream, targetId, source);
         }
       }, timeOutVal);
@@ -158,18 +165,18 @@ const ioEmitStreamFromServer = async (io, stream, targetId, source) => {
 
   if (
     stream.video &&
-    states.stream.floating &&
-    !states.client[targetId].projection
+    streamState.floating &&
+    !clientState.client[targetId].projection
   ) {
     console.log("floating");
     const projectionStream = {
       ...stream,
       floating: true,
-      position: states.client[targetId].position,
+      position: clientState.client[targetId].position,
       target: targetId,
     };
-    const projectionTargetId = Object.keys(states.client).find((key) => {
-      return states.client[key].projection;
+    const projectionTargetId = Object.keys(clientState.client).find((key) => {
+      return clientState.client[key].projection;
     });
     io.to(projectionTargetId).emit("streamFromServer", projectionStream);
   }

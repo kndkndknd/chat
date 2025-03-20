@@ -10,7 +10,7 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@types/sharp": "0.32.0",
+    "@types/sharp": "0.31.1",
     "dotenv": "16.3.1"
   },
   "dependencies": {

@@ -1,9 +1,9 @@
 import SocketIO from "socket.io";
-import { states } from "../../states";
+import { clientState, hlsState } from "../../states";
 
 export const playHLS = (file: string, io: SocketIO.Server) => {
-  const notPlayClient = Object.keys(states.client).filter((key) => {
-    return !states.hls.includes(key);
+  const notPlayClient = Object.keys(clientState.client).filter((key) => {
+    return !hlsState.includes(key);
   });
   const cmd: {
     cmd: string;
@@ -26,10 +26,10 @@ export const playHLS = (file: string, io: SocketIO.Server) => {
   if (notPlayClient.length > 0) {
     const target = notPlayClient[(Math.random() * notPlayClient.length) | 0];
     io.to(target).emit("cmdFromServer", cmd);
-    states.hls.push(target);
-  } else if (Object.keys(states.client).length > 0) {
-    const target = Object.keys(states.client)[
-      (Math.random() * Object.keys(states.client).length) | 0
+    hlsState.push(target);
+  } else if (Object.keys(clientState.client).length > 0) {
+    const target = Object.keys(clientState.client)[
+      (Math.random() * Object.keys(clientState.client).length) | 0
     ];
     io.to(target).emit("cmdFromServer", cmd);
   }

@@ -1,11 +1,9 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../../../types/global";
 import { execSchedule } from "./execSchedule";
 
 // exec 'HH:MM:SS cmd' or 'MM:SS cmd' from splitSpace.ts
 export const splitTimerCmd = (
   io: SocketIO.Server,
-  state: cmdStateType,
   stringArr: string[],
   timeStampArr: string[]
 ) => {

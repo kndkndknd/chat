@@ -1,20 +1,15 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../../../types/global";
+import { cmdState } from "../states";
 
-export const voiceEmit = (
-  io: SocketIO.Server,
-  strings: string,
-  id: string,
-  state: cmdStateType
-) => {
+export const voiceEmit = (io: SocketIO.Server, strings: string, id: string) => {
   console.log("id", id);
-  console.log("VOICE", state.cmd.VOICE);
-  if (state.cmd.VOICE.length > 0) {
-    state.cmd.VOICE.forEach((element) => {
+  console.log("VOICE", cmdState.VOICE);
+  if (cmdState.VOICE.length > 0) {
+    cmdState.VOICE.forEach((element) => {
       if (element === id || id === "all" || id === "ALL" || id === "scenario") {
         io.to(element).emit("voiceFromServer", {
           text: strings,
-          lang: state.cmd.voiceLang,
+          lang: cmdState.voiceLang,
         });
       } else {
         console.log("not voice id");

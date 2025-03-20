@@ -2,7 +2,7 @@ import { spawn } from "child_process";
 
 // https://github.com/jhurliman/node-pcmを自分のに合わせて作成
 
-import { streams, states } from "../../states";
+import { streamState } from "../../states";
 
 export const promiseGetPcmData = (
   filePath: string,
@@ -235,10 +235,6 @@ export const awaitGetBitCracshedData = async (
     sampleRate = options.sampleRate;
   if (typeof options.ffmpegPath !== "undefined")
     ffmpegPath = options.ffmpegPath;
-
-  let tmpBuff = new Float32Array(states.stream.basisBufferSize);
-  let buffIndex = 0;
-  let chunkIndex = 0;
 
   const ffmpegOption = [
     "-i",

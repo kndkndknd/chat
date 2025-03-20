@@ -1,16 +1,16 @@
 import { time } from "console";
-import { states } from "../states";
+import { arduinoState, sampleRateState, streamState } from "../states";
 import axios from "axios";
 import { stat } from "fs";
 
-const requestHost = "http://localhost:" + states.arduino.port;
+const requestHost = "http://localhost:" + arduinoState.port;
 
 export const connectTest = async () => {
   const requestUrl = `${requestHost}/test`;
   console.log(requestUrl);
   /*
   const response = await fetch(
-    `http://${states.arduino.host}:${states.arduino.port}/test`
+    `http://${arduinoState.host}:${arduinoState.port}/test`
   );
   */
   try {
@@ -32,13 +32,13 @@ export const connectTest = async () => {
 
 export const switchCtrl = async () => {
   console.log("switchCtrl");
-  let relay: "on" | "off" = states.arduino.relay === "on" ? "off" : "on";
+  let relay: "on" | "off" = arduinoState.relay === "on" ? "off" : "on";
   const requestUrl = `${requestHost}/${relay}`;
   console.log(requestUrl);
   try {
     const response = await fetch(requestUrl);
     const data = await response.json();
-    states.arduino.relay = data.success ? relay : states.arduino.relay;
+    arduinoState.relay = data.success ? relay : arduinoState.relay;
     console.log(data.success);
     return data.success;
   } catch (e) {
@@ -48,10 +48,10 @@ export const switchCtrl = async () => {
 };
 
 export const switchCramp = async (source) => {
-  // const freq = 1000 / (20 * (states.stream.sampleRate[source] / 44100));
-  const freq = states.stream.sampleRate[source] / 1000;
+  // const freq = 1000 / (20 * (sampleRateState.sampleRate[source] / 44100));
+  const freq = sampleRateState.sampleRate[source] / 1000;
   const timeout =
-    (1000 * states.stream.basisBufferSize) / states.stream.sampleRate[source];
+    (1000 * streamState.basisBufferSize) / sampleRateState.sampleRate[source];
   const params = { freq: freq, timeout: timeout };
   console.log("interval:", 1 / freq);
   console.log(params);

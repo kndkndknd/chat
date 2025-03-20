@@ -1,6 +1,16 @@
 import SocketIO from "socket.io";
-import { cmdStateType, buffStateType } from "../../../types/global";
-import { chats, streams, states } from "../states";
+import { buffStateType } from "../../../types/global";
+import {
+  chats,
+  streams,
+  clientState,
+  streamState,
+  glitchState,
+  sampleRateState,
+  currentState,
+  cmdState,
+  arduinoState,
+} from "../states";
 import { glitchStream } from "./glitchStream";
 import { pushStateStream } from "./pushStateStream";
 // import { pickupTarget } from "../route";
@@ -64,13 +74,13 @@ export const chatReceive = async (
           streams[buffer.source] = {
             audio: [],
             video: [],
-            bufferSize: states.stream.basisBufferSize,
+            bufferSize: streamState.basisBufferSize,
             index: 0,
           };
         }
         streams[buffer.source].audio.push(buffer.audio);
         streams[buffer.source].video.push(buffer.video);
-        pushStateStream(buffer.source, states);
+        pushStateStream(buffer.source);
     }
   } else {
     chatEmit(io);
@@ -78,27 +88,27 @@ export const chatReceive = async (
 };
 
 export const chatEmit = async (io, from?) => {
-  if (states.current.stream.CHAT) {
+  if (currentState.stream.CHAT) {
     // console.log(states.client);
     // console.log(io.sockets.adapter.rooms);
     // console.log(io.sockets.adapter.rooms.size);
     // console.log(io.sockets.adapter.rooms.get(buffer.from));
     const targetId =
       from !== undefined
-        ? pickupStreamTarget(states, "CHAT", from)
-        : pickupStreamTarget(states, "CHAT");
+        ? pickupStreamTarget("CHAT", from)
+        : pickupStreamTarget("CHAT");
     // const targetId =
     //   states.client[Math.floor(Math.random() * states.client.length)];
     // console.log("chatReceive targetId: ", targetId);
     // if (targetId !== "arduino") {
     if (chats.length > 0) {
       const chunk = {
-        sampleRate: states.stream.sampleRate.CHAT,
-        glitch: states.stream.glitch.CHAT,
+        sampleRate: sampleRateState.sampleRate.CHAT,
+        glitch: glitchState.glitch.CHAT,
         ...chats.shift(),
       };
-      if (states.stream.randomrate.CHAT) {
-        if (states.stream.randomratenote.CHAT) {
+      if (sampleRateState.randomrate.CHAT) {
+        if (sampleRateState.randomratenote.CHAT) {
           chunk.sampleRate = 11025 + Math.floor(Math.random() * 10) * 11025;
         } else {
           chunk.sampleRate = sampleRateRandomize("CHAT");
@@ -113,25 +123,24 @@ export const chatEmit = async (io, from?) => {
         // chunk.sampleRate = sampleRateRandomize("CHAT");
         //          console.log(chunk.sampleRate)
       }
-      if (states.stream.glitch.CHAT && chunk.video) {
+      if (glitchState.glitch.CHAT && chunk.video) {
         chunk.video = await glitchStream(chunk.video);
         // console.log("glitch", chunk.video.slice(0, 50));
       }
-      if (!states.stream.grid.CHAT) {
+      if (!streamState.grid.CHAT) {
         // io.to(targetId).emit("chatFromServer", chunk);
         ioEmitChatFromServer(io, chunk, targetId);
       } else {
-        const timeOutVal = Object.keys(states.cmd.METRONOME).includes(targetId)
-          ? (Math.round(Math.random() * 16) * states.cmd.METRONOME[targetId]) /
-            4
-          : (Math.round(Math.random() * 16) * states.stream.latency.CHAT) / 4;
+        const timeOutVal = Object.keys(cmdState.METRONOME).includes(targetId)
+          ? (Math.round(Math.random() * 16) * cmdState.METRONOME[targetId]) / 4
+          : (Math.round(Math.random() * 16) * streamState.latency.CHAT) / 4;
 
         // const timeOutVal =
         //   (Math.round(Math.random() * 16) * states.stream.latency.CHAT) / 4;
         setTimeout(() => {
           // io.to(targetId).emit("chatFromServer", chunk);
           // console.log("grid setTimeout");
-          if (states.stream.grid.CHAT) {
+          if (streamState.grid.CHAT) {
             // console.log("grid emit");
             ioEmitChatFromServer(io, chunk, targetId);
           }
@@ -174,24 +183,24 @@ const ioEmitChatFromServer = async (io, chunk, targetId) => {
   // console.log("targetId", targetId);
   // console.log("machine", states.client[targetId]);
 
-  if (states.stream.floating && !states.client[targetId].projection) {
+  if (streamState.floating && !clientState.client[targetId].projection) {
     // console.log("floating");
     const projectionChunk = {
       ...chunk,
       floating: true,
-      position: states.client[targetId].position,
+      position: clientState.client[targetId].position,
       target: targetId,
     };
-    const projectionTargetId = Object.keys(states.client).find((key) => {
-      return states.client[key].projection;
+    const projectionTargetId = Object.keys(clientState.client).find((key) => {
+      return clientState.client[key].projection;
     });
     io.to(projectionTargetId).emit("chatFromServer", projectionChunk);
   }
 
   if (
-    states.client[targetId] !== undefined &&
-    states.client[targetId].urlPathName.includes("pi") &&
-    states.arduino.connected
+    clientState.client[targetId] !== undefined &&
+    clientState.client[targetId].urlPathName.includes("pi") &&
+    arduinoState.connected
   ) {
     const result = await switchCramp("CHAT");
     console.log("switchCramp", result);

@@ -257,6 +257,7 @@ export const playAudioStream = (
   // console.log(sampleRate);
   // console.log(bufferSize);
   // console.log(bufferArray);
+
   let audio_src = audioContext.createBufferSource();
   const flo32arr = new Float32Array(bufferArray);
   let audioData = new Float32Array(bufferSize);
@@ -596,6 +597,7 @@ let eighthNoteSec: number = 0;
 export const quantize = (bar: number, beat?: number, stream?: string) => {
   console.log("bar", bar);
   console.log("streamFlag: ", frontState.streamFlag);
+  console.log("quantize stream: ", frontState.quantize.stream);
   // frontState.quantize.flag = true;
   // frontState.quantize.bar = bar;
   // frontState.quantize.beat =
@@ -643,52 +645,6 @@ export const stopQuantize = () => {
   frontState.quantize.bar = 0;
   console.log("frontState.quantize", frontState.quantize);
   // quantizerCurrentTime = 0;
-};
-
-export const initQuantizePlay = (
-  data: {
-    source: string;
-    audio: Float32Array;
-    video?: string;
-    sampleRate: number;
-    glitch: boolean;
-    bufferSize: number;
-    duration?: number;
-    floating?: boolean;
-    position?: { top: number; left: number; width: number; height: number };
-    target?: string;
-  },
-  id
-) => {
-  const currentTime = audioContext.currentTime;
-  const currentTimeDiff = currentTime - frontState.quantize.currentTime;
-  const beat =
-    frontState.quantize.beat === 0
-      ? Math.pow(2, Math.floor(Math.random() * 5))
-      : frontState.quantize.beat;
-
-  // console.log("currentTimeDiff", currentTimeDiff);
-  let i = 1;
-  while (true) {
-    const note = (frontState.quantize.bar / beat) * i;
-    if (
-      note > currentTimeDiff &&
-      note + currentTime <
-        frontState.quantize.currentTime + frontState.quantize.bar
-    ) {
-      setTimeout(() => {
-        // streamPlay(data.source === "CHAT" ? "CHAT" : "STREAM", id, data);
-        console.log("streamPlay, debug initQuantizePlay");
-        if (data.source === "CHAT") {
-          chatReq(String(id));
-        } else {
-          socket.emit("streamReqFromClient", data.source);
-        }
-      }, note - currentTimeDiff * 1000);
-      break;
-    }
-    i++;
-  }
 };
 
 export const quantizePlay = (
@@ -779,7 +735,8 @@ export const streamPlay = (
   // if (!frontState.quantize.flag) {
   // console.log("chatFromServer");
   // console.log("socket.id(socket.on): " + String(socket.id));
-  // console.log(data.audio);
+  // console.log(stream.audio);
+
   playAudioStream(
     stream.audio,
     stream.sampleRate,

@@ -1,15 +1,15 @@
 // import {cmdStateType} from '../../types/global'
-import { states } from "../../states";
+import { formState } from "../../states";
 import { receiveEnter } from "../receiveEnter";
 import SocketIO from "socket.io";
 import { playHLS } from "../../stream/hls/playHls";
 
 export const enterFromForm = (string: string, io: SocketIO.Server) => {
-  const cmdArr = Object.keys(states.form.cmd).filter((key) => {
+  const cmdArr = Object.keys(formState.cmd).filter((key) => {
     return string.includes(key);
   });
 
-  const hlsArr = Object.keys(states.form.hls).filter((key) => {
+  const hlsArr = Object.keys(formState.hls).filter((key) => {
     return string.includes(key);
   });
 
@@ -17,17 +17,17 @@ export const enterFromForm = (string: string, io: SocketIO.Server) => {
   console.log("hlsArr", hlsArr);
   if (cmdArr.length > 0) {
     cmdArr.forEach((cmd) => {
-      receiveEnter(states.form.cmd[cmd], "form", io, states);
+      receiveEnter(formState.cmd[cmd], "form", io);
     });
     if (hlsArr.length > 0) {
       hlsArr.forEach((hls) => {
-        playHLS(states.form.hls[hls], io);
+        playHLS(formState.hls[hls], io);
       });
     }
   } else {
     if (hlsArr.length > 0) {
       hlsArr.forEach((hls) => {
-        playHLS(states.form.hls[hls], io);
+        playHLS(formState.hls[hls], io);
       });
     } else {
       return false;

@@ -1,19 +1,13 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../../../types/global";
 import { pickupStreamTarget } from "./pickupStreamTarget";
-import { switchCramp } from "../arduinoAccess/arduinoAccess";
-import { time } from "console";
-import { chatEmit } from "./chatReceive";
+import { currentState } from "../states";
 
-export const chatPreparation = async (
-  io: SocketIO.Server,
-  state: cmdStateType
-) => {
-  console.log(state.current.stream.CHAT);
-  if (!state.current.stream.CHAT) {
+export const chatPreparation = async (io: SocketIO.Server) => {
+  console.log(currentState.stream.CHAT);
+  if (!currentState.stream.CHAT) {
     // console.log(state.client);
-    state.current.stream.CHAT = true;
-    const targetId = pickupStreamTarget(state, "CHAT");
+    currentState.stream.CHAT = true;
+    const targetId = pickupStreamTarget("CHAT");
     console.log(targetId);
     // if (targetId !== "arduino") {
     io.to(targetId).emit("chatReqFromServer");
@@ -33,7 +27,7 @@ export const chatPreparation = async (
     //   }
     // }
   } else {
-    state.current.stream.CHAT = false;
+    currentState.stream.CHAT = false;
   }
 };
 

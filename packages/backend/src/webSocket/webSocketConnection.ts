@@ -5,7 +5,6 @@ import SocketIO from "socket.io";
 import dotenv from "dotenv";
 dotenv.config();
 
-import { states } from "../states";
 import { receiveEnter } from "../cmd/receiveEnter";
 
 const serverUrl = "https://" + process.env.WEB_HOST;
@@ -34,16 +33,16 @@ function connectWebSocket(url: string, io: SocketIO.Server) {
     if (data.type === "char") {
       console.log(data);
     } else if (data.type === "cmd") {
-      receiveEnter(data.cmd, "", io, states);
+      receiveEnter(data.cmd, "", io);
       console.log("cmd", data.cmd);
     } else if (data.type === "sinewave") {
-      receiveEnter(data.frequency, "", io, states);
+      receiveEnter(data.frequency, "", io);
       console.log("sinewave", data.frequency);
     } else if (data.type === "stop") {
-      receiveEnter("STOP", "", io, states);
+      receiveEnter("STOP", "", io);
       console.log("stop", data);
     } else if (data.type === "chat") {
-      receiveEnter("CHAT", "", io, states);
+      receiveEnter("CHAT", "", io);
       console.log("CHAT", data);
     }
   });

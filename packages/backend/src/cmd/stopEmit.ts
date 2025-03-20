@@ -1,10 +1,15 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../../../types/global";
 import { voiceEmit } from "./voiceEmit";
+import {
+  clientState,
+  cmdState,
+  streamState,
+  currentState,
+  previousState,
+} from "../states";
 
 export const stopEmit = (
   io: SocketIO.Server,
-  state: cmdStateType,
   source: string,
   target?: "ALL" | "STREAM" | "CMD" | "ExceptHls",
   client?: string
@@ -27,58 +32,58 @@ export const stopEmit = (
   //   });
   // }
   if (source !== undefined && source !== "") {
-    voiceEmit(io, "STOP", source, state);
+    voiceEmit(io, "STOP", source);
   }
 
   // stop cmd / sinewave
   if (client === undefined) {
     // current -> previous && current -> stop
-    Object.keys(state.client).forEach((element) => {
+    Object.keys(clientState.client).forEach((element) => {
       io.to(element).emit("stopFromServer", {
         target: target === undefined ? "ALL" : target,
-        fadeOutVal: state.cmd.FADE.OUT,
+        fadeOutVal: cmdState.FADE.OUT,
       });
     });
-    for (let cmd in state.current.cmd) {
-      state.previous.cmd[cmd] = state.current.cmd[cmd];
-      state.current.cmd[cmd] = [];
+    for (let cmd in currentState.cmd) {
+      previousState.cmd[cmd] = currentState.cmd[cmd];
+      currentState.cmd[cmd] = [];
     }
-    state.previous.sinewave = state.current.sinewave;
-    state.current.sinewave = {};
+    previousState.sinewave = currentState.sinewave;
+    currentState.sinewave = {};
     if (target !== "ExceptHls") {
-      state.hls = [];
+      // state.hls = [];
     }
     // state.hls = [];
-  } else if (Object.keys(state.client).includes(client)) {
+  } else if (Object.keys(clientState.client).includes(client)) {
     io.to(client).emit("stopFromServer", {
       target: target === undefined ? "ALL" : target,
-      fadeOutVal: state.cmd.FADE.OUT,
+      fadeOutVal: cmdState.FADE.OUT,
     });
-    for (let cmd in state.current.cmd) {
-      if (state.current.cmd[cmd].includes(client)) {
-        state.previous.cmd[cmd] = state.current.cmd[cmd];
-        state.current.cmd[cmd] = state.current.cmd[cmd].filter(
+    for (let cmd in currentState.cmd) {
+      if (currentState.cmd[cmd].includes(client)) {
+        previousState.cmd[cmd] = currentState.cmd[cmd];
+        currentState.cmd[cmd] = currentState.cmd[cmd].filter(
           (element) => element !== client
         );
       }
     }
-    if (state.current.sinewave[client] !== undefined) {
-      state.previous.sinewave[client] = state.current.sinewave[client];
-      delete state.current.sinewave[client];
+    if (currentState.sinewave[client] !== undefined) {
+      previousState.sinewave[client] = currentState.sinewave[client];
+      delete currentState.sinewave[client];
     }
-    if (target !== "ExceptHls") {
-      state.hls = state.hls.filter((element) => element !== client);
-    }
+    // if (target !== "ExceptHls") {
+    //   state.hls = state.hls.filter((element) => element !== client);
+    // }
     // state.hls = state.hls.filter((element) => element !== client);
   }
 
   // stop stream
-  for (let stream in state.current.stream) {
-    state.previous.stream[stream] = state.current.stream[stream];
-    state.current.stream[stream] = false;
+  for (let stream in currentState.stream) {
+    previousState.stream[stream] = currentState.stream[stream];
+    currentState.stream[stream] = false;
   }
-  Object.keys(state.stream.target).forEach((element) => {
-    state.stream.target[element] = [];
+  Object.keys(streamState.target).forEach((element) => {
+    streamState.target[element] = [];
   });
   // console.log("client", state.client);
   // console.log("hls", state.hls);

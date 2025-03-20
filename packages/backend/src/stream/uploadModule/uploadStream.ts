@@ -10,14 +10,7 @@ import { pushStateStream } from "../pushStateStream";
 // var readFile = util.promisify(fs.readFile);
 // var execPromise = util.promisify(exec);
 
-import {
-  streams,
-  cmdList,
-  streamList,
-  parameterList,
-  states,
-  uploadParams,
-} from "../../states";
+import { streams, uploadParams, streamState } from "../../states";
 // import SocketIO from "socket.io";
 // import { cmdStateType } from "../..//types/global.js";
 
@@ -49,7 +42,7 @@ export const uploadStream = async (stringArr) => {
     streams[f.split(".")[0]] = {
       audio: [],
       video: [],
-      bufferSize: states.stream.basisBufferSize,
+      bufferSize: streamState.basisBufferSize,
       index: 0,
     };
   }

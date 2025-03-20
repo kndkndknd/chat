@@ -1,45 +1,46 @@
 import {
   cmdList,
   streamList,
-  // parameterList,
-  states,
-  streams,
+  currentState,
+  previousState,
+  clientState,
+  cmdState,
 } from "../../states";
 import { cmdStateType } from "../../../../types/global";
+// import { cmdSelect } from "../../route";
 
-export const solo = (
-  stringArr: string[],
-  arrTypeArr: string[],
-  state: cmdStateType,
-  io
-) => {
+export const solo = (stringArr: string[], arrTypeArr: string[], io) => {
   if (Object.keys(cmdList).includes(stringArr[0])) {
     // コマンドソロ
-    state.previous = { text: stringArr.join(" "), ...state.current };
+    previousState.text = stringArr.join(" ");
+    previousState.stream = currentState.stream;
+    previousState.cmd = currentState.cmd;
+    previousState.sinewave = currentState.sinewave;
+    previousState.RECORD = currentState.RECORD;
 
     const cmd = cmdList[stringArr[0]];
     const soloTarget =
-      states.current.cmd[cmd].length > 0
-        ? states.current.cmd[cmd][
-            Math.floor(Math.random() * states.current.cmd[cmd].length)
+      currentState.cmd[cmd].length > 0
+        ? currentState.cmd[cmd][
+            Math.floor(Math.random() * currentState.cmd[cmd].length)
           ]
-        : Object.keys(states.client)[
-            Math.floor(Math.random() * Object.keys(states.client).length)
+        : Object.keys(clientState.client)[
+            Math.floor(Math.random() * Object.keys(clientState.client).length)
           ];
-    for (let stream in states.current.stream) {
-      states.current.stream[stream] = false;
+    for (let stream in currentState.stream) {
+      currentState.stream[stream] = false;
     }
-    for (let currendCmd in states.current.cmd) {
+    for (let currendCmd in currentState.cmd) {
       if (currendCmd === cmd) {
-        states.current.cmd[currendCmd] = [soloTarget];
+        currentState.cmd[currendCmd] = [soloTarget];
       } else {
-        states.current.cmd[currendCmd] = [];
+        currentState.cmd[currendCmd] = [];
       }
     }
     io.to(soloTarget).emit("cmdFromServer", {
       cmd: cmd,
       flag: true,
-      gain: states.cmd.GAIN[cmd],
+      gain: cmdState.GAIN[cmd],
       solo: true,
     });
     console.log("solo: コマンドソロ", cmd, soloTarget);
