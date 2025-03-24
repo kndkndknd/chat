@@ -1,6 +1,5 @@
 import SocketIO from "socket.io";
 
-import { cmdStateType } from "../../../types/global";
 import {
   cmdState,
   cmdList,
@@ -33,7 +32,7 @@ import { loadScenario } from "../scenario/loadScenario";
 import { execScenario } from "../scenario/execScenario";
 import { putCmd } from "./putCmd";
 import { cmdLogging } from "../logging/cmdLogging";
-import { quantizeCmd } from "../stream/quantize";
+import { quantizeCmd } from "../stream/quantizeCmd";
 
 export const receiveEnter = async (
   strings: string,
@@ -103,7 +102,13 @@ export const receiveEnter = async (
     stopEmit(io, id, "ALL");
   } else if (strings === "QUANTIZE") {
     const quantizeObj = quantizeCmd("all", "all", 0);
-    io.emit("quantizeFromServer", quantizeObj);
+    io.emit("quantizeFromServer", {
+      flag: quantizeObj.flag,
+      stream: quantizeObj.stream,
+      bpm: quantizeObj.bpm,
+      bar: quantizeObj.bar,
+      beat: quantizeObj.beat,
+    });
   } else if (strings === "TWICE" || strings === "HALF") {
     sinewaveChange(strings, io);
   } else if (strings === "PREVIOUS" || strings === "PREV") {

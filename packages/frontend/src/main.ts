@@ -40,7 +40,7 @@ import { cnvs, ctx, videoElement, frontState } from "./globalVariable";
 
 import { keyDown } from "./textInput";
 
-import { newWindowReqType } from "./types/global";
+import { newWindowReqType } from "../../../types";
 import { enableClockMode, disableClockMode } from "./clockMode";
 import { hlsVideoPlay, hlsSizing } from "./hlsVideo";
 
@@ -192,8 +192,7 @@ socket.on(
     console.log("chatFromServer");
     if (
       frontState.quantize.flag &&
-      (frontState.quantize.stream === "all" ||
-        frontState.quantize.stream === "CHAT")
+      frontState.quantize.stream.includes("CHAT")
     ) {
       const chunk = {
         source: "CHAT",
@@ -235,8 +234,7 @@ socket.on(
     frontState.streamFlag[data.source] = true;
     if (
       frontState.quantize.flag &&
-      (frontState.quantize.stream === "all" ||
-        frontState.quantize.stream === data.source)
+      frontState.quantize.stream.includes(data.source)
     ) {
       frontState.streamChunk[data.source] = data;
     } else {
@@ -295,63 +293,52 @@ socket.on(
   "quantizeFromServer",
   (data: {
     flag: boolean;
-    stream: string;
+    stream: string[];
     bpm: number;
     bar: number;
     beat: number;
   }) => {
     if (data.flag) {
       console.log(data);
-      frontState.quantize.flag = true;
+      frontState.quantize.flag = data.flag;
       frontState.quantize.bar = data.bar;
       frontState.quantize.beat =
         data.beat !== undefined ? data.beat : frontState.quantize.beat;
-      frontState.quantize.stream =
-        data.stream !== undefined ? data.stream : frontState.quantize.stream;
-      if (
-        frontState.streamFlag[data.stream] &&
-        frontState.streamChunk[data.stream] !== undefined &&
-        frontState.streamChunk[data.stream].autdio !== undefined
-      ) {
-        quantizePlay(
-          {
-            source: data.stream,
-            video:
-              frontState.streamChunk[data.stream].video === undefined
-                ? ""
-                : frontState.streamChunk[data.stream].video,
-            audio: frontState.streamChunk[data.stream].audio,
-            sampleRate: frontState.streamChunk[data.stream].sampleRate,
-            glitch: frontState.streamChunk[data.stream].glitch,
-            bufferSize: frontState.streamChunk[data.stream].bufferSize,
-          },
-          socket.id
-        );
-      } else if (data.stream === "all") {
-        for (let key in frontState.streamFlag) {
+      for (const streamEl of data.stream) {
+        if (data.flag && !frontState.quantize.stream.includes(streamEl)) {
+          frontState.quantize.stream.push(streamEl);
           if (
-            frontState.streamFlag[key] &&
-            frontState.streamChunk[key] !== undefined &&
-            frontState.streamChunk[key].autdio !== undefined
+            frontState.streamFlag[streamEl] &&
+            frontState.streamChunk[streamEl] !== undefined &&
+            frontState.streamChunk[streamEl].audio !== undefined
           ) {
             quantizePlay(
               {
-                source: key,
+                source: streamEl,
                 video:
-                  frontState.streamChunk[key].video === undefined
+                  frontState.streamChunk[streamEl].video === undefined
                     ? ""
-                    : frontState.streamChunk[key].video,
-                audio: frontState.streamChunk[key].audio,
-                sampleRate: frontState.streamChunk[key].sampleRate,
-                glitch: frontState.streamChunk[key].glitch,
-                bufferSize: frontState.streamChunk[key].bufferSize,
+                    : frontState.streamChunk[streamEl].video,
+                audio: frontState.streamChunk[streamEl].audio,
+                sampleRate: frontState.streamChunk[streamEl].sampleRate,
+                glitch: frontState.streamChunk[streamEl].glitch,
+                bufferSize: frontState.streamChunk[streamEl].bufferSize,
               },
               socket.id
             );
           }
+        } else if (
+          !data.flag &&
+          frontState.quantize.stream.includes(streamEl)
+        ) {
+          frontState.quantize.stream = frontState.quantize.stream.filter(
+            (el) => el !== streamEl
+          );
         }
       }
-      quantize(data.bar, data.beat, data.stream);
+      if (frontState.quantize.flag && frontState.quantize.interval === 0) {
+        quantize(data.bar, data.beat, data.stream);
+      }
       textPrint(
         `QUANTIZE(BPM:${String(data.bpm)},Beat:${String(data.beat)})`,
         ctx,

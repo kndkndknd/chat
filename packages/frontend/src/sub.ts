@@ -34,7 +34,7 @@ import { cnvs, ctx, frontState, videoElement } from "./globalVariable";
 
 import { keyDown } from "./textInput";
 
-import { newWindowReqType } from "./types/global";
+import { newWindowReqType } from "../../../types";
 import { enableClockMode, disableClockMode } from "./clockMode";
 
 let start = false;
@@ -360,7 +360,7 @@ socket.on(
   "quantizeFromServer",
   (data: {
     flag: boolean;
-    stream: string;
+    stream: string[];
     bpm: number;
     bar: number;
     beat: number;

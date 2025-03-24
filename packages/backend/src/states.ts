@@ -1,12 +1,8 @@
 import {
-  StreamsType,
-  // cmdLogType,
   cmdStateType,
   streamStateType,
   sampleRateStateType,
   glitchStateType,
-  quantizeStateType,
-  // sevenSinsType,
   clientStateType,
   currentStateType,
   previousStateType,
@@ -15,7 +11,8 @@ import {
   flagStateType,
   arduinoStateType,
   formStateType,
-} from "../../types/global";
+  StreamsType,
+} from "../../../types";
 
 import { LogType } from "../../types/log_schedule";
 
@@ -119,23 +116,6 @@ export const glitchState: glitchStateType = {
     TIMELAPSE: false,
   },
   glitchSampleRate: 96000,
-};
-
-export const quantizeState: quantizeStateType = {
-  flag: {
-    client: {},
-    stream: {},
-  },
-  bpm: {
-    CHAT: {},
-    PLAYBACK: {},
-    TIMELAPSE: {},
-  },
-  beat: {
-    CHAT: {},
-    PLAYBACK: {},
-    TIMELAPSE: {},
-  },
 };
 
 export const currentState: currentStateType = {

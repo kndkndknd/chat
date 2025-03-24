@@ -4,7 +4,7 @@ import * as Http from "http";
 // import { statusList, pathList, statusClient } from "../statusList";
 import { chatReceive } from "../stream/chatReceive";
 
-import { buffStateType } from "../../../types/global";
+import { buffStateType } from "../../../../types";
 
 // import {
 //   selectOtherClient,

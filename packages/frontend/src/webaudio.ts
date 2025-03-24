@@ -594,7 +594,7 @@ function Setup() {
 // let quantizerCurrentTime: number = 0;
 let eighthNoteSec: number = 0;
 
-export const quantize = (bar: number, beat?: number, stream?: string) => {
+export const quantize = (bar: number, beat?: number, stream?: string[]) => {
   console.log("bar", bar);
   console.log("streamFlag: ", frontState.streamFlag);
   console.log("quantize stream: ", frontState.quantize.stream);
@@ -606,25 +606,15 @@ export const quantize = (bar: number, beat?: number, stream?: string) => {
   //   stream !== undefined ? stream : frontState.quantize.stream;
 
   frontState.quantize.interval = window.setInterval(() => {
-    if (frontState.quantize.stream === "all") {
-      for (let key in frontState.streamFlag) {
-        if (
-          frontState.streamFlag[key] &&
-          frontState.streamChunk[key] !== undefined &&
-          frontState.streamChunk[key].audio !== undefined
-        ) {
-          quantizePlay(frontState.streamChunk[key], socket.id);
-        }
+    for (const stream of frontState.quantize.stream) {
+      console.log("stream", stream);
+      if (
+        frontState.streamFlag[stream] &&
+        frontState.streamChunk[stream] !== undefined &&
+        frontState.streamChunk[stream].audio !== undefined
+      ) {
+        quantizePlay(frontState.streamChunk[stream], socket.id);
       }
-    } else if (
-      frontState.streamFlag[frontState.quantize.stream] &&
-      frontState.streamChunk[frontState.quantize.stream] !== undefined &&
-      frontState.streamChunk[frontState.quantize.stream].audio !== undefined
-    ) {
-      quantizePlay(
-        frontState.streamChunk[frontState.quantize.stream],
-        socket.id
-      );
     }
     frontState.quantize.currentTime = audioContext.currentTime;
     console.log("bar currentTime", frontState.quantize.currentTime);

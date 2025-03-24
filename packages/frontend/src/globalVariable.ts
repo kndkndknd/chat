@@ -13,7 +13,7 @@ export const frontState = {
     interval: 0,
     currentTime: 0,
     timeout: 0,
-    stream: "all",
+    stream: [],
   },
   metronome: {
     status: false,

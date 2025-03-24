@@ -1,9 +1,7 @@
 import SocketIO from "socket.io";
 import dotenv from "dotenv";
 
-import { cmdList, streamList, parameterList, streams } from "../states";
-// import { putString } from "../cmd/putString";
-// import { buffStateType } from "../../../types/global";
+import { streams } from "../states";
 import { stringEmit } from "../socket/ioEmit";
 dotenv.config();
 

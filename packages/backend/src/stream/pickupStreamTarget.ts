@@ -2,7 +2,10 @@ import { streamState, clientState } from "../states";
 
 export const pickupStreamTarget = (stream: string, from?: string): string => {
   console.log("streamState.target", streamState.target[stream]);
-  if (streamState.target[stream].length > 1) {
+  if (
+    streamState.target[stream] !== undefined &&
+    streamState.target[stream].length > 1
+  ) {
     // from以外のtargetがあればFromを除外した配列を返し、fromがなければtarget全体を返す
     // const targetArr =
     //   from === undefined
@@ -40,7 +43,10 @@ export const pickupStreamTarget = (stream: string, from?: string): string => {
       console.log("from");
       return from;
     }
-  } else if (streamState.target[stream].length === 1) {
+  } else if (
+    streamState.target[stream] !== undefined &&
+    streamState.target[stream].length === 1
+  ) {
     console.log("targetArr(1)", streamState.target[stream]);
     return streamState.target[stream][0];
   } else {

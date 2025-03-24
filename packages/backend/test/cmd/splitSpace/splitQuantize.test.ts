@@ -1,10 +1,9 @@
 import { expect, test } from "vitest";
 import { splitQuantize } from "../../../src/cmd/splitSpace/splitQuantize";
-import { states } from "../../../src/states";
 import { getTypeArr } from "../../../src/cmd/splitSpace/getTypeArr";
-import { get } from "http";
+import { quantizeState } from "../../../src/states";
 
-test("getScheduleFromJson", async () => {
+test("splitQuantize", async () => {
   // ターゲットについてはtargetに入ってる。下記targetを除いたstringArr
   // stringArr.length === 1 => quantizeCmd(io, state, "all", target, 0);
   // stringArr.length === 2 && 1つめがnumber === "number" => quantizeCmd(io, state, "all", target, Number(stringArr[1]));
@@ -12,22 +11,17 @@ test("getScheduleFromJson", async () => {
   // stringArr.length === 3 && 1つめがnumberで2つ目がstream  => quantizeCmd(io, state, stringArr[3], target, Number(stringArr[1]));
   // stringArr.length === 3 && 1つめがstreamで2つ目がnumber => quantizeCmd(io, state, stringArr[1], target, Number(stringArr[2]));
 
-  const stringArr = ["CHAT"];
+  const stringArr = ["QUANTIZE", "4", "CHAT"];
   const arrTypeArr = getTypeArr(stringArr);
+  quantizeState.bpm.CHAT = { target: 60 };
 
-  // const log = [
-  //   { date: "0000-00-00 00:00:00", cmd: "SCENARIO" },
-  //   { date: "0000-00-00 00:00:10", cmd: "440" },
-  //   { date: "0000-00-00 00:00:11.123", cmd: "CLICK" },
-  //   { date: "0000-00-00 00:02:00", cmd: "STOP" },
-  // ];
-  const result = await splitQuantize(states, stringArr, arrTypeArr, "target");
+  const result = await splitQuantize(stringArr, arrTypeArr, "target");
   console.log(result);
   expect(result).toEqual({
     flag: true,
     stream: "CHAT",
-    bpm: 0,
-    bar: 0,
-    beat: 0,
+    bpm: 60,
+    bar: 4000,
+    beat: 4,
   });
 });

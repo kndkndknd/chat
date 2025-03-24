@@ -1,4 +1,3 @@
-// import {cmdStateType} from '../../types/global'
 import { formState } from "../../states";
 import { receiveEnter } from "../receiveEnter";
 import SocketIO from "socket.io";

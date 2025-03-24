@@ -9,9 +9,6 @@ import { promiseGetImageData } from "./getImageData";
 import { pushStateStream } from "../pushStateStream";
 import { get } from "http";
 
-// import SocketIO from "socket.io";
-// import { cmdStateType } from "../..//types/global.js";
-
 // const fs = require("fs");
 // const pcm = require("pcm");
 // const util = require("util");

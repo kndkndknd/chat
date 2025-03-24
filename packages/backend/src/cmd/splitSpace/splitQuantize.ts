@@ -1,6 +1,6 @@
-import { quantizeCmd } from "../../stream/quantize";
-import { quantizeObjType } from "../../../../types/quantizeType";
-import { streamState } from "../../states";
+import { quantizeCmd } from "../../stream/quantizeCmd";
+import { quantizeObjType } from "../../../../../types";
+import { streamList } from "../../states";
 
 // ターゲットについてはtargetに入ってる。下記targetを除いたstringArr
 // stringArr.length === 1 => quantizeCmd(io, state, "all", target, 0);
@@ -16,6 +16,7 @@ export const splitQuantize = (
   console.log("splitQuantize: ", stringArr);
   console.log("arrTypeArr: ", arrTypeArr);
   console.log("target: ", target);
+
   if (stringArr.length === 1) {
     if (target !== undefined) {
       return quantizeCmd("all", target, 0);
@@ -33,7 +34,7 @@ export const splitQuantize = (
   } else if (
     stringArr.length === 2 &&
     arrTypeArr[1] === "string" &&
-    Object.keys(streamState.target).includes(stringArr[1])
+    (streamList.includes(stringArr[1]) || stringArr[1] === "CHAT")
   ) {
     // quantizeCmd(io, state, stringArr[2], target, 0);
     if (target !== undefined) {
@@ -44,18 +45,18 @@ export const splitQuantize = (
   } else if (
     stringArr.length === 3 &&
     arrTypeArr[1] === "number" &&
-    Object.keys(streamState.target).includes(stringArr[2])
+    (streamList.includes(stringArr[2]) || stringArr[2] === "CHAT")
   ) {
     // quantizeCmd(io, state, stringArr[3], target, Number(stringArr[2]));
     if (target !== undefined) {
-      return quantizeCmd(stringArr[3], target, Number(stringArr[1]));
+      return quantizeCmd(stringArr[2], target, Number(stringArr[1]));
     } else {
-      return quantizeCmd(stringArr[3], "all", Number(stringArr[1]));
+      return quantizeCmd(stringArr[2], "all", Number(stringArr[1]));
     }
   } else if (
     stringArr.length === 3 &&
     arrTypeArr[2] === "number" &&
-    Object.keys(streamState.target).includes(stringArr[1])
+    (streamList.includes(stringArr[1]) || stringArr[1] === "CHAT")
   ) {
     // quantizeCmd(io, state, stringArr[1], target, Number(stringArr[2]));
     if (target !== undefined) {

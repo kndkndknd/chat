@@ -6,8 +6,6 @@ import {
   clientState,
   cmdState,
 } from "../../states";
-import { cmdStateType } from "../../../../types/global";
-// import { cmdSelect } from "../../route";
 
 export const solo = (stringArr: string[], arrTypeArr: string[], io) => {
   if (Object.keys(cmdList).includes(stringArr[0])) {

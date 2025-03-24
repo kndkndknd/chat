@@ -1,5 +1,5 @@
 import SocketIO from "socket.io";
-import { buffStateType } from "../../../types/global";
+import { buffStateType } from "../../../../types";
 import {
   streams,
   currentState,

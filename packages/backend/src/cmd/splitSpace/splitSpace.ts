@@ -1,5 +1,4 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../../../../types/global";
 import {
   clientState,
   cmdState,
@@ -51,6 +50,7 @@ import { getTypeArr } from "./getTypeArr";
 import { splitRandomRate } from "./splitRandomRate";
 import { splitModulation } from "./splitModulation";
 import { splitArduino } from "./splitArduino";
+import { quantizeObjType } from "../../../../../types";
 
 export const splitSpace = async (
   stringArr: Array<string>,
@@ -354,11 +354,23 @@ export const splitSpace = async (
     }
   } else if (stringArr[0] === "QUANTIZE") {
     console.log("debug quantize");
-    const quantizeObj = splitQuantize(stringArr, arrTypeArr);
+    const quantizeObj: quantizeObjType | "quantize failed" = splitQuantize(
+      stringArr,
+      arrTypeArr
+    );
     if (quantizeObj === "quantize failed") {
       stringEmit(io, "QUANTIZE: FAILED");
     } else {
-      io.emit("quantizeFromServer", quantizeObj);
+      for (const client of quantizeObj.client) {
+        io.to(client).emit("quantizeFromServer", {
+          flag: quantizeObj.flag,
+          stream: quantizeObj.stream,
+          bpm: quantizeObj.bpm,
+          bar: quantizeObj.bar,
+          beat: quantizeObj.beat,
+        });
+      }
+      // io.emit("quantizeFromServer", quantizeObj);
     }
   } else {
     stringEmit(io, stringArr.join(" "), false);

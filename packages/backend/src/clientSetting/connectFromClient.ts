@@ -4,9 +4,9 @@ import {
   streamState,
   arduinoState,
   bpmState,
-  quantizeState,
   cmdState,
 } from "../states";
+import { quantizeState } from "../state";
 import { floatingPosition } from "./floatingPosition";
 
 export const connectFromClient = (data, socket, io) => {
@@ -75,12 +75,14 @@ export const connectFromClient = (data, socket, io) => {
     cmdState.METRONOME[sockId] = 1000;
 
     // QUANTIZE
-    quantizeState.flag.client[sockId] = false;
-    for (let key in quantizeState.bpm) {
-      quantizeState.bpm[key][sockId] = 60;
-    }
-    for (let key in quantizeState.beat) {
-      quantizeState.beat[key][sockId] = 0;
+    for (const stream of Object.keys(quantizeState)) {
+      if (quantizeState[stream][sockId] === undefined) {
+        quantizeState[stream][sockId] = {
+          bpm: 60,
+          beat: 0,
+          flag: false,
+        };
+      }
     }
 
     console.log(clientState.client);

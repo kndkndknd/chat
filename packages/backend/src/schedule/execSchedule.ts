@@ -1,5 +1,4 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../../../types/global";
 import { receiveEnter } from "../cmd/receiveEnter";
 import { stopEmit } from "../cmd/stopEmit";
 import { clientState, currentState } from "../states";

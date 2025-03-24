@@ -1,5 +1,4 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../../../types/global";
 import { receiveEnter } from "../cmd/receiveEnter";
 
 export const execScenario = async (

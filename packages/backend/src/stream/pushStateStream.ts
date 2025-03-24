@@ -5,9 +5,10 @@ import {
   previousState,
   sampleRateState,
   glitchState,
-  quantizeState,
+  // quantizeState,
   clientState,
 } from "../states";
+import { quantizeState } from "../state";
 
 export const pushStateStream = (
   streamName: string,
@@ -29,11 +30,14 @@ export const pushStateStream = (
     min: 5000,
     max: 132300,
   };
-  quantizeState.flag.stream[streamName] = false;
-  quantizeState.bpm[streamName] = {};
-  quantizeState.beat[streamName] = {};
-  for (let key in clientState.client) {
-    quantizeState.bpm[streamName][key] = 60;
-    quantizeState.beat[streamName][key] = 0;
+  if (quantizeState[streamName] === undefined) {
+    quantizeState[streamName] = {};
+    for (let key in clientState.client) {
+      quantizeState[streamName][key] = {
+        bpm: 60,
+        beat: 0,
+        flag: false,
+      };
+    }
   }
 };
