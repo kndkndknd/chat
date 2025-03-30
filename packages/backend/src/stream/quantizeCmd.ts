@@ -9,9 +9,11 @@ export const quantizeCmd = (
   // io: SocketIO.Server,
   streamTarget: string,
   clientTarget: string,
-  beatArg?: number,
-  bpmArg?: number,
-  flagArg?: boolean
+  parameter?: {
+    beat?: number;
+    bpm?: number;
+    flag?: boolean;
+  }
 ): quantizeObjType => {
   const streamArr =
     streamTarget !== "all" ? [streamTarget] : ["CHAT", ...streamList];
@@ -20,9 +22,9 @@ export const quantizeCmd = (
   const { bpm, bar, beat, flag } = decideQuantizeFromAverage(
     streamArr,
     clientArr,
-    beatArg,
-    bpmArg,
-    flagArg
+    parameter.beat,
+    parameter.bpm,
+    parameter.flag
   );
 
   setQuantizeState(streamArr, clientArr, bpm, beat, flag);
@@ -32,8 +34,8 @@ export const quantizeCmd = (
     stream: streamArr,
     target: clientArr,
     bpm: bpm,
-    bar: bpmArg !== undefined ? millisecondsPerBar(bpm) : bar,
-    beat: beatArg !== undefined ? beatArg : beat,
+    bar: parameter.bpm !== undefined ? millisecondsPerBar(bpm) : bar,
+    beat: parameter.beat !== undefined ? parameter.beat : beat,
   };
   console.log("quantizeObj", quantizeObj);
   console.log("quantizeState", quantizeState);

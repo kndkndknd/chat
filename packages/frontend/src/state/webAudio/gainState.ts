@@ -1,0 +1,15 @@
+export const gainState = {
+  masterGain: null as GainNode | null,
+  chatGain: null as GainNode | null,
+  oscGain: null as GainNode | null,
+  feedbackGain: null as GainNode | null,
+  whitenoiseGain: null as GainNode | null,
+  bassGain: null as GainNode | null,
+  clickGain: null as GainNode | null,
+  simulateGain: null as GainNode | null,
+  glitchGain: null as GainNode | null,
+  feedbackReverveGain: null as GainNode | null,
+  threeGain: null as GainNode | null,
+  simulateMaxGain: 0,
+  simulateBassGain: 1,
+};

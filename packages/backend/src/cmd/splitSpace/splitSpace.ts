@@ -210,8 +210,9 @@ export const splitSpace = async (
   } else if (stringArr[0] === "SWITCH" || stringArr[0] === "ARDUINO") {
     splitArduino(stringArr, io);
   } else if (
-    stringArr[1] === "CHAT" ||
-    (streamList.includes(stringArr[1]) && stringArr[0] !== "GET")
+    (stringArr[1] === "CHAT" ||
+      (streamList.includes(stringArr[1]) && stringArr[0] !== "GET")) &&
+    (stringArr[0].includes("-") || arrTypeArr[0] === "number")
   ) {
     console.log("route", stringArr);
     const targetArr = stringArr[0].split("-");
@@ -358,17 +359,22 @@ export const splitSpace = async (
       stringArr,
       arrTypeArr
     );
+    console.log("quantize: ", quantizeObj);
     if (quantizeObj === "quantize failed") {
       stringEmit(io, "QUANTIZE: FAILED");
     } else {
-      for (const client of quantizeObj.client) {
-        io.to(client).emit("quantizeFromServer", {
-          flag: quantizeObj.flag,
-          stream: quantizeObj.stream,
-          bpm: quantizeObj.bpm,
-          bar: quantizeObj.bar,
-          beat: quantizeObj.beat,
-        });
+      if (quantizeObj.client !== undefined && quantizeObj.client.length > 0) {
+        for (const client of quantizeObj.client) {
+          io.to(client).emit("quantizeFromServer", {
+            flag: quantizeObj.flag,
+            stream: quantizeObj.stream,
+            bpm: quantizeObj.bpm,
+            bar: quantizeObj.bar,
+            beat: quantizeObj.beat,
+          });
+        }
+      } else {
+        io.emit("quantizeFromServer", quantizeObj);
       }
       // io.emit("quantizeFromServer", quantizeObj);
     }

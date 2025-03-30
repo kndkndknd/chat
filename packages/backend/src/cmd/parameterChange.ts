@@ -18,6 +18,7 @@ import { putCmd } from "./putCmd";
 import { stringEmit } from "../socket/ioEmit";
 import { notTargetEmit } from "./notTargetEmit";
 import { millisecondsPerBar } from "./bpmCalc";
+import { quantizeState } from "../state";
 
 export const parameterChange = (
   param: string,
@@ -140,6 +141,23 @@ export const parameterChange = (
 
         if (arg.property) {
           // propertyがSTREAMを指定している場合
+          if (
+            quantizeState[arg.property] === undefined ||
+            Object.keys(quantizeState[arg.property]).length === 0
+          ) {
+            quantizeState[arg.property] = {};
+            for (const client in clientState.client) {
+              quantizeState[arg.property][client] = {
+                flag: false,
+                bpm: arg.value,
+                beat: 0,
+              };
+            }
+          } else {
+            for (let client in clientState.client) {
+              quantizeState[arg.property][client].bpm = arg.value;
+            }
+          }
           if (Object.keys(streamState.latency).includes(arg.property)) {
             streamState.latency[arg.property] = latency;
             // cmdState.METRONOME = {};
@@ -200,6 +218,32 @@ export const parameterChange = (
           for (let target in bpmState.client) {
             bpmState.client[target] = arg.value;
           }
+
+          for (let stream in streamState.target) {
+            if (quantizeState[stream] === undefined) {
+              quantizeState[stream] = {};
+              for (const client in clientState.client) {
+                quantizeState[stream][client] = {
+                  flag: false,
+                  bpm: arg.value,
+                  beat: 0,
+                };
+              }
+            } else {
+              for (let client in clientState.client) {
+                if (!Object.keys(quantizeState[stream]).includes(client)) {
+                  quantizeState[stream][client] = {
+                    flag: false,
+                    bpm: arg.value,
+                    beat: 0,
+                  };
+                } else {
+                  quantizeState[stream][client].bpm = arg.value;
+                }
+              }
+            }
+          }
+
           if (currentState.cmd.METRONOME.length > 0) {
             currentState.cmd.METRONOME.forEach((target) => {
               const cmd: {
@@ -218,6 +262,8 @@ export const parameterChange = (
               putCmd(io, [target], cmd);
             });
           }
+          io.emit("bpmFromServer", { bpm: arg.value, bar: bar });
+
           stringEmit(io, "BPM: " + String(arg.value));
           io.emit("bpmFromServer", {
             bpm: arg.value,

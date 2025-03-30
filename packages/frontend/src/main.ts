@@ -1,60 +1,63 @@
-import { io, Socket } from "socket.io-client";
-const socket: Socket = io();
+import { io } from "socket.io-client";
+import { metronomeState, socketState } from "./state";
+
+socketState.socket = io();
+socketState.socketId = socketState.socket.id;
+
+import {
+  flagState,
+  streamFlagState,
+  timelapseState,
+  quantizeState,
+  streamChunk,
+  contextState,
+  oscState,
+  gainState,
+  convolverState,
+  scriptProcessorState,
+  otherNodeState,
+} from "./state";
+
 import {
   initVideo,
   initVideoStream,
-  canvasSizing,
   textPrint,
   erasePrint,
   showImage,
   emojiState,
-  // positionFloatingImage,
-} from "./imageEvent";
+  canvasSizing,
+} from "./canvasEvent";
 
 import {
   initAudio,
-  initAudioStream,
-  sinewave,
-  whitenoise,
-  feedback,
-  bass,
   click,
-  chatReq,
-  playAudioStream,
   stopCmd,
-  recordReq,
-  simulate,
-  metronome,
+  // recordReqFromServer,
   gainChange,
-  quantize,
-  stopQuantize,
   streamPlay,
-  quantizePlay,
 } from "./webaudio";
 
+import { chatReq, recordReqFromServer, initAudioStream } from "./stream";
+import { quantize, quantizePlay, quantizeStop } from "./quantize";
+
 import { cmdFromServer } from "./cmd";
-
-import { cnvs, ctx, videoElement, frontState } from "./globalVariable";
-
-//import {debugOn} from './socket'
 
 import { keyDown } from "./textInput";
 
 import { newWindowReqType } from "../../../types";
-import { enableClockMode, disableClockMode } from "./clockMode";
+import { enableClockMode, disableClockMode } from "./clientMode/clockMode";
 import { hlsVideoPlay, hlsSizing } from "./hlsVideo";
+import { quantizeFromServer } from "./quantize/quantizeFromServer";
+import { text } from "node:stream/consumers";
+import { setQuantize } from "./quantize/setQuantize";
 
 // let start = false;
 
-let darkFlag = false;
 let cinemaFlag = false;
 let clockModeId: number = 0;
 const clientMode = "client";
 
 let clockBase = 0;
-
-// let videoElement = <HTMLVideoElement>document.getElementById('video');
-let timelapseId: number;
 
 let stringsClient = "";
 
@@ -62,7 +65,7 @@ let eListener = <HTMLElement>document.getElementById("wrapper");
 eListener.addEventListener(
   "click",
   () => {
-    if (!frontState.start) {
+    if (!flagState.start) {
       initialize();
     }
   },
@@ -71,7 +74,7 @@ eListener.addEventListener(
 
 window.addEventListener("resize", (e) => {
   console.log("resizing");
-  canvasSizing(socket);
+  canvasSizing(socketState.socket);
   hlsSizing();
 });
 canvasSizing();
@@ -79,39 +82,39 @@ hlsSizing();
 
 document.addEventListener("keydown", (e) => {
   console.log(e);
-  if (e.key === "Enter" && !frontState.start) {
+  if (e.key === "Enter" && !flagState.start) {
     initialize();
   } else {
-    stringsClient = keyDown(e, stringsClient, socket, ctx, cnvs);
+    stringsClient = keyDown(e, stringsClient, socketState.socket);
   }
 });
 
-socket.on(
+socketState.socket.on(
   "stringsFromServer",
   (data: { strings: string; timeout: boolean }) => {
     // erasePrint(stx, strCnvs);
-    erasePrint(ctx, cnvs);
+    erasePrint();
     console.log("stringsFromServer", data);
     stringsClient = data.strings;
-    textPrint(stringsClient, ctx, cnvs);
+    textPrint(stringsClient);
     if (data.timeout) {
       setTimeout(() => {
-        erasePrint(ctx, cnvs);
+        erasePrint();
       }, 500);
     }
     if (cinemaFlag) {
       setTimeout(() => {
-        erasePrint(ctx, cnvs);
+        erasePrint();
       }, 500);
     }
   }
 );
-socket.on("erasePrintFromServer", () => {
+socketState.socket.on("erasePrintFromServer", () => {
   // erasePrint(stx, strCnvs)
-  erasePrint(ctx, cnvs);
+  erasePrint();
 });
 
-socket.on(
+socketState.socket.on(
   "cmdFromServer",
   (cmd: {
     cmd: string;
@@ -125,57 +128,58 @@ socket.on(
     gain?: number;
     solo?: boolean;
   }) => {
-    cmdFromServer(cmd, ctx, cnvs);
+    cmdFromServer(cmd);
     stringsClient = "";
   }
 );
 
-socket.on("stopFromServer", (data: { fadeOutVal: number; target?: string }) => {
-  erasePrint(ctx, cnvs);
-  if (data.target === undefined || data.target === "ALL") {
-    stopCmd(data.fadeOutVal);
-  } else if (data.target === "ExceptHls") {
-    stopCmd(data.fadeOutVal, "HLS");
+socketState.socket.on(
+  "stopFromServer",
+  (data: { fadeOutVal: number; target?: string }) => {
+    erasePrint();
+    if (data.target === undefined || data.target === "ALL") {
+      stopCmd(data.fadeOutVal);
+    } else if (data.target === "ExceptHls") {
+      stopCmd(data.fadeOutVal, "HLS");
+    }
+    // erasePrint(stx, strCnvs)
+    textPrint("STOP");
+    setTimeout(() => {
+      erasePrint();
+    }, 800);
   }
-  // erasePrint(stx, strCnvs)
-  textPrint("STOP", ctx, cnvs);
-  setTimeout(() => {
-    erasePrint(ctx, cnvs);
-  }, 800);
-});
+);
 
-socket.on("textFromServer", (data: { text: string }) => {
-  erasePrint(ctx, cnvs);
-  textPrint(data.text, ctx, cnvs);
+socketState.socket.on("textFromServer", (data: { text: string }) => {
+  erasePrint();
+  textPrint(data.text);
   if (cinemaFlag) {
     setTimeout(() => {
-      erasePrint(ctx, cnvs);
+      erasePrint();
     }, 500);
   }
 });
 
-socket.on("chatReqFromServer", () => {
-  chatReq(String(socket.id));
-  // textPrint("chatrequest", ctx, cnvs);
-  frontState.streamFlag.CHAT = true;
+socketState.socket.on("chatReqFromServer", () => {
+  chatReq(String(socketState.socket.id));
   setTimeout(() => {
-    erasePrint(ctx, cnvs);
+    erasePrint();
   }, 1000);
 });
 
-socket.on(
+socketState.socket.on(
   "recordReqFromServer",
   (data: { source: string; timeout: number }) => {
-    recordReq(data);
-    textPrint("RECORD", ctx, cnvs);
+    recordReqFromServer(data);
+    textPrint("RECORD");
     setTimeout(() => {
-      erasePrint(ctx, cnvs);
+      erasePrint();
     }, data.timeout);
   }
 );
 
 // CHATのみ向けにする
-socket.on(
+socketState.socket.on(
   "chatFromServer",
   (data: {
     audio: Float32Array;
@@ -190,10 +194,7 @@ socket.on(
     target?: string;
   }) => {
     console.log("chatFromServer");
-    if (
-      frontState.quantize.flag &&
-      frontState.quantize.stream.includes("CHAT")
-    ) {
+    if (quantizeState.flag && quantizeState.stream.includes("CHAT")) {
       const chunk = {
         source: "CHAT",
         audio: data.audio,
@@ -204,20 +205,20 @@ socket.on(
         duration: data.duration,
       };
       // data.source = "CHAT";
-      frontState.streamChunk.CHAT = chunk;
+      streamChunk.CHAT = chunk;
     } else {
       if (data.floating === undefined || !data.floating) {
-        streamPlay("CHAT", socket.id, data);
+        streamPlay("CHAT", socketState.socket.id, data);
       } else {
         // const position = positionFloatingImage(data.target);
-        showImage(data.video, ctx, data.position);
+        showImage(data.video, data.position);
       }
     }
   }
 );
 
 // CHAT以外のSTREAM向け
-socket.on(
+socketState.socket.on(
   "streamFromServer",
   (data: {
     source: string;
@@ -231,49 +232,49 @@ socket.on(
     position?: { top: number; left: number; width: number; height: number };
     target?: string;
   }) => {
-    frontState.streamFlag[data.source] = true;
-    if (
-      frontState.quantize.flag &&
-      frontState.quantize.stream.includes(data.source)
-    ) {
-      frontState.streamChunk[data.source] = data;
+    streamFlagState[data.source] = true;
+    if (quantizeState.flag && quantizeState.stream.includes(data.source)) {
+      streamChunk[data.source] = data;
     } else {
       if (data.floating === undefined || !data.floating) {
-        streamPlay("STREAM", socket.id, data, cinemaFlag);
+        streamPlay("STREAM", socketState.socket.id, data, cinemaFlag);
       } else {
-        showImage(data.video, ctx, data.position);
+        showImage(data.video, data.position);
       }
     }
   }
 );
 
-socket.on("voiceFromServer", (data: { text: string; lang: string }) => {
-  console.log("debug");
-  const uttr = new SpeechSynthesisUtterance();
-  uttr.lang = data.lang;
-  uttr.text = data.text;
-  // 英語に対応しているvoiceを設定
-  speechSynthesis.onvoiceschanged = () => {
-    const voices = speechSynthesis.getVoices();
-    for (let i = 0; i < voices.length; i++) {
-      console.log(voices[i]);
-      if (voices[i].lang === "en-US") {
-        // console.log("hit");
+socketState.socket.on(
+  "voiceFromServer",
+  (data: { text: string; lang: string }) => {
+    console.log("debug");
+    const uttr = new SpeechSynthesisUtterance();
+    uttr.lang = data.lang;
+    uttr.text = data.text;
+    // 英語に対応しているvoiceを設定
+    speechSynthesis.onvoiceschanged = () => {
+      const voices = speechSynthesis.getVoices();
+      for (let i = 0; i < voices.length; i++) {
         console.log(voices[i]);
-        uttr.voice = voices[i];
-        // break;
+        if (voices[i].lang === "en-US") {
+          // console.log("hit");
+          console.log(voices[i]);
+          uttr.voice = voices[i];
+          // break;
+        }
       }
-    }
-  };
-  console.log(uttr);
-  speechSynthesis.speak(uttr);
-});
+    };
+    console.log(uttr);
+    speechSynthesis.speak(uttr);
+  }
+);
 
-socket.on("gainFromServer", (data) => {
+socketState.socket.on("gainFromServer", (data) => {
   gainChange(data);
 });
 
-socket.on("windowReqFromServer", (data: newWindowReqType) => {
+socketState.socket.on("windowReqFromServer", (data: newWindowReqType) => {
   window.open(
     data.URL,
     "_blank",
@@ -289,7 +290,7 @@ socket.on("windowReqFromServer", (data: newWindowReqType) => {
   click(1.0);
 });
 
-socket.on(
+socketState.socket.on(
   "quantizeFromServer",
   (data: {
     flag: boolean;
@@ -298,95 +299,50 @@ socket.on(
     bar: number;
     beat: number;
   }) => {
-    if (data.flag) {
-      console.log(data);
-      frontState.quantize.flag = data.flag;
-      frontState.quantize.bar = data.bar;
-      frontState.quantize.beat =
-        data.beat !== undefined ? data.beat : frontState.quantize.beat;
-      for (const streamEl of data.stream) {
-        if (data.flag && !frontState.quantize.stream.includes(streamEl)) {
-          frontState.quantize.stream.push(streamEl);
-          if (
-            frontState.streamFlag[streamEl] &&
-            frontState.streamChunk[streamEl] !== undefined &&
-            frontState.streamChunk[streamEl].audio !== undefined
-          ) {
-            quantizePlay(
-              {
-                source: streamEl,
-                video:
-                  frontState.streamChunk[streamEl].video === undefined
-                    ? ""
-                    : frontState.streamChunk[streamEl].video,
-                audio: frontState.streamChunk[streamEl].audio,
-                sampleRate: frontState.streamChunk[streamEl].sampleRate,
-                glitch: frontState.streamChunk[streamEl].glitch,
-                bufferSize: frontState.streamChunk[streamEl].bufferSize,
-              },
-              socket.id
-            );
-          }
-        } else if (
-          !data.flag &&
-          frontState.quantize.stream.includes(streamEl)
-        ) {
-          frontState.quantize.stream = frontState.quantize.stream.filter(
-            (el) => el !== streamEl
-          );
-        }
-      }
-      if (frontState.quantize.flag && frontState.quantize.interval === 0) {
-        quantize(data.bar, data.beat, data.stream);
-      }
-      textPrint(
-        `QUANTIZE(BPM:${String(data.bpm)},Beat:${String(data.beat)})`,
-        ctx,
-        cnvs
-      );
-      setTimeout(() => {
-        erasePrint(ctx, cnvs);
-      }, 800);
+    quantizeFromServer(data);
+  }
+);
+
+socketState.socket.on(
+  "clockFromServer",
+  (data: { clock: boolean; barLatency: number }) => {
+    if (data.clock) {
+      clockBase = Date.now();
+      clockModeId = enableClockMode(data.barLatency);
     } else {
-      stopQuantize();
-      textPrint("QUANTIZE:false", ctx, cnvs);
-      setTimeout(() => {
-        erasePrint(ctx, cnvs);
-      }, 800);
+      clockBase = 0;
+      clockModeId = disableClockMode(clockModeId);
     }
   }
 );
 
-socket.on("clockFromServer", (data: { clock: boolean; barLatency: number }) => {
-  if (data.clock) {
-    clockBase = Date.now();
-    clockModeId = enableClockMode(data.barLatency);
-  } else {
-    clockBase = 0;
-    clockModeId = disableClockMode(clockModeId);
+socketState.socket.on(
+  "emojiFromServer",
+  (data: { state: boolean; text: string }) => {
+    textPrint(data.text);
+    setTimeout(() => {
+      erasePrint();
+    }, 500);
+    emojiState(data.state);
   }
-});
+);
 
-socket.on("emojiFromServer", (data: { state: boolean; text: string }) => {
-  textPrint(data.text, ctx, cnvs);
-  setTimeout(() => {
-    erasePrint(ctx, cnvs);
-  }, 500);
-  emojiState(data.state);
-});
-
-socket.on("bpmFromServer", (data: { bpm: number; bar: number }) => {
+socketState.socket.on("bpmFromServer", (data: { bpm: number; bar: number }) => {
   console.log("bpmFromServer", data);
-  frontState.metronome.fournote = data.bar / 4;
-  frontState.quantize.bar = data.bar;
-  if (frontState.quantize.flag) {
-    stopQuantize();
-    quantize(data.bar, frontState.quantize.beat);
+  metronomeState.fournote = data.bar / 4;
+  // quantizeState.bar = data.bar;
+  if (quantizeState.flag) {
+    setQuantize({
+      flag: true,
+      bar: data.bar,
+      stream: quantizeState.stream,
+      beat: quantizeState.beat,
+    });
   }
 });
 
 /*
-socket.on("clockModeFromServer", (data: { clockMode: boolean }) => {
+socketState.socket.on("clockModeFromServer", (data: { clockMode: boolean }) => {
   console.log(data);
   if (data.clockMode) {
     if (clockModeId === 0) {
@@ -400,27 +356,27 @@ socket.on("clockModeFromServer", (data: { clockMode: boolean }) => {
 });
 */
 const videoPlayer = <HTMLVideoElement>document.getElementById("video2");
-socket.on("bufferFromServer", (data) => {
+socketState.socket.on("bufferFromServer", (data) => {
   const uint8Array = new Uint8Array(data);
   const blob = new Blob([uint8Array]);
   const url = URL.createObjectURL(blob);
   // videoElement.src = url;
   videoPlayer.src = url;
-  textPrint("buffer", ctx, cnvs);
+  textPrint("buffer");
 });
 
 // disconnect時、1秒後再接続
-socket.on("disconnect", () => {
+socketState.socket.on("disconnect", () => {
   console.log("disconnect");
   setTimeout(() => {
-    socket.connect();
+    socketState.socket.connect();
   }, 1000);
 });
 
 export const initialize = async () => {
-  erasePrint(ctx, cnvs);
+  erasePrint();
 
-  await initVideo(videoElement);
+  await initVideo();
   await initAudio();
 
   const SUPPORTS_MEDIA_DEVICES = "mediaDevices" in navigator;
@@ -476,10 +432,10 @@ export const initialize = async () => {
       audio: audioOption,
     });
     await initAudioStream(stream);
-    await initVideoStream(stream, videoElement);
+    await initVideoStream(stream);
     await console.log(stream);
-    await textPrint("initialized", ctx, cnvs);
-    await socket.emit("connectFromClient", {
+    await textPrint("initialized");
+    await socketState.socket.emit("connectFromClient", {
       clientMode:
         window.location.pathname.includes("noStream") ||
         window.location.pathname.includes("nostream")
@@ -490,17 +446,17 @@ export const initialize = async () => {
       height: window.innerHeight,
     });
     await setTimeout(() => {
-      erasePrint(ctx, cnvs);
+      erasePrint();
     }, 500);
   } else {
-    textPrint("not support navigator.mediaDevices.getUserMedia", ctx, cnvs);
+    textPrint("not support navigator.mediaDevices.getUserMedia");
   }
 
-  frontState.start = true;
+  flagState.start = true;
   // streamFlag.timelapse = true;
-  frontState.timelapse = false;
-  timelapseId = window.setInterval(() => {
-    frontState.timelapse = true;
+  timelapseState.flag = false;
+  timelapseState.setIntervalId = window.setInterval(() => {
+    flagState.timelapse = true;
   }, 60000);
 
   /*
@@ -512,6 +468,6 @@ setTimeout(() => {
 
   */
 };
-textPrint("click screen", ctx, cnvs);
+textPrint("click screen");
 
 //debugOn

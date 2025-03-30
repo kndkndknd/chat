@@ -1,14 +1,13 @@
 // import { Socket } from "socket.io-client";
-import { textPrint } from "./imageEvent";
-import { cnvs, ctx } from "./globalVariable";
+import { textPrint } from "../canvasEvent";
+// import { cnvs, ctx } from "./globalVariable";
 
 let clockModeId = null;
 
 export const enableClockMode = (latency: number) => {
   clockModeId = window.setInterval(() => {
     const date = new Date();
-    // 暫定
-    textPrint(String(date), ctx, cnvs);
+    textPrint(String(date));
   }, latency);
   return clockModeId;
 };

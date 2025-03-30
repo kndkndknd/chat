@@ -1,0 +1,42 @@
+import { quantizeState, streamFlagState } from "../state";
+import { playAudioStream } from "../stream";
+import { showImage, erasePrint, textPrint } from "../canvasEvent";
+import { chatReq } from "../stream";
+import { socketState } from "../state/socketState";
+export const quantizePlay = (data) => {
+    const beat = quantizeState.beat === 0
+        ? Math.pow(2, Math.floor(Math.random() * 6))
+        : quantizeState.beat;
+    for (let i = 0; i <= beat; i++) {
+        setTimeout(() => {
+            if (streamFlagState[data.source]) {
+                playAudioStream(data.audio, data.sampleRate, data.glitch, data.bufferSize);
+                if (data.video) {
+                    showImage(data.video);
+                    setTimeout(() => {
+                        erasePrint();
+                    }, 300);
+                }
+                else if (data.source !== undefined) {
+                    textPrint(data.source.toLowerCase());
+                }
+            }
+        }, (quantizeState.bar / beat) * i);
+    }
+    if (data.source === "CHAT") {
+        console.log("chatreq");
+        chatReq(String(socketState.socketId));
+    }
+    else {
+        console.log("streamReqFromClient");
+        socketState.socket.emit("streamReqFromClient", data.source);
+    }
+    // if (frontState.recLatency) {
+    //   setTimeout(() => {
+    //     if (data.source === "CHAT") {
+    //       chatReq(String(id));
+    //     } else {
+    //       socket.emit("streamReqFromClient", data.source);
+    //     }
+    //   }, (data.bufferSize / data.sampleRate) * 1000);
+};

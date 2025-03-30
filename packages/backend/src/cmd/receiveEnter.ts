@@ -59,23 +59,6 @@ export const receiveEnter = async (
   } else if (strings === "RECORD" || strings === "REC") {
     recordEmit(io);
     voiceEmit(io, "RECORD", id);
-    /*
-    if (!state.current.RECORD) {
-      state.current.RECORD = true;
-      io.emit("recordReqFromServer", { target: "PLAYBACK", timeout: 10000 });
-      if (state.cmd.VOICE.length > 0) {
-        state.cmd.VOICE.forEach((element) => {
-          //          io.to(element).emit('voiceFromServer', 'RECORD')
-          io.to(element).emit("voiceFromServer", {
-            text: "RECORD",
-            lang: state.cmd.voiceLang,
-          });
-        });
-      }
-    } else {
-      state.current.RECORD = false;
-    }
-    */
   } else if (strings.includes(" ") /*&& strings.split(" ").length < 4*/) {
     splitSpace(strings.split(" "), io, id);
   } else if (strings.includes("+")) {
@@ -101,7 +84,7 @@ export const receiveEnter = async (
     voiceEmit(io, strings, id);
     stopEmit(io, id, "ALL");
   } else if (strings === "QUANTIZE") {
-    const quantizeObj = quantizeCmd("all", "all", 0);
+    const quantizeObj = quantizeCmd("all", "all", { beat: 0 });
     io.emit("quantizeFromServer", {
       flag: quantizeObj.flag,
       stream: quantizeObj.stream,
