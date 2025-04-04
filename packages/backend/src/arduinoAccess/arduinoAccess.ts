@@ -3,7 +3,8 @@ import { arduinoState, sampleRateState, streamState } from "../states";
 import axios from "axios";
 import { stat } from "fs";
 
-const requestHost = "http://localhost:" + arduinoState.port;
+// const requestHost = "http://" + arduinoState.host + arduinoState.port;
+const requestHost = `http://${arduinoState.host}:${arduinoState.port}`;
 
 export const connectTest = async () => {
   const requestUrl = `${requestHost}/test`;

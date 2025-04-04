@@ -172,7 +172,7 @@ export const flagState: flagStateType = {
   timer: true,
 };
 export const arduinoState: arduinoStateType = {
-  host: "localhost",
+  host: "pi5.local",
   port: 5050,
   connected: false,
   relay: "off",
