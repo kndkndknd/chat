@@ -103,16 +103,36 @@ export const splitSpace = async (
       splitRandomRate(stringArr, io);
     } else if (stringArr[0] === "VOICE") {
       //  } else if (stringArr[0] === 'VOICE' && stringArr.length === 2 && arrTypeArr[1] === 'string') {
-      if (stringArr[1] === "JA" || stringArr[1] === "JP") {
-        cmdState.voiceLang = "ja-JP";
-        stringEmit(io, "VOICE: ja-JP");
-      } else if (stringArr[1] === "EN" || stringArr[1] === "US") {
-        cmdState.voiceLang = "en-US";
-        stringEmit(io, "VOICE: en-US");
-      } else {
-        const voiceText = stringArr.slice(1).join(" ");
-        voiceEmit(io, voiceText, "all");
-      }
+        if (stringArr[1] === "JA" || stringArr[1] === "JP") {
+          cmdState.voiceLang = "ja-JP";
+          stringEmit(io, "VOICE: ja-JP");
+          if(stringArr.length > 2) {
+            const voiceText = stringArr.slice(2).join(" ");
+            if( source !== undefined) {
+              voiceEmit(io, voiceText, source);
+            } else {
+              voiceEmit(io, voiceText, "all");
+            }
+          }
+        } else if (stringArr[1] === "EN" || stringArr[1] === "US") {
+          cmdState.voiceLang = "en-US";
+          stringEmit(io, "VOICE: en-US");
+          if(stringArr.length > 2) {
+            const voiceText = stringArr.slice(2).join(" ");
+            if( source !== undefined) {
+              voiceEmit(io, voiceText, source);
+            } else {
+              voiceEmit(io, voiceText, "all");
+            }
+          }
+        } else {
+            const voiceText = stringArr.slice(1).join(" ");
+            if( source !== undefined) {
+            voiceEmit(io, voiceText, source);
+            } else {
+              voiceEmit(io, voiceText, "all");
+            }
+        }      
     } else {
       let argVal: number;
       let argProp: string;
