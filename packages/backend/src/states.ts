@@ -14,169 +14,17 @@ import {
   StreamsType,
 } from "../../../types";
 
-import { LogType } from "../../types/log_schedule";
 
-export const cmdState: cmdStateType = {
-  GAIN: {
-    MASTER: 1.0,
-    SINEWAVE: 0.4,
-    FEEDBACK: 1,
-    WHITENOISE: 1.0,
-    CLICK: 0.9,
-    BASS: 1.5,
-    CHAT: 1.5,
-    GLITCH: 2,
-    SIMULATE: 1.0,
-    METRONOME: 0.9,
-  },
-  FADE: {
-    IN: 0,
-    OUT: 0,
-  },
-  SINEWAVE: {},
-  PORTAMENT: 0,
-  VOICE: [],
-  voiceLang: "en-US",
-  METRONOME: {},
-};
 
-export const clientState: clientStateType = {
-  client: {},
-  cmdClient: [],
-  streamClient: [],
-  sinewaveClient: [],
-};
 
-export const streamState: streamStateType = {
-  basisBufferSize: 8192,
-  random: {
-    CHAT: false,
-    PLAYBACK: false,
-    TIMELAPSE: false,
-  },
-  grid: {
-    CHAT: false,
-    PLAYBACK: false,
-    TIMELAPSE: false,
-  },
-  target: {
-    CHAT: [],
-    PLAYBACK: [],
-    TIMELAPSE: [],
-  },
-  latency: {
-    CHAT: 1000,
-    PLAYBACK: 1000,
-    TIMELAPSE: 1000,
-  },
-  loop: false,
-  timelapse: false,
-  floating: false,
-};
 
-export const sampleRateState: sampleRateStateType = {
-  sampleRate: {
-    CHAT: 44100,
-    PLAYBACK: 44100,
-    TIMELAPSE: 44100,
-    EMPTY: 44100,
-  },
-  randomrate: {
-    CHAT: false,
-    PLAYBACK: false,
-    TIMELAPSE: false,
-  },
-  randomratemode: "random",
-  randomratekey: "A",
-  randomraterange: {
-    CHAT: {
-      min: 4300,
-      max: 132300,
-    },
-    PLAYBACK: {
-      min: 4300,
-      max: 132300,
-    },
-    TIMELAPSE: {
-      min: 4300,
-      max: 132300,
-    },
-  },
-  randomratenote: {
-    CHAT: false,
-    PLAYBACK: false,
-    TIMELAPSE: false,
-  },
-};
 
-export const glitchState: glitchStateType = {
-  glitch: {
-    CHAT: false,
-    PLAYBACK: false,
-    TIMELAPSE: false,
-  },
-  glitchSampleRate: 96000,
-};
 
-export const currentState: currentStateType = {
-  cmd: {
-    FEEDBACK: [],
-    WHITENOISE: [],
-    CLICK: [],
-    BASS: [],
-    METRONOME: [],
-  },
-  sinewave: {},
-  stream: {
-    CHAT: false,
-    PLAYBACK: false,
-    TIMELAPSE: false,
-  },
-  RECORD: false,
-};
 
-export const previousState: previousStateType = {
-  text: "",
-  cmd: {
-    FEEDBACK: [],
-    WHITENOISE: [],
-    CLICK: [],
-    BASS: [],
-    METRONOME: [],
-  },
-  sinewave: {},
-  stream: {
-    CHAT: false,
-    PLAYBACK: false,
-    TIMELAPSE: false,
-  },
-  RECORD: false,
-};
 
-export const webState: webStateType = {
-  flag: false,
-  type: "websocket",
-  url: "ws://chat.knd.cloud/ws/",
-};
 
-export const bpmState: bpmStateType = {
-  client: {},
-  stream: {},
-  METRONOME: 60,
-  MODULATION: 1,
-};
 
-export const flagState: flagStateType = {
-  clockMode: false,
-  emoji: false,
-  timer: true,
-};
-export const arduinoState: arduinoStateType = {
-  host: "pi5.local",
-  port: 5050,
-  connected: false,
-  relay: "off",
-};
+
 
 export const formState: formStateType = {
   hls: {
@@ -206,57 +54,8 @@ export const formState: formStateType = {
 
 export const hlsState: string[] = [];
 
-export const chats = [];
 
-export const oneshots = {
-  KICK: {
-    audio: [],
-    video: [],
-    bufferSize: streamState.basisBufferSize,
-  },
-  SNARE: {
-    audio: [],
-    video: [],
-    bufferSize: streamState.basisBufferSize,
-  },
-  HAT: {
-    audio: [],
-    video: [],
-    bufferSize: streamState.basisBufferSize,
-  },
-  SILENCE: {
-    audio: [],
-    video: [],
-    bufferSize: streamState.basisBufferSize,
-  },
-};
 
-export const streams: StreamsType = {
-  PLAYBACK: {
-    audio: [],
-    video: [],
-    index: 0,
-    bufferSize: streamState.basisBufferSize,
-  },
-  TIMELAPSE: {
-    audio: [],
-    video: [],
-    index: 0,
-    bufferSize: streamState.basisBufferSize,
-  },
-  INTERNET: {
-    audio: [],
-    video: [],
-    index: 0,
-    bufferSize: streamState.basisBufferSize,
-  },
-  EMPTY: {
-    audio: [],
-    video: [],
-    index: 0,
-    bufferSize: streamState.basisBufferSize,
-  },
-};
 
 export const chat_web = true;
 
@@ -319,4 +118,3 @@ export const helpList = {
 
 export const streamApiUrl: string = "http://127.0.0.1:8088/getLiveStream";
 
-export const cmdLog: LogType[] = [];
