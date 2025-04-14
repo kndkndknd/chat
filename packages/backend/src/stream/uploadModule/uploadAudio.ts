@@ -3,7 +3,8 @@
 import { promiseGetPcmData } from "./getPcmData";
 import { pushStateStream } from "../pushStateStream";
 
-import { streams, streamState } from "../../states";
+import { streamState } from "../../state";
+import { streams } from "../../data";
 // import { pushStateStream } from "../pushStateStream.js";
 
 export const uploadAudio = async (f: string, mediaDirPath: string) => {

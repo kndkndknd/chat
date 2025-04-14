@@ -4,14 +4,8 @@ import { sinewaveEmit } from "./sinewaveEmit";
 import { chatPreparation } from "../stream/chatPreparation";
 import { streamEmit } from "../stream/streamEmit";
 import { stopEmit } from "./stopEmit";
-import {
-  cmdList,
-  streamList,
-  parameterList,
-  clientState,
-  cmdState,
-  currentState,
-} from "../states";
+import { clientState, cmdState, currentState } from "../state";
+import { cmdList, streamList, parameterList } from "../data";
 import { sinewaveChange } from "./sinewaveChange";
 import { parameterChange } from "./parameterChange";
 import { getTypeArr } from "./splitSpace/getTypeArr";

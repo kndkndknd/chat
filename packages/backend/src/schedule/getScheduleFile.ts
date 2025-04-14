@@ -1,6 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
-import { log } from "console";
+// import { log } from "console";
 
 // schedule.jsonかscenario.jsonがあれば読み込む。なければログファイルで最も新しいものを読み込む
 export const getScheduleFile = (): string => {

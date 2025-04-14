@@ -2,15 +2,15 @@ import SocketIO from "socket.io";
 
 import {
   cmdState,
-  cmdList,
-  streamList,
-  parameterList,
   clientState,
   arduinoState,
   streamState,
   flagState,
   previousState,
-} from "../states";
+} from "../state";
+
+import { cmdList, parameterList, streamList } from "../data";
+
 import { streamEmit } from "../stream/streamEmit";
 import { cmdEmit } from "./cmdEmit";
 import { stopEmit } from "./stopEmit";

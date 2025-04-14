@@ -1,5 +1,5 @@
 import SocketIO from "socket.io";
-import { cmdState } from "../states";
+import { cmdState } from "../state";
 
 export const voiceEmit = (io: SocketIO.Server, strings: string, id: string) => {
   console.log("id", id);

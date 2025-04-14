@@ -1,8 +1,8 @@
-import * as path from "path";
+// import * as path from "path";
 import * as fs from "fs";
 
-import { cmdLog } from "../states";
-import { getDateTimeString } from "../../../util/getDateTimeString";
+// import { cmdLog } from "../data";
+// import { getDateTimeString } from "../../../util/getDateTimeString";
 import { LogType } from "../../../types/log_schedule";
 
 // read log json file

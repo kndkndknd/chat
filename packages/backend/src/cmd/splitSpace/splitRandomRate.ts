@@ -1,4 +1,4 @@
-import { sampleRateState } from "../../states";
+import { sampleRateState } from "../../state";
 import { stringEmit } from "../../socket/ioEmit";
 
 export const splitRandomRate = (stringArr: string[], io) => {

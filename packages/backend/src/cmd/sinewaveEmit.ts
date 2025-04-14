@@ -2,7 +2,7 @@ import SocketIO from "socket.io";
 import { putCmd } from "./putCmd";
 // import { notTargetEmit } from "./notTargetEmit";
 import { pickupCmdTarget } from "./pickupCmdTarget";
-import { currentState, previousState, clientState, cmdState } from "../states";
+import { currentState, previousState, clientState, cmdState } from "../state";
 
 export const sinewaveEmit = (
   frequencyStr: number,

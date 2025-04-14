@@ -1,6 +1,7 @@
 import SocketIO from "socket.io";
 
-import { clientState, cmdList, cmdState, currentState } from "../states";
+import { clientState, cmdState, currentState } from "../state";
+import { cmdList } from "../data";
 
 import { stopEmit } from "./stopEmit";
 import { putCmd } from "./putCmd";

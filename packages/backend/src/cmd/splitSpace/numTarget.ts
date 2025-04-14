@@ -1,10 +1,5 @@
-import {
-  cmdList,
-  streamList,
-  clientState,
-  currentState,
-  streamState,
-} from "../../states";
+import { clientState, currentState, streamState } from "../../state";
+import { cmdList, streamList } from "../../data";
 import { cmdEmit } from "../cmdEmit";
 import { recordEmit } from "../../stream/recordEmit";
 import { sinewaveEmit } from "../sinewaveEmit";

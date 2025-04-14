@@ -1,5 +1,5 @@
 import SocketIO from "socket.io";
-import { previousState } from "../states";
+import { previousState } from "../state";
 import { cmdEmit } from "./cmdEmit";
 import { streamEmit } from "../stream/streamEmit";
 import { sinewaveEmit } from "./sinewaveEmit";

@@ -1,6 +1,6 @@
 import { quantizeCmd } from "../../stream/quantizeCmd";
 import { quantizeObjType } from "../../../../../types";
-import { streamList } from "../../states";
+import { streamList } from "../../data";
 
 // ターゲットについてはtargetに入ってる。下記targetを除いたstringArr
 // stringArr.length === 1 => quantizeCmd(io, state, "all", target, 0);

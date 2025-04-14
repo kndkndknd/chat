@@ -1,5 +1,5 @@
 import SocketIO from "socket.io";
-import { clientState, hlsState } from "../../states";
+import { clientState, hlsState } from "../../state";
 
 export const playHLS = (file: string, io: SocketIO.Server) => {
   const notPlayClient = Object.keys(clientState.client).filter((key) => {

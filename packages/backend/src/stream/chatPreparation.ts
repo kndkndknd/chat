@@ -1,6 +1,6 @@
 import SocketIO from "socket.io";
 import { pickupStreamTarget } from "./pickupStreamTarget";
-import { currentState } from "../states";
+import { currentState } from "../state";
 
 export const chatPreparation = async (io: SocketIO.Server) => {
   console.log(currentState.stream.CHAT);

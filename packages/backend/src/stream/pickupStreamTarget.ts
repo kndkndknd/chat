@@ -1,4 +1,4 @@
-import { streamState, clientState } from "../states";
+import { streamState, clientState } from "../state";
 
 export const pickupStreamTarget = (stream: string, from?: string): string => {
   console.log("streamState.target", streamState.target[stream]);

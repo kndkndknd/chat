@@ -1,6 +1,6 @@
 import SocketIO from "socket.io";
 import dotenv from "dotenv";
-import { cmdList, streamList, parameterList, streams } from "../states";
+import { cmdList, streamList, parameterList, streams } from "../data";
 // import { stringEmit } from "../socket/ioEmit.js";
 import { pushStateStream } from "../stream/pushStateStream";
 

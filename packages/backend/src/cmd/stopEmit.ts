@@ -6,7 +6,7 @@ import {
   streamState,
   currentState,
   previousState,
-} from "../states";
+} from "../state";
 
 export const stopEmit = (
   io: SocketIO.Server,

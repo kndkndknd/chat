@@ -1,9 +1,13 @@
 import { millisecondsPerBar } from "../cmd/bpmCalc";
 import { quantizeObjType } from "../../../../types";
-import { streamList, clientState } from "../states";
+import {
+  clientState,
+  bpmState,
+  quantizeState,
+  setQuantizeState,
+} from "../state";
 // import { decideQuantizeFromAverage } from "./quantizeModule/decideQuantizeFromAverage";
-import { bpmState } from "../states";
-import { quantizeState, setQuantizeState } from "../state";
+import { streamList } from "../data";
 
 export const quantizeCmd = (
   // io: SocketIO.Server,

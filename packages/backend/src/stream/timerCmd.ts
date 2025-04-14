@@ -1,7 +1,7 @@
 import SocketIO from "socket.io";
 import { receiveEnter } from "../cmd/receiveEnter";
 import { stopEmit } from "../cmd/stopEmit";
-import { clientState, currentState } from "../states";
+import { clientState, currentState } from "../state";
 
 export const timerCmd = (
   io: SocketIO.Server,

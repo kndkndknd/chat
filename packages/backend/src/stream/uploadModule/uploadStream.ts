@@ -10,7 +10,8 @@ import * as path from "path";
 // var readFile = util.promisify(fs.readFile);
 // var execPromise = util.promisify(exec);
 
-import { streams, uploadParams, streamState } from "../../states";
+import { streams, uploadParams } from "../../data";
+import { streamState } from "../../state";
 // import SocketIO from "socket.io";
 
 import { getFilePath } from "./getFilePath";

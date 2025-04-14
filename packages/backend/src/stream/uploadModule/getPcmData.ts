@@ -2,7 +2,7 @@ import { spawn } from "child_process";
 
 // https://github.com/jhurliman/node-pcmを自分のに合わせて作成
 
-import { streamState } from "../../states";
+import { streamState } from "../../state";
 
 export const promiseGetPcmData = (
   filePath: string,

@@ -2,7 +2,8 @@ import * as fs from "fs";
 // import { execa } from "execa";
 import { spawn } from "child_process";
 
-import { streams, streamState } from "../../states";
+import { streamState } from "../../state";
+import { streams } from "../../data";
 
 import { promiseGetPcmData } from "./getPcmData";
 import { promiseGetImageData } from "./getImageData";

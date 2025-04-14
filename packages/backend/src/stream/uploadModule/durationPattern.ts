@@ -1,4 +1,4 @@
-import { uploadParams } from "../../states";
+import { uploadParams } from "../../data";
 
 export const durationPattern = (duration: number, stringArr: Array<string>) => {
   const lengthArr: Array<{ t: string; ss?: string }> = [

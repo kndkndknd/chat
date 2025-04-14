@@ -14,18 +14,6 @@ import {
   StreamsType,
 } from "../../../types";
 
-
-
-
-
-
-
-
-
-
-
-
-
 export const formState: formStateType = {
   hls: {
     knd: "KND",
@@ -52,46 +40,7 @@ export const formState: formStateType = {
   },
 };
 
-export const hlsState: string[] = [];
-
-
-
-
 export const chat_web = true;
-
-export const cmdList = {
-  FEEDBACK: "FEEDBACK",
-  FEED: "FEEDBACK",
-  WHITENOISE: "WHITENOISE",
-  NOISE: "WHITENOISE",
-  CLICK: "CLICK",
-  BASS: "BASS",
-  SIMULATE: "SIMULATE",
-  SIMS: "SIMULATE",
-  METRONOME: "METRONOME",
-  PREVIOUS: "PREVIOUS",
-  PREV: "PREVIOUS",
-};
-
-export let streamList = ["PLAYBACK", "TIMELAPSE", "EMPTY"];
-
-export const parameterList = {
-  PORTAMENT: "PORTAMENT", // 引数が前提 単体は0なら5、0以外なら0
-  PORT: "PORTAMENT",
-  SAMPLERATE: "SAMPLERATE",
-  RATE: "SAMPLERATE",
-  BPM: "BPM",
-  GLITCH: "GLITCH", // 単体でも使える、引数もありうる
-  GRID: "GRID", // ほぼ単体使いな気がするが、STREAM指定できたらそれはそれで
-  VOICE: "VOICE", // 単体。引数にするとしたら1 VOICEのような形だと思う
-  RANDOM: "RANDOM",
-};
-
-export const uploadParams = {
-  mediaDir: "chat_upload",
-  ss: "00:00:00",
-  t: "00:00:20",
-};
 
 export const helpList = {
   FEEDBACK:
@@ -115,6 +64,3 @@ export const helpList = {
   INSERT:
     "自宅のサーバのDBにPLAYBACK等を保存する INSERT (STREAM名) (場所) (日付)の形式で実行する",
 };
-
-export const streamApiUrl: string = "http://127.0.0.1:8088/getLiveStream";
-

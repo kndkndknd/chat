@@ -1,13 +1,13 @@
 import SocketIO from "socket.io";
 import { buffStateType } from "../../../../types";
 import {
-  streams,
   currentState,
   streamState,
   glitchState,
   sampleRateState,
   clientState,
-} from "../states";
+} from "../state";
+import { streams } from "../data";
 import { pickupStreamTarget } from "./pickupStreamTarget";
 import { switchCramp } from "../arduinoAccess/arduinoAccess";
 import { glitchStream } from "./glitchStream";

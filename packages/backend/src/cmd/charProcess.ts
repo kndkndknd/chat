@@ -1,5 +1,5 @@
 import SocketIO from "socket.io";
-import { previousState } from "../states";
+import { previousState } from "../state";
 import { receiveEnter } from "./receiveEnter";
 import { stopEmit } from "./stopEmit";
 import { metronomeBpmSet } from "./metronomeBpmSet";

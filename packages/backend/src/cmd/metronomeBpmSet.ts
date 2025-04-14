@@ -1,5 +1,5 @@
 import SocketIO from "socket.io";
-import { clientState, cmdState } from "../states";
+import { clientState, cmdState } from "../state";
 import { stringEmit } from "../socket/ioEmit";
 // import { putCmd } from './putCmd'
 

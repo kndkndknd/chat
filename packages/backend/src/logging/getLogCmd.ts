@@ -1,4 +1,4 @@
-import { cmdLog } from "../states";
+import { cmdLog } from "../data";
 let cmdLogNum = 0;
 
 export const getLogCmd = (arrow: string) => {

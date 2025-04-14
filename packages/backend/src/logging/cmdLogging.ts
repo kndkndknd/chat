@@ -1,4 +1,4 @@
-import { cmdLog } from "../states";
+import { cmdLog } from "../data";
 import { getDateTimeString } from "../../../util/getDateTimeString";
 
 export const cmdLogging = (strings: string) => {

@@ -2,10 +2,6 @@ import SocketIO from "socket.io";
 
 // import { putString } from './putString'
 import {
-  cmdList,
-  streamList,
-  parameterList,
-  streams,
   cmdState,
   streamState,
   glitchState,
@@ -13,7 +9,7 @@ import {
   clientState,
   currentState,
   bpmState,
-} from "../states";
+} from "../state";
 import { putCmd } from "./putCmd";
 import { stringEmit } from "../socket/ioEmit";
 import { notTargetEmit } from "./notTargetEmit";

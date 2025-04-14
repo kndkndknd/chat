@@ -1,11 +1,10 @@
 import {
-  cmdList,
-  streamList,
   currentState,
   previousState,
   clientState,
   cmdState,
-} from "../../states";
+} from "../../state";
+import { cmdList, streamList } from "../../data";
 
 export const solo = (stringArr: string[], arrTypeArr: string[], io) => {
   if (Object.keys(cmdList).includes(stringArr[0])) {

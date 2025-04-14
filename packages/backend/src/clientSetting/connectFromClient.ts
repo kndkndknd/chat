@@ -5,7 +5,7 @@ import {
   arduinoState,
   bpmState,
   cmdState,
-} from "../states";
+} from "../state";
 import { quantizeState } from "../state";
 import { floatingPosition } from "./floatingPosition";
 

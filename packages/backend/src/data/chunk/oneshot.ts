@@ -1,4 +1,4 @@
-import { streamState } from '../state';
+import { streamState } from "../../state";
 
 export const oneshots = {
   KICK: {

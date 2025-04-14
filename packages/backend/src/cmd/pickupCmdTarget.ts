@@ -1,4 +1,5 @@
-import { cmdList, clientState, currentState } from "../states";
+import { clientState, currentState } from "../state";
+import { cmdList } from "../data";
 
 interface Cmd {
   cmd: string;

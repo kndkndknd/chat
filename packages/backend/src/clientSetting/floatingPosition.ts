@@ -1,4 +1,4 @@
-import { clientState } from "../states";
+import { clientState } from "../state";
 
 export const floatingPosition = (
   socketId

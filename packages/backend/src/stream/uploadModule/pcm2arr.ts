@@ -1,6 +1,6 @@
 const pcm = require("pcm");
 
-import { streamState } from "../../states";
+import { streamState } from "../../state";
 
 export const pcm2arr = (url) => {
   let tmpBuff = new Float32Array(streamState.basisBufferSize);

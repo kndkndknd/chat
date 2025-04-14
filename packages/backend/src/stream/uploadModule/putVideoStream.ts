@@ -1,7 +1,7 @@
 import { spawn } from "child_process";
 import * as fs from "fs";
 
-import { streams } from "../../states";
+import { streams } from "../../data";
 
 export const putVideoStream = async (
   fileName,

@@ -1,14 +1,13 @@
 import {
-  streamList,
   streamState,
   currentState,
   previousState,
   sampleRateState,
   glitchState,
-  // quantizeState,
+  quantizeState,
   clientState,
-} from "../states";
-import { quantizeState } from "../state";
+} from "../state";
+import { streamList } from "../data";
 
 export const pushStateStream = (
   streamName: string,

@@ -1,4 +1,4 @@
-import { sampleRateState } from "../states";
+import { sampleRateState } from "../state";
 
 export const sampleRateRandomize = (stream: string) => {
   const max = sampleRateState.randomraterange[stream].max;

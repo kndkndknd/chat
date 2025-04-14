@@ -1,4 +1,4 @@
-import { arduinoState } from "../../states";
+import { arduinoState } from "../../state";
 import { connectTest } from "../../arduinoAccess/arduinoAccess";
 
 export const splitArduino = (stringArr: string[], io) => {

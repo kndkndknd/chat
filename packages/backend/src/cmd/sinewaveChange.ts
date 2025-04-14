@@ -1,7 +1,7 @@
 import SocketIO from "socket.io";
 
 import { putCmd } from "./putCmd";
-import { currentState, previousState, cmdState } from "../states";
+import { currentState, previousState, cmdState } from "../state";
 
 export const sinewaveChange = (
   cmdStrings: string,

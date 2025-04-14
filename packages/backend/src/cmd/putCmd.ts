@@ -1,7 +1,7 @@
 import SocketIO from "socket.io";
 import { switchOneshot } from "../arduinoAccess/arduinoAccess";
 // import { time } from "console";
-import { clientState, arduinoState } from "../states";
+import { clientState, arduinoState } from "../state";
 
 export const putCmd = (
   io: SocketIO.Server,

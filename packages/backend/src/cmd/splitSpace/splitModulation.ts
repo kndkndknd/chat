@@ -1,5 +1,5 @@
 import { modulationByBPM } from "./modulationByBPM";
-import { bpmState, clientState } from "../../states";
+import { bpmState, clientState } from "../../state";
 import { sinewaveEmit } from "../sinewaveEmit";
 
 export const splitModulation = (

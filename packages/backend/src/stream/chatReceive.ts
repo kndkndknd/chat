@@ -1,8 +1,6 @@
 import SocketIO from "socket.io";
 import { buffStateType } from "../../../../types";
 import {
-  chats,
-  streams,
   clientState,
   streamState,
   glitchState,
@@ -10,7 +8,8 @@ import {
   currentState,
   cmdState,
   arduinoState,
-} from "../states";
+} from "../state";
+import { chats, streams } from "../data";
 import { glitchStream } from "./glitchStream";
 import { pushStateStream } from "./pushStateStream";
 // import { pickupTarget } from "../route";

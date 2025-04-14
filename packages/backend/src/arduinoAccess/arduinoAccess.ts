@@ -1,5 +1,5 @@
 import { time } from "console";
-import { arduinoState, sampleRateState, streamState } from "../states";
+import { arduinoState, sampleRateState, streamState } from "../state";
 import axios from "axios";
 import { stat } from "fs";
 

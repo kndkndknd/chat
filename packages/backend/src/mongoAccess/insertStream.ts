@@ -1,7 +1,7 @@
 import SocketIO from "socket.io";
 import dotenv from "dotenv";
 
-import { streams } from "../states";
+import { streams } from "../data";
 import { stringEmit } from "../socket/ioEmit";
 dotenv.config();
 

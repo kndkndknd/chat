@@ -7,7 +7,7 @@ import {
   previousState,
   clientState,
   cmdState,
-} from "../../states";
+} from "../../state";
 
 export const splitStop = (stringArr: string[], io) => {
   console.log("splitStop", stringArr);

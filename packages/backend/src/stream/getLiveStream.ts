@@ -4,7 +4,8 @@ import { spawn } from "child_process";
 import axios from "axios";
 const pcm = require("pcm");
 
-import { streams, streamApiUrl, streamState } from "../states";
+import { streamState } from "../state";
+import { streams, streamApiUrl } from "../data";
 import { putVideoStream } from "./uploadModule/putVideoStream";
 import { pushStateStream } from "./pushStateStream";
 
