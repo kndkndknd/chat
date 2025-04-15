@@ -38,6 +38,14 @@ void btnOff() {
   server.send(200, "text/plain", "off");  //レスポンス200を返しhtml送信
 }
 
+// ブラウザOFFボタン処理
+void test() {
+  // digitalWrite(BLUE_LED_PIN, LOW);  // 本体LED消灯
+  // digitalWrite(26, LOW);       // 外部出力OFF
+  // Serial.println("get:/get/btn_off");
+  server.send(200, "text/plain", "ok");  //レスポンス200を返しhtml送信
+}
+
 
 void setup()
 {

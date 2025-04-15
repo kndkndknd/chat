@@ -1,4 +1,5 @@
 export const keyWaitState = {
-  timeoutId: null as number | null,
+  keywaitTimeoutId: null as number | null,
+  ratationTimeoutId: null as number | null,
   listening: false,
-}
+};

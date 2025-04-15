@@ -24,6 +24,7 @@ import { stringEmit } from "./ioEmit";
 import { enterFromForm } from "../cmd/form/enterFromForm";
 import { stopEmit } from "../cmd/stopEmit";
 import { connectFromClient } from "../clientSetting/connectFromClient";
+import { m5Test, m5Switch } from "../arduinoAccess/m5Access";
 
 // websocket
 import { sendCharWebSocket } from "../webSocket/sendChar";
@@ -99,6 +100,10 @@ export const ioServer = (
 
     socket.on("escapeFromForm", () => {
       stopEmit(io, "form", "ExceptHls");
+    });
+
+    socket.on("startRotationFromSmartphone", () => {
+      m5Switch();
     });
 
     socket.on("disconnect", () => {

@@ -6,3 +6,10 @@ export const arduinoState: arduinoStateType = {
   connected: false,
   relay: "off",
 };
+
+export const m5State: arduinoStateType = {
+  host: "m5stack.local",
+  port: 80,
+  connected: false,
+  relay: "off",
+};

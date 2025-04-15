@@ -8,12 +8,7 @@ import { keyWaitState } from "./keyWaitState";
 socketState.socket = io();
 socketState.socketId = socketState.socket.id;
 
-
-import {
-  textPrint,
-  erasePrint,
-  canvasSizing,
-} from "../canvasEvent";
+import { textPrint, erasePrint, canvasSizing } from "../canvasEvent";
 
 import { keyDown } from "./keyDown";
 
@@ -39,6 +34,7 @@ const portament = 10;
 const fade = 5;
 const gain = 1;
 const timeout = 44444;
+const keyWait = 1000;
 
 let eListener = <HTMLElement>document.getElementById("wrapper");
 eListener.addEventListener(
@@ -62,36 +58,51 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !flagState.start) {
     initialize();
   } else {
-    if(!keyWaitState.listening) {
+    if (!keyWaitState.listening) {
       keyWaitState.listening = true;
     }
-    if(keyWaitState.timeoutId !== null) {
-      clearTimeout(keyWaitState.timeoutId);
+    if (keyWaitState.keywaitTimeoutId !== null) {
+      clearTimeout(keyWaitState.keywaitTimeoutId);
     }
     chordState.push(keyDown(e));
-    keyWaitState.timeoutId = window.setTimeout(() => {
+    keyWaitState.keywaitTimeoutId = window.setTimeout(() => {
+      const text = chordState
+        .map((chord) => {
+          return chord.char;
+        })
+        .join(" + ");
+      erasePrint();
+      textPrint(text);
       chordStart();
       keyWaitState.listening = false;
-      keyWaitState.timeoutId = null;
-      setTimeout(() => {
+      keyWaitState.keywaitTimeoutId = null;
+      keyWaitState.ratationTimeoutId = window.setTimeout(() => {
         chordStop();
         chordState.length = 0;
         console.log("chordState", chordState);
+        socketState.socket.emit("startRotationFromSmartphone");
+        erasePrint();
       }, timeout);
-    }, 1000);
-   
+    }, keyWait);
   }
 });
 
-socketState.socket.on(
-  "startRotatingSmartphoneFromServer",
-  () => {
-    // erasePrint(stx, strCnvs);
-    erasePrint();
-    
-  }
-);
+socketState.socket.on("startRotationFromServer", () => {
+  erasePrint();
+});
 
+socketState.socket.on("stopRotationFromServer", () => {
+  if (keyWaitState.keywaitTimeoutId !== null) {
+    clearTimeout(keyWaitState.keywaitTimeoutId);
+  }
+  if (keyWaitState.ratationTimeoutId !== null) {
+    clearTimeout(keyWaitState.ratationTimeoutId);
+  }
+  chordStop();
+  chordState.length = 0;
+  erasePrint();
+  textPrint("STOP");
+});
 
 // socketState.socket.on(
 //   "stringsFromServer",
@@ -182,33 +193,25 @@ textPrint("click screen");
 
 const chordStart = () => {
   const currentTime = contextState.audioContext.currentTime;
-  for(let i = 0; i < chordState.length; i++) {
-    if(oscArrState !== null && oscArrState.length > i) {
+  for (let i = 0; i < chordState.length; i++) {
+    if (oscArrState !== null && oscArrState.length > i) {
       oscArrState[i].osc.frequency.setTargetAtTime(
         chordState[i].frequency,
         currentTime,
         portament
       );
-      oscArrState[i].gain.gain.setTargetAtTime(
-        gain,
-        currentTime,
-        fade
-      );
+      oscArrState[i].gain.gain.setTargetAtTime(gain, currentTime, fade);
     } else {
       oscArrState.push({
         osc: contextState.audioContext.createOscillator(),
         gain: contextState.audioContext.createGain(),
-      })
+      });
       oscArrState[i].osc.frequency.setTargetAtTime(
         chordState[i].frequency,
         currentTime,
         portament
       );
-      oscArrState[i].gain.gain.setTargetAtTime(
-        gain,
-        currentTime,
-        fade
-      );
+      oscArrState[i].gain.gain.setTargetAtTime(gain, currentTime, fade);
       oscArrState[i].osc.connect(oscArrState[i].gain);
       oscArrState[i].gain.connect(contextState.masterGain);
       oscArrState[i].osc.start(0);
@@ -218,11 +221,7 @@ const chordStart = () => {
 
 const chordStop = () => {
   const currentTime = contextState.audioContext.currentTime;
-  for(let i = 0; i < oscArrState.length; i++) {
-    oscArrState[i].gain.gain.setTargetAtTime(
-      0,
-      currentTime,
-      fade
-    );
+  for (let i = 0; i < oscArrState.length; i++) {
+    oscArrState[i].gain.gain.setTargetAtTime(0, currentTime, fade);
   }
-}
+};

@@ -45,6 +45,7 @@ import { splitRandomRate } from "./splitRandomRate";
 import { splitModulation } from "./splitModulation";
 import { splitArduino } from "./splitArduino";
 import { quantizeObjType } from "../../../../../types";
+import { m5Test, m5Switch } from "../../arduinoAccess/m5Access";
 
 export const splitSpace = async (
   stringArr: Array<string>,
@@ -391,6 +392,17 @@ export const splitSpace = async (
         io.emit("quantizeFromServer", quantizeObj);
       }
       // io.emit("quantizeFromServer", quantizeObj);
+    }
+  } else if (stringArr[0] === "ROTATE" || stringArr[0] === "ROTATION") {
+    if (stringArr[1] === "START") {
+      io.emit("startRotationFromServer");
+      m5Switch("on");
+    } else if (stringArr[1] === "STOP") {
+      io.emit("stopRotationFromServer");
+      m5Switch("off");
+      // arduinoへのGET
+    } else if (stringArr[1] === "TEST") {
+      m5Test();
     }
   } else {
     stringEmit(io, stringArr.join(" "), false);

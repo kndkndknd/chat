@@ -2,7 +2,7 @@
 import { quantizeState } from "./states/quantizeState";
 import { cmdState } from "./states/cmdState";
 import { streamState } from "./states/streamState";
-import { arduinoState } from "./states/arduinoState";
+import { arduinoState, m5State } from "./states/arduinoState";
 import { bpmState } from "./states/bpmState";
 import { clientState } from "./states/clientState";
 import { currentState } from "./states/currentState";
@@ -30,4 +30,5 @@ export {
   sampleRateState,
   webState,
   hlsState,
+  m5State,
 };
