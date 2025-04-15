@@ -1,1 +1,1 @@
-export const oscArrState: OscillatorNode | null[] = [];
+export const oscArrState: {osc: OscillatorNode, gain: GainNode}[] | null = [];
