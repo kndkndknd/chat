@@ -56,3 +56,10 @@ export const m5Switch = async (param?: "on" | "off") => {
     return false;
   }
 };
+
+export const m5SetIpAddress = async (ip: string) => {
+  m5State.host = ip;
+  console.log("m5SetIpAddress", m5State.host);
+  const result = await m5Test();
+  return result;
+};

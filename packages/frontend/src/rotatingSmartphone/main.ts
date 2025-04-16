@@ -23,17 +23,17 @@ import { keyDown } from "./keyDown";
 
 import { initAudio } from "./initAudio";
 
-import { cmdFromServer } from "../cmd";
+// import { cmdFromServer } from "../cmd";
 import { oscArrState } from "./oscArrState";
 
 // import { keyDown } from "../textInput";
 
 // let start = false;
 
-const portament = 10;
-const fade = 5;
+const portament = 5;
+const fade = 2.5;
 const gain = 1;
-const timeout = 44444;
+const timeout = 25416;
 const keyWait = 1000;
 
 let eListener = <HTMLElement>document.getElementById("wrapper");

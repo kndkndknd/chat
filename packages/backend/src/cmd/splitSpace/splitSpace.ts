@@ -45,7 +45,7 @@ import { splitRandomRate } from "./splitRandomRate";
 import { splitModulation } from "./splitModulation";
 import { splitArduino } from "./splitArduino";
 import { quantizeObjType } from "../../../../../types";
-import { m5Test, m5Switch } from "../../arduinoAccess/m5Access";
+import { rotate } from "./rotate";
 
 export const splitSpace = async (
   stringArr: Array<string>,
@@ -394,15 +394,23 @@ export const splitSpace = async (
       // io.emit("quantizeFromServer", quantizeObj);
     }
   } else if (stringArr[0] === "ROTATE" || stringArr[0] === "ROTATION") {
-    if (stringArr[1] === "START") {
-      io.emit("startRotationFromServer");
-      m5Switch("on");
-    } else if (stringArr[1] === "STOP") {
-      io.emit("stopRotationFromServer");
-      m5Switch("off");
-      // arduinoへのGET
-    } else if (stringArr[1] === "TEST") {
-      m5Test();
+    if (
+      stringArr.length === 3 &&
+      (stringArr[1] === "IP" || stringArr[1] === "ADDRESS")
+    ) {
+      const result = await rotate(stringArr[1], io, stringArr[2]);
+      if (result) {
+        stringEmit(io, `ROTATE SET IP ${stringArr[2]}: SUCCESS`);
+      } else {
+        stringEmit(io, `ROTATE SET IP ${stringArr[2]}: FAILED`);
+      }
+    } else {
+      const result = rotate(stringArr[1], io);
+      if (result) {
+        stringEmit(io, `ROTATE ${stringArr[1]}: SUCCESS`);
+      } else {
+        stringEmit(io, `ROTATE ${stringArr[1]}: FAILED`);
+      }
     }
   } else {
     stringEmit(io, stringArr.join(" "), false);
