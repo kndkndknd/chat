@@ -453,7 +453,6 @@ export const initialize = async () => {
   }
 
   flagState.start = true;
-  // streamFlag.timelapse = true;
   timelapseState.flag = false;
   timelapseState.setIntervalId = window.setInterval(() => {
     flagState.timelapse = true;
