@@ -31,16 +31,21 @@ import {
 import {
   initAudio,
   click,
-  stopCmd,
+  // stopCmd,
   // recordReqFromServer,
   gainChange,
-  streamPlay,
+  // streamPlay,
 } from "./webaudio";
 
-import { chatReq, recordReqFromServer, initAudioStream } from "./stream";
+import {
+  chatReq,
+  recordReqFromServer,
+  initAudioStream,
+  streamPlay,
+} from "./stream";
 import { quantize, quantizePlay, quantizeStop } from "./quantize";
 
-import { cmdFromServer } from "./cmd";
+import { cmdFromServer, stopCmd } from "./cmd";
 
 import { keyDown } from "./textInput";
 
@@ -208,7 +213,7 @@ socketState.socket.on(
       streamChunk.CHAT = chunk;
     } else {
       if (data.floating === undefined || !data.floating) {
-        streamPlay("CHAT", socketState.socket.id, data);
+        streamPlay("CHAT", socketState.socket, data);
       } else {
         // const position = positionFloatingImage(data.target);
         showImage(data.video, data.position);
@@ -237,7 +242,7 @@ socketState.socket.on(
       streamChunk[data.source] = data;
     } else {
       if (data.floating === undefined || !data.floating) {
-        streamPlay("STREAM", socketState.socket.id, data, cinemaFlag);
+        streamPlay("STREAM", socketState.socket, data, cinemaFlag);
       } else {
         showImage(data.video, data.position);
       }

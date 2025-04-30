@@ -13,8 +13,9 @@ import {
 import { putCmd } from "./putCmd";
 import { stringEmit } from "../socket/ioEmit";
 import { notTargetEmit } from "./notTargetEmit";
-import { millisecondsPerBar } from "./bpmCalc";
+import { millisecondsPerBar } from "../../../util/bpmCalc";
 import { quantizeState } from "../state";
+import { streamList } from "../data";
 
 export const parameterChange = (
   param: string,
@@ -136,26 +137,26 @@ export const parameterChange = (
         const bar = millisecondsPerBar(arg.value);
 
         if (arg.property) {
-          // propertyがSTREAMを指定している場合
-          if (
-            quantizeState[arg.property] === undefined ||
-            Object.keys(quantizeState[arg.property]).length === 0
-          ) {
-            quantizeState[arg.property] = {};
-            for (const client in clientState.client) {
-              quantizeState[arg.property][client] = {
-                flag: false,
-                bpm: arg.value,
-                beat: 0,
-              };
+          if (streamList.includes(arg.property)) {
+            // propertyがSTREAMを指定している場合
+            for (const client of Object.keys(bpmState)) {
+              if (
+                Object.keys(bpmState[client].stream).length === 0 ||
+                bpmState[client].stream[arg.property] === undefined
+              ) {
+                bpmState[client].stream[arg.property] = {
+                  bpm: arg.value,
+                  beat: 0,
+                  gridFlag: false,
+                  quantizeFlag: false,
+                  latency: latency,
+                };
+              } else {
+                bpmState[client].stream[arg.property].bpm = arg.value;
+                bpmState[client].stream[arg.property].latency = latency;
+              }
             }
-          } else {
-            for (let client in clientState.client) {
-              quantizeState[arg.property][client].bpm = arg.value;
-            }
-          }
-          if (Object.keys(streamState.latency).includes(arg.property)) {
-            streamState.latency[arg.property] = latency;
+            // streamState.latency[arg.property] = latency;
             // cmdState.METRONOME = {};
             io.emit("bpmFromServer", { bpm: arg.value, bar: bar });
 
@@ -169,9 +170,27 @@ export const parameterChange = (
             const target = Object.keys(clientState.client)[
               Number(arg.property)
             ];
-            if (Object.keys(cmdState.METRONOME).includes(target)) {
-              cmdState.METRONOME[target] = latency;
-              bpmState.client[target] = arg.value;
+            if (Object.keys(bpmState).includes(target)) {
+              bpmState[target].METRONOME.bpm = arg.value;
+              for (const stream in bpmState[target].stream) {
+                bpmState[target].stream[stream] =
+                  bpmState[target].stream[stream] === undefined
+                    ? {
+                        bpm: arg.value,
+                        beat: 0,
+                        gridFlag: false,
+                        quantizeFlag: false,
+                        latency: latency,
+                      }
+                    : {
+                        bpm: arg.value,
+                        beat: bpmState[target].stream[stream].beat,
+                        gridFlag: bpmState[target].stream[stream].gridFlag,
+                        quantizeFlag:
+                          bpmState[target].stream[stream].quantizeFlag,
+                        latency: latency,
+                      };
+              }
               io.to(target).emit("bpmFromServer", {
                 bpm: arg.value,
                 bar: bar,
@@ -205,37 +224,28 @@ export const parameterChange = (
           }
           // io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value)  + '(' + arg.property + ')', timeout: true})
         } else {
-          for (let target in streamState.latency) {
-            streamState.latency[target] = latency;
-          }
-          for (let target in cmdState.METRONOME) {
-            cmdState.METRONOME[target] = latency;
-          }
-          for (let target in bpmState.client) {
-            bpmState.client[target] = arg.value;
-          }
-
-          for (let stream in streamState.target) {
-            if (quantizeState[stream] === undefined) {
-              quantizeState[stream] = {};
-              for (const client in clientState.client) {
-                quantizeState[stream][client] = {
-                  flag: false,
+          for (const client in bpmState) {
+            if (bpmState[client].METRONOME === undefined) {
+              bpmState[client].METRONOME = {
+                bpm: arg.value,
+                beat: 0,
+                flag: false,
+              };
+            } else {
+              bpmState[client].METRONOME.bpm = arg.value;
+            }
+            for (let stream of streamList) {
+              if (bpmState[client].stream[stream] === undefined) {
+                bpmState[client].stream[stream] = {
                   bpm: arg.value,
                   beat: 0,
+                  gridFlag: false,
+                  quantizeFlag: false,
+                  latency: latency,
                 };
-              }
-            } else {
-              for (let client in clientState.client) {
-                if (!Object.keys(quantizeState[stream]).includes(client)) {
-                  quantizeState[stream][client] = {
-                    flag: false,
-                    bpm: arg.value,
-                    beat: 0,
-                  };
-                } else {
-                  quantizeState[stream][client].bpm = arg.value;
-                }
+              } else {
+                bpmState[client].stream[stream].bpm = arg.value;
+                bpmState[client].stream[stream].latency = latency;
               }
             }
           }

@@ -5,11 +5,9 @@ import { recordEmit } from "../../stream/recordEmit";
 import { sinewaveEmit } from "../sinewaveEmit";
 import { streamEmit } from "../../stream/streamEmit";
 import { parameterChange } from "../parameterChange";
-import { millisecondsPerBar } from "../bpmCalc";
 import { notTargetEmit } from "../notTargetEmit";
 import { stringEmit } from "../../socket/ioEmit";
 import { chatPreparation } from "../../stream/chatPreparation";
-// import { quantizeCmd } from "../../stream/quantize";
 import { splitQuantize } from "../splitSpace/splitQuantize";
 
 export const numTarget = (

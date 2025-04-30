@@ -1,4 +1,4 @@
-import { streamStateType } from '../../../../../types';
+import { streamStateType } from "../../../../../types";
 
 export const streamState: streamStateType = {
   basisBufferSize: 8192,
@@ -16,11 +16,6 @@ export const streamState: streamStateType = {
     CHAT: [],
     PLAYBACK: [],
     TIMELAPSE: [],
-  },
-  latency: {
-    CHAT: 1000,
-    PLAYBACK: 1000,
-    TIMELAPSE: 1000,
   },
   loop: false,
   timelapse: false,

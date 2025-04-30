@@ -4,8 +4,8 @@ import {
   previousState,
   sampleRateState,
   glitchState,
-  quantizeState,
   clientState,
+  bpmState,
 } from "../state";
 import { streamList } from "../data";
 
@@ -20,7 +20,7 @@ export const pushStateStream = (
   sampleRateState.sampleRate[streamName] = 44100;
   glitchState.glitch[streamName] = false;
   streamState.grid[streamName] = true;
-  streamState.latency[streamName] = 1000;
+  // streamState.latency[streamName] = 1000;
   streamState.random[streamName] = random !== undefined ? random : true;
   sampleRateState.randomrate[streamName] = false;
   streamState.target[streamName] = [];
@@ -29,14 +29,14 @@ export const pushStateStream = (
     min: 5000,
     max: 132300,
   };
-  if (quantizeState[streamName] === undefined) {
-    quantizeState[streamName] = {};
-    for (let key in clientState.client) {
-      quantizeState[streamName][key] = {
-        bpm: 60,
-        beat: 0,
-        flag: false,
-      };
-    }
+  // bpmState.stream[streamName] = {};
+  for (const client in bpmState) {
+    bpmState[client].stream[streamName] = {
+      bpm: 60,
+      beat: 0,
+      gridFlag: false,
+      quantizeFlag: false,
+      latency: 0,
+    };
   }
 };

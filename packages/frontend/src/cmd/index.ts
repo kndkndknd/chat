@@ -1,2 +1,3 @@
 import { cmdFromServer } from "./cmdFromServer";
-export { cmdFromServer };
+import { stopCmd } from "./stopCmd";
+export { cmdFromServer, stopCmd };

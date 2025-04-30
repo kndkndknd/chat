@@ -1,9 +1,9 @@
-import { millisecondsPerBar } from "../cmd/bpmCalc";
+import { millisecondsPerBar } from "../../../util/bpmCalc";
 import { quantizeObjType } from "../../../../types";
 import {
   clientState,
   bpmState,
-  quantizeState,
+  // quantizeState,
   setQuantizeState,
 } from "../state";
 // import { decideQuantizeFromAverage } from "./quantizeModule/decideQuantizeFromAverage";
@@ -42,7 +42,7 @@ export const quantizeCmd = (
     beat: parameter.beat !== undefined ? parameter.beat : beat,
   };
   console.log("quantizeObj", quantizeObj);
-  console.log("quantizeState", quantizeState);
+  // console.log("quantizeState", quantizeState);
   return quantizeObj;
 };
 
@@ -57,28 +57,33 @@ const decideQuantizeFromAverage = (
   let denominator = 0;
   let sumBpm = 0;
   let sumBeat = 0;
-  let sumFlag = 0;
+  // let sumGridFlag = 0;
+  let sumQuantizeFlag = 0;
   for (const streamEl of streamArr) {
     for (const clientEl of clientArr) {
       denominator++;
-      if (
-        quantizeState[streamEl] !== undefined &&
-        quantizeState[streamEl][clientEl] !== undefined
-      ) {
-        sumBpm += quantizeState[streamEl][clientEl].bpm;
-        sumBeat += quantizeState[streamEl][clientEl].beat;
-        sumFlag += quantizeState[streamEl][clientEl].flag ? 1 : 0;
+      if (bpmState[clientEl].stream[streamEl] !== undefined) {
+        sumBpm += bpmState[clientEl].stream[streamEl].bpm;
+        sumBeat += bpmState[clientEl].stream[streamEl].beat;
+        // sumGridFlag += bpmState[clientEl].stream[streamEl].gridFlag ? 1 : 0;
+        sumQuantizeFlag += bpmState[clientEl].stream[streamEl].quantizeFlag
+          ? 1
+          : 0;
       } else {
-        sumBpm += bpmState.METRONOME;
+        sumBpm += bpmState[clientEl].METRONOME.bpm;
+        sumBeat += bpmState[clientEl].METRONOME.beat;
+        // sumGridFlag += bpmState[clientEl].METRONOME.flag ? 1 : 0;
+        sumQuantizeFlag += bpmState[clientEl].METRONOME.flag ? 1 : 0;
       }
     }
   }
-  console.log("sumFlag", sumFlag, "denominator", denominator);
+  console.log("sumFlag", sumQuantizeFlag, "denominator", denominator);
   console.log("argFlag", argFlag, "argBpm", argBpm, "argBeat", argBeat);
   const returnBpm = sumBpm / denominator;
   const returnBeat = sumBeat === 0 ? 0 : Math.round(sumBeat / denominator);
-  const returnFlag = sumFlag === 0 || sumFlag * 2 < denominator ? true : false;
-  console.log("returnFlag", returnFlag);
+  const returnQuantizeFlag =
+    sumQuantizeFlag === 0 || sumQuantizeFlag * 2 < denominator ? true : false;
+  console.log("returnFlag", returnQuantizeFlag);
 
   return {
     bpm: argBpm === undefined || argBpm === 0 ? returnBpm : argBpm,
@@ -91,7 +96,7 @@ const decideQuantizeFromAverage = (
       (argBpm !== undefined && argBpm !== 0 && argBpm !== returnBpm) ||
       (argBeat !== undefined && argBeat !== returnBeat) ||
       (argFlag !== undefined && argFlag) ||
-      returnFlag
+      returnQuantizeFlag
         ? true
         : false,
   };

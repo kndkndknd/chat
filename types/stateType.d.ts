@@ -48,9 +48,6 @@ export type streamStateType = {
   target: {
     [key: string]: Array<string>;
   };
-  latency: {
-    [key: string]: number;
-  };
   loop: boolean;
   timelapse: boolean;
   floating: boolean;

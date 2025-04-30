@@ -16,8 +16,7 @@ export const splitModulation = (
         )
       : modulationByBPM(
           Number(stringArr[1]),
-          Object.values(bpmState.client).reduce((acc, val) => acc + val, 0) /
-            Object.values(bpmState.client).length,
+          bpmState[clientState.cmdClient[0]].MODULATION.bpm,
           clientState.cmdClient
         );
   freqArr.forEach((freq, index) => {

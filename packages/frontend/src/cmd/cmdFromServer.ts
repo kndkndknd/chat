@@ -6,11 +6,11 @@ import {
   click,
   simulate,
   metronome,
-  stopCmd,
 } from "../webaudio";
 import { textPrint, erasePrint } from "../canvasEvent";
 import { hlsVideoPlay } from "../hlsVideo";
 import { flagState } from "../state";
+import { stopCmd } from "./stopCmd";
 // import { frontState } from "./globalVariable";
 
 export const cmdFromServer = (cmd: {

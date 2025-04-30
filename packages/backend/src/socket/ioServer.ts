@@ -123,14 +123,14 @@ export const ioServer = (
           return element !== sockId;
         });
       }
-      if (Object.keys(bpmState.client).includes(sockId)) {
-        delete bpmState.client[sockId];
+      if (bpmState[sockId] !== undefined) {
+        delete bpmState[sockId];
       }
 
       console.log("clients:", clientState.client);
       console.log("streamClient:", clientState.streamClient);
       console.log("cmdClient:", clientState.cmdClient);
-      console.log("bpm", bpmState.client);
+      console.log("bpm", bpmState);
       // io.emit("statusFromServer", statusList);
     });
   });

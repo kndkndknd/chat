@@ -9,9 +9,8 @@ import {
 } from "../state";
 import { streams } from "../data";
 import { pickupStreamTarget } from "./pickupStreamTarget";
-import { switchCramp } from "../arduinoAccess/arduinoAccess";
 import { glitchStream } from "./glitchStream";
-import { sampleRateRandomize } from "./sampleRateRandomize";
+import { gridTimeoutVal } from "./gridTimeoutVal";
 
 export const streamEmit = async (
   source: string,
@@ -142,8 +141,7 @@ export const streamEmit = async (
       // io.to(targetId).emit("streamFromServer", stream);
       ioEmitStreamFromServer(io, stream, targetId, source);
     } else {
-      const timeOutVal =
-        (Math.round(Math.random() * 16) * streamState.latency[source]) / 4;
+      const timeOutVal = gridTimeoutVal(source, targetId);
       setTimeout(() => {
         if (currentState.stream[source]) {
           ioEmitStreamFromServer(io, stream, targetId, source);

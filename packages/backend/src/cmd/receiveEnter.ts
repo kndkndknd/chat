@@ -7,6 +7,7 @@ import {
   streamState,
   flagState,
   previousState,
+  bpmState,
 } from "../state";
 
 import { cmdList, parameterList, streamList } from "../data";
@@ -21,7 +22,6 @@ import { sinewaveChange } from "./sinewaveChange";
 import { parameterChange } from "./parameterChange";
 import { voiceEmit } from "./voiceEmit";
 import { chatPreparation } from "../stream/chatPreparation";
-import { millisecondsPerBar, secondsPerEighthNote } from "./bpmCalc";
 // import { putString } from "./putString";
 import { recordEmit } from "../stream/recordEmit";
 import { switchCtrl } from "../arduinoAccess/arduinoAccess";
@@ -33,6 +33,7 @@ import { execScenario } from "../scenario/execScenario";
 import { putCmd } from "./putCmd";
 import { cmdLogging } from "../logging/cmdLogging";
 import { quantizeCmd } from "../stream/quantizeCmd";
+import { millisecondsPerBeat } from "../../../util/bpmCalc";
 
 export const receiveEnter = async (
   strings: string,
@@ -136,7 +137,9 @@ export const receiveEnter = async (
     io.emit("clockFromServer", {
       clock: true,
       // 暫定
-      barLatency: streamState.latency.CHAT * 4,
+      barLatency:
+        millisecondsPerBeat(bpmState[Object.keys(bpmState)[0]].METRONOME.bpm) *
+        4,
     });
   } else if (strings === "FUSEJI" || strings === "EMOJI") {
     flagState.emoji = !flagState.emoji;

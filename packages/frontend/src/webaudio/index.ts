@@ -1,12 +1,12 @@
-import { bass } from "./bass";
-import { click } from "./click";
-import { feedback } from "./feedback";
-import { gainChange } from "./gainChange";
-import { metronome } from "./metronome";
-import { simulate } from "./simulate";
-import { sinewave } from "./sinewave";
-import { whitenoise } from "./whitenoise";
-import { initAudio } from "./initAudio";
+import { bass } from "./sound/bass";
+import { click } from "./sound/click";
+import { feedback } from "./sound/feedback";
+import { gainChange } from "./params/gainChange";
+import { metronome } from "./sound/metronome";
+import { simulate } from "./sound/simulate";
+import { sinewave } from "./sound/sinewave";
+import { whitenoise } from "./sound/whitenoise";
+import { initAudio } from "./init/initAudio";
 
 export {
   bass,

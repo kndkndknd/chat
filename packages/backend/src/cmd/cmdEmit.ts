@@ -8,6 +8,8 @@ import { putCmd } from "./putCmd";
 import { notTargetEmit } from "./notTargetEmit";
 import { previousCmd } from "./previousCmd";
 import { pickupCmdTarget } from "./pickupCmdTarget";
+// import { getLengthFromBPM } from "../../../util/getLengthFromBPM";
+import { metronomeEmit } from "./metronomeEmit";
 
 export const cmdEmit = (
   cmdStrings: string,
@@ -150,46 +152,7 @@ export const cmdEmit = (
       notTargetEmit(targetId, Object.keys(clientState.client), io);
       break;
     case "METRONOME":
-      cmd = {
-        cmd: "METRONOME",
-      };
-
-      if (target) {
-        if (currentState.cmd[cmd.cmd].includes(target)) {
-          cmd.flag = false;
-          cmd.gain = cmdState.GAIN.METRONOME;
-          for (let id in currentState.cmd.METRONOME) {
-            if (target === currentState.cmd.METRONOME[id]) {
-              cmd.value = cmdState.METRONOME[target];
-              delete currentState.cmd[cmd.cmd][id];
-            }
-          }
-          console.log(currentState.cmd.METRONOME);
-        } else {
-          cmd.flag = true;
-          cmd.gain = cmdState.GAIN.METRONOME;
-          currentState.cmd.METRONOME.push(target);
-          cmd.value = cmdState.METRONOME[target];
-        }
-      } else {
-        if (currentState.cmd.METRONOME.length === 0) {
-          cmd.flag = true;
-          cmd.gain = cmdState.GAIN.METRONOME;
-          target = Object.keys(clientState.client)[
-            Math.floor(Math.random() * Object.keys(clientState.client).length)
-          ];
-          currentState.cmd[cmd.cmd].push(target);
-          cmd.value = cmdState.METRONOME[target];
-        } else {
-          cmd.flag = false;
-          cmd.gain = cmdState.GAIN.METRONOME;
-          target = currentState.cmd.METRONOME.shift();
-          cmd.value = cmdState.METRONOME[target];
-        }
-      }
-      putCmd(io, [target], cmd);
-      notTargetEmit(target, Object.keys(clientState.client), io);
-      console.log("metronome");
+      metronomeEmit(io, cmd, target);
       break;
     case "PREVIOUS":
     case "PREV":

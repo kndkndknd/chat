@@ -1,7 +1,8 @@
-import { sinewave, whitenoise, feedback, bass, click, simulate, metronome, stopCmd, } from "../webaudio";
+import { sinewave, whitenoise, feedback, bass, click, simulate, metronome, } from "../webaudio";
 import { textPrint, erasePrint } from "../canvasEvent";
 import { hlsVideoPlay } from "../hlsVideo";
 import { flagState } from "../state";
+import { stopCmd } from "./stopCmd";
 // import { frontState } from "./globalVariable";
 export const cmdFromServer = (cmd) => {
     switch (cmd.cmd) {

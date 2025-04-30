@@ -6,8 +6,8 @@ import {
   glitchState,
   sampleRateState,
   currentState,
-  cmdState,
   arduinoState,
+  bpmState,
 } from "../state";
 import { chats, streams } from "../data";
 import { glitchStream } from "./glitchStream";
@@ -17,6 +17,7 @@ import { pickupStreamTarget } from "./pickupStreamTarget";
 import { switchCramp } from "../arduinoAccess/arduinoAccess";
 import { sampleRateRandomize } from "./sampleRateRandomize";
 import { stat } from "fs";
+import { gridTimeoutVal } from "./gridTimeoutVal";
 
 export const chatReceive = async (
   io: SocketIO.Server,
@@ -126,16 +127,19 @@ export const chatEmit = async (io, from?) => {
         chunk.video = await glitchStream(chunk.video);
         // console.log("glitch", chunk.video.slice(0, 50));
       }
-      if (!streamState.grid.CHAT) {
-        // io.to(targetId).emit("chatFromServer", chunk);
-        ioEmitChatFromServer(io, chunk, targetId);
-      } else {
-        const timeOutVal = Object.keys(cmdState.METRONOME).includes(targetId)
-          ? (Math.round(Math.random() * 16) * cmdState.METRONOME[targetId]) / 4
-          : (Math.round(Math.random() * 16) * streamState.latency.CHAT) / 4;
+      // if (!streamState.grid.CHAT) {
+      //   // io.to(targetId).emit("chatFromServer", chunk);
+      //   ioEmitChatFromServer(io, chunk, targetId);
+      // } else {
+      if (
+        bpmState[targetId].stream.CHAT.gridFlag &&
+        !bpmState[targetId].stream.CHAT.quantizeFlag
+      ) {
+        const timeOutVal = gridTimeoutVal("CHAT", targetId);
+        // const timeOutVal = Object.keys(cmdState.METRONOME).includes(targetId)
+        //   ? (Math.round(Math.random() * 16) * cmdState.METRONOME[targetId]) / 4
+        //   : (Math.round(Math.random() * 16) * streamState.latency.CHAT) / 4;
 
-        // const timeOutVal =
-        //   (Math.round(Math.random() * 16) * states.stream.latency.CHAT) / 4;
         setTimeout(() => {
           // io.to(targetId).emit("chatFromServer", chunk);
           // console.log("grid setTimeout");
@@ -144,6 +148,8 @@ export const chatEmit = async (io, from?) => {
             ioEmitChatFromServer(io, chunk, targetId);
           }
         }, timeOutVal);
+      } else {
+        ioEmitChatFromServer(io, chunk, targetId);
       }
     } else {
       io.to(targetId).emit("chatReqFromServer");

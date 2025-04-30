@@ -7,6 +7,7 @@ import {
   cmdState,
 } from "../state";
 import { quantizeState } from "../state";
+import { streamList } from "../data";
 import { floatingPosition } from "./floatingPosition";
 
 export const connectFromClient = (data, socket, io) => {
@@ -67,23 +68,39 @@ export const connectFromClient = (data, socket, io) => {
       }
     }
 
-    if (!Object.keys(bpmState.client).includes(sockId)) {
-      bpmState.client[sockId] = 60;
+    if (bpmState[sockId] === undefined)
+      bpmState[sockId] = {
+        stream: {},
+        METRONOME: { bpm: 60, beat: 4, flag: false },
+        MODULATION: { bpm: 60, beat: 4, flag: false },
+      };
+    for (const stream of streamList) {
+      bpmState[sockId].stream[stream] = {
+        bpm: 60,
+        beat: 0,
+        gridFlag: false,
+        quantizeFlag: false,
+        latency: 1000,
+      };
     }
 
-    // METRONOMEは接続時に初期値を作る
-    cmdState.METRONOME[sockId] = 1000;
+    // if (!Object.keys(bpmState.client).includes(sockId)) {
+    //   bpmState.client[sockId] = 60;
+    // }
 
-    // QUANTIZE
-    for (const stream of Object.keys(quantizeState)) {
-      if (quantizeState[stream][sockId] === undefined) {
-        quantizeState[stream][sockId] = {
-          bpm: 60,
-          beat: 0,
-          flag: false,
-        };
-      }
-    }
+    // // METRONOMEは接続時に初期値を作る
+    // cmdState.METRONOME[sockId] = 1000;
+
+    // // QUANTIZE
+    // for (const stream of Object.keys(quantizeState)) {
+    //   if (quantizeState[stream][sockId] === undefined) {
+    //     quantizeState[stream][sockId] = {
+    //       bpm: 60,
+    //       beat: 0,
+    //       flag: false,
+    //     };
+    //   }
+    // }
 
     console.log(clientState.client);
     return true;
@@ -99,7 +116,14 @@ export const connectFromClient = (data, socket, io) => {
     //   });
   } else if (data.clientMode === "noStream") {
     // METRONOMEは接続時に初期値を作る
-    cmdState.METRONOME[sockId] = 1000;
+    // cmdState.METRONOME[sockId] = 1000;
+    if (bpmState[sockId] === undefined) {
+      bpmState[sockId] = {
+        stream: {},
+        METRONOME: { bpm: 60, beat: 4, flag: false },
+        MODULATION: { bpm: 60, beat: 4, flag: false },
+      };
+    }
     console.log(sockId + " is noStream Client");
     const position = floatingPosition(sockId);
 

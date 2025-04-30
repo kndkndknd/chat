@@ -1,8 +1,9 @@
-import { playAudioStream } from "./playAudioStream";
+import { playAudioStream } from "./play/playAudioStream";
 import { chatReq } from "./chatReq";
-import { streamPlay } from "./streamPlay";
-import { recordReqFromServer } from "./recordReqFromServer";
-import { initAudioStream } from "./initAudioStream";
+import { streamPlay } from "./play/streamPlay";
+import { recordReqFromServer } from "./socketFromServer/recordReqFromServer";
+import { initAudioStream } from "./init/initAudioStream";
+import { chatFromServer } from "./socketFromServer/chatFromServer";
 
 export {
   initAudioStream,
@@ -10,4 +11,5 @@ export {
   chatReq,
   streamPlay,
   recordReqFromServer,
+  chatFromServer,
 };

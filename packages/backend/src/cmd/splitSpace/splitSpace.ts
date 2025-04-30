@@ -61,36 +61,6 @@ export const splitSpace = async (
     if (stringArr[1] !== "VOICE") {
       voiceEmit(io, stringArr.slice(1).join(" "), source);
     }
-  } else if (stringArr[0] === "HELP") {
-    helpPrint(stringArr.slice(1), io);
-  } else if (stringArr[1] === "SOLO") {
-    solo(stringArr, arrTypeArr, io);
-  } else if (stringArr[0] === "CLEAR") {
-    if (stringArr[1] === "BUFFER") {
-      for (let stream in streams) {
-        if (
-          stream !== "CHAT" &&
-          stream !== "EMPTY" &&
-          stream !== "KICK" &&
-          stream !== "SNARE" &&
-          stream !== "HAT"
-        ) {
-          streams[stream].audio = [];
-          streams[stream].video = [];
-        }
-      }
-    } else if (streamList.includes(stringArr[1])) {
-      streams[stringArr[1]].audio = [];
-      streams[stringArr[1]].video = [];
-    } else if (stringArr[1] === "INDEX") {
-      for (let stream in streams) {
-        streams[stream].index = 0;
-      }
-    }
-    // } else if (stringArr[0] === "FADE" && Object.keys(cmdList).includes(stringArr[1])) {
-  } else if (stringArr[0] === "FADE") {
-    fadeCmd(stringArr, arrTypeArr, io);
-    voiceEmit(io, stringArr.join(" "), source);
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
     // RANDOMのみRATEとSTREAMがあるので個別処理
     if (stringArr[0] === "RANDOM") {
@@ -167,19 +137,32 @@ export const splitSpace = async (
         sinewaveEmit(Number(stringArr[1]), io, target);
       });
     }
-  } else if (stringArr[0] === "STOP") {
+  } else if (stringArr[0] === "CLEAR") {
+    if (stringArr[1] === "BUFFER") {
+      for (let stream in streams) {
+        if (
+          stream !== "CHAT" &&
+          stream !== "EMPTY" &&
+          stream !== "KICK" &&
+          stream !== "SNARE" &&
+          stream !== "HAT"
+        ) {
+          streams[stream].audio = [];
+          streams[stream].video = [];
+        }
+      }
+    } else if (streamList.includes(stringArr[1])) {
+      streams[stringArr[1]].audio = [];
+      streams[stringArr[1]].video = [];
+    } else if (stringArr[1] === "INDEX") {
+      for (let stream in streams) {
+        streams[stream].index = 0;
+      }
+    }
+    // } else if (stringArr[0] === "FADE" && Object.keys(cmdList).includes(stringArr[1])) {
+  } else if (stringArr[0] === "FADE") {
+    fadeCmd(stringArr, arrTypeArr, io);
     voiceEmit(io, stringArr.join(" "), source);
-
-    splitStop(stringArr, io);
-    // } else if (stringArr[0] === "FADE") {
-  } else if (stringArr[0] === "UPLOAD" && stringArr.length == 2) {
-    voiceEmit(io, stringArr.join(" "), source);
-
-    // const uploadResult = await uploadStream(stringArr);
-    // uploadStream(stringArr, io);
-    const result = await uploadStream(stringArr);
-    console.log(result);
-    stringEmit(io, result, true);
   } else if (
     stringArr[0] === "GAIN" &&
     stringArr.length === 3 &&
@@ -193,6 +176,23 @@ export const splitSpace = async (
 
     // } else if (stringArr[0] === 'FIND' && stringArr.length === 3) {
     // findStream(stringArr[1], stringArr[2], io);
+  } else if (stringArr[0] === "HELP") {
+    helpPrint(stringArr.slice(1), io);
+  } else if (stringArr[1] === "SOLO") {
+    solo(stringArr, arrTypeArr, io);
+  } else if (stringArr[0] === "STOP") {
+    voiceEmit(io, stringArr.join(" "), source);
+
+    splitStop(stringArr, io);
+    // } else if (stringArr[0] === "FADE") {
+  } else if (stringArr[0] === "UPLOAD" && stringArr.length == 2) {
+    voiceEmit(io, stringArr.join(" "), source);
+
+    // const uploadResult = await uploadStream(stringArr);
+    // uploadStream(stringArr, io);
+    const result = await uploadStream(stringArr);
+    console.log(result);
+    stringEmit(io, result, true);
   } else if (stringArr[0] === "INSERT") {
     if (stringArr[1] === "HELP" || stringArr[1] === "?") {
       stringEmit(io, `INSERT (STREAM) (PLACE) (YYYMMDD)`, false);
