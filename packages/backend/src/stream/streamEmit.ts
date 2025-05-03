@@ -6,6 +6,7 @@ import {
   glitchState,
   sampleRateState,
   clientState,
+  bpmState,
 } from "../state";
 import { streams } from "../data";
 import { pickupStreamTarget } from "./pickupStreamTarget";
@@ -137,7 +138,8 @@ export const streamEmit = async (
     // console.log("stream", stream);
     console.log("sampleRateState", sampleRateState);
     if (!stream.video) console.log("not video");
-    if (!streamState.grid[source]) {
+    // if (!streamState.grid[source]) {
+    if (bpmState[targetId].stream[source].gridFlag) {
       // io.to(targetId).emit("streamFromServer", stream);
       ioEmitStreamFromServer(io, stream, targetId, source);
     } else {

@@ -143,7 +143,10 @@ export const chatEmit = async (io, from?) => {
         setTimeout(() => {
           // io.to(targetId).emit("chatFromServer", chunk);
           // console.log("grid setTimeout");
-          if (streamState.grid.CHAT) {
+          if (
+            bpmState[targetId].stream.CHAT.gridFlag &&
+            !bpmState[targetId].stream.CHAT.quantizeFlag
+          ) {
             // console.log("grid emit");
             ioEmitChatFromServer(io, chunk, targetId);
           }

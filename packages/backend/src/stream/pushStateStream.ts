@@ -19,7 +19,7 @@ export const pushStateStream = (
   previousState.stream[streamName] = false;
   sampleRateState.sampleRate[streamName] = 44100;
   glitchState.glitch[streamName] = false;
-  streamState.grid[streamName] = true;
+  // streamState.grid[streamName] = true;
   // streamState.latency[streamName] = 1000;
   streamState.random[streamName] = random !== undefined ? random : true;
   sampleRateState.randomrate[streamName] = false;
@@ -34,7 +34,7 @@ export const pushStateStream = (
     bpmState[client].stream[streamName] = {
       bpm: 60,
       beat: 0,
-      gridFlag: false,
+      gridFlag: true,
       quantizeFlag: false,
       latency: 0,
     };
