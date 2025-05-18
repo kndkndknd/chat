@@ -15,6 +15,9 @@ import { hlsState } from "./states/hlsState";
 // set state
 import { setQuantizeState } from "./setState/setQuantizeState";
 
+// webSocket
+import { webSocketIdState } from "./states/webSocketIdState";
+
 export {
   quantizeState,
   setQuantizeState,
@@ -30,4 +33,5 @@ export {
   sampleRateState,
   webState,
   hlsState,
+  webSocketIdState,
 };

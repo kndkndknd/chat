@@ -157,6 +157,12 @@ app.post("/api/form", function (req, res, next) {
   res.json({ success: true, message: "Data received" });
 });
 
+app.post("/api/char", function (req, res, next) {
+  console.log("POST /api/char", req.body);
+  console.log("ip:", req.ip);
+  res.json({ success: true, message: "char received" });
+});
+
 /*
 const socketOptions = {
   cors: {

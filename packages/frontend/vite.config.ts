@@ -6,6 +6,7 @@ export default defineConfig({
       input: {
         main: "./html/index.html",
         form: "./html/form.html",
+        wsclient: "./html/wsClient.html",
         // snowleopard: "./src/snowleopard/snowLeopardClient.js",
       },
       output: {

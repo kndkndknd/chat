@@ -20,6 +20,7 @@
   "dependencies": {
     "hls.js": "1.5.8",
     "http-proxy-middleware": "2.0.6",
-    "ts-loader": "9.5.1"
+    "ts-loader": "9.5.1",
+    "uuid": "11.1.0"
   }
 }

@@ -5,6 +5,7 @@ import SocketIO from "socket.io";
 import dotenv from "dotenv";
 dotenv.config();
 
+import { webSocketIdState } from "../state";
 import { receiveEnter } from "../cmd/receiveEnter";
 
 const serverUrl = "https://" + process.env.WEB_HOST;
@@ -24,13 +25,17 @@ function connectWebSocket(url: string, io: SocketIO.Server) {
     console.log("WebSocket connection opened");
     // メッセージをサーバに送信
     // ws.send("Hello Server!");
-    ws.send(JSON.stringify({ type: "register", id: "server" }));
+    // ws.send(JSON.stringify({ type: "register", id: "server" }));
   });
 
   ws.on("message", (message) => {
     console.log("Received from server:", message.toString());
     const data = JSON.parse(message.toString());
-    if (data.type === "char") {
+    if (data.type === "register") {
+      if (data.clientId) {
+        webSocketIdState.set(data.clientId, ws);
+      }
+    } else if (data.type === "char") {
       console.log(data);
     } else if (data.type === "cmd") {
       receiveEnter(data.cmd, "", io);
