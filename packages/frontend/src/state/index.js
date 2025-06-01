@@ -13,6 +13,8 @@ import { gainState } from "./webAudio/gainState";
 import { convolverState } from "./webAudio/convolverState";
 import { scriptProcessorState } from "./webAudio/scriptProcessorState";
 import { otherNodeState } from "./webAudio/otherNodeState";
+// webRTC
+import { webRtcState } from "./webRtcState";
 export { flagState, metronomeState, streamFlagState, streamChunk, quantizeState, socketState, timelapseState, 
 // webAudioState,
-contextState, oscState, gainState, convolverState, scriptProcessorState, otherNodeState, };
+contextState, oscState, gainState, convolverState, scriptProcessorState, otherNodeState, webRtcState, };

@@ -223,6 +223,8 @@ export const receiveEnter = async (
     } else {
       stringEmit(io, "GET LIVESTREAM: FAILED");
     }
+  } else if (strings === "CALL") {
+    io.to(id).emit("webRtcOfferReqFromServer");
   } else {
     voiceEmit(io, strings, id);
   }

@@ -101,6 +101,13 @@ export const ioServer = (
       stopEmit(io, "form", "ExceptHls");
     });
 
+    // WebRTC
+    socket.on("rtcConnectionFromClient", (data) => {
+      console.log("rtcConnectionFromClient", data);
+      if (data.type !== undefined) console.log("type: ", data.type);
+      socket.broadcast.emit("rtcConnectionFromServer", data);
+    });
+
     socket.on("disconnect", () => {
       console.log("disconnect:", String(socket.id));
       let sockId = String(socket.id);
