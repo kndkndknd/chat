@@ -38,7 +38,7 @@ async function init() {
   // 同一ディレクトリの model.tar.gz を（Webから）読み込む。
   // model = await Vosk.createModel("model/vosk-model-small-en-us-0.15.tar.gz");
   model = await Vosk.createModel(
-    "../../../../voskModel/vosk-model-en-us-0.22.tar.gz"
+    "../voskModel/vosk-model-en-us-0.22-lgraph.tar.gz"
   );
 
   // ボタン有効化

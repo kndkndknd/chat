@@ -7,6 +7,7 @@ export default defineConfig({
         main: "./html/index.html",
         form: "./html/form.html",
         vosk: "./html/vosk.html",
+        rotate: "./html/rotate.html",
         wsclient: "./html/wsClient.html",
         // snowleopard: "./src/snowleopard/snowLeopardClient.js",
       },
