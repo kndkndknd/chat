@@ -45,6 +45,7 @@ import { splitRandomRate } from "./splitRandomRate";
 import { splitModulation } from "./splitModulation";
 import { splitArduino } from "./splitArduino";
 import { quantizeObjType } from "../../../../../types";
+import { splitVoskCmd } from "./splitVoskCmd";
 
 export const splitSpace = async (
   stringArr: Array<string>,
@@ -392,6 +393,8 @@ export const splitSpace = async (
       }
       // io.emit("quantizeFromServer", quantizeObj);
     }
+  } else if (stringArr[0] === "VOSK") {
+    splitVoskCmd(stringArr.splice(1), arrTypeArr.splice(1), io);
   } else {
     stringEmit(io, stringArr.join(" "), false);
     if (cmdState.VOICE.length > 0) {

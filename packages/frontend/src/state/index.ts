@@ -18,6 +18,8 @@ import { otherNodeState } from "./webAudio/otherNodeState";
 // webRTC
 import { webRtcState } from "./webRtcState";
 
+import { voiceState } from "./voiceState";
+
 export {
   flagState,
   metronomeState,
@@ -34,4 +36,5 @@ export {
   scriptProcessorState,
   otherNodeState,
   webRtcState,
+  voiceState,
 };

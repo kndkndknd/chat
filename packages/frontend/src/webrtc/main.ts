@@ -1,5 +1,5 @@
 import { io } from "socket.io-client";
-import { metronomeState, socketState } from "./state";
+import { metronomeState, socketState } from "../state";
 
 socketState.socket = io();
 socketState.socketId = socketState.socket.id;
@@ -10,8 +10,14 @@ import {
   timelapseState,
   quantizeState,
   streamChunk,
-  voiceState,
-} from "./state";
+  contextState,
+  oscState,
+  gainState,
+  convolverState,
+  scriptProcessorState,
+  otherNodeState,
+  webRtcState,
+} from "../state";
 
 import {
   initVideo,
@@ -21,7 +27,7 @@ import {
   showImage,
   emojiState,
   canvasSizing,
-} from "./canvasEvent";
+} from "../canvasEvent";
 
 import {
   initAudio,
@@ -30,27 +36,27 @@ import {
   // recordReqFromServer,
   gainChange,
   // streamPlay,
-} from "./webaudio";
+} from "../webaudio";
 
 import {
   chatReq,
   recordReqFromServer,
   initAudioStream,
   streamPlay,
-} from "./stream";
-import { quantize, quantizePlay, quantizeStop } from "./quantize";
+} from "../stream";
+import { quantize, quantizePlay, quantizeStop } from "../quantize";
 
-import { cmdFromServer, stopCmd } from "./cmd";
+import { cmdFromServer, stopCmd } from "../cmd";
 
-import { keyDown } from "./textInput";
+import { keyDown } from "../textInput";
 
-import { newWindowReqType } from "../../../types";
-import { enableClockMode, disableClockMode } from "./clientMode/clockMode";
-import { hlsVideoPlay, hlsSizing } from "./hlsVideo";
-import { quantizeFromServer } from "./quantize/quantizeFromServer";
+import { newWindowReqType } from "../../../../types";
+import { enableClockMode, disableClockMode } from "../clientMode/clockMode";
+import { hlsVideoPlay, hlsSizing } from "../hlsVideo";
+import { quantizeFromServer } from "../quantize/quantizeFromServer";
 import { text } from "node:stream/consumers";
-import { setQuantize } from "./quantize/setQuantize";
-import { speechVoice } from "./voice";
+import { setQuantize } from "../quantize/setQuantize";
+import { speechVoice } from "../voice";
 
 // let start = false;
 
@@ -59,8 +65,6 @@ let clockModeId: number = 0;
 const clientMode = "client";
 
 let clockBase = 0;
-
-voiceState.speechSynthesis = new SpeechSynthesisUtterance();
 
 let stringsClient = "";
 
@@ -251,30 +255,7 @@ socketState.socket.on(
 socketState.socket.on(
   "voiceFromServer",
   (data: { text: string; lang: string }) => {
-    console.log("debug");
-    const uttr = new SpeechSynthesisUtterance();
-    uttr.lang = data.lang;
-    uttr.text = data.text;
-    // 英語に対応しているvoiceを設定
-    speechSynthesis.onvoiceschanged = () => {
-      const voices = speechSynthesis.getVoices();
-      for (let i = 0; i < voices.length; i++) {
-        console.log(voices[i]);
-        if (voices[i].lang === "en-US") {
-          console.log("hit");
-          console.log(voices[i]);
-          uttr.voice = voices[i];
-        }
-      }
-    };
-
-    speechSynthesis.speak(uttr);
-    // voiceState.lang = data.lang;
-    // voiceState.speechSynthesis.text = data.text;
-    // voiceState.speechSynthesis.lang = data.lang;
-    // if (voiceState.flag && voiceState.speechSynthesis.text.length > 0) {
-    //   speechVoice(voiceState.speechSynthesis);
-    // }
+    // speechVoice(data);
   }
 );
 
@@ -349,6 +330,33 @@ socketState.socket.on("bpmFromServer", (data: { bpm: number; bar: number }) => {
   }
 });
 
+// WebRTC
+const localVideo = <HTMLVideoElement>document.getElementById("local");
+const remoteVideo = <HTMLVideoElement>document.getElementById("remote");
+
+socketState.socket.on("rtcConnectionFromServer", async (data) => {
+  console.log("rtcConnectionFromServer");
+  if (data.type === "offer") {
+    console.log("offer");
+    await webRtcState.peerConnection?.setRemoteDescription(data);
+    const answer = await webRtcState.peerConnection?.createAnswer();
+    if (answer) {
+      await webRtcState.peerConnection?.setLocalDescription(answer);
+      socketState.socket.emit(
+        "rtcConnectionFromClient",
+        JSON.stringify(webRtcState.peerConnection?.localDescription)
+      );
+      console.log("send answer");
+    }
+  } else if (data.type === "answer") {
+    console.log("reseive answer and set remote description");
+    await webRtcState.peerConnection?.setRemoteDescription(data);
+  } else if (data.type === "candidate") {
+    console.log("add candidate");
+    await webRtcState.peerConnection?.addIceCandidate(data.candidate);
+  }
+});
+
 /*
 socketState.socket.on("clockModeFromServer", (data: { clockMode: boolean }) => {
   console.log(data);
@@ -371,6 +379,18 @@ socketState.socket.on("bufferFromServer", (data) => {
   // videoElement.src = url;
   videoPlayer.src = url;
   textPrint("buffer");
+});
+
+socketState.socket.on("webRtcOfferReqFromServer", async () => {
+  console.log("webRtcOfferReqFromServer");
+  const offer = await webRtcState.peerConnection?.createOffer();
+  if (offer) {
+    await webRtcState.peerConnection?.setLocalDescription(offer);
+    console.log("offer: ", offer);
+    socketState.socket.emit("rtcConnectionFromClient", offer);
+  } else {
+    console.error("Failed to create offer");
+  }
 });
 
 // disconnect時、1秒後再接続
@@ -454,8 +474,40 @@ export const initialize = async () => {
       height: window.innerHeight,
     });
 
+    // Initialize RTPPeerConnection
+    webRtcState.peerConnection = new RTCPeerConnection();
+    webRtcState.peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        socketState.socket.emit(
+          "rtcConnectionFromClient",
+          JSON.stringify({
+            type: "candidate",
+            candidate: event.candidate,
+          })
+        );
+      }
+    };
+    if (localVideo.srcObject === null) {
+      localVideo.srcObject = stream;
+    }
+    stream.getTracks().forEach((track) => {
+      console.log(track);
+      webRtcState.peerConnection?.addTrack(track, stream);
+    });
+
     await setTimeout(() => {
       erasePrint();
+      webRtcState.peerConnection.ontrack = (event) => {
+        console.log("ontrack");
+        if (
+          remoteVideo.srcObject === null &&
+          webRtcState.isConnected &&
+          event.streams !== null &&
+          event.streams.length > 0
+        ) {
+          remoteVideo.srcObject = event.streams[0];
+        }
+      };
     }, 500);
   } else {
     textPrint("not support navigator.mediaDevices.getUserMedia");

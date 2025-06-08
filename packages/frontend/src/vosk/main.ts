@@ -2,8 +2,9 @@ import * as Vosk from "vosk-browser";
 import { io } from "socket.io-client";
 
 import { socketState } from "../state";
-import { textPrint, canvasSizing } from "../canvasEvent";
+import { textPrint, canvasSizing, erasePrint } from "../canvasEvent";
 import { speechVoice } from "../voice";
+import { text } from "stream/consumers";
 
 socketState.socket = io();
 socketState.socketId = socketState.socket.id;
@@ -11,10 +12,13 @@ socketState.socketId = socketState.socket.id;
 const voskState = {
   text: "",
   interval: 0,
-  intervalValue: 180000,
+  intervalValue: 60000,
+  recognitionFlag: true,
   voiceFlag: true,
   clicked: false,
-  lang: "en",
+  lang: "en-US",
+  startTime: 0,
+  // lang: "fr-FR", // フランス語のモデルを使用
 };
 
 let model = null;
@@ -38,7 +42,9 @@ async function init() {
   // 同一ディレクトリの model.tar.gz を（Webから）読み込む。
   // model = await Vosk.createModel("model/vosk-model-small-en-us-0.15.tar.gz");
   model = await Vosk.createModel(
-    "../voskModel/vosk-model-en-us-0.22-lgraph.tar.gz"
+    // "../voskModel/vosk-model-en-us-0.22-lgraph.tar.gz"
+    // "../voskModel/vosk-model-small-fr-0.22.tar.gz"
+    "../voskModel/vosk-model-small-ja-0.22.tar.gz" // 日本語モデルを使用
   );
 
   // ボタン有効化
@@ -54,8 +60,10 @@ async function start() {
 
   // 文章確定時はtextPrintを更新
   recognizer.on("result", (event) => {
-    voskState.text = voskState.text + " " + event.result.text;
-    textPrint(voskState.text);
+    if (voskState.recognitionFlag) {
+      voskState.text = voskState.text + " " + event.result.text;
+      textPrint(voskState.text);
+    }
     /*
     const p = document.createElement('p')
     p.innerText = event.result.text
@@ -119,11 +127,54 @@ async function start() {
   sourceNode.connect(recognizerNode).connect(audioContext.destination);
 
   voskState.interval = window.setInterval(() => {
-    if (voskState.voiceFlag && voskState.text.length > 0) {
-      speechVoice({ text: voskState.text, lang: voskState.lang });
-    }
-    voskState.text = "";
+    voskInterval();
+    // voskState.startTime = Date.now();
+    // if (voskState.voiceFlag && voskState.text.length > 0) {
+    //   initAndSpeak(voskState.text);
+    // }
+    // voskState.text = "";
   }, voskState.intervalValue);
+}
+
+function initAndSpeak(text: string) {
+  // 音声のロードを待ってから話す
+  const loadVoices = () =>
+    new Promise<SpeechSynthesisVoice[]>((resolve) => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length) {
+        resolve(voices);
+      } else {
+        speechSynthesis.onvoiceschanged = () => {
+          resolve(speechSynthesis.getVoices());
+        };
+      }
+    });
+
+  loadVoices().then((voices) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    const frenchVoice = voices.find((voice) => voice.lang.startsWith("fr"));
+    const japaneseVoice = voices.find((voice) => voice.lang.startsWith("ja"));
+
+    // if (frenchVoice) {
+    //   utterance.voice = frenchVoice;
+    // } else {
+    //   console.warn(
+    //     "フランス語の音声が見つかりません。デフォルト音声を使用します。"
+    //   );
+    // }
+    //     utterance.lang = "fr-FR";
+
+    if (japaneseVoice) {
+      utterance.voice = japaneseVoice;
+    } else {
+      console.warn(
+        "日本語の音声が見つかりません。デフォルト音声を使用します。"
+      );
+    }
+    utterance.lang = "ja-JP";
+
+    speechSynthesis.speak(utterance);
+  });
 }
 
 const clickWrapper = () => {
@@ -133,6 +184,9 @@ const clickWrapper = () => {
   } else {
     start();
     textPrint("voice recognition start...");
+    setTimeout(() => {
+      erasePrint();
+    }, 1000);
   }
 };
 
@@ -144,3 +198,55 @@ const button = document.getElementById("wrapper");
 button.addEventListener("click", clickWrapper);
 
 textPrint("click screen 2 time", ctx);
+
+socketState.socket.on("voskCtrlFromServer", (data) => {
+  if (data.type === "flag") {
+    voskState.voiceFlag = data.flag;
+    voskState.recognitionFlag = data.flag;
+    if (voskState.voiceFlag) {
+      textPrint("voice recognition start");
+    } else {
+      textPrint("voice recognition stop");
+      voskState.text = "";
+    }
+  } else if (data.type === "interval change") {
+    textPrint(`interval changed to ${data.value} sec`);
+    voskState.intervalValue = data.value * 1000;
+    const now = Date.now();
+    // 既存のインターバルをクリア
+    if (voskState.interval) {
+      clearInterval(voskState.interval);
+    }
+    setTimeout(() => {
+      initAndSpeak(voskState.text);
+      voskState.text = "";
+      voskState.interval = window.setInterval(() => {
+        voskInterval();
+      }, voskState.intervalValue);
+    }, data.value - (now - voskState.startTime));
+    textPrint(`interval changed to ${voskState.intervalValue} ms`);
+  }
+  setTimeout(() => {
+    erasePrint();
+  }, 1000);
+});
+
+const voskInterval = () => {
+  console.log("voskInterval called");
+  voskState.startTime = Date.now();
+  const wait = voskState.text.split(" ").length * 400;
+  if (voskState.recognitionFlag) {
+    voskState.recognitionFlag = false;
+    setTimeout(() => {
+      voskState.recognitionFlag = true;
+    }, wait);
+  }
+  voskState.recognitionFlag = false;
+  if (voskState.voiceFlag && voskState.text.length > 0) {
+    initAndSpeak(voskState.text);
+    setTimeout(() => {
+      erasePrint();
+    }, wait);
+  }
+  voskState.text = "";
+};
