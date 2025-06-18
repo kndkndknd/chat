@@ -1,4 +1,4 @@
-import { contextState, scriptProcessorState, gainState, otherNodeState, flagState, socketState, oscState, } from "../../state";
+import { contextState, scriptProcessorState, gainState, otherNodeState, flagState, socketState, oscState, timelapseState, } from "../../state";
 import { textPrint, erasePrint, toBase64 } from "../../canvasEvent";
 export const initAudioStream = (stream) => {
     let mediastreamsource;
@@ -61,7 +61,7 @@ const onAudioProcess = (e) => {
         console.log(bufferData);
         socketState.socket.emit("chatFromClient", bufferData);
     }
-    if (flagState.timelapseFlag) {
+    if (timelapseState.flag && timelapseState.trriger) {
         let bufferData = {
             source: "TIMELAPSE",
             video: toBase64(),
@@ -73,7 +73,8 @@ const onAudioProcess = (e) => {
         // console.log(bufferData.audio)
         // console.log("socket.id(chatFromClient)", socket.id);
         socketState.socket.emit("chatFromClient", bufferData);
-        flagState.timelapseFlag = false;
+        // flagState.timelapseFlag = false;
+        timelapseState.trriger = false;
     }
     if (flagState.simulate) {
         let freqData = new Uint8Array(otherNodeState.analyser.frequencyBinCount);

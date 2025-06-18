@@ -3,7 +3,7 @@ import { clientState, cmdState, streamState } from "../../state";
 import { streamList, parameterList, streams } from "../../data";
 import { cmdEmit } from "../cmdEmit";
 import { sinewaveEmit } from "../sinewaveEmit";
-import { parameterChange } from "../parameterChange";
+import { parameterChange } from "../../parameterChange";
 
 import { putCmd } from "../putCmd";
 import { stringEmit } from "../../socket/ioEmit";
@@ -60,7 +60,11 @@ export const splitSpace = async (
   if (arrTypeArr[0] === "number") {
     numTarget(stringArr, arrTypeArr, io);
     if (stringArr[1] !== "VOICE") {
-      voiceEmit(io, stringArr.slice(1).join(" "), source);
+      voiceEmit(
+        io,
+        stringArr.slice(1).join(" "),
+        source !== undefined ? source : "all"
+      );
     }
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
     // RANDOMのみRATEとSTREAMがあるので個別処理
@@ -127,7 +131,7 @@ export const splitSpace = async (
       // stringEmit(io, stringArr[0] + " " + stringArr[1]);
     }
   } else if (stringArr[0] === "ALL") {
-    voiceEmit(io, stringArr.join(" "), source);
+    voiceEmit(io, stringArr.join(" "), source !== undefined ? source : "all");
 
     if (arrTypeArr[1] === "string") {
       Object.keys(clientState.client).forEach((target) => {
@@ -374,7 +378,7 @@ export const splitSpace = async (
       stringArr,
       arrTypeArr
     );
-    console.log("quantize: ", quantizeObj);
+    console.log("splitQuantize return: ", quantizeObj);
     if (quantizeObj === "quantize failed") {
       stringEmit(io, "QUANTIZE: FAILED");
     } else {
@@ -395,6 +399,17 @@ export const splitSpace = async (
     }
   } else if (stringArr[0] === "VOSK") {
     splitVoskCmd(stringArr.splice(1), arrTypeArr.splice(1), io);
+  } else if (stringArr[0] === "TIMELAPSE") {
+    console.log("timelapse split", stringArr[1]);
+    if (stringArr[1] === "FALSE" || stringArr[1] === "OFF") {
+      io.emit("timelapseFromServer", {
+        cmd: "FALSE",
+      });
+    } else if (stringArr[1] === "GET" || stringArr[1] === "FETCH") {
+      io.emit("timelapseFromServer", {
+        cmd: "GET",
+      });
+    }
   } else {
     stringEmit(io, stringArr.join(" "), false);
     if (cmdState.VOICE.length > 0) {

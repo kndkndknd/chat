@@ -35,8 +35,8 @@ async function init() {
     // model = await Vosk.createModel("model/vosk-model-small-en-us-0.15.tar.gz");
     model = await Vosk.createModel(
     // "../voskModel/vosk-model-en-us-0.22-lgraph.tar.gz"
-    // "../voskModel/vosk-model-small-fr-0.22.tar.gz"
-    "../voskModel/vosk-model-small-ja-0.22.tar.gz" // 日本語モデルを使用
+    "../voskModel/vosk-model-small-fr-0.22.tar.gz"
+    // "../voskModel/vosk-model-small-ja-0.22.tar.gz" // 日本語モデルを使用
     );
     // ボタン有効化
     // document.getElementById('start').disabled = false
@@ -45,6 +45,7 @@ async function init() {
 // ボタンの処理
 async function start() {
     // document.getElementById('start').disabled = true
+    // console.log("debug");
     const recognizer = new model.KaldiRecognizer(44100);
     // 文章確定時はtextPrintを更新
     recognizer.on("result", (event) => {
@@ -135,21 +136,21 @@ function initAndSpeak(text) {
         const utterance = new SpeechSynthesisUtterance(text);
         const frenchVoice = voices.find((voice) => voice.lang.startsWith("fr"));
         const japaneseVoice = voices.find((voice) => voice.lang.startsWith("ja"));
-        // if (frenchVoice) {
-        //   utterance.voice = frenchVoice;
-        // } else {
-        //   console.warn(
-        //     "フランス語の音声が見つかりません。デフォルト音声を使用します。"
-        //   );
-        // }
-        //     utterance.lang = "fr-FR";
-        if (japaneseVoice) {
-            utterance.voice = japaneseVoice;
+        if (frenchVoice) {
+            utterance.voice = frenchVoice;
         }
         else {
-            console.warn("日本語の音声が見つかりません。デフォルト音声を使用します。");
+            console.warn("フランス語の音声が見つかりません。デフォルト音声を使用します。");
         }
-        utterance.lang = "ja-JP";
+        utterance.lang = "fr-FR";
+        // if (japaneseVoice) {
+        //   utterance.voice = japaneseVoice;
+        // } else {
+        //   console.warn(
+        //     "日本語の音声が見つかりません。デフォルト音声を使用します。"
+        //   );
+        // }
+        // utterance.lang = "ja-JP";
         speechSynthesis.speak(utterance);
     });
 }
@@ -204,16 +205,26 @@ socketState.socket.on("voskCtrlFromServer", (data) => {
         erasePrint();
     }, 1000);
 });
+socketState.socket.on("voskCallFromServer", () => {
+    textPrint("test");
+    voskState.startTime = Date.now();
+    const wait = voskState.text.length * 300;
+    voskState.recognitionFlag = false;
+    if (voskState.voiceFlag && voskState.text.length > 0) {
+        initAndSpeak(voskState.text);
+        voskState.text = "";
+        setTimeout(() => {
+            erasePrint();
+        }, 1000);
+    }
+    setTimeout(() => {
+        voskState.recognitionFlag = true;
+    }, wait);
+});
 const voskInterval = () => {
     console.log("voskInterval called");
     voskState.startTime = Date.now();
-    const wait = voskState.text.split(" ").length * 400;
-    if (voskState.recognitionFlag) {
-        voskState.recognitionFlag = false;
-        setTimeout(() => {
-            voskState.recognitionFlag = true;
-        }, wait);
-    }
+    const wait = voskState.text.length * 300;
     voskState.recognitionFlag = false;
     if (voskState.voiceFlag && voskState.text.length > 0) {
         initAndSpeak(voskState.text);
@@ -222,4 +233,7 @@ const voskInterval = () => {
         }, wait);
     }
     voskState.text = "";
+    setTimeout(() => {
+        voskState.recognitionFlag = true;
+    }, wait);
 };

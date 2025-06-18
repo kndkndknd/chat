@@ -5,11 +5,13 @@ export const splitVoskCmd = (stringArr: string[], arrTypeArr: string[], io) => {
   console.log("arrTypeArr: ", arrTypeArr);
 
   if (stringArr.length === 0) {
-    flagState.vosk = !flagState.vosk;
-    io.emit("voskCtrlFromServer", {
-      type: "flag",
-      flag: flagState.vosk,
-    });
+    // flagState.vosk = !flagState.vosk;
+    io.emit("voskCallFromServer");
+
+    // io.emit("voskCtrlFromServer", {
+    //   type: "flag",
+    //   flag: flagState.vosk,
+    // });
   } else if (stringArr.length === 1 && arrTypeArr[0] === "number") {
     io.emit("voskCtrlFromServer", {
       type: "interval change",

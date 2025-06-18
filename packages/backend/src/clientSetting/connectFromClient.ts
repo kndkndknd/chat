@@ -70,7 +70,15 @@ export const connectFromClient = (data, socket, io) => {
 
     if (bpmState[sockId] === undefined)
       bpmState[sockId] = {
-        stream: {},
+        stream: {
+          CHAT: {
+            bpm: 60,
+            beat: 0,
+            gridFlag: false,
+            quantizeFlag: false,
+            latency: 1000,
+          },
+        },
         METRONOME: { bpm: 60, beat: 4, flag: false },
         MODULATION: { bpm: 60, beat: 4, flag: false },
       };
@@ -83,6 +91,7 @@ export const connectFromClient = (data, socket, io) => {
         latency: 1000,
       };
     }
+    console.log("bpmState", sockId, bpmState[sockId]);
 
     // if (!Object.keys(bpmState.client).includes(sockId)) {
     //   bpmState.client[sockId] = 60;

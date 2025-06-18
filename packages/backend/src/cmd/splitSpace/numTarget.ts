@@ -4,7 +4,7 @@ import { cmdEmit } from "../cmdEmit";
 import { recordEmit } from "../../stream/recordEmit";
 import { sinewaveEmit } from "../sinewaveEmit";
 import { streamEmit } from "../../stream/streamEmit";
-import { parameterChange } from "../parameterChange";
+import { parameterChange } from "../../parameterChange";
 import { notTargetEmit } from "../notTargetEmit";
 import { stringEmit } from "../../socket/ioEmit";
 import { chatPreparation } from "../../stream/chatPreparation";

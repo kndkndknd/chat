@@ -7,7 +7,7 @@ import { stopEmit } from "./stopEmit";
 import { clientState, cmdState, currentState } from "../state";
 import { cmdList, streamList, parameterList } from "../data";
 import { sinewaveChange } from "./sinewaveChange";
-import { parameterChange } from "./parameterChange";
+import { parameterChange } from "../parameterChange";
 import { getTypeArr } from "./splitSpace/getTypeArr";
 
 export const splitPlus = (

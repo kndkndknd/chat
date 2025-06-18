@@ -51,6 +51,7 @@ import { quantizeFromServer } from "./quantize/quantizeFromServer";
 import { text } from "node:stream/consumers";
 import { setQuantize } from "./quantize/setQuantize";
 import { speechVoice } from "./voice";
+import { time } from "node:console";
 
 // let start = false;
 
@@ -349,6 +350,21 @@ socketState.socket.on("bpmFromServer", (data: { bpm: number; bar: number }) => {
   }
 });
 
+socketState.socket.on("timelapseFromServer", (data) => {
+  console.log("timelapseFromServer", data);
+  if (data.cmd === "FALSE") {
+    timelapseState.flag = false;
+  } else if (data.cmd === "GET") {
+    timelapseState.trriger = true;
+    if (!timelapseState.flag) {
+      timelapseState.flag = true;
+      setTimeout(() => {
+        timelapseState.flag = false;
+      }, 5000);
+    }
+  }
+});
+
 /*
 socketState.socket.on("clockModeFromServer", (data: { clockMode: boolean }) => {
   console.log(data);
@@ -463,9 +479,10 @@ export const initialize = async () => {
 
   flagState.start = true;
   // streamFlag.timelapse = true;
-  timelapseState.flag = false;
+  timelapseState.flag = true;
+  timelapseState.trriger = false;
   timelapseState.setIntervalId = window.setInterval(() => {
-    flagState.timelapse = true;
+    timelapseState.trriger = true;
   }, 60000);
 
   /*
