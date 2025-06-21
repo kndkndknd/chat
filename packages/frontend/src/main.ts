@@ -10,12 +10,7 @@ import {
   timelapseState,
   quantizeState,
   streamChunk,
-  contextState,
-  oscState,
-  gainState,
-  convolverState,
-  scriptProcessorState,
-  otherNodeState,
+  voiceState,
 } from "./state";
 
 import {
@@ -55,6 +50,8 @@ import { hlsVideoPlay, hlsSizing } from "./hlsVideo";
 import { quantizeFromServer } from "./quantize/quantizeFromServer";
 import { text } from "node:stream/consumers";
 import { setQuantize } from "./quantize/setQuantize";
+import { speechVoice } from "./voice";
+import { time } from "node:console";
 
 // let start = false;
 
@@ -63,6 +60,8 @@ let clockModeId: number = 0;
 const clientMode = "client";
 
 let clockBase = 0;
+
+voiceState.speechSynthesis = new SpeechSynthesisUtterance();
 
 let stringsClient = "";
 
@@ -263,15 +262,20 @@ socketState.socket.on(
       for (let i = 0; i < voices.length; i++) {
         console.log(voices[i]);
         if (voices[i].lang === "en-US") {
-          // console.log("hit");
+          console.log("hit");
           console.log(voices[i]);
           uttr.voice = voices[i];
-          // break;
         }
       }
     };
-    console.log(uttr);
+
     speechSynthesis.speak(uttr);
+    // voiceState.lang = data.lang;
+    // voiceState.speechSynthesis.text = data.text;
+    // voiceState.speechSynthesis.lang = data.lang;
+    // if (voiceState.flag && voiceState.speechSynthesis.text.length > 0) {
+    //   speechVoice(voiceState.speechSynthesis);
+    // }
   }
 );
 
@@ -343,6 +347,21 @@ socketState.socket.on("bpmFromServer", (data: { bpm: number; bar: number }) => {
       stream: quantizeState.stream,
       beat: quantizeState.beat,
     });
+  }
+});
+
+socketState.socket.on("timelapseFromServer", (data) => {
+  console.log("timelapseFromServer", data);
+  if (data.cmd === "FALSE") {
+    timelapseState.flag = false;
+  } else if (data.cmd === "GET") {
+    timelapseState.trriger = true;
+    if (!timelapseState.flag) {
+      timelapseState.flag = true;
+      setTimeout(() => {
+        timelapseState.flag = false;
+      }, 5000);
+    }
   }
 });
 
@@ -450,6 +469,7 @@ export const initialize = async () => {
       width: window.innerWidth,
       height: window.innerHeight,
     });
+
     await setTimeout(() => {
       erasePrint();
     }, 500);
@@ -459,9 +479,10 @@ export const initialize = async () => {
 
   flagState.start = true;
   // streamFlag.timelapse = true;
-  timelapseState.flag = false;
+  timelapseState.flag = true;
+  timelapseState.trriger = false;
   timelapseState.setIntervalId = window.setInterval(() => {
-    flagState.timelapse = true;
+    timelapseState.trriger = true;
   }, 60000);
 
   /*

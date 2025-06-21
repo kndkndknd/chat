@@ -30,6 +30,7 @@ export const quantizeCmd = (
     parameter.bpm,
     parameter.flag
   );
+  console.log("quantizeCmd, debug", flag, bpm, bar, beat);
 
   setQuantizeState(streamArr, clientArr, bpm, beat, flag);
 
@@ -93,10 +94,12 @@ const decideQuantizeFromAverage = (
         : millisecondsPerBar(argBpm),
     beat: argBeat === undefined ? returnBeat : argBeat,
     flag:
-      (argBpm !== undefined && argBpm !== 0 && argBpm !== returnBpm) ||
-      (argBeat !== undefined && argBeat !== returnBeat) ||
-      (argFlag !== undefined && argFlag) ||
-      returnQuantizeFlag
+      argFlag !== undefined
+        ? argFlag
+        : (argBpm !== undefined && argBpm !== 0 && argBpm !== returnBpm) ||
+          (argBeat !== undefined && argBeat !== returnBeat) ||
+          (argFlag !== undefined && argFlag) ||
+          returnQuantizeFlag
         ? true
         : false,
   };

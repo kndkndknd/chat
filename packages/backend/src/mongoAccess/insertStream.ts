@@ -1,11 +1,15 @@
 import SocketIO from "socket.io";
 import dotenv from "dotenv";
+import path from "path";
 
 import { streams } from "../data";
 import { stringEmit } from "../socket/ioEmit";
-dotenv.config();
+
+const dotenvPath = path.resolve(__dirname, "../../../../.env");
+dotenv.config({ path: dotenvPath });
 
 const ipaddress = process.env.DB_HOST;
+console.log("IP Address:", ipaddress);
 
 export const insertStream = async (
   type: string,

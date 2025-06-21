@@ -1,12 +1,15 @@
 import SocketIO from "socket.io";
 import dotenv from "dotenv";
+import path from "path";
 import { cmdList, streamList, parameterList, streams } from "../data";
 // import { stringEmit } from "../socket/ioEmit.js";
 import { pushStateStream } from "../stream/pushStateStream";
 
-dotenv.config();
+const dotenvPath = path.resolve(__dirname, "../../../../.env");
+dotenv.config({ path: dotenvPath });
 
 const ipaddress = process.env.DB_HOST;
+console.log("IP Address:", ipaddress);
 
 interface streamInterface {
   _id: string;

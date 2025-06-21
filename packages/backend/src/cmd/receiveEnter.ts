@@ -15,11 +15,11 @@ import { cmdList, parameterList, streamList } from "../data";
 import { streamEmit } from "../stream/streamEmit";
 import { cmdEmit } from "./cmdEmit";
 import { stopEmit } from "./stopEmit";
-import { splitSpace } from "./splitSpace/splitSpace";
+import { splitSpace } from "./splitSpace";
 import { splitPlus } from "./splitPlus";
 import { sinewaveEmit } from "./sinewaveEmit";
 import { sinewaveChange } from "./sinewaveChange";
-import { parameterChange } from "./parameterChange";
+import { parameterChange } from "../parameterChange";
 import { voiceEmit } from "./voiceEmit";
 import { chatPreparation } from "../stream/chatPreparation";
 // import { putString } from "./putString";
@@ -223,6 +223,11 @@ export const receiveEnter = async (
     } else {
       stringEmit(io, "GET LIVESTREAM: FAILED");
     }
+  } else if (strings === "CALL") {
+    io.to(id).emit("webRtcOfferReqFromServer");
+  } else if (strings === "VOSK") {
+    console.log("VOSK CALL");
+    io.emit("voskCallFromServer");
   } else {
     voiceEmit(io, strings, id);
   }

@@ -42,10 +42,11 @@ export const splitQuantize = (
     } else {
       return quantizeCmd(stringArr[1], "all", { beat: 0 });
     }
-  } else if (stringArr.length === 2 && arrTypeArr[0] === "string") {
+  } else if (stringArr.length === 2 && arrTypeArr[1] === "string") {
     if (stringArr[1] === "TRUE" || stringArr[1] === "ON") {
       return quantizeCmd("all", "all", { flag: true });
     } else if (stringArr[1] === "FALSE" || stringArr[1] === "OFF") {
+      console.log("debug: ", stringArr);
       return quantizeCmd("all", "all", { flag: false });
     }
   } else if (

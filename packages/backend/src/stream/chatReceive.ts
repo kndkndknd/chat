@@ -32,6 +32,8 @@ export const chatReceive = async (
       case "CHAT":
         chats.push(buffer);
         console.log("chat length: ", chats.length);
+        console.log("bpmState", bpmState);
+
         if (buffer.from !== undefined) {
           chatEmit(io, buffer.from);
         } else {
@@ -97,6 +99,8 @@ export const chatEmit = async (io, from?) => {
       from !== undefined
         ? pickupStreamTarget("CHAT", from)
         : pickupStreamTarget("CHAT");
+    console.log("chatEmit targetId: ", targetId);
+    console.log("bpmState", targetId, bpmState[targetId]);
     // const targetId =
     //   states.client[Math.floor(Math.random() * states.client.length)];
     // console.log("chatReceive targetId: ", targetId);

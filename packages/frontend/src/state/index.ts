@@ -15,6 +15,11 @@ import { convolverState } from "./webAudio/convolverState";
 import { scriptProcessorState } from "./webAudio/scriptProcessorState";
 import { otherNodeState } from "./webAudio/otherNodeState";
 
+// webRTC
+import { webRtcState } from "./webRtcState";
+
+import { voiceState } from "./voiceState";
+
 export {
   flagState,
   metronomeState,
@@ -30,4 +35,6 @@ export {
   convolverState,
   scriptProcessorState,
   otherNodeState,
+  webRtcState,
+  voiceState,
 };

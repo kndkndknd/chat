@@ -28,6 +28,9 @@ import { connectFromClient } from "../clientSetting/connectFromClient";
 // websocket
 import { sendCharWebSocket } from "../webSocket/sendChar";
 
+// rotate
+import { m5Switch } from "../rotate/m5Access";
+
 let strings = "";
 const previousFace = { x: 0, y: 0 };
 
@@ -99,6 +102,18 @@ export const ioServer = (
 
     socket.on("escapeFromForm", () => {
       stopEmit(io, "form", "ExceptHls");
+    });
+
+    // WebRTC
+    socket.on("rtcConnectionFromClient", (data) => {
+      console.log("rtcConnectionFromClient", data);
+      if (data.type !== undefined) console.log("type: ", data.type);
+      socket.broadcast.emit("rtcConnectionFromServer", data);
+    });
+
+    // rotate
+    socket.on("startRotationFromSmartphone", () => {
+      m5Switch();
     });
 
     socket.on("disconnect", () => {

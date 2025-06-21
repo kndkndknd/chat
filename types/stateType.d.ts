@@ -161,6 +161,7 @@ export type flagStateType = {
   clockMode: boolean;
   emoji: boolean;
   timer: boolean;
+  vosk: boolean;
 };
 
 export type arduinoStateType = {
