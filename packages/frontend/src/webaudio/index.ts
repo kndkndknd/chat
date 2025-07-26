@@ -7,6 +7,8 @@ import { simulate } from "./sound/simulate";
 import { sinewave } from "./sound/sinewave";
 import { whitenoise } from "./sound/whitenoise";
 import { initAudio } from "./init/initAudio";
+import { accelarateOsc } from "./sound/accelarateOsc";
+import { gpsOsc } from "./sound/gpsOsc";
 
 export {
   bass,
@@ -18,4 +20,6 @@ export {
   sinewave,
   whitenoise,
   initAudio,
+  accelarateOsc,
+  gpsOsc,
 };

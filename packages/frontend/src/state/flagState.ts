@@ -9,4 +9,8 @@ export const flagState = {
   timelapse: false,
   emoji: false,
   socketId: "",
+  gpsFlag: false,
+  accelarateFlag: false,
+  gpsOscFlag: false,
+  accelarateOscFlag: false,
 };

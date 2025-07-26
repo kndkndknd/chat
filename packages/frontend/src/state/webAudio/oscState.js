@@ -5,4 +5,6 @@ export const oscState = {
     clickOsc: null,
     simulateOsc: null,
     threeOsc: null,
+    gpsOsc: null,
+    accelarateOsc: null,
 };

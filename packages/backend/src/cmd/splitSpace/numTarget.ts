@@ -71,6 +71,10 @@ export const numTarget = (
     } else {
       io.emit("quantizeFromServer", quantizeObj);
     }
+  } else if (stringArr[1] === "GPS") {
+    io.to(target).emit("gpsFlagFromServer");
+  } else if (stringArr[1] === "ACCELARATE") {
+    io.emit("accelarateFlagFromServer");
   } else {
     stringEmit(io, "not cmd", true, target);
   }

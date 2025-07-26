@@ -30,6 +30,8 @@ import {
   // recordReqFromServer,
   gainChange,
   // streamPlay,
+  accelarateOsc,
+  gpsOsc,
 } from "./webaudio";
 
 import {
@@ -53,6 +55,9 @@ import { setQuantize } from "./quantize/setQuantize";
 import { speechVoice } from "./voice";
 import { time } from "node:console";
 
+import { getGPSPosition, watchGPSPosition } from "./gps";
+import { getAcceleration } from "./sensor";
+
 // let start = false;
 
 let cinemaFlag = false;
@@ -64,6 +69,21 @@ let clockBase = 0;
 voiceState.speechSynthesis = new SpeechSynthesisUtterance();
 
 let stringsClient = "";
+let sensorTimeIntervalId: number | null = null;
+const gpsPosition = {
+  latitude: 0,
+  longitude: 0,
+};
+
+const originlat = 35.7323529;
+const originlng = 139.8839623;
+
+const accelerationData = {
+  x: 0,
+  y: 0,
+  z: 0,
+  timestamp: 0,
+};
 
 let eListener = <HTMLElement>document.getElementById("wrapper");
 eListener.addEventListener(
@@ -365,6 +385,22 @@ socketState.socket.on("timelapseFromServer", (data) => {
   }
 });
 
+socketState.socket.on("gpsFlagFromServer", () => {
+  if (!flagState.gpsFlag) {
+    flagState.gpsFlag = true;
+  } else {
+    flagState.gpsFlag = false;
+  }
+});
+
+socketState.socket.on("accelarateFlagFromServer", () => {
+  if (!flagState.accelarateFlag) {
+    flagState.accelarateFlag = true;
+  } else {
+    flagState.accelarateFlag = false;
+  }
+});
+
 /*
 socketState.socket.on("clockModeFromServer", (data: { clockMode: boolean }) => {
   console.log(data);
@@ -469,6 +505,54 @@ export const initialize = async () => {
       width: window.innerWidth,
       height: window.innerHeight,
     });
+
+    sensorTimeIntervalId = window.setInterval(() => {
+      getAcceleration()
+        .then((acceleration) => {
+          accelerationData.x = acceleration.x;
+          accelerationData.y = acceleration.y;
+          accelerationData.z = acceleration.z;
+          accelerationData.timestamp = acceleration.timestamp;
+        })
+        .catch((error) => {
+          console.error("加速度センサーの取得に失敗:", error);
+        });
+      if (flagState.gpsFlag) {
+        getGPSPosition()
+          .then((position) => {
+            gpsPosition.latitude = position.latitude;
+            gpsPosition.longitude = position.longitude;
+          })
+          .catch((error) => {
+            console.error("GPS位置情報の取得に失敗:", error);
+          });
+        const frequency =
+          20 +
+          440 *
+            Math.sqrt(
+              Math.pow(gpsPosition.latitude - originlat, 2) +
+                Math.pow(gpsPosition.longitude - originlng, 2)
+            );
+        gpsOsc(true, frequency, 0, 1, 1);
+        textPrint(String(frequency) + "Hz");
+      } else {
+        gpsOsc(false, 440, 0, 1, 1);
+      }
+      if (flagState.accelarateFlag) {
+        const frequency =
+          20 +
+          20 *
+            Math.sqrt(
+              Math.pow(accelerationData.x, 2) +
+                Math.pow(accelerationData.y, 2) +
+                Math.pow(accelerationData.z, 2)
+            );
+        accelarateOsc(true, frequency, 0, 1, 1);
+        textPrint(String(frequency) + "Hz");
+      } else {
+        accelarateOsc(false, 440, 0, 1, 1);
+      }
+    }, 500);
 
     await setTimeout(() => {
       erasePrint();
