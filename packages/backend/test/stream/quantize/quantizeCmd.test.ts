@@ -1,14 +1,14 @@
 import { expect, test } from "vitest";
-import { quantizeCmd } from "../../src/stream/quantizeCmd";
-import { quantizeState } from "../../src/state";
+import { quantizeCmd } from "../../../src/stream/quantize/quantizeCmd";
+import { quantizeState } from "../../../src/state";
 
-test("quantize", () => {
+test("quantizeCmd", () => {
   const streamTarget = "CHAT";
   const clientTarget = "test";
   const beat = 0;
   quantizeState.bpm[streamTarget]["test"] = 60;
 
-  const result = quantizeCmd(streamTarget, clientTarget, beat);
+  const result = quantizeCmd(streamTarget, clientTarget, { beat });
   // console.log(result);
   expect(result).toEqual({
     flag: true,

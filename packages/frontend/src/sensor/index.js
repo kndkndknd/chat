@@ -6,7 +6,8 @@ export async function getAcceleration() {
     return new Promise((resolve, reject) => {
         // DeviceMotionEventの対応確認
         if (!window.DeviceMotionEvent) {
-            reject(new Error("DeviceMotionEventがサポートされていません"));
+            // reject(new Error("DeviceMotionEventがサポートされていません"));
+            console.log("DeviceMotionEventがサポートされていません");
             return;
         }
         // 権限が必要な場合のリクエスト（iOS 13以降）

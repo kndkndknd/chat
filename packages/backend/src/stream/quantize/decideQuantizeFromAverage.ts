@@ -1,54 +1,22 @@
-import { millisecondsPerBar } from "../../../util/bpmCalc";
-import { quantizeObjType } from "../../../../types";
-import {
-  clientState,
-  bpmState,
-  // quantizeState,
-  setQuantizeState,
-} from "../state";
-// import { decideQuantizeFromAverage } from "./quantizeModule/decideQuantizeFromAverage";
-import { streamList } from "../data";
+import { bpmState } from "../../state";
+import { millisecondsPerBar } from "../../../../util/bpmCalc";
 
-export const quantizeCmd = (
-  // io: SocketIO.Server,
-  streamTarget: string,
-  clientTarget: string,
-  parameter?: {
-    beat?: number;
-    bpm?: number;
-    flag?: boolean;
-  }
-): quantizeObjType => {
-  const streamArr =
-    streamTarget !== "all" ? [streamTarget] : ["CHAT", ...streamList];
-  const clientArr =
-    clientTarget !== "all" ? [clientTarget] : Object.keys(clientState.client);
-  const { bpm, bar, beat, flag } = decideQuantizeFromAverage(
-    streamArr,
-    clientArr,
-    parameter.beat,
-    parameter.bpm,
-    parameter.flag
-  );
-  console.log("quantizeCmd, debug", flag, bpm, bar, beat);
+// quantizeObjへのbpm, barのセット
 
-  setQuantizeState(streamArr, clientArr, bpm, beat, flag);
-
-  const quantizeObj = {
-    flag: flag,
-    stream: streamArr,
-    target: clientArr,
-    bpm: bpm,
-    bar: parameter.bpm !== undefined ? millisecondsPerBar(bpm) : bar,
-    beat: parameter.beat !== undefined ? parameter.beat : beat,
-  };
-  console.log("quantizeObj", quantizeObj);
-  // console.log("quantizeState", quantizeState);
-  return quantizeObj;
-};
-
-// quantizeObjへのbpm, barのセットと、quantizeStateの更新
-const decideQuantizeFromAverage = (
+/**
+ * クオンタイズ設定のための平均値を算出する関数
+ * @param streamArr 対象とするストリーム名の配列
+ * @param clientArr 対象とするクライアントIDの配列
+ * @param argBpm オプションのBPM値（undefinedの場合は平均値を使用）
+ * @param argBeat オプションのビート数（undefinedの場合は平均値を使用）
+ * @param argFlag オプションのフラグ（undefinedの場合は平均値を使用）
+ * @returns { bpm: number; bar: number; beat: number; flag: boolean }
+ * @description この関数は、指定されたストリームとクライアントのBPMとビート数の平均値を計算し、
+ * オプションで指定された値を使用してクオンタイズ設定を決定します。
+ * argBpm, argBeat, argFlagが指定されない場合、平均値を基にしたクオンタイズ設定が行われます。
+ * また、フラグは、平均値に基づいて計算され、必要に応じてtrueまたはfalseに設定されます。
+ */
+export const decideQuantizeFromAverage = (
   streamArr: string[],
   clientArr: string[],
   argBpm: number | undefined,

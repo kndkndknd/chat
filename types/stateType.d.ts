@@ -1,13 +1,4 @@
 // stream.client = {flag, bpm, beat}
-export type quantizeStateType = {
-  [key: string]: {
-    [key: string]: {
-      flag: boolean;
-      bpm: number;
-      beat: number;
-    };
-  };
-};
 
 export type cmdStateType = {
   GAIN: {

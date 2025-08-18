@@ -1,5 +1,6 @@
 import { io } from "socket.io-client";
 import { metronomeState, socketState } from "./state";
+import { bpmClientStateType } from "../../../types";
 
 socketState.socket = io();
 socketState.socketId = socketState.socket.id;
@@ -8,9 +9,9 @@ import {
   flagState,
   streamFlagState,
   timelapseState,
-  quantizeState,
   streamChunk,
   voiceState,
+  quantizeState,
 } from "./state";
 
 import {
@@ -59,6 +60,10 @@ import { getGPSPosition, watchGPSPosition } from "./gps";
 import { getAcceleration } from "./sensor";
 
 // let start = false;
+
+const ua = navigator.userAgent.toLowerCase();
+const isMobile = /iphone|ipad|ipod|android/.test(ua);
+const isAndroid = /android/.test(ua);
 
 let cinemaFlag = false;
 let clockModeId: number = 0;
@@ -321,13 +326,7 @@ socketState.socket.on("windowReqFromServer", (data: newWindowReqType) => {
 
 socketState.socket.on(
   "quantizeFromServer",
-  (data: {
-    flag: boolean;
-    stream: string[];
-    bpm: number;
-    bar: number;
-    beat: number;
-  }) => {
+  (data: bpmClientStateType) => {
     quantizeFromServer(data);
   }
 );
@@ -506,54 +505,57 @@ export const initialize = async () => {
       height: window.innerHeight,
     });
 
-    sensorTimeIntervalId = window.setInterval(() => {
-      getAcceleration()
-        .then((acceleration) => {
-          accelerationData.x = acceleration.x;
-          accelerationData.y = acceleration.y;
-          accelerationData.z = acceleration.z;
-          accelerationData.timestamp = acceleration.timestamp;
-        })
-        .catch((error) => {
-          console.error("加速度センサーの取得に失敗:", error);
-        });
-      if (flagState.gpsFlag) {
-        getGPSPosition()
-          .then((position) => {
-            gpsPosition.latitude = position.latitude;
-            gpsPosition.longitude = position.longitude;
+    if (isMobile) {
+      sensorTimeIntervalId = window.setInterval(() => {
+        getAcceleration()
+          .then((acceleration) => {
+            accelerationData.x = acceleration.x;
+            accelerationData.y = acceleration.y;
+            accelerationData.z = acceleration.z;
+            accelerationData.timestamp = acceleration.timestamp;
           })
           .catch((error) => {
-            console.error("GPS位置情報の取得に失敗:", error);
+            console.error("加速度センサーの取得に失敗:", error);
           });
-        const frequency =
-          20 +
-          440 *
-            Math.sqrt(
-              Math.pow(gpsPosition.latitude - originlat, 2) +
-                Math.pow(gpsPosition.longitude - originlng, 2)
-            );
-        gpsOsc(true, frequency, 0, 1, 1);
-        textPrint(String(frequency) + "Hz");
-      } else {
-        gpsOsc(false, 440, 0, 1, 1);
-      }
-      if (flagState.accelarateFlag) {
-        const frequency =
-          20 +
-          20 *
-            Math.sqrt(
-              Math.pow(accelerationData.x, 2) +
-                Math.pow(accelerationData.y, 2) +
-                Math.pow(accelerationData.z, 2)
-            );
-        accelarateOsc(true, frequency, 0, 1, 1);
-        textPrint(String(frequency) + "Hz");
-      } else {
-        accelarateOsc(false, 440, 0, 1, 1);
-      }
-    }, 500);
-
+        if (flagState.gpsFlag) {
+          getGPSPosition()
+            .then((position) => {
+              gpsPosition.latitude = position.latitude;
+              gpsPosition.longitude = position.longitude;
+            })
+            .catch((error) => {
+              console.error("GPS位置情報の取得に失敗:", error);
+            });
+          const frequency =
+            20 +
+            440 *
+              Math.sqrt(
+                Math.pow(gpsPosition.latitude - originlat, 2) +
+                  Math.pow(gpsPosition.longitude - originlng, 2)
+              );
+          gpsOsc(true, frequency, 0, 1, 1);
+          textPrint(String(frequency) + "Hz");
+        } else {
+          gpsOsc(false, 440, 0, 1, 1);
+        }
+        if (flagState.accelarateFlag) {
+          const frequency =
+            20 +
+            20 *
+              Math.sqrt(
+                Math.pow(accelerationData.x, 2) +
+                  Math.pow(accelerationData.y, 2) +
+                  Math.pow(accelerationData.z, 2)
+              );
+          accelarateOsc(true, frequency, 0, 1, 1);
+          textPrint(String(frequency) + "Hz");
+        } else {
+          accelarateOsc(false, 440, 0, 1, 1);
+        }
+      }, 500);
+    } else {
+      console.log("GPSまたは加速度センサーがサポートされていません");
+    }
     await setTimeout(() => {
       erasePrint();
     }, 500);

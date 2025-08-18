@@ -6,7 +6,7 @@ import {
   clientStateType,
   glitchStateType,
   sampleRateStateType,
-  quantizeStateType,
+  // quantizeStateType,
   currentStateType,
   previousStateType,
   bpmStateType,
@@ -18,12 +18,12 @@ import {
 import { LogType } from "./logType";
 import { quantizeObjType, frontQuantizeStateType } from "./quantizeType";
 import { newWindowReqType } from "./newWindowType";
+import { bpmClientStateType } from "./bpmType";
 
 export {
   CmdType,
   LogType,
   quantizeObjType,
-  frontQuantizeStateType,
   buffStateType,
   buffArrayType,
   StreamsType,
@@ -32,11 +32,12 @@ export {
   streamStateType,
   glitchStateType,
   sampleRateStateType,
-  quantizeStateType,
+  // quantizeStateType,
   frontQuantizeStateType,
   currentStateType,
   previousStateType,
   bpmStateType,
+  bpmClientStateType,
   formStateType,
   webStateType,
   flagStateType,

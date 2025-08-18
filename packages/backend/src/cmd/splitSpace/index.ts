@@ -35,7 +35,7 @@ import { modulationByBPM } from "./modulationByBPM";
 
 import { putLogFile } from "../../logging/putLogFile";
 import { text } from "stream/consumers";
-import { splitQuantize } from "./splitQuantize";
+import { splitQuantize } from "../../stream/quantize/splitQuantize";
 
 import { scheduleSplitCmd } from "../../schedule/scheduleSplitCmd";
 import { getScheduleFromSplitSpace } from "../../schedule/getScheduleFromSplitSpace";
@@ -46,6 +46,7 @@ import { splitModulation } from "./splitModulation";
 import { splitArduino } from "./splitArduino";
 import { quantizeObjType } from "../../../../../types";
 import { splitVoskCmd } from "./splitVoskCmd";
+import { millisecondsPerBar } from "../../../../util/bpmCalc";
 
 export const splitSpace = async (
   stringArr: Array<string>,
@@ -374,26 +375,13 @@ export const splitSpace = async (
     }
   } else if (stringArr[0] === "QUANTIZE") {
     console.log("debug quantize");
-    const quantizeObj: quantizeObjType | "quantize failed" = splitQuantize(
-      stringArr,
-      arrTypeArr
-    );
+    const quantizeObj = splitQuantize(stringArr, arrTypeArr);
     console.log("splitQuantize return: ", quantizeObj);
     if (quantizeObj === "quantize failed") {
       stringEmit(io, "QUANTIZE: FAILED");
     } else {
-      if (quantizeObj.client !== undefined && quantizeObj.client.length > 0) {
-        for (const client of quantizeObj.client) {
-          io.to(client).emit("quantizeFromServer", {
-            flag: quantizeObj.flag,
-            stream: quantizeObj.stream,
-            bpm: quantizeObj.bpm,
-            bar: quantizeObj.bar,
-            beat: quantizeObj.beat,
-          });
-        }
-      } else {
-        io.emit("quantizeFromServer", quantizeObj);
+      for (const client in quantizeObj) {
+        io.to(client).emit("quantizeFromServer", quantizeObj[client].stream);
       }
       // io.emit("quantizeFromServer", quantizeObj);
     }

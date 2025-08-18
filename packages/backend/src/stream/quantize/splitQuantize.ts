@@ -1,6 +1,7 @@
-import { quantizeCmd } from "../../stream/quantizeCmd";
+import { quantizeCmd } from "../../stream/quantize/quantizeCmd";
 import { quantizeObjType } from "../../../../../types";
 import { streamList } from "../../data";
+import { bpmClientStateType } from "../../../../../types";
 
 // ターゲットについてはtargetに入ってる。下記targetを除いたstringArr
 // stringArr.length === 1 => quantizeCmd(io, state, "all", target, 0);
@@ -12,7 +13,7 @@ export const splitQuantize = (
   stringArr: string[],
   arrTypeArr: string[],
   target?: string
-): quantizeObjType | "quantize failed" => {
+): { [client: string]: bpmClientStateType } | "quantize failed" => {
   console.log("splitQuantize: ", stringArr);
   console.log("arrTypeArr: ", arrTypeArr);
   console.log("target: ", target);

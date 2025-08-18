@@ -14,7 +14,8 @@ export async function getAcceleration(): Promise<AccelerationData> {
   return new Promise((resolve, reject) => {
     // DeviceMotionEventの対応確認
     if (!window.DeviceMotionEvent) {
-      reject(new Error("DeviceMotionEventがサポートされていません"));
+      // reject(new Error("DeviceMotionEventがサポートされていません"));
+      console.log("DeviceMotionEventがサポートされていません");
       return;
     }
 

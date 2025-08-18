@@ -8,7 +8,7 @@ import { parameterChange } from "../../parameterChange";
 import { notTargetEmit } from "../notTargetEmit";
 import { stringEmit } from "../../socket/ioEmit";
 import { chatPreparation } from "../../stream/chatPreparation";
-import { splitQuantize } from "../splitSpace/splitQuantize";
+import { splitQuantize } from "../../stream/quantize/splitQuantize";
 
 export const numTarget = (
   stringArr: Array<string>,

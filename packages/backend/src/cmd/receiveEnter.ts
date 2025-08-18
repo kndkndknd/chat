@@ -32,8 +32,12 @@ import { loadScenario } from "../scenario/loadScenario";
 import { execScenario } from "../scenario/execScenario";
 import { putCmd } from "./putCmd";
 import { cmdLogging } from "../logging/cmdLogging";
-import { quantizeCmd } from "../stream/quantizeCmd";
-import { millisecondsPerBeat } from "../../../util/bpmCalc";
+import { quantizeCmd } from "../stream/quantize/quantizeCmd";
+import { millisecondsPerBar } from "../../../util/bpmCalc";
+
+import { execStream } from "../cmd/execStream";
+import { execCmd } from "./execCmd";
+import { changeCmdParam } from "./changeCmdParam";
 
 export const receiveEnter = async (
   strings: string,
@@ -54,115 +58,46 @@ export const receiveEnter = async (
   }
   */
 
-  if (strings === "CHAT") {
-    chatPreparation(io);
-    voiceEmit(io, strings, id);
-  } else if (strings === "RECORD" || strings === "REC") {
-    recordEmit(io);
-    voiceEmit(io, "RECORD", id);
+  if (
+    strings === "CHAT" ||
+    strings === "RECORD" ||
+    strings === "REC" ||
+    streamList.includes(strings)
+  ) {
+    execStream(strings, io, id);
   } else if (strings.includes(" ") /*&& strings.split(" ").length < 4*/) {
     splitSpace(strings.split(" "), io, id);
   } else if (strings.includes("+")) {
     splitPlus(strings.split("+"), io);
-  } else if (streamList.includes(strings)) {
-    console.log("in stream");
-    streamEmit(strings, io);
-    voiceEmit(io, strings, id);
-  } else if (Object.keys(cmdList).includes(strings)) {
-    console.log("in cmd");
-    voiceEmit(io, cmdList[strings], id);
-    cmdEmit(cmdList[strings], io);
-  } else if (Number.isFinite(Number(strings))) {
-    console.log("sinewave");
-    voiceEmit(io, strings + "Hz", id);
-    sinewaveEmit(Number(strings), io);
-  } else if (strings === "SINEWAVE") {
-    const frequency = 20 + Math.random() * 19980;
-    voiceEmit(io, frequency + "Hz", id);
-    sinewaveEmit(frequency, io);
+  } else if (
+    Object.keys(cmdList).includes(strings) ||
+    Number.isFinite(Number(strings)) ||
+    strings === "SINEWAVE" ||
+    strings === "PREVIOUS" ||
+    strings === "PREV" ||
+    strings === "NO" ||
+    strings === "NUMBER" ||
+    strings === "SWITCH" ||
+    strings === "CLOCK" ||
+    strings === "SOLFEGIO"
+  ) {
+    execCmd(strings, io, id);
   } else if (strings === "STOP") {
     console.log("stop");
     voiceEmit(io, strings, id);
     stopEmit(io, id, "ALL");
   } else if (strings === "QUANTIZE") {
     const quantizeObj = quantizeCmd("all", "all", { beat: 0 });
-    io.emit("quantizeFromServer", {
-      flag: quantizeObj.flag,
-      stream: quantizeObj.stream,
-      bpm: quantizeObj.bpm,
-      bar: quantizeObj.bar,
-      beat: quantizeObj.beat,
-    });
-  } else if (strings === "TWICE" || strings === "HALF") {
-    sinewaveChange(strings, io);
-  } else if (strings === "PREVIOUS" || strings === "PREV") {
-    voiceEmit(io, "PREVIOUS", id);
-    previousCmd(io);
-  } else if (Object.keys(parameterList).includes(strings)) {
-    parameterChange(parameterList[strings], io, { source: id });
-  } else if (strings === "NO" || strings === "NUMBER") {
-    Object.keys(clientState.client).forEach((id, index) => {
-      console.log(id);
-      io.to(id).emit("stringsFromServer", {
-        strings: String(index),
-        timeout: true,
-      });
-      //putString(io, String(index), state)
-    });
-    // 20230923 sinewave Clientの表示
-    clientState.sinewaveClient.forEach((id, index) => {
-      console.log(id);
-      io.to(id).emit("stringsFromServer", {
-        strings: String(index) + "(sinewave)",
-        timeout: true,
-      });
-      //putString(io, String(index), state)
-    });
-  } else if (strings === "SWITCH") {
-    const switchState = arduinoState.relay === "on" ? "OFF" : "ON";
-    console.log(switchState);
-    io.emit("stringsFromServer", {
-      strings: "SWITCH " + switchState,
-      timeout: true,
-    });
-    switchCtrl().then((result) => {
-      console.log(result);
-    });
-  } else if (strings === "CLOCK") {
-    /*
-    state.clockMode = !state.clockMode;
-    console.log(state.clockMode);
-    io.to(id).emit("clockModeFromServer", { clockMode: state.clockMode });
-    */
-    io.emit("clockFromServer", {
-      clock: true,
-      // 暫定
-      barLatency:
-        millisecondsPerBeat(bpmState[Object.keys(bpmState)[0]].METRONOME.bpm) *
-        4,
-    });
-  } else if (strings === "FUSEJI" || strings === "EMOJI") {
-    flagState.emoji = !flagState.emoji;
-    io.emit("emojiFromServer", {
-      state: flagState.emoji,
-      text: "Emoji " + flagState.emoji,
-    });
-    // stringEmit(io, "EMOJI " + state.emoji, true);
-
-    /*
-  } else if (strings === "LIVESTREAM" || strings === "SOMEWHERE") {
-    //仮
-    const liveStreamUrl = "https://www.showroom-live.com/r/officialJKT48";
-    getLiveBuffer(liveStreamUrl).then((buffer) => {
-      try {
-        // 仮
-        console.log("emitBuffer", buffer);
-        io.emit("bufferFromServer", buffer);
-      } catch (err) {
-        console.error(err);
-      }
-    });
-*/
+    const client = Object.keys(quantizeObj)[0];
+    io.emit("quantizeFromServer", quantizeObj[client].stream);
+  } else if (
+    Object.keys(parameterList).includes(strings) ||
+    strings === "TWICE" ||
+    strings === "HALF" ||
+    strings === "FUSEJI" ||
+    strings === "EMOJI"
+  ) {
+    changeCmdParam(strings, id, io);
   } else if (strings === "START" || strings === "SCENARIO") {
     const scenario = await loadScenario();
     await execScenario(scenario, io);
@@ -199,11 +134,6 @@ export const receiveEnter = async (
       voiceEmit(io, strings, "scenario");
     }
     stringEmit(io, strings, false);
-  } else if (strings === "SOLFEGGIO") {
-    const solfeggioArr = [285, 396, 417, 528, 639, 741, 852, 963];
-    const frequency =
-      solfeggioArr[Math.floor(Math.random() * solfeggioArr.length)];
-    sinewaveEmit(frequency, io);
   } else if (strings === "FLOATING") {
     streamState.floating = !streamState.floating;
     stringEmit(io, "FLOATING: " + streamState.floating, true);

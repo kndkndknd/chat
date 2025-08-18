@@ -23,7 +23,8 @@ export async function getGPSPosition(
   return new Promise((resolve, reject) => {
     // Geolocation APIの対応確認
     if (!navigator.geolocation) {
-      reject(new Error("Geolocation APIがサポートされていません"));
+      // reject(new Error("Geolocation APIがサポートされていません"));
+      console.log("Geolocation APIがサポートされていません");
       return;
     }
 

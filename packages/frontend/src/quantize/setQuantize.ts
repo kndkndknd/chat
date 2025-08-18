@@ -1,4 +1,4 @@
-import { frontQuantizeStateType } from "../../../../types";
+import { frontQuantizeStateType, bpmClientStateType } from "../../../../types";
 import {
   streamFlagState,
   streamChunk,
@@ -8,53 +8,51 @@ import {
 } from "../state";
 import { chatReq } from "../stream";
 import { quantizePlay } from "./quantizePlay";
+import { millisecondsPerBar } from "../../../util/bpmCalc";
 
-export const setQuantize = (data: {
-  flag: boolean;
-  bar: number;
-  stream: string[];
-  beat?: number;
-}): frontQuantizeStateType => {
-  if (data.flag) {
-    const quantizeObj: frontQuantizeStateType = {
-      flag: data.flag,
-      bar: data.bar,
-      beat: data.beat !== undefined ? data.beat : quantizeState.beat,
-      stream: [],
-      interval: 0,
-      currentTime: 0,
-      timeout: 0,
-    };
-    // console.log(data);
-    for (const streamEl of data.stream) {
-      if (data.flag && !quantizeState.stream.includes(streamEl)) {
-        quantizeObj.stream.push(streamEl);
-      } else if (!data.flag && quantizeState.stream.includes(streamEl)) {
-        quantizeObj.stream = quantizeState.stream.filter(
-          (el) => el !== streamEl
-        );
-      }
-    }
-    if (quantizeState.interval !== null && data.bar === quantizeState.bar) {
-      clearInterval(quantizeState.interval);
-      quantizeState.interval = null;
-    } else if (quantizeState.interval === null) {
-      quantizeInterval(data.bar);
-    } else {
-      clearInterval(quantizeState.interval);
-      quantizeState.interval = null;
-      quantizeInterval(data.bar);
-    }
-    return quantizeObj;
+export const setQuantize = (
+  data: bpmClientStateType
+): frontQuantizeStateType => {
+  // if (data.flag) {
+  const quantizeObj: frontQuantizeStateType = {
+    flag: quantizeState.flag,
+    bar: quantizeState.bar,
+    beat: quantizeState.beat,
+    stream: [],
+    interval: quantizeState.interval,
+    currentTime: quantizeState.currentTime,
+    timeout: quantizeState.timeout,
+  };
+
+  const bar = millisecondsPerBar(data.stream[Object.keys(data.stream)[0]].bpm);
+  if (quantizeState.interval !== null && bar === quantizeState.bar) {
+    clearInterval(quantizeState.interval);
+    quantizeState.interval = null;
+  } else if (quantizeState.interval === null) {
+    quantizeInterval(bar);
   } else {
-    if (quantizeState.flag) {
+    clearInterval(quantizeState.interval);
+    quantizeState.interval = null;
+    quantizeInterval(bar);
+  }
+
+  for (const stream in data.stream) {
+    if (data.stream[stream] !== undefined) {
+      quantizeObj.stream.push(stream);
+    }
+    quantizeObj.flag = data.stream[stream].quantizeFlag;
+    quantizeObj.beat = data.stream[stream].beat;
+    quantizeObj.bar = millisecondsPerBar(data.stream[stream].bpm);
+    // quantizeObj.interval = quantizeObj.bar;
+  }
+
+  if (!quantizeObj.flag && quantizeState.flag) {
+    for (const stream in quantizeObj.stream) {
       clearInterval(quantizeState.interval);
       quantizeState.interval = null;
       for (const stream in streamChunk) {
         streamChunk[stream] = {};
       }
-    }
-    for (const stream in streamFlagState) {
       if (streamFlagState[stream]) {
         if (stream === "CHAT") {
           chatReq(socketState.socketId);
@@ -63,16 +61,57 @@ export const setQuantize = (data: {
         }
       }
     }
-    return {
-      flag: false,
-      bar: quantizeState.bar,
-      beat: quantizeState.beat,
-      stream: [],
-      interval: quantizeState.interval,
-      timeout: 0,
-      currentTime: 0,
-    };
   }
+  return quantizeObj;
+
+  //   // console.log(data);
+  //   for (const streamEl of data.stream) {
+  //     if (data.flag && !quantizeState.stream.includes(streamEl)) {
+  //       quantizeObj.stream.push(streamEl);
+  //     } else if (!data.flag && quantizeState.stream.includes(streamEl)) {
+  //       quantizeObj.stream = quantizeState.stream.filter(
+  //         (el) => el !== streamEl
+  //       );
+  //     }
+  //   }
+  //   if (quantizeState.interval !== null && data.bar === quantizeState.bar) {
+  //     clearInterval(quantizeState.interval);
+  //     quantizeState.interval = null;
+  //   } else if (quantizeState.interval === null) {
+  //     quantizeInterval(data.bar);
+  //   } else {
+  //     clearInterval(quantizeState.interval);
+  //     quantizeState.interval = null;
+  //     quantizeInterval(data.bar);
+  //   }
+  //   return quantizeObj;
+  // } else {
+  //   if (quantizeState.flag) {
+  //     clearInterval(quantizeState.interval);
+  //     quantizeState.interval = null;
+  //     for (const stream in streamChunk) {
+  //       streamChunk[stream] = {};
+  //     }
+  //   }
+  //   for (const stream in streamFlagState) {
+  //     if (streamFlagState[stream]) {
+  //       if (stream === "CHAT") {
+  //         chatReq(socketState.socketId);
+  //       } else {
+  //         socketState.socket.emit("streamReqFromClient", stream);
+  //       }
+  //     }
+  //   }
+  //   return {
+  //     flag: false,
+  //     bar: quantizeState.bar,
+  //     beat: quantizeState.beat,
+  //     stream: [],
+  //     interval: quantizeState.interval,
+  //     timeout: 0,
+  //     currentTime: 0,
+  //   };
+  // }
 };
 
 const quantizeInterval = (bar: number) => {

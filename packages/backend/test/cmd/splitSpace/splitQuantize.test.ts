@@ -1,7 +1,6 @@
 import { expect, test } from "vitest";
-import { splitQuantize } from "../../../src/cmd/splitSpace/splitQuantize";
+import { splitQuantize } from "../../../src/stream/quantize/splitQuantize";
 import { getTypeArr } from "../../../src/cmd/splitSpace/getTypeArr";
-import { quantizeState } from "../../../src/states";
 
 test("splitQuantize", async () => {
   // ターゲットについてはtargetに入ってる。下記targetを除いたstringArr
@@ -13,7 +12,7 @@ test("splitQuantize", async () => {
 
   const stringArr = ["QUANTIZE", "4", "CHAT"];
   const arrTypeArr = getTypeArr(stringArr);
-  quantizeState.bpm.CHAT = { target: 60 };
+  // quantizeState.bpm.CHAT = { target: 60 };
 
   const result = await splitQuantize(stringArr, arrTypeArr, "target");
   console.log(result);

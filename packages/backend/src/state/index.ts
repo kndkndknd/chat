@@ -1,9 +1,8 @@
 // state
-import { quantizeState } from "./states/quantizeState";
 import { cmdState } from "./states/cmdState";
 import { streamState } from "./states/streamState";
 import { arduinoState } from "./states/arduinoState";
-import { bpmState } from "./states/bpmState";
+import { bpmState, bpmClientStateType } from "./states/bpmState";
 import { clientState } from "./states/clientState";
 import { currentState } from "./states/currentState";
 import { flagState } from "./states/flagState";
@@ -12,19 +11,16 @@ import { previousState } from "./states/previousState";
 import { sampleRateState } from "./states/sampleRateState";
 import { webState } from "./states/webState";
 import { hlsState } from "./states/hlsState";
-// set state
-import { setQuantizeState } from "./setState/setQuantizeState";
 
 // webSocket
 import { webSocketIdState } from "./states/webSocketIdState";
 
 export {
-  quantizeState,
-  setQuantizeState,
   cmdState,
   streamState,
   arduinoState,
   bpmState,
+  bpmClientStateType,
   clientState,
   currentState,
   flagState,

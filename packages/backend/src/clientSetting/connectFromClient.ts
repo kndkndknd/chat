@@ -6,9 +6,9 @@ import {
   bpmState,
   cmdState,
 } from "../state";
-import { quantizeState } from "../state";
 import { streamList } from "../data";
 import { floatingPosition } from "./floatingPosition";
+import { averageBpmInfo } from "../../../util/averageBpmInfo";
 
 export const connectFromClient = (data, socket, io) => {
   let sockId = String(socket.id);
@@ -68,48 +68,11 @@ export const connectFromClient = (data, socket, io) => {
       }
     }
 
-    if (bpmState[sockId] === undefined)
-      bpmState[sockId] = {
-        stream: {
-          CHAT: {
-            bpm: 60,
-            beat: 0,
-            gridFlag: false,
-            quantizeFlag: false,
-            latency: 1000,
-          },
-        },
-        METRONOME: { bpm: 60, beat: 4, flag: false },
-        MODULATION: { bpm: 60, beat: 4, flag: false },
-      };
-    for (const stream of streamList) {
-      bpmState[sockId].stream[stream] = {
-        bpm: 60,
-        beat: 0,
-        gridFlag: false,
-        quantizeFlag: false,
-        latency: 1000,
-      };
+    if (bpmState[sockId] === undefined) {
+      bpmState[sockId] = averageBpmInfo();
     }
+
     console.log("bpmState", sockId, bpmState[sockId]);
-
-    // if (!Object.keys(bpmState.client).includes(sockId)) {
-    //   bpmState.client[sockId] = 60;
-    // }
-
-    // // METRONOMEは接続時に初期値を作る
-    // cmdState.METRONOME[sockId] = 1000;
-
-    // // QUANTIZE
-    // for (const stream of Object.keys(quantizeState)) {
-    //   if (quantizeState[stream][sockId] === undefined) {
-    //     quantizeState[stream][sockId] = {
-    //       bpm: 60,
-    //       beat: 0,
-    //       flag: false,
-    //     };
-    //   }
-    // }
 
     console.log(clientState.client);
     return true;

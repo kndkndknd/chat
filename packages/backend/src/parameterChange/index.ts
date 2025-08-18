@@ -1,22 +1,6 @@
 import SocketIO from "socket.io";
 
 // import { putString } from './putString'
-import {
-  cmdState,
-  streamState,
-  glitchState,
-  sampleRateState,
-  clientState,
-  currentState,
-  bpmState,
-} from "../state";
-import { putCmd } from "../cmd/putCmd";
-import { stringEmit } from "../socket/ioEmit";
-import { notTargetEmit } from "../cmd/notTargetEmit";
-import { millisecondsPerBar } from "../../../util/bpmCalc";
-import { quantizeState } from "../state";
-import { streamList } from "../data";
-
 import { portamentChange } from "./portamentChange";
 import { sampleRateChange } from "./sampleRateChange";
 import { glitchChange } from "./glitchChange";
