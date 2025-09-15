@@ -1,20 +1,51 @@
 import { expect, test } from "vitest";
 import { quantizeCmd } from "../../../src/stream/quantize/quantizeCmd";
-import { quantizeState } from "../../../src/state";
+import { bpmStreamStateType, bpmClientStateType } from "../../../../../types";
+import { bpmState } from "../../../src/state";
 
 test("quantizeCmd", () => {
   const streamTarget = "CHAT";
-  const clientTarget = "test";
-  const beat = 0;
-  quantizeState.bpm[streamTarget]["test"] = 60;
+  const clientTarget = "testClient";
+  const parameter = { beat: 6, bpm: 120, flag: true };
 
-  const result = quantizeCmd(streamTarget, clientTarget, { beat });
+  const bpmStateObj: bpmClientStateType = {
+    METRONOME: {
+      bpm: 60,
+      beat: 4,
+      flag: true,
+    },
+    MODULATION: {
+      flag: false,
+      bpm: 60,
+      beat: 4,
+    },
+    stream: {
+      CHAT: {
+        bpm: 60,
+        beat: 4,
+        gridFlag: false,
+        quantizeFlag: false,
+        latency: 60000 / 60 / 4,
+      },
+    },
+  };
+  bpmState[clientTarget] = bpmStateObj as bpmClientStateType;
+  console.log("bpmState after set: ", bpmState);
+
+  const result: { [client: string]: bpmStreamStateType } = quantizeCmd(
+    { streamTarget, clientTarget },
+    parameter
+  );
   // console.log(result);
   expect(result).toEqual({
-    flag: true,
-    stream: "CHAT",
-    bpm: 60,
-    bar: 4000,
-    beat: 0,
+    testClient: {
+      CHAT: {
+        bpm: 120,
+        beat: 6,
+        gridFlag: false,
+        quantizeFlag: true,
+        latency: 60000 / parameter.bpm / parameter.beat,
+      },
+    },
   });
 });

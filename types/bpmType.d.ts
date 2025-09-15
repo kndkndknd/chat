@@ -9,13 +9,15 @@ export type bpmClientStateType = {
     bpm: number;
     beat: number;
   };
-  stream: {
-    [stream: string]: {
-      bpm: number;
-      beat: number;
-      gridFlag: boolean;
-      quantizeFlag: boolean;
-      latency: number;
-    };
+  stream: bpmStreamStateType;
+};
+
+export type bpmStreamStateType = {
+  [stream: string]: {
+    bpm: number;
+    beat: number;
+    gridFlag: boolean;
+    quantizeFlag: boolean;
+    latency: number;
   };
 };

@@ -18,7 +18,7 @@ import {
 import { LogType } from "./logType";
 import { quantizeObjType, frontQuantizeStateType } from "./quantizeType";
 import { newWindowReqType } from "./newWindowType";
-import { bpmClientStateType } from "./bpmType";
+import { bpmClientStateType, bpmStreamStateType } from "./bpmType";
 
 export {
   CmdType,
@@ -38,6 +38,7 @@ export {
   previousStateType,
   bpmStateType,
   bpmClientStateType,
+  bpmStreamStateType,
   formStateType,
   webStateType,
   flagStateType,

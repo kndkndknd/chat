@@ -1,6 +1,8 @@
 import { expect, test } from "vitest";
 import { splitQuantize } from "../../../src/stream/quantize/splitQuantize";
 import { getTypeArr } from "../../../src/cmd/splitSpace/getTypeArr";
+import { bpmState } from "../../../src/state";
+import { bpmClientStateType, bpmStreamStateType } from "../../../../../types";
 
 test("splitQuantize", async () => {
   // ターゲットについてはtargetに入ってる。下記targetを除いたstringArr
@@ -9,6 +11,29 @@ test("splitQuantize", async () => {
   // stringArr.length === 2 && 1つめがstringでstream => quantizeCmd(io, state, stringArr[2], target, 0);
   // stringArr.length === 3 && 1つめがnumberで2つ目がstream  => quantizeCmd(io, state, stringArr[3], target, Number(stringArr[1]));
   // stringArr.length === 3 && 1つめがstreamで2つ目がnumber => quantizeCmd(io, state, stringArr[1], target, Number(stringArr[2]));
+
+  const bpmStateObj: bpmClientStateType = {
+    METRONOME: {
+      bpm: 60,
+      beat: 4,
+      flag: true,
+    },
+    MODULATION: {
+      flag: false,
+      bpm: 60,
+      beat: 4,
+    },
+    stream: {
+      CHAT: {
+        bpm: 60,
+        beat: 4,
+        gridFlag: false,
+        quantizeFlag: false,
+        latency: 60000 / 60 / 4,
+      },
+    },
+  };
+  bpmState["clientTarget"] = bpmStateObj as bpmClientStateType;
 
   const stringArr = ["QUANTIZE", "4", "CHAT"];
   const arrTypeArr = getTypeArr(stringArr);

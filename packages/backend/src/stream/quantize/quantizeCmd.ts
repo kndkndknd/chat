@@ -1,7 +1,7 @@
 import { millisecondsPerBar } from "../../../../util/bpmCalc";
 // import { quantizeObjType } from "../../../../../types";
 import { clientState, bpmState } from "../../state";
-import { bpmClientStateType } from "../../../../../types";
+import { bpmClientStateType, bpmStreamStateType } from "../../../../../types";
 import { decideQuantizeFromAverage } from "./decideQuantizeFromAverage";
 import { streamList } from "../../data";
 
@@ -20,51 +20,99 @@ import { streamList } from "../../data";
  */
 export const quantizeCmd = (
   // io: SocketIO.Server,
-  streamTarget: string,
-  clientTarget: string,
+  target: {
+    streamTarget: string;
+    clientTarget: string;
+  },
   parameter?: {
     beat?: number;
     bpm?: number;
     flag?: boolean;
   }
-): { [client: string]: bpmClientStateType } => {
+): { [client: string]: bpmStreamStateType } => {
+  // const argBpmClientObj = {};
+  // if (clientTarget === "all") {
+  //   for (const client of Object.keys(clientState.client)) {
+  //     argBpmClientObj[client] = {
+  //       stream: {},
+  //     };
+  //   }
+  // } else {
+  //   argBpmClientObj[clientTarget] = {
+  //     stream: {},
+  //   };
+  // }
+  // for (const client in argBpmClientObj) {
+  //   if (streamTarget === "all") {
+  //     argBpmClientObj[client].stream.CHAT = {};
+  //     for (const stream of streamList) {
+  //       argBpmClientObj[client][stream] = {};
+  //     }
+  //   } else {
+  //     argBpmClientObj[client].stream[streamTarget] = {};
+  //   }
+  // }
+  // const bpmClientObj: { [client: string]: bpmStreamStateType } =
+  //   decideQuantizeFromAverage(
+  //     argBpmClientObj,
+  //     parameter.beat,
+  //     parameter.bpm,
+  //     parameter.flag
+  //   );
+
   const streamArr =
-    streamTarget !== "all" ? [streamTarget] : ["CHAT", ...streamList];
+    target.streamTarget !== "all"
+      ? [target.streamTarget]
+      : ["CHAT", ...streamList];
   const clientArr =
-    clientTarget !== "all" ? [clientTarget] : Object.keys(clientState.client);
-  const { bpm, bar, beat, flag } = decideQuantizeFromAverage(
-    streamArr,
-    clientArr,
-    parameter.beat,
-    parameter.bpm,
-    parameter.flag
-  );
-  console.log("quantizeCmd, debug", flag, bpm, bar, beat);
-  const quantizeObj: { [client: string]: bpmClientStateType } = {};
+    target.clientTarget !== "all"
+      ? [target.clientTarget]
+      : Object.keys(clientState.client);
+
+  console.log("bpmState in test: ", bpmState);
+  // if (parameter === undefined) {
+  const preQuantizeObj: { [client: string]: bpmStreamStateType } = {};
   for (const client of clientArr) {
-    quantizeObj[client] = {
-      METRONOME: {
-        flag: bpmState[client].METRONOME.flag,
-        bpm: bpmState[client].METRONOME.bpm,
-        beat: bpmState[client].METRONOME.beat,
-      },
-      MODULATION: {
-        flag: bpmState[client].MODULATION.flag,
-        bpm: bpmState[client].MODULATION.bpm,
-        beat: bpmState[client].MODULATION.beat,
-      },
-      stream: {},
-    };
+    preQuantizeObj[client] = {};
     for (const stream of streamArr) {
-      quantizeObj[client].stream[stream] = {
-        quantizeFlag: flag,
-        bpm: bpm,
-        beat: beat,
-        gridFlag: bpmState[client].stream[stream].gridFlag,
-        latency: millisecondsPerBar(bpm) / beat,
-      };
+      preQuantizeObj[client][stream] =
+        bpmState[client].stream[stream] !== undefined
+          ? { ...bpmState[client].stream[stream] }
+          : {
+              bpm: 60,
+              beat: 4,
+              gridFlag: false,
+              quantizeFlag: false,
+              latency: 250,
+            };
     }
   }
+  console.log("preQuantizeObj: ", preQuantizeObj);
+  const quantizeObj = decideQuantizeFromAverage(preQuantizeObj, parameter);
+  console.log("quantizeObj: ", quantizeObj);
+  // console.log("quantizeState", quantizeState);
+  return quantizeObj;
+  // } else if (
+  //   parameter.beat !== undefined &&
+  //   parameter.bpm !== undefined &&
+  //   parameter.flag !== undefined
+  // ) {
+  //   const quantizeObj: { [client: string]: bpmStreamStateType } = {};
+
+  //   for (const client of clientArr) {
+  //     for (const stream of streamArr) {
+  //       quantizeObj[client].stream[stream] = {
+  //         bpm: parameter.bpm,
+  //         beat: parameter.beat,
+  //         gridFlag: false,
+  //         quantizeFlag: parameter.flag,
+  //         latency: 60000 / parameter.bpm / parameter.beat,
+  //       };
+  //     }
+  //   }
+  //   console.log("quantizeObj: ", quantizeObj);
+  //   return quantizeObj;
+  // }
 
   // const quantizeObj = {
   //   flag: flag,
@@ -74,7 +122,4 @@ export const quantizeCmd = (
   //   bar: parameter.bpm !== undefined ? millisecondsPerBar(bpm) : bar,
   //   beat: parameter.beat !== undefined ? parameter.beat : beat,
   // };
-  console.log("quantizeObj", quantizeObj);
-  // console.log("quantizeState", quantizeState);
-  return quantizeObj;
 };

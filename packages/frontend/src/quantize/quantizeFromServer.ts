@@ -45,7 +45,9 @@ export const quantizeFromServer = (data: bpmClientStateType) => {
   }
 
   const string = quantizeObj.flag
-    ? `QUANTIZE:${quantizeObj.flag}, bpm:${data.bpm}, beat:${data.beat}`
+    ? `QUANTIZE:${quantizeObj.flag}, bpm:${
+        60000 / (quantizeObj.bar / quantizeObj.beat)
+      }, beat:${quantizeObj.beat}`
     : "QUANTIZE:false";
   // 文字表示
   textPrint(string);

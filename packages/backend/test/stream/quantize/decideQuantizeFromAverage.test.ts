@@ -1,68 +1,158 @@
 import { expect, test } from "vitest";
 import { decideQuantizeFromAverage } from "../../../src/stream/quantize/decideQuantizeFromAverage";
 import { bpmState } from "../../../src/state";
+import { bpmStreamStateType } from "../../../../../types";
 
-test("quantize", () => {
-  const streamArr = ["PLAYBACK"];
-  const clientArr = ["testId", "testId2"];
-  bpmState["testId"] = {
-    METRONOME: {
-      bpm: 60,
-      beat: 4,
-      flag: false,
+test("decideQuantizeFromAverage1", () => {
+  // TODO: bpmStateの初期化
+  const bpmStreamState: { [keys: string]: bpmStreamStateType } = {
+    client1: {
+      STREAM1: {
+        bpm: 120,
+        beat: 4,
+        gridFlag: true,
+        quantizeFlag: true,
+        latency: 0,
+      },
+      STREAM2: {
+        bpm: 100,
+        beat: 8,
+        gridFlag: true,
+        quantizeFlag: true,
+        latency: 0,
+      },
     },
-    MODULATION: {
-      flag: false,
-      bpm: 60,
-      beat: 4,
+    client2: {
+      STREAM1: {
+        bpm: 140,
+        beat: 4,
+        gridFlag: true,
+        quantizeFlag: true,
+        latency: 0,
+      },
+      STREAM2: {
+        bpm: 110,
+        beat: 8,
+        gridFlag: true,
+        quantizeFlag: true,
+        latency: 0,
+      },
     },
-    stream: {
-      PLAYBACK: {
-        bpm: 60,
+  };
+
+  const result = decideQuantizeFromAverage(bpmStreamState, {
+    bpm: 130,
+    beat: 4,
+    flag: true,
+  });
+
+  expect(result).toEqual({
+    client1: {
+      STREAM1: {
+        bpm: 130,
         beat: 4,
         gridFlag: false,
-        quantizeFlag: false,
-        latency: 1000,
+        latency: 60000 / 130 / 4,
+        quantizeFlag: true,
       },
-    },
-  };
-
-  bpmState["testId2"] = {
-    METRONOME: {
-      bpm: 30,
-      beat: 2,
-      flag: false,
-    },
-    MODULATION: {
-      flag: false,
-      bpm: 30,
-      beat: 2,
-    },
-    stream: {
-      PLAYBACK: {
-        bpm: 30,
-        beat: 2,
+      STREAM2: {
+        bpm: 130,
+        beat: 4,
         gridFlag: false,
+        latency: 60000 / 130 / 4,
+        quantizeFlag: true,
+      },
+    },
+    client2: {
+      STREAM1: {
+        bpm: 130,
+        beat: 4,
+        gridFlag: false,
+        latency: 60000 / 130 / 4,
+        quantizeFlag: true,
+      },
+      STREAM2: {
+        bpm: 130,
+        beat: 4,
+        gridFlag: false,
+        latency: 60000 / 130 / 4,
+        quantizeFlag: true,
+      },
+    },
+  });
+});
+
+test("decideQuantizeFromAverage2", () => {
+  // TODO: bpmStateの初期化
+  const bpmStreamState: { [keys: string]: bpmStreamStateType } = {
+    client1: {
+      STREAM1: {
+        bpm: 120,
+        beat: 4,
+        gridFlag: true,
+        quantizeFlag: true,
+        latency: 0,
+      },
+      STREAM2: {
+        bpm: 100,
+        beat: 8,
+        gridFlag: true,
+        quantizeFlag: true,
+        latency: 0,
+      },
+    },
+    client2: {
+      STREAM1: {
+        bpm: 140,
+        beat: 4,
+        gridFlag: true,
+        quantizeFlag: true,
+        latency: 0,
+      },
+      STREAM2: {
+        bpm: 110,
+        beat: 8,
+        gridFlag: true,
         quantizeFlag: false,
-        latency: 1000,
+        latency: 0,
       },
     },
   };
 
-  console.log("bpmState", bpmState);
+  const result = decideQuantizeFromAverage(bpmStreamState);
 
-  const result = decideQuantizeFromAverage(
-    streamArr,
-    clientArr,
-    undefined,
-    undefined,
-    undefined
-  );
-  // console.log(result);
   expect(result).toEqual({
-    flag: true,
-    bpm: 45,
-    bar: (4 * 60000) / 45,
-    beat: 3,
+    client1: {
+      STREAM1: {
+        bpm: 117.5,
+        beat: 6,
+        gridFlag: false,
+        latency: 60000 / 117.5 / 6,
+        quantizeFlag: true,
+      },
+      STREAM2: {
+        bpm: 117.5,
+        beat: 6,
+        gridFlag: false,
+        latency: 60000 / 117.5 / 6,
+        quantizeFlag: true,
+      },
+    },
+    client2: {
+      STREAM1: {
+        bpm: 117.5,
+        beat: 6,
+        gridFlag: false,
+        latency: 60000 / 117.5 / 6,
+        quantizeFlag: true,
+      },
+      STREAM2: {
+        bpm: 117.5,
+        beat: 6,
+        gridFlag: false,
+        latency: 60000 / 117.5 / 6,
+        quantizeFlag: true,
+      },
+    },
   });
 });
