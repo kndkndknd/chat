@@ -1,5 +1,6 @@
-import { bpmState, bpmClientStateType } from "../backend/src/state";
+import { bpmState } from "../backend/src/state";
 import { streamList } from "../backend/src/data";
+import { bpmClientStateType } from "../../types";
 
 export const averageBpmInfo = (): bpmClientStateType => {
   if (Object.keys(bpmState).length === 0) {

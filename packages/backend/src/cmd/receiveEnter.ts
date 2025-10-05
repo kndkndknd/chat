@@ -7,7 +7,7 @@ import {
   streamState,
   flagState,
   previousState,
-  bpmState,
+  bpmStateDefault,
 } from "../state";
 
 import { cmdList, parameterList, streamList } from "../data";
@@ -87,7 +87,10 @@ export const receiveEnter = async (
     voiceEmit(io, strings, id);
     stopEmit(io, id, "ALL");
   } else if (strings === "QUANTIZE") {
-    const quantizeObj = quantizeCmd("all", "all", { beat: 0 });
+    const quantizeObj = quantizeCmd(
+      { streamTarget: "all", clientTarget: "all" },
+      { beat: bpmStateDefault.beat }
+    );
     const client = Object.keys(quantizeObj)[0];
     io.emit("quantizeFromServer", quantizeObj[client].stream);
   } else if (

@@ -1,5 +1,5 @@
 import { io } from "socket.io-client";
-import { metronomeState, socketState } from "../state";
+import { socketState } from "../state";
 socketState.socket = io();
 socketState.socketId = socketState.socket.id;
 import { flagState, streamFlagState, timelapseState, quantizeState, streamChunk, webRtcState, } from "../state";
@@ -15,8 +15,6 @@ import { cmdFromServer, stopCmd } from "../cmd";
 import { keyDown } from "../textInput";
 import { enableClockMode, disableClockMode } from "../clientMode/clockMode";
 import { hlsSizing } from "../hlsVideo";
-import { quantizeFromServer } from "../quantize/quantizeFromServer";
-import { setQuantize } from "../quantize/setQuantize";
 // let start = false;
 let cinemaFlag = false;
 let clockModeId = 0;
@@ -164,9 +162,18 @@ socketState.socket.on("windowReqFromServer", (data) => {
         String(data.left));
     click(1.0);
 });
-socketState.socket.on("quantizeFromServer", (data) => {
-    quantizeFromServer(data);
-});
+// socketState.socket.on(
+//   "quantizeFromServer",
+//   (data: {
+//     flag: boolean;
+//     stream: string[];
+//     bpm: number;
+//     bar: number;
+//     beat: number;
+//   }) => {
+//     quantizeFromServer(data);
+//   }
+// );
 socketState.socket.on("clockFromServer", (data) => {
     if (data.clock) {
         clockBase = Date.now();
@@ -184,19 +191,19 @@ socketState.socket.on("emojiFromServer", (data) => {
     }, 500);
     emojiState(data.state);
 });
-socketState.socket.on("bpmFromServer", (data) => {
-    console.log("bpmFromServer", data);
-    metronomeState.fournote = data.bar / 4;
-    // quantizeState.bar = data.bar;
-    if (quantizeState.flag) {
-        setQuantize({
-            flag: true,
-            bar: data.bar,
-            stream: quantizeState.stream,
-            beat: quantizeState.beat,
-        });
-    }
-});
+// socketState.socket.on("bpmFromServer", (data: { bpm: number; bar: number }) => {
+//   console.log("bpmFromServer", data);
+//   metronomeState.fournote = data.bar / 4;
+//   // quantizeState.bar = data.bar;
+//   if (quantizeState.flag) {
+//     setQuantize({
+//       flag: true,
+//       bar: data.bar,
+//       stream: quantizeState.stream,
+//       beat: quantizeState.beat,
+//     });
+//   }
+// });
 // WebRTC
 const localVideo = document.getElementById("local");
 const remoteVideo = document.getElementById("remote");

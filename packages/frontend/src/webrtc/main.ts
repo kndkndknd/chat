@@ -279,18 +279,18 @@ socketState.socket.on("windowReqFromServer", (data: newWindowReqType) => {
   click(1.0);
 });
 
-socketState.socket.on(
-  "quantizeFromServer",
-  (data: {
-    flag: boolean;
-    stream: string[];
-    bpm: number;
-    bar: number;
-    beat: number;
-  }) => {
-    quantizeFromServer(data);
-  }
-);
+// socketState.socket.on(
+//   "quantizeFromServer",
+//   (data: {
+//     flag: boolean;
+//     stream: string[];
+//     bpm: number;
+//     bar: number;
+//     beat: number;
+//   }) => {
+//     quantizeFromServer(data);
+//   }
+// );
 
 socketState.socket.on(
   "clockFromServer",
@@ -316,19 +316,19 @@ socketState.socket.on(
   }
 );
 
-socketState.socket.on("bpmFromServer", (data: { bpm: number; bar: number }) => {
-  console.log("bpmFromServer", data);
-  metronomeState.fournote = data.bar / 4;
-  // quantizeState.bar = data.bar;
-  if (quantizeState.flag) {
-    setQuantize({
-      flag: true,
-      bar: data.bar,
-      stream: quantizeState.stream,
-      beat: quantizeState.beat,
-    });
-  }
-});
+// socketState.socket.on("bpmFromServer", (data: { bpm: number; bar: number }) => {
+//   console.log("bpmFromServer", data);
+//   metronomeState.fournote = data.bar / 4;
+//   // quantizeState.bar = data.bar;
+//   if (quantizeState.flag) {
+//     setQuantize({
+//       flag: true,
+//       bar: data.bar,
+//       stream: quantizeState.stream,
+//       beat: quantizeState.beat,
+//     });
+//   }
+// });
 
 // WebRTC
 const localVideo = <HTMLVideoElement>document.getElementById("local");

@@ -8,7 +8,7 @@ import { parameterChange } from "../../parameterChange";
 import { notTargetEmit } from "../notTargetEmit";
 import { stringEmit } from "../../socket/ioEmit";
 import { chatPreparation } from "../../stream/chatPreparation";
-import { splitQuantize } from "../../stream/quantize/splitQuantize";
+import { splitQuantize } from "./splitQuantize";
 
 export const numTarget = (
   stringArr: Array<string>,
@@ -66,11 +66,11 @@ export const numTarget = (
       arrTypeArr.slice(1),
       target
     );
-    if (quantizeObj === "quantize failed") {
-      stringEmit(io, "quantize failed", true, target);
-    } else {
-      io.emit("quantizeFromServer", quantizeObj);
-    }
+    // if (quantizeObj === "quantize failed") {
+    //   stringEmit(io, "quantize failed", true, target);
+    // } else {
+    io.emit("quantizeFromServer", quantizeObj);
+    // }
   } else if (stringArr[1] === "GPS") {
     io.to(target).emit("gpsFlagFromServer");
   } else if (stringArr[1] === "ACCELARATE") {

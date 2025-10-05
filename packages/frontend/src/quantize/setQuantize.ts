@@ -11,7 +11,7 @@ import { quantizePlay } from "./quantizePlay";
 import { millisecondsPerBar } from "../../../util/bpmCalc";
 
 export const setQuantize = (
-  data: bpmClientStateType
+  data /*: bpmClientStateType*/
 ): frontQuantizeStateType => {
   // if (data.flag) {
   const quantizeObj: frontQuantizeStateType = {

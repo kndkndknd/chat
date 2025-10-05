@@ -35,7 +35,7 @@ import { modulationByBPM } from "./modulationByBPM";
 
 import { putLogFile } from "../../logging/putLogFile";
 import { text } from "stream/consumers";
-import { splitQuantize } from "../../stream/quantize/splitQuantize";
+import { splitQuantize } from "./splitQuantize";
 
 import { scheduleSplitCmd } from "../../schedule/scheduleSplitCmd";
 import { getScheduleFromSplitSpace } from "../../schedule/getScheduleFromSplitSpace";
@@ -374,17 +374,7 @@ export const splitSpace = async (
       deleteLog();
     }
   } else if (stringArr[0] === "QUANTIZE") {
-    console.log("debug quantize");
-    const quantizeObj = splitQuantize(stringArr, arrTypeArr);
-    console.log("splitQuantize return: ", quantizeObj);
-    if (quantizeObj === "quantize failed") {
-      stringEmit(io, "QUANTIZE: FAILED");
-    } else {
-      for (const client in quantizeObj) {
-        io.to(client).emit("quantizeFromServer", quantizeObj[client].stream);
-      }
-      // io.emit("quantizeFromServer", quantizeObj);
-    }
+    splitQuantize(stringArr, arrTypeArr, io);
   } else if (stringArr[0] === "VOSK") {
     splitVoskCmd(stringArr.splice(1), arrTypeArr.splice(1), io);
   } else if (stringArr[0] === "TIMELAPSE") {

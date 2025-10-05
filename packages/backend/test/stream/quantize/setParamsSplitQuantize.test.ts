@@ -1,7 +1,7 @@
 import { expect, test } from "vitest";
-import { splitQuantize } from "../../../src/stream/quantize/splitQuantize";
+import { setParamsSplitQuantize } from "../../../src/stream/quantize/setParamsSplitQuantize";
 import { getTypeArr } from "../../../src/cmd/splitSpace/getTypeArr";
-import { bpmState } from "../../../src/state";
+import { bpmState, bpmStateDefault } from "../../../src/state";
 import { bpmClientStateType, bpmStreamStateType } from "../../../../../types";
 
 test("splitQuantize", async () => {
@@ -14,22 +14,22 @@ test("splitQuantize", async () => {
 
   const bpmStateObj: bpmClientStateType = {
     METRONOME: {
-      bpm: 60,
-      beat: 4,
-      flag: true,
+      bpm: bpmStateDefault.bpm,
+      beat: bpmStateDefault.beat,
+      flag: bpmStateDefault.metronomeFlag,
     },
     MODULATION: {
-      flag: false,
-      bpm: 60,
-      beat: 4,
+      flag: bpmStateDefault.modulationFlag,
+      bpm: bpmStateDefault.bpm,
+      beat: bpmStateDefault.beat,
     },
     stream: {
       CHAT: {
-        bpm: 60,
-        beat: 4,
-        gridFlag: false,
-        quantizeFlag: false,
-        latency: 60000 / 60 / 4,
+        bpm: bpmStateDefault.bpm,
+        beat: bpmStateDefault.beat,
+        gridFlag: bpmStateDefault.gridFlag,
+        quantizeFlag: bpmStateDefault.quantizeFlag,
+        latency: bpmStateDefault.latency,
       },
     },
   };
@@ -39,7 +39,7 @@ test("splitQuantize", async () => {
   const arrTypeArr = getTypeArr(stringArr);
   // quantizeState.bpm.CHAT = { target: 60 };
 
-  const result = await splitQuantize(stringArr, arrTypeArr, "target");
+  const result = await setParamsSplitQuantize(stringArr, arrTypeArr, "target");
   console.log(result);
   expect(result).toEqual({
     flag: true,

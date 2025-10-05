@@ -2,7 +2,7 @@
 import { cmdState } from "./states/cmdState";
 import { streamState } from "./states/streamState";
 import { arduinoState } from "./states/arduinoState";
-import { bpmState, bpmClientStateType } from "./states/bpmState";
+import { bpmState, bpmStateDefault } from "./states/bpmState";
 import { clientState } from "./states/clientState";
 import { currentState } from "./states/currentState";
 import { flagState } from "./states/flagState";
@@ -20,7 +20,7 @@ export {
   streamState,
   arduinoState,
   bpmState,
-  bpmClientStateType,
+  bpmStateDefault,
   clientState,
   currentState,
   flagState,
