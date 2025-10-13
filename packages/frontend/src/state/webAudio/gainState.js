@@ -7,6 +7,8 @@ export const gainState = {
     bassGain: null,
     clickGain: null,
     simulateGain: null,
+    gpsOscGain: null,
+    accelarateOscGain: null,
     glitchGain: null,
     feedbackReverveGain: null,
     threeGain: null,

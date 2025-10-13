@@ -78,6 +78,7 @@ export type clientStateType = {
       urlPathName: string;
       projection: boolean;
       stream: boolean;
+      mobile: boolean;
       position: {
         top: number;
         left: number;

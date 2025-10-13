@@ -1,6 +1,7 @@
 import { io } from "socket.io-client";
 import { metronomeState, socketState } from "./state";
 import { bpmClientStateType } from "../../../types";
+import { bpmStreamStateType } from "../../../types";
 
 socketState.socket = io();
 socketState.socketId = socketState.socket.id;
@@ -324,12 +325,9 @@ socketState.socket.on("windowReqFromServer", (data: newWindowReqType) => {
   click(1.0);
 });
 
-socketState.socket.on(
-  "quantizeFromServer",
-  (data: bpmClientStateType) => {
-    quantizeFromServer(data);
-  }
-);
+socketState.socket.on("quantizeFromServer", (data: bpmStreamStateType) => {
+  quantizeFromServer(data);
+});
 
 socketState.socket.on(
   "clockFromServer",
@@ -360,12 +358,12 @@ socketState.socket.on("bpmFromServer", (data: { bpm: number; bar: number }) => {
   metronomeState.fournote = data.bar / 4;
   // quantizeState.bar = data.bar;
   if (quantizeState.flag) {
-    setQuantize({
-      flag: true,
-      bar: data.bar,
-      stream: quantizeState.stream,
-      beat: quantizeState.beat,
-    });
+    // setQuantize({
+    //   flag: true,
+    //   bar: data.bar,
+    //   stream: quantizeState.stream,
+    //   beat: quantizeState.beat,
+    // });
   }
 });
 
@@ -385,18 +383,26 @@ socketState.socket.on("timelapseFromServer", (data) => {
 });
 
 socketState.socket.on("gpsFlagFromServer", () => {
-  if (!flagState.gpsFlag) {
-    flagState.gpsFlag = true;
+  if (isMobile) {
+    if (!flagState.gpsFlag) {
+      flagState.gpsFlag = true;
+    } else {
+      flagState.gpsFlag = false;
+    }
   } else {
-    flagState.gpsFlag = false;
+    textPrint("This device is not mobile");
   }
 });
 
 socketState.socket.on("accelarateFlagFromServer", () => {
-  if (!flagState.accelarateFlag) {
-    flagState.accelarateFlag = true;
+  if (isMobile) {
+    if (!flagState.accelarateFlag) {
+      flagState.accelarateFlag = true;
+    } else {
+      flagState.accelarateFlag = false;
+    }
   } else {
-    flagState.accelarateFlag = false;
+    textPrint("This device is not mobile");
   }
 });
 
@@ -503,6 +509,7 @@ export const initialize = async () => {
       urlPathName: window.location.pathname,
       width: window.innerWidth,
       height: window.innerHeight,
+      isMobile: isMobile,
     });
 
     if (isMobile) {

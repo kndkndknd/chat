@@ -16,8 +16,8 @@ export const accelarateOsc = (
     portament
   );
   if (flag) {
-    gainState.oscGain.gain.setTargetAtTime(gain, currentTime, fade);
+    gainState.accelarateOscGain.gain.setTargetAtTime(gain, currentTime, fade);
   } else {
-    gainState.oscGain.gain.setTargetAtTime(0, currentTime, fade);
+    gainState.accelarateOscGain.gain.setTargetAtTime(0, currentTime, fade);
   }
 };

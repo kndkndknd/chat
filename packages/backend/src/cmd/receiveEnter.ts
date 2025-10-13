@@ -8,6 +8,7 @@ import {
   flagState,
   previousState,
   bpmStateDefault,
+  bpmState,
 } from "../state";
 
 import { cmdList, parameterList, streamList } from "../data";
@@ -32,7 +33,7 @@ import { loadScenario } from "../scenario/loadScenario";
 import { execScenario } from "../scenario/execScenario";
 import { putCmd } from "./putCmd";
 import { cmdLogging } from "../logging/cmdLogging";
-import { quantizeCmd } from "../stream/quantize/quantizeCmd";
+import { quantizeCmd } from "../stream/quantize";
 import { millisecondsPerBar } from "../../../util/bpmCalc";
 
 import { execStream } from "../cmd/execStream";
@@ -87,12 +88,8 @@ export const receiveEnter = async (
     voiceEmit(io, strings, id);
     stopEmit(io, id, "ALL");
   } else if (strings === "QUANTIZE") {
-    const quantizeObj = quantizeCmd(
-      { streamTarget: "all", clientTarget: "all" },
-      { beat: bpmStateDefault.beat }
-    );
-    const client = Object.keys(quantizeObj)[0];
-    io.emit("quantizeFromServer", quantizeObj[client].stream);
+    quantizeCmd(io);
+    // io.emit("quantizeFromServer", quantizeObj[client].stream);
   } else if (
     Object.keys(parameterList).includes(strings) ||
     strings === "TWICE" ||

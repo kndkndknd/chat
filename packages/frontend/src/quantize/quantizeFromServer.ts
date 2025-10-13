@@ -7,10 +7,14 @@ import {
 import { setQuantize } from "./setQuantize";
 import { quantizePlay } from "./quantizePlay";
 import { textPrint, erasePrint } from "../canvasEvent";
-import { frontQuantizeStateType, bpmClientStateType } from "../../../../types";
+import {
+  frontQuantizeStateType,
+  bpmClientStateType,
+  bpmStreamStateType,
+} from "../../../../types";
 // import { setQuantizeState } from "./setQuantizeState";
 
-export const quantizeFromServer = (data: bpmClientStateType) => {
+export const quantizeFromServer = (data: bpmStreamStateType) => {
   console.log("quantizeFromServer", data);
   const quantizeObj: frontQuantizeStateType = setQuantize(data);
   quantizeState.flag = quantizeObj.flag;

@@ -35,6 +35,7 @@ export const connectFromClient = (data, socket, io) => {
           stream: true,
           urlPathName: data.urlPathName,
           projection: true,
+          mobile: data.isMobile,
           position: {
             top: 0,
             left: 0,
@@ -57,6 +58,7 @@ export const connectFromClient = (data, socket, io) => {
           urlPathName: data.urlPathName,
           projection: false,
           position,
+          mobile: data.isMobile,
         };
       }
     if (!data.urlPathName.includes("exc")) {
@@ -105,6 +107,7 @@ export const connectFromClient = (data, socket, io) => {
       urlPathName: data.urlPathName,
       projection: false,
       position,
+      mobile: data.isMobile,
     };
     return true;
   }

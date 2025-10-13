@@ -93,13 +93,17 @@ export const initAudio = () => {
     gainState.threeGain.gain.setValueAtTime(1, 0);
     gainState.threeGain.connect(gainState.masterGain);
     oscState.threeOsc.start(0);
-    // SIMULATE
+    // GPS & ACCELARATE
     oscState.gpsOsc = contextState.audioContext.createOscillator();
-    oscState.gpsOsc.connect(gainState.oscGain);
+    gainState.gpsOscGain = contextState.audioContext.createGain();
+    gainState.gpsOscGain.gain.setValueAtTime(0, 0);
+    oscState.gpsOsc.connect(gainState.gpsOscGain);
     oscState.gpsOsc.frequency.setValueAtTime(440, 0);
     oscState.gpsOsc.start(0);
     oscState.accelarateOsc = contextState.audioContext.createOscillator();
-    oscState.accelarateOsc.connect(gainState.oscGain);
+    gainState.accelarateOscGain = contextState.audioContext.createGain();
+    gainState.accelarateOscGain.gain.setValueAtTime(0, 0);
+    oscState.accelarateOsc.connect(gainState.accelarateOscGain);
     oscState.accelarateOsc.frequency.setValueAtTime(440, 0);
     oscState.accelarateOsc.start(0);
 };

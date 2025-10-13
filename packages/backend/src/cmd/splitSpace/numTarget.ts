@@ -61,15 +61,10 @@ export const numTarget = (
       }
     }
   } else if (stringArr[1] === "QUANTIZE") {
-    const quantizeObj = splitQuantize(
-      stringArr.slice(1),
-      arrTypeArr.slice(1),
-      target
-    );
+    splitQuantize(stringArr.slice(2), io, target);
     // if (quantizeObj === "quantize failed") {
     //   stringEmit(io, "quantize failed", true, target);
     // } else {
-    io.emit("quantizeFromServer", quantizeObj);
     // }
   } else if (stringArr[1] === "GPS") {
     io.to(target).emit("gpsFlagFromServer");

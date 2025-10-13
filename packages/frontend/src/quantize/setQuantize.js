@@ -2,7 +2,7 @@ import { streamFlagState, streamChunk, contextState, quantizeState, socketState,
 import { chatReq } from "../stream";
 import { quantizePlay } from "./quantizePlay";
 import { millisecondsPerBar } from "../../../util/bpmCalc";
-export const setQuantize = (data /*: bpmClientStateType*/) => {
+export const setQuantize = (data) => {
     // if (data.flag) {
     const quantizeObj = {
         flag: quantizeState.flag,
@@ -13,7 +13,7 @@ export const setQuantize = (data /*: bpmClientStateType*/) => {
         currentTime: quantizeState.currentTime,
         timeout: quantizeState.timeout,
     };
-    const bar = millisecondsPerBar(data.stream[Object.keys(data.stream)[0]].bpm);
+    const bar = millisecondsPerBar(data[Object.keys(data)[0]].bpm);
     if (quantizeState.interval !== null && bar === quantizeState.bar) {
         clearInterval(quantizeState.interval);
         quantizeState.interval = null;
@@ -26,13 +26,13 @@ export const setQuantize = (data /*: bpmClientStateType*/) => {
         quantizeState.interval = null;
         quantizeInterval(bar);
     }
-    for (const stream in data.stream) {
-        if (data.stream[stream] !== undefined) {
+    for (const stream in data) {
+        if (data[stream] !== undefined) {
             quantizeObj.stream.push(stream);
         }
-        quantizeObj.flag = data.stream[stream].quantizeFlag;
-        quantizeObj.beat = data.stream[stream].beat;
-        quantizeObj.bar = millisecondsPerBar(data.stream[stream].bpm);
+        quantizeObj.flag = data[stream].quantizeFlag;
+        quantizeObj.beat = data[stream].beat;
+        quantizeObj.bar = millisecondsPerBar(data[stream].bpm);
         // quantizeObj.interval = quantizeObj.bar;
     }
     if (!quantizeObj.flag && quantizeState.flag) {

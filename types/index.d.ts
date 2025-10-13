@@ -18,7 +18,11 @@ import {
 import { LogType } from "./logType";
 import { quantizeObjType, frontQuantizeStateType } from "./quantizeType";
 import { newWindowReqType } from "./newWindowType";
-import { bpmClientStateType, bpmStreamStateType } from "./bpmType";
+import {
+  bpmClientStateType,
+  bpmStreamStateType,
+  quantizeParamClass,
+} from "./bpmType";
 
 export {
   CmdType,
@@ -44,4 +48,5 @@ export {
   flagStateType,
   arduinoStateType,
   newWindowReqType,
+  quantizeParamClass,
 };

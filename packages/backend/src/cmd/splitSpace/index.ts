@@ -374,7 +374,7 @@ export const splitSpace = async (
       deleteLog();
     }
   } else if (stringArr[0] === "QUANTIZE") {
-    splitQuantize(stringArr, arrTypeArr, io);
+    splitQuantize(stringArr.splice(1), io);
   } else if (stringArr[0] === "VOSK") {
     splitVoskCmd(stringArr.splice(1), arrTypeArr.splice(1), io);
   } else if (stringArr[0] === "TIMELAPSE") {

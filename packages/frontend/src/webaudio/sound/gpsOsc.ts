@@ -12,8 +12,8 @@ export const gpsOsc = (
   console.log("debug");
   oscState.gpsOsc.frequency.setTargetAtTime(frequency, currentTime, portament);
   if (flag) {
-    gainState.oscGain.gain.setTargetAtTime(gain, currentTime, fade);
+    gainState.gpsOscGain.gain.setTargetAtTime(gain, currentTime, fade);
   } else {
-    gainState.oscGain.gain.setTargetAtTime(0, currentTime, fade);
+    gainState.gpsOscGain.gain.setTargetAtTime(0, currentTime, fade);
   }
 };
