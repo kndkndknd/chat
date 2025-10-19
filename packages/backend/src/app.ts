@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import { default as Express } from "express";
+import express from "express";
 import * as path from "path";
 import { default as favicon } from "serve-favicon";
 import * as Https from "https";
@@ -141,6 +142,51 @@ app.get("/hls", function (req, res, next) {
     res.json({ success: false, message: "Something went wrong" });
   }
 });
+
+// app.get("/recorder", function (req, res, next) {
+//   try {
+//     console.log("recorder");
+//     res.sendFile(path.join(__dirname, "..", "static", "html", "recorder.html"));
+//   } catch (error) {
+//     console.log(error);
+//     res.json({ success: false, message: "Something went wrong" });
+//   }
+// });
+
+// import { ingest, stopIngesting } from "./recorder";
+
+// app.post(
+//   "/api/ingest",
+//   express.raw({
+//     // type: ["video/webm", "application/octet-stream"],
+//     type: "video/webm",
+//     limit: "25mb",
+//   }),
+//   async (req, res, next) => {
+//     // await console.log(req.body);
+//     try {
+//       if (!Buffer.isBuffer(req.body)) {
+//         return res.status(415).send("unsupported media type");
+//       }
+//       const chunk: Buffer = req.body as Buffer;
+//       console.log("ingest chunk size:", chunk.length);
+
+//       const filename = (req.header("x-filename") ?? "upload.bin").toString();
+//       const mime = req.header("content-type") ?? "application/octet-stream";
+//       console.log("bytes:", chunk.length, "mime:", mime, "filename:", filename);
+
+//       await ingest(chunk);
+//       res.json({ ok: true });
+//     } catch (error) {
+//       next(error);
+//     }
+//   }
+// );
+
+// app.post("/api/stop", async (_req, res) => {
+//   await stopIngesting();
+//   await res.json({ ok: true });
+// });
 
 app.get("/:name", function (req, res, next) {
   const name = req.params.name;

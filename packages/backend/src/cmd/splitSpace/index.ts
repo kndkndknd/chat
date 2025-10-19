@@ -47,6 +47,7 @@ import { splitArduino } from "./splitArduino";
 import { quantizeObjType } from "../../../../../types";
 import { splitVoskCmd } from "./splitVoskCmd";
 import { millisecondsPerBar } from "../../../../util/bpmCalc";
+import { m5Switch } from "../../rotate/m5Access";
 
 export const splitSpace = async (
   stringArr: Array<string>,
@@ -387,6 +388,15 @@ export const splitSpace = async (
       io.emit("timelapseFromServer", {
         cmd: "GET",
       });
+    }
+  } else if (stringArr[0] === "ROTATE") {
+    if (stringArr[1] === "ON" || stringArr[1] === "OFF") {
+      const result = await m5Switch(stringArr[1].toLowerCase() as "on" | "off");
+      if (result) {
+        stringEmit(io, `M5STACK SWITCH ${stringArr[1]}: SUCCESS`);
+      } else {
+        stringEmit(io, `M5STACK SWITCH ${stringArr[1]}: FAILED`);
+      }
     }
   } else {
     stringEmit(io, stringArr.join(" "), false);

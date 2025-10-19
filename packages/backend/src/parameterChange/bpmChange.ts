@@ -1,6 +1,12 @@
 import SocketIO from "socket.io";
 
-import { cmdState, currentState, bpmState, clientState } from "../state";
+import {
+  cmdState,
+  currentState,
+  bpmState,
+  clientState,
+  bpmStateDefault,
+} from "../state";
 import { putCmd } from "../cmd/putCmd";
 import { stringEmit } from "../socket/ioEmit";
 import { millisecondsPerBar } from "../../../util/bpmCalc";
@@ -15,7 +21,7 @@ export const bpmChange = (
     const bar = millisecondsPerBar(arg.value);
 
     if (arg.property) {
-      if (streamList.includes(arg.property)) {
+      if (["CHAT", ...streamList].includes(arg.property)) {
         // propertyがSTREAMを指定している場合
         for (const client of Object.keys(bpmState)) {
           if (
@@ -24,7 +30,7 @@ export const bpmChange = (
           ) {
             bpmState[client].stream[arg.property] = {
               bpm: arg.value,
-              beat: 0,
+              beat: bpmStateDefault.beat,
               gridFlag: false,
               quantizeFlag: false,
               latency: latency,
@@ -103,17 +109,27 @@ export const bpmChange = (
         if (bpmState[client].METRONOME === undefined) {
           bpmState[client].METRONOME = {
             bpm: arg.value,
-            beat: 0,
+            beat: bpmStateDefault.beat,
             flag: false,
           };
         } else {
           bpmState[client].METRONOME.bpm = arg.value;
         }
-        for (let stream of streamList) {
+        if (bpmState[client].MODULATION === undefined) {
+          bpmState[client].MODULATION = {
+            bpm: arg.value,
+            beat: bpmStateDefault.beat,
+            flag: false,
+          };
+        } else {
+          bpmState[client].METRONOME.bpm = arg.value;
+        }
+
+        for (let stream of ["CHAT", ...streamList]) {
           if (bpmState[client].stream[stream] === undefined) {
             bpmState[client].stream[stream] = {
               bpm: arg.value,
-              beat: 0,
+              beat: bpmStateDefault.beat,
               gridFlag: false,
               quantizeFlag: false,
               latency: latency,

@@ -9,6 +9,7 @@ export default defineConfig({
         vosk: "./html/vosk.html",
         rotate: "./html/rotate.html",
         wsclient: "./html/wsClient.html",
+        recorder: "./html/recorder.html",
         // snowleopard: "./src/snowleopard/snowLeopardClient.js",
       },
       output: {

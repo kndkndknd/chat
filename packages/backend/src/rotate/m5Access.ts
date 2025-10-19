@@ -43,9 +43,12 @@ export const m5Switch = async (param?: "on" | "off") => {
   try {
     const response = await fetch(requestUrl);
     const data = await response.text();
-    if (data === "on" || data === "off") {
+    if (
+      (param === "on" && data === "Pin 26 is HIGH") ||
+      (param === "off" && data === "Pin 26 is LOW")
+    ) {
       console.log("m5Switch", data);
-      m5State.relay = data;
+      m5State.relay = param;
       return true;
     } else {
       console.log("m5Switch error", data);

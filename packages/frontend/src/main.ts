@@ -575,7 +575,9 @@ export const initialize = async () => {
   timelapseState.flag = true;
   timelapseState.trriger = false;
   timelapseState.setIntervalId = window.setInterval(() => {
-    timelapseState.trriger = true;
+    if (timelapseState.flag) {
+      timelapseState.trriger = true;
+    }
   }, 60000);
 
   /*

@@ -1,5 +1,5 @@
 import SocketIO from "socket.io";
-import { clientState, cmdState } from "../state";
+import { clientState, bpmState } from "../state";
 import { stringEmit } from "../socket/ioEmit";
 // import { putCmd } from './putCmd'
 
@@ -19,7 +19,16 @@ export const metronomeBpmSet = (io: SocketIO.Server, sourceId: string) => {
       // for (let target in state.cmd.METRONOME) {
       //   state.cmd.METRONOME[target] = latency;
       // }
-      cmdState.METRONOME[sourceId] = latency;
+      // cmdState.METRONOME[sourceId] = latency;
+      const bpm = 60000 / latency;
+      for (const client in bpmState) {
+        bpmState[client].METRONOME.bpm = bpm;
+        bpmState[client].MODULATION.bpm = bpm;
+        for (const stream in bpmState[client].stream) {
+          bpmState[client].stream[stream].bpm = bpm;
+        }
+      }
+
       const targetIndex = Object.keys(clientState.client).map(
         (element, index) => {
           if (element === sourceId) return index;

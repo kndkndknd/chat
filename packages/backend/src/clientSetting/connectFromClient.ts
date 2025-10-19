@@ -4,6 +4,7 @@ import {
   streamState,
   arduinoState,
   bpmState,
+  bpmStateDefault,
   cmdState,
 } from "../state";
 import { streamList } from "../data";
@@ -71,7 +72,28 @@ export const connectFromClient = (data, socket, io) => {
     }
 
     if (bpmState[sockId] === undefined) {
-      bpmState[sockId] = averageBpmInfo();
+      bpmState[sockId] = {
+        METRONOME: {
+          bpm: bpmStateDefault.bpm,
+          beat: bpmStateDefault.beat,
+          flag: bpmStateDefault.metronomeFlag,
+        },
+        MODULATION: {
+          bpm: bpmStateDefault.bpm,
+          beat: bpmStateDefault.beat,
+          flag: bpmStateDefault.modulationFlag,
+        },
+        stream: {},
+      };
+      ["CHAT", ...streamList].forEach((stream) => {
+        bpmState[sockId].stream[stream] = {
+          bpm: bpmStateDefault.bpm,
+          beat: bpmStateDefault.beat,
+          gridFlag: bpmStateDefault.gridFlag,
+          quantizeFlag: bpmStateDefault.quantizeFlag,
+          latency: bpmStateDefault.latency,
+        };
+      });
     }
 
     console.log("bpmState", sockId, bpmState[sockId]);
