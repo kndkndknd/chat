@@ -13,6 +13,7 @@ import {
   streamChunk,
   voiceState,
   quantizeState,
+  videoBufferState,
 } from "./state";
 
 import {
@@ -59,6 +60,8 @@ import { time } from "node:console";
 
 import { getGPSPosition, watchGPSPosition } from "./gps";
 import { getAcceleration } from "./sensor";
+import { emitChunk } from "./videoBuffer/emitChunk";
+import { playVideo } from "./videoBuffer/playVideo";
 
 // let start = false;
 
@@ -406,6 +409,45 @@ socketState.socket.on("accelarateFlagFromServer", () => {
   }
 });
 
+socketState.socket.on("videoRequestFromServer", (data: { video: boolean }) => {
+  console.log("videoRequestFromServer", data);
+  videoBufferState.flag = data.video;
+  if (videoBufferState.flag) {
+    videoBufferState.mediaRecorder?.start(1000);
+  } else {
+    videoBufferState.mediaRecorder?.stop();
+  }
+  textPrint(`Video Buffering: ${videoBufferState.flag}`);
+  setTimeout(() => {
+    erasePrint();
+  }, 1000);
+});
+
+socketState.socket.on("videoFromServer", async (videoBuffer: ArrayBuffer) => {
+  console.log("videoFromServer", videoBuffer);
+
+  // videoBufferState.queue.push(videoBuffer);
+  playVideo(videoBuffer);
+
+  // await playVideo(videoBuffer);
+
+  // const videoElement = <HTMLVideoElement>document.getElementById("videoBuffer");
+  // videoElement.controls = true;
+  // const mediaSource = new MediaSource();
+  // videoElement.src = URL.createObjectURL(mediaSource);
+
+  // mediaSource.addEventListener("sourceopen", () => {
+  //   const sourceBuffer = mediaSource.addSourceBuffer(
+  //     'video/webm; codecs="vp8, opus"'
+  //   );
+  //   sourceBuffer.addEventListener("updateend", () => {
+  //     mediaSource.endOfStream();
+  //     videoElement.play();
+  //   });
+  //   sourceBuffer.appendBuffer(new Uint8Array(videoBuffer as any));
+  // });
+});
+
 /*
 socketState.socket.on("clockModeFromServer", (data: { clockMode: boolean }) => {
   console.log(data);
@@ -498,6 +540,57 @@ export const initialize = async () => {
     });
     await initAudioStream(stream);
     await initVideoStream(stream);
+
+    // videoBuffer
+    const options: MediaRecorderOptions = {
+      mimeType: "video/webm;codecs=vp8,opus",
+      videoBitsPerSecond: 2_000_000,
+    };
+
+    videoBufferState.mediaRecorder = new MediaRecorder(stream, options);
+
+    videoBufferState.mediaRecorder.addEventListener(
+      "dataavailable",
+      (event) => {
+        const { data } = event;
+        videoBufferState.uploadChain = videoBufferState.uploadChain.then(() => {
+          emitChunk(data, videoBufferState.firstChunkFlag);
+          if (videoBufferState.firstChunkFlag) {
+            videoBufferState.firstChunkFlag = false;
+          }
+        });
+      }
+    );
+    videoBufferState.videoElement = document.getElementById(
+      "videoBuffer"
+    ) as HTMLVideoElement;
+    videoBufferState.videoElement.muted = true;
+    videoBufferState.videoElement.playsInline = true;
+    // videoBufferState.videoElement.src = URL.createObjectURL(
+    //   videoBufferState.mediaSource
+    // );
+
+    // videoBufferState.mediaSource.addEventListener("sourceopen", () => {
+    //   // 実際に送っている WebM のコーデックに合わせて指定
+    //   // 例: 'video/webm; codecs="vp8,opus"'
+    //   const mime = 'video/webm; codecs="vp8,opus"';
+    //   if (!MediaSource.isTypeSupported(mime)) {
+    //     console.error("MIME not supported:", mime);
+    //     return;
+    //   }
+    //   videoBufferState.sourceBuffer =
+    //     videoBufferState.mediaSource.addSourceBuffer(mime);
+
+    //   videoBufferState.sourceBuffer.addEventListener("updateend", () => {
+    //     videoBufferState.appending = false;
+    //     playVideo();
+    //   });
+    // });
+
+    // あとで別でコントロールを作る
+    // videoBufferState.mediaRecorder.start(1000);
+    // console.log("mediaRecorder started for videoBuffer");
+
     await console.log(stream);
     await textPrint("initialized");
     await socketState.socket.emit("connectFromClient", {

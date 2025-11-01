@@ -7,7 +7,7 @@ import { switchCtrl } from "../arduinoAccess/arduinoAccess";
 import { millisecondsPerBeat } from "../../../util/bpmCalc";
 
 import { cmdList } from "../data";
-import { clientState, arduinoState, bpmState } from "../state";
+import { clientState, arduinoState, bpmState, flagState } from "../state";
 
 export const execCmd = async (
   strings: string,
@@ -75,5 +75,9 @@ export const execCmd = async (
     const frequency =
       solfeggioArr[Math.floor(Math.random() * solfeggioArr.length)];
     sinewaveEmit(frequency, io);
+  } else if (strings === "VIDEO") {
+    flagState.video = !flagState.video;
+    console.log("flagState.video:", flagState.video);
+    io.emit("videoRequestFromServer", { video: flagState.video });
   }
 };

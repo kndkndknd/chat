@@ -154,6 +154,7 @@ export type flagStateType = {
   emoji: boolean;
   timer: boolean;
   vosk: boolean;
+  // video: boolean;
 };
 
 export type arduinoStateType = {

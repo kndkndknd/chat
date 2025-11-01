@@ -15,6 +15,10 @@ import SocketIO from "socket.io";
 import { getLiveStream } from "./stream/getLiveStream";
 import { stringEmit } from "./socket/ioEmit";
 import { webSocket } from "./webSocket/webSocketConnection";
+import { videoBuffers } from "./data/chunk/videoBuffers";
+import { toBuffer } from "./stream/video/toBuffer";
+import { bufferReceive } from "./stream/video/bufferReceive";
+import { startsWithEbmlHeader } from "./stream/video/complementHeader";
 
 // import { io as socketIoClient, Socket } from "socket.io-client";
 
@@ -143,50 +147,53 @@ app.get("/hls", function (req, res, next) {
   }
 });
 
-// app.get("/recorder", function (req, res, next) {
-//   try {
-//     console.log("recorder");
-//     res.sendFile(path.join(__dirname, "..", "static", "html", "recorder.html"));
-//   } catch (error) {
-//     console.log(error);
-//     res.json({ success: false, message: "Something went wrong" });
-//   }
-// });
+app.get("/recorder", function (req, res, next) {
+  try {
+    console.log("recorder");
+    res.sendFile(path.join(__dirname, "..", "static", "html", "recorder.html"));
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Something went wrong" });
+  }
+});
 
-// import { ingest, stopIngesting } from "./recorder";
+import { ingest, stopIngesting } from "./recorder";
 
-// app.post(
-//   "/api/ingest",
-//   express.raw({
-//     // type: ["video/webm", "application/octet-stream"],
-//     type: "video/webm",
-//     limit: "25mb",
-//   }),
-//   async (req, res, next) => {
-//     // await console.log(req.body);
-//     try {
-//       if (!Buffer.isBuffer(req.body)) {
-//         return res.status(415).send("unsupported media type");
-//       }
-//       const chunk: Buffer = req.body as Buffer;
-//       console.log("ingest chunk size:", chunk.length);
+app.post(
+  "/api/ingest",
+  express.raw({
+    // type: ["video/webm", "application/octet-stream"],
+    type: "video/webm",
+    limit: "25mb",
+  }),
+  async (req, res, next) => {
+    // await console.log(req.body);
+    try {
+      if (!Buffer.isBuffer(req.body)) {
+        return res.status(415).send("unsupported media type");
+      }
+      const chunk: Buffer = req.body as Buffer;
+      console.log("ingest chunk size:", chunk.length);
 
-//       const filename = (req.header("x-filename") ?? "upload.bin").toString();
-//       const mime = req.header("content-type") ?? "application/octet-stream";
-//       console.log("bytes:", chunk.length, "mime:", mime, "filename:", filename);
+      const filename = (req.header("x-filename") ?? "upload.bin").toString();
+      const mime = req.header("content-type") ?? "application/octet-stream";
+      console.log("bytes:", chunk.length, "mime:", mime, "filename:", filename);
 
-//       await ingest(chunk);
-//       res.json({ ok: true });
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
-// );
+      // videoBuffers.push(chunk);
+      // console.log("videoBuffers length:", videoBuffers.length);
 
-// app.post("/api/stop", async (_req, res) => {
-//   await stopIngesting();
-//   await res.json({ ok: true });
-// });
+      await ingest(chunk);
+      res.json({ ok: true });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+app.post("/api/stop", async (_req, res) => {
+  await stopIngesting();
+  await res.json({ ok: true });
+});
 
 app.get("/:name", function (req, res, next) {
   const name = req.params.name;
@@ -227,6 +234,20 @@ app.post("/api/char", function (req, res, next) {
   console.log("ip:", req.ip);
   res.json({ success: true, message: "char received" });
 });
+
+app.post(
+  "/api/upload",
+  express.raw({
+    type: ["application/octet-stream", "binary/octet-stream"],
+    limit: "50mb",
+  }),
+  (req, res) => {
+    const sid = String(req.query.sid || "default");
+    const buf = toBuffer(req.body);
+    const checkEbmlHeader = startsWithEbmlHeader(req.body);
+    const result = bufferReceive(sid, buf, checkEbmlHeader);
+  }
+);
 
 /*
 const socketOptions = {

@@ -1,5 +1,6 @@
 import { Server, Socket } from "socket.io";
 import * as Http from "http";
+import express from "express";
 
 // import { statusList, pathList, statusClient } from "../statusList";
 import { chatReceive } from "../stream/chatReceive";
@@ -27,6 +28,8 @@ import { connectFromClient } from "../clientSetting/connectFromClient";
 
 // websocket
 import { sendCharWebSocket } from "../webSocket/sendChar";
+
+import { videoReceive } from "../stream/video/videoReceive";
 
 // rotate
 import { m5Switch } from "../rotate/m5Access";
@@ -115,6 +118,13 @@ export const ioServer = (
     socket.on("startRotationFromSmartphone", () => {
       m5Switch();
     });
+
+    socket.on(
+      "videoFromClient",
+      ({ chunk, isFirstChunk }: { chunk: Blob; isFirstChunk: boolean }) => {
+        videoReceive(chunk, isFirstChunk, io);
+      }
+    );
 
     socket.on("disconnect", () => {
       console.log("disconnect:", String(socket.id));

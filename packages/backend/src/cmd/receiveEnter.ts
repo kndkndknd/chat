@@ -80,7 +80,8 @@ export const receiveEnter = async (
     strings === "NUMBER" ||
     strings === "SWITCH" ||
     strings === "CLOCK" ||
-    strings === "SOLFEGIO"
+    strings === "SOLFEGIO" ||
+    strings === "VIDEO"
   ) {
     execCmd(strings, io, id);
   } else if (strings === "STOP") {

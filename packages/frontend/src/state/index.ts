@@ -20,6 +20,8 @@ import { webRtcState } from "./webRtcState";
 
 import { voiceState } from "./voiceState";
 
+import { videoBufferState } from "./videoBufferState";
+
 export {
   flagState,
   metronomeState,
@@ -37,4 +39,5 @@ export {
   otherNodeState,
   webRtcState,
   voiceState,
+  videoBufferState,
 };

@@ -11,6 +11,7 @@ import { previousState } from "./states/previousState";
 import { sampleRateState } from "./states/sampleRateState";
 import { webState } from "./states/webState";
 import { hlsState } from "./states/hlsState";
+import { videoBufferState } from "./states/videoBufferState";
 
 // webSocket
 import { webSocketIdState } from "./states/webSocketIdState";
@@ -30,4 +31,5 @@ export {
   webState,
   hlsState,
   webSocketIdState,
+  videoBufferState,
 };
