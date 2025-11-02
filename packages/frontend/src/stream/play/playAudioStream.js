@@ -1,6 +1,6 @@
 import { contextState, gainState, convolverState } from "../../state";
 export const playAudioStream = (bufferArray, sampleRate, glitch, bufferSize) => {
-    // console.log(sampleRate);
+    console.log("sampleRate:", sampleRate);
     // console.log(bufferSize);
     // console.log(bufferArray);
     let audio_src = contextState.audioContext.createBufferSource();
@@ -31,6 +31,10 @@ export const playAudioStream = (bufferArray, sampleRate, glitch, bufferSize) => 
         audio_src.buffer = audio_buf;
         convolverState.convolver.buffer = audio_buf;
         audio_src.connect(convolverState.convolver);
+        audio_src.playbackRate.value =
+            sampleRate !== undefined && sampleRate !== null && sampleRate > 0
+                ? sampleRate / 44100
+                : 1.0;
     }
     audio_src.start(0);
 };

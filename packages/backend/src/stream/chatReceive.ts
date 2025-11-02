@@ -217,5 +217,6 @@ const ioEmitChatFromServer = async (io, chunk, targetId) => {
     const result = await switchCramp("CHAT");
     console.log("switchCramp", result);
   }
+  console.log("chunk sampleRate:", chunk.sampleRate);
   io.to(targetId).emit("chatFromServer", chunk);
 };

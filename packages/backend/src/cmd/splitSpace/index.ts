@@ -144,6 +144,13 @@ export const splitSpace = async (
         sinewaveEmit(Number(stringArr[1]), io, target);
       });
     }
+  } else if (
+    stringArr[0] === "BUFFER" ||
+    (stringArr[0] === "BUFFERSIZE" && arrTypeArr[1] === "number")
+  ) {
+    const input = Number(stringArr[1]);
+    streamState.basisBufferSize = bufferSizeChange(input);
+    stringEmit(io, `BufferSize: ${streamState.basisBufferSize}`);
   } else if (stringArr[0] === "CLEAR") {
     if (stringArr[1] === "BUFFER") {
       for (let stream in streams) {
@@ -170,6 +177,8 @@ export const splitSpace = async (
   } else if (stringArr[0] === "FADE") {
     fadeCmd(stringArr, arrTypeArr, io);
     voiceEmit(io, stringArr.join(" "), source);
+  } else if (stringArr[0] === "FIND") {
+    findStream("test", "test", io);
   } else if (
     stringArr[0] === "GAIN" &&
     stringArr.length === 3 &&
@@ -180,89 +189,21 @@ export const splitSpace = async (
     console.log(cmdState.GAIN);
     stringEmit(io, stringArr[1] + " GAIN: " + stringArr[2]);
     // 動作確認用
+  } else if (
+    stringArr[0] === "GAIN" &&
+    Object.keys(cmdState.GAIN).includes(stringArr[1])
+  ) {
+    if (stringArr.length === 3 && arrTypeArr[2] === "number") {
+      cmdState.GAIN[stringArr[1]] = Number(stringArr[2]);
+    }
+    stringEmit(
+      io,
+      `${stringArr[1]} GAIN: ${String(cmdState.GAIN[stringArr[1]])}`,
+      true
+    );
 
     // } else if (stringArr[0] === 'FIND' && stringArr.length === 3) {
     // findStream(stringArr[1], stringArr[2], io);
-  } else if (stringArr[0] === "HELP") {
-    helpPrint(stringArr.slice(1), io);
-  } else if (stringArr[1] === "SOLO") {
-    solo(stringArr, arrTypeArr, io);
-  } else if (stringArr[0] === "STOP") {
-    voiceEmit(io, stringArr.join(" "), source);
-
-    splitStop(stringArr, io);
-    // } else if (stringArr[0] === "FADE") {
-  } else if (stringArr[0] === "UPLOAD" && stringArr.length == 2) {
-    voiceEmit(io, stringArr.join(" "), source);
-
-    // const uploadResult = await uploadStream(stringArr);
-    // uploadStream(stringArr, io);
-    const result = await uploadStream(stringArr);
-    console.log(result);
-    stringEmit(io, result, true);
-  } else if (stringArr[0] === "INSERT") {
-    if (stringArr[1] === "HELP" || stringArr[1] === "?") {
-      stringEmit(io, `INSERT (STREAM) (PLACE) (YYYMMDD)`, false);
-    } else if (streamList.includes(stringArr[1])) {
-      if (
-        stringArr.length === 4 &&
-        arrTypeArr[3] === "number" &&
-        stringArr[3].length === 8
-      ) {
-        insertStream(stringArr[1], io, stringArr[2], stringArr[3]);
-      } else {
-        stringEmit(io, `INSERT (STREAM) (PLACE) (YYYMMDD)`, false);
-      }
-      // insertStream(stringArr[1], io);
-    }
-
-    /*
-    if (
-      stringArr.length === 2 &&
-      Object.keys(state.stream.sampleRate).includes(stringArr[1])
-    ) {
-      insertStream(stringArr[1], io);
-    }
-    */
-  } else if (stringArr[0] === "FIND") {
-    findStream("test", "test", io);
-  } else if (stringArr[0].includes(":")) {
-    scheduleSplitCmd(stringArr, source, io);
-  } else if (stringArr[0] === "SWITCH" || stringArr[0] === "ARDUINO") {
-    splitArduino(stringArr, io);
-  } else if (
-    (stringArr[1] === "CHAT" ||
-      (streamList.includes(stringArr[1]) && stringArr[0] !== "GET")) &&
-    (stringArr[0].includes("-") || arrTypeArr[0] === "number")
-  ) {
-    console.log("route", stringArr);
-    const targetArr = stringArr[0].split("-");
-    if (
-      targetArr.length > 1 &&
-      targetArr.every((el) => {
-        return !isNaN(Number(el)) && el !== "";
-      })
-    ) {
-      console.log("targetArr", targetArr);
-      const targetIdArr = targetArr.map((el) => {
-        return Object.keys(clientState.client)[Number(el)];
-      });
-      console.log("targetIdArr", targetIdArr);
-      streamState.target[stringArr[1]] = targetIdArr;
-      console.log(streamState.target);
-      if (stringArr[1] === "CHAT") {
-        console.log("debug");
-        chatPreparation(io);
-      } else {
-        streamEmit(stringArr[1], io);
-      }
-    }
-  } else if (
-    stringArr[0] === "RECORD" &&
-    stringArr[1] === "AS" &&
-    stringArr.length === 3
-  ) {
-    recordAsOtherEmit(io, stringArr[2]);
   } else if (stringArr[0] === "GET" || stringArr[0] === "YOUTUBE") {
     stringEmit(io, `GETTING ${stringArr.slice(1).join(" ")}...`, true);
     if (stringArr[1] === "LIVESTREAM") {
@@ -294,59 +235,32 @@ export const splitSpace = async (
         stringEmit(io, "GET LIVESTREAM: FAILED");
       }
     }
-  } else if (stringArr[0] === "TWITTER" || stringArr[0] === "X") {
-    const result = await getTimeLine(stringArr, io);
-    if (result) {
-      //stringEmit(io, "GET TIMELINE: SUCCESS");
-    } else {
-      stringEmit(io, "GET TIMELINE: FAILED");
+  } else if (stringArr[0] === "HELP") {
+    helpPrint(stringArr.slice(1), io);
+  } else if (stringArr[0] === "INSERT") {
+    if (stringArr[1] === "HELP" || stringArr[1] === "?") {
+      stringEmit(io, `INSERT (STREAM) (PLACE) (YYYMMDD)`, false);
+    } else if (streamList.includes(stringArr[1])) {
+      if (
+        stringArr.length === 4 &&
+        arrTypeArr[3] === "number" &&
+        stringArr[3].length === 8
+      ) {
+        insertStream(stringArr[1], io, stringArr[2], stringArr[3]);
+      } else {
+        stringEmit(io, `INSERT (STREAM) (PLACE) (YYYMMDD)`, false);
+      }
+      // insertStream(stringArr[1], io);
     }
-  } else if (
-    stringArr[0] === "GAIN" &&
-    Object.keys(cmdState.GAIN).includes(stringArr[1])
-  ) {
-    if (stringArr.length === 3 && arrTypeArr[2] === "number") {
-      cmdState.GAIN[stringArr[1]] = Number(stringArr[2]);
+
+    /*
+    if (
+      stringArr.length === 2 &&
+      Object.keys(state.stream.sampleRate).includes(stringArr[1])
+    ) {
+      insertStream(stringArr[1], io);
     }
-    stringEmit(
-      io,
-      `${stringArr[1]} GAIN: ${String(cmdState.GAIN[stringArr[1]])}`,
-      true
-    );
-  } else if (stringArr[0] === "SCENARIO" || stringArr[0] === "START") {
-    const scenario = await loadScenario(stringArr[1]);
-    await execScenario(scenario, io);
-  } else if (stringArr[0] === "VIDEO" || stringArr[0] === "HLS") {
-    const cmd: {
-      cmd: string;
-      property: string;
-      value: number;
-      flag: boolean;
-      target?: string;
-      overlay?: boolean;
-      fade?: number;
-      portament?: number;
-      gain?: number;
-      solo?: boolean;
-    } = {
-      cmd: "HLS",
-      property: stringArr[1],
-      value: 0,
-      flag: true,
-    };
-    io.emit("cmdFromServer", cmd);
-  } else if (
-    stringArr[0] === "BUFFER" ||
-    (stringArr[0] === "BUFFERSIZE" && arrTypeArr[1] === "number")
-  ) {
-    const input = Number(stringArr[1]);
-    streamState.basisBufferSize = bufferSizeChange(input);
-    stringEmit(io, `BufferSize: ${streamState.basisBufferSize}`);
-  } else if (
-    arrTypeArr[1] === "number" &&
-    (stringArr[0] === "MODULATION" || stringArr[0] === "MOD")
-  ) {
-    splitModulation(stringArr, arrTypeArr, io);
+    */
   } else if (stringArr[0] === "LOG") {
     if (
       stringArr[1] === "FILE" ||
@@ -376,8 +290,33 @@ export const splitSpace = async (
     }
   } else if (stringArr[0] === "QUANTIZE") {
     splitQuantize(stringArr.splice(1), io);
-  } else if (stringArr[0] === "VOSK") {
-    splitVoskCmd(stringArr.splice(1), arrTypeArr.splice(1), io);
+  } else if (
+    stringArr[0] === "RECORD" &&
+    stringArr[1] === "AS" &&
+    stringArr.length === 3
+  ) {
+    recordAsOtherEmit(io, stringArr[2]);
+  } else if (stringArr[0] === "ROTATE") {
+    if (stringArr[1] === "ON" || stringArr[1] === "OFF") {
+      const result = await m5Switch(stringArr[1].toLowerCase() as "on" | "off");
+      if (result) {
+        stringEmit(io, `M5STACK SWITCH ${stringArr[1]}: SUCCESS`);
+      } else {
+        stringEmit(io, `M5STACK SWITCH ${stringArr[1]}: FAILED`);
+      }
+    }
+  } else if (stringArr[0] === "SCENARIO" || stringArr[0] === "START") {
+    const scenario = await loadScenario(stringArr[1]);
+    await execScenario(scenario, io);
+  } else if (stringArr[1] === "SOLO") {
+    solo(stringArr, arrTypeArr, io);
+  } else if (stringArr[0] === "STOP") {
+    voiceEmit(io, stringArr.join(" "), source);
+
+    splitStop(stringArr, io);
+    // } else if (stringArr[0] === "FADE") {
+  } else if (stringArr[0] === "SWITCH" || stringArr[0] === "ARDUINO") {
+    splitArduino(stringArr, io);
   } else if (stringArr[0] === "TIMELAPSE") {
     console.log("timelapse split", stringArr[1]);
     if (stringArr[1] === "FALSE" || stringArr[1] === "OFF") {
@@ -389,15 +328,76 @@ export const splitSpace = async (
         cmd: "GET",
       });
     }
-  } else if (stringArr[0] === "ROTATE") {
-    if (stringArr[1] === "ON" || stringArr[1] === "OFF") {
-      const result = await m5Switch(stringArr[1].toLowerCase() as "on" | "off");
-      if (result) {
-        stringEmit(io, `M5STACK SWITCH ${stringArr[1]}: SUCCESS`);
+  } else if (stringArr[0] === "TWITTER" || stringArr[0] === "X") {
+    const result = await getTimeLine(stringArr, io);
+    if (result) {
+      //stringEmit(io, "GET TIMELINE: SUCCESS");
+    } else {
+      stringEmit(io, "GET TIMELINE: FAILED");
+    }
+  } else if (stringArr[0] === "UPLOAD" && stringArr.length == 2) {
+    voiceEmit(io, stringArr.join(" "), source);
+
+    // const uploadResult = await uploadStream(stringArr);
+    // uploadStream(stringArr, io);
+    const result = await uploadStream(stringArr);
+    console.log(result);
+    stringEmit(io, result, true);
+  } else if (stringArr[0] === "VIDEO" || stringArr[0] === "HLS") {
+    const cmd: {
+      cmd: string;
+      property: string;
+      value: number;
+      flag: boolean;
+      target?: string;
+      overlay?: boolean;
+      fade?: number;
+      portament?: number;
+      gain?: number;
+      solo?: boolean;
+    } = {
+      cmd: "HLS",
+      property: stringArr[1],
+      value: 0,
+      flag: true,
+    };
+    io.emit("cmdFromServer", cmd);
+  } else if (stringArr[0] === "VOSK") {
+    splitVoskCmd(stringArr.splice(1), arrTypeArr.splice(1), io);
+  } else if (stringArr[0].includes(":")) {
+    scheduleSplitCmd(stringArr, source, io);
+  } else if (
+    (stringArr[1] === "CHAT" ||
+      (streamList.includes(stringArr[1]) && stringArr[0] !== "GET")) &&
+    (stringArr[0].includes("-") || arrTypeArr[0] === "number")
+  ) {
+    console.log("route", stringArr);
+    const targetArr = stringArr[0].split("-");
+    if (
+      targetArr.length > 1 &&
+      targetArr.every((el) => {
+        return !isNaN(Number(el)) && el !== "";
+      })
+    ) {
+      console.log("targetArr", targetArr);
+      const targetIdArr = targetArr.map((el) => {
+        return Object.keys(clientState.client)[Number(el)];
+      });
+      console.log("targetIdArr", targetIdArr);
+      streamState.target[stringArr[1]] = targetIdArr;
+      console.log(streamState.target);
+      if (stringArr[1] === "CHAT") {
+        console.log("debug");
+        chatPreparation(io);
       } else {
-        stringEmit(io, `M5STACK SWITCH ${stringArr[1]}: FAILED`);
+        streamEmit(stringArr[1], io);
       }
     }
+  } else if (
+    arrTypeArr[1] === "number" &&
+    (stringArr[0] === "MODULATION" || stringArr[0] === "MOD")
+  ) {
+    splitModulation(stringArr, arrTypeArr, io);
   } else {
     stringEmit(io, stringArr.join(" "), false);
     if (cmdState.VOICE.length > 0) {

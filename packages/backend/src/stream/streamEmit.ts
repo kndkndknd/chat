@@ -113,9 +113,10 @@ export const streamEmit = async (
   if (buff) {
     const stream = {
       source: source,
-      sampleRate: glitchState.glitch[source]
-        ? glitchState.glitchSampleRate[source]
-        : sampleRateState.sampleRate[source], // glicthがtrueならサンプルレートを切替
+      // sampleRate: glitchState.glitch[source]
+      //   ? glitchState.glitchSampleRate[source]
+      //   : sampleRateState.sampleRate[source], // glicthがtrueならサンプルレートを切替
+      sampleRate: sampleRateState.sampleRate[source], // glicthがtrueならサンプルレートを切替
       glitch: glitchState.glitch[source] ? glitchState.glitch[source] : false,
       ...buff,
     };
