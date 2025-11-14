@@ -3,6 +3,7 @@ import { chatReq } from "../chatReq";
 import { showImage, textPrint, erasePrint } from "../../canvasEvent";
 import { flagState } from "../../state";
 import { Socket } from "socket.io-client";
+import { filterStateType } from "../../../../../types";
 
 export const streamPlay = (
   type: "CHAT" | "STREAM",
@@ -16,6 +17,7 @@ export const streamPlay = (
     video?: string;
     source?: string;
     floating?: boolean;
+    filter?: filterStateType;
   },
   cinemaFlag?: boolean
 ) => {
@@ -28,7 +30,8 @@ export const streamPlay = (
     stream.audio,
     stream.sampleRate,
     stream.glitch,
-    stream.bufferSize
+    stream.bufferSize,
+    stream.filter
   );
   if (stream.video) {
     showImage(stream.video);

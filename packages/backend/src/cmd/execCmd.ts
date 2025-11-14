@@ -7,7 +7,9 @@ import { switchCtrl } from "../arduinoAccess/arduinoAccess";
 import { millisecondsPerBeat } from "../../../util/bpmCalc";
 
 import { cmdList } from "../data";
-import { clientState, arduinoState, bpmState } from "../state";
+import { clientState, arduinoState, bpmState, streamState } from "../state";
+import { quantizeCmd } from "../stream/quantize";
+import { stringEmit } from "../socket/ioEmit";
 
 export const execCmd = async (
   strings: string,
@@ -22,6 +24,12 @@ export const execCmd = async (
     console.log("sinewave");
     voiceEmit(io, strings + "Hz", id);
     sinewaveEmit(Number(strings), io);
+  } else if (strings === "FILTER") {
+    for (const stream in streamState.filter) {
+      streamState.filter[stream].flag = !streamState.filter[stream].flag;
+    }
+    console.log(streamState.filter);
+    stringEmit(io, "FILTER: TOGGLED", true);
   } else if (strings === "SINEWAVE") {
     const frequency = 20 + Math.random() * 19980;
     voiceEmit(io, frequency + "Hz", id);
@@ -29,6 +37,8 @@ export const execCmd = async (
   } else if (strings === "PREVIOUS" || strings === "PREV") {
     voiceEmit(io, "PREVIOUS", id);
     previousCmd(io);
+  } else if (strings === "QUANTIZE") {
+    quantizeCmd(io);
   } else if (strings === "NO" || strings === "NUMBER") {
     Object.keys(clientState.client).forEach((id, index) => {
       console.log(id);

@@ -6,6 +6,7 @@ import {
   glitchState,
   clientState,
   bpmState,
+  defaultFilterState,
 } from "../state";
 import { streamList } from "../data";
 
@@ -24,6 +25,7 @@ export const pushStateStream = (
   streamState.random[streamName] = random !== undefined ? random : true;
   sampleRateState.randomrate[streamName] = false;
   streamState.target[streamName] = [];
+  streamState.filter[streamName] = defaultFilterState;
   sampleRateState.randomratemode = "random";
   sampleRateState.randomraterange[streamName] = {
     min: 5000,

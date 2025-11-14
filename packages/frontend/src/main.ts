@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 import { metronomeState, socketState } from "./state";
 import { bpmClientStateType } from "../../../types";
-import { bpmStreamStateType } from "../../../types";
+import { bpmStreamStateType, filterStateType } from "../../../types";
 
 socketState.socket = io();
 socketState.socketId = socketState.socket.id;
@@ -261,6 +261,7 @@ socketState.socket.on(
     floating?: boolean;
     position?: { top: number; left: number; width: number; height: number };
     target?: string;
+    filter?: filterStateType;
   }) => {
     streamFlagState[data.source] = true;
     if (quantizeState.flag && quantizeState.stream.includes(data.source)) {

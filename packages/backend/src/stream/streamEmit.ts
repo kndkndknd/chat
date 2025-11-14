@@ -118,6 +118,7 @@ export const streamEmit = async (
       //   : sampleRateState.sampleRate[source], // glicthがtrueならサンプルレートを切替
       sampleRate: sampleRateState.sampleRate[source], // glicthがtrueならサンプルレートを切替
       glitch: glitchState.glitch[source] ? glitchState.glitch[source] : false,
+      filter: streamState.filter[source],
       ...buff,
     };
     if (glitchState.glitch[source] && stream.video.length > 0) {

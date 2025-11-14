@@ -1,4 +1,4 @@
-import { contextState, oscState, gainState, scriptProcessorState, convolverState, otherNodeState, } from "../../state";
+import { contextState, oscState, gainState, scriptProcessorState, convolverState, filterState, otherNodeState, } from "../../state";
 let buf0;
 let buf1;
 const chatGainVal = 1.5;
@@ -73,6 +73,16 @@ export const initAudio = () => {
     gainState.chatGain = contextState.audioContext.createGain();
     gainState.chatGain.gain.setValueAtTime(chatGainVal, 0);
     gainState.chatGain.connect(gainState.masterGain);
+    // chat filter
+    filterState.chatFilter = contextState.audioContext.createBiquadFilter();
+    filterState.chatFilter.type = "lowpass";
+    filterState.chatFilter.frequency.setValueAtTime(1000, 0);
+    filterState.chatFilter.Q.setValueAtTime(2.5, 0);
+    filterState.chatFilter.gain.setValueAtTime(chatGainVal, 0);
+    filterState.chatFilter.connect(gainState.masterGain);
+    // gainState.chatGain.disconnect();
+    // gainState.chatGain.connect(filterState.chatFilter);
+    // filterNodeState.chatFilter.connect(gainState.masterGain);
     // SIMULATE
     oscState.simulateOsc = contextState.audioContext.createOscillator();
     gainState.simulateGain = contextState.audioContext.createGain();

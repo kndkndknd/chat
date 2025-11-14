@@ -39,9 +39,28 @@ export type streamStateType = {
   target: {
     [key: string]: Array<string>;
   };
+  filter: {
+    [key: string]: filterStateType;
+  };
   loop: boolean;
   timelapse: boolean;
   floating: boolean;
+};
+
+export type filterStateType = {
+  flag: boolean;
+  type:
+    | "lowpass"
+    | "highpass"
+    | "bandpass"
+    | "lowshelf"
+    | "highshelf"
+    | "peaking"
+    | "notch"
+    | "allpass";
+  frequency: number;
+  Q: number;
+  gain: number;
 };
 
 export type glitchStateType = {

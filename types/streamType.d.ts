@@ -1,3 +1,5 @@
+import { filterStateType } from "./stateType";
+
 export type buffStateType = {
   source: string;
   audio: Float32Array;
@@ -6,6 +8,7 @@ export type buffStateType = {
   duration: number;
   from?: string;
   floating?: boolean;
+  filter?: filterStateType;
 };
 
 export type buffArrayType = {

@@ -1,5 +1,5 @@
-import { contextState, gainState, convolverState } from "../../state";
-export const playAudioStream = (bufferArray, sampleRate, glitch, bufferSize) => {
+import { contextState, gainState, convolverState, filterState, } from "../../state";
+export const playAudioStream = (bufferArray, sampleRate, glitch, bufferSize, filter) => {
     console.log("sampleRate:", sampleRate);
     // console.log(bufferSize);
     // console.log(bufferArray);
@@ -22,7 +22,17 @@ export const playAudioStream = (bufferArray, sampleRate, glitch, bufferSize) => 
         let audio_buf = contextState.audioContext.createBuffer(1, bufferSize, sampleRate);
         audio_buf.copyToChannel(audioData, 0);
         audio_src.buffer = audio_buf;
-        audio_src.connect(gainState.chatGain);
+        if (filter === undefined || !filter.flag) {
+            audio_src.connect(gainState.chatGain);
+        }
+        else {
+            console.log("filter applied:", filter);
+            filterState.chatFilter.type = filter.type;
+            filterState.chatFilter.frequency.setValueAtTime(filter.frequency, 0);
+            filterState.chatFilter.Q.setValueAtTime(filter.Q, 0);
+            filterState.chatFilter.gain.setValueAtTime(filter.gain, 0);
+            audio_src.connect(filterState.chatFilter);
+        }
     }
     else {
         // console.log("glitched");

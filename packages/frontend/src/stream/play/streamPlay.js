@@ -7,7 +7,7 @@ export const streamPlay = (type, socket, stream, cinemaFlag) => {
     // console.log("chatFromServer");
     // console.log("socket.id(socket.on): " + String(socket.id));
     // console.log(stream.audio);
-    playAudioStream(stream.audio, stream.sampleRate, stream.glitch, stream.bufferSize);
+    playAudioStream(stream.audio, stream.sampleRate, stream.glitch, stream.bufferSize, stream.filter);
     if (stream.video) {
         showImage(stream.video);
         if (type === "STREAM" && cinemaFlag !== undefined && cinemaFlag) {

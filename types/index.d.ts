@@ -3,6 +3,7 @@ import { buffStateType, buffArrayType, StreamsType } from "./streamType";
 import {
   cmdStateType,
   streamStateType,
+  filterStateType,
   clientStateType,
   glitchStateType,
   sampleRateStateType,
@@ -34,6 +35,7 @@ export {
   cmdStateType,
   clientStateType,
   streamStateType,
+  filterStateType,
   glitchStateType,
   sampleRateStateType,
   // quantizeStateType,

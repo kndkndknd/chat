@@ -80,15 +80,15 @@ export const receiveEnter = async (
     strings === "NUMBER" ||
     strings === "SWITCH" ||
     strings === "CLOCK" ||
-    strings === "SOLFEGIO"
+    strings === "SOLFEGIO" ||
+    strings === "FILTER" ||
+    strings === "QUANTIZE"
   ) {
     execCmd(strings, io, id);
   } else if (strings === "STOP") {
     console.log("stop");
     voiceEmit(io, strings, id);
     stopEmit(io, id, "ALL");
-  } else if (strings === "QUANTIZE") {
-    quantizeCmd(io);
     // io.emit("quantizeFromServer", quantizeObj[client].stream);
   } else if (
     Object.keys(parameterList).includes(strings) ||

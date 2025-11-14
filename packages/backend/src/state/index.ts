@@ -1,6 +1,6 @@
 // state
 import { cmdState } from "./states/cmdState";
-import { streamState } from "./states/streamState";
+import { streamState, defaultFilterState } from "./states/streamState";
 import { arduinoState } from "./states/arduinoState";
 import { bpmState, bpmStateDefault } from "./states/bpmState";
 import { clientState } from "./states/clientState";
@@ -18,6 +18,7 @@ import { webSocketIdState } from "./states/webSocketIdState";
 export {
   cmdState,
   streamState,
+  defaultFilterState,
   arduinoState,
   bpmState,
   bpmStateDefault,
