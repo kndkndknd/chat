@@ -116,6 +116,12 @@ export const ioServer = (
       m5Switch();
     });
 
+    // audioWorklet buffer
+    socket.on("audiobufferFromClient", (data) => {
+      console.log("audiobufferFromClient");
+      console.log(data);
+    });
+
     socket.on("disconnect", () => {
       console.log("disconnect:", String(socket.id));
       let sockId = String(socket.id);

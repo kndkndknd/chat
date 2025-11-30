@@ -12,6 +12,7 @@
     "test": "vitest"
   },
   "devDependencies": {
+    "@types/audioworklet": "^0.0.91",
     "node-emoji": "2.1.3",
     "socket.io-client": "4.7.2",
     "typescript": "^5.3.3",

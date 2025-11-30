@@ -13,6 +13,7 @@ import {
   streamChunk,
   voiceState,
   quantizeState,
+  audioWorkletState,
 } from "./state";
 
 import {
@@ -59,6 +60,8 @@ import { time } from "node:console";
 
 import { getGPSPosition, watchGPSPosition } from "./gps";
 import { getAcceleration } from "./sensor";
+
+import { initAudioWorklet } from "./audioWorklet/main";
 
 // let start = false;
 
@@ -192,6 +195,7 @@ socketState.socket.on("textFromServer", (data: { text: string }) => {
 
 socketState.socket.on("chatReqFromServer", () => {
   chatReq(String(socketState.socket.id));
+  audioWorkletState.flag.CHAT = true;
   setTimeout(() => {
     erasePrint();
   }, 1000);
@@ -224,6 +228,8 @@ socketState.socket.on(
     target?: string;
   }) => {
     console.log("chatFromServer");
+    audioWorkletState.flag.CHAT = true;
+
     if (quantizeState.flag && quantizeState.stream.includes("CHAT")) {
       const chunk = {
         source: "CHAT",
@@ -564,6 +570,9 @@ export const initialize = async () => {
     } else {
       console.log("GPSまたは加速度センサーがサポートされていません");
     }
+
+    await initAudioWorklet(stream, socketState.socket);
+
     await setTimeout(() => {
       erasePrint();
     }, 500);

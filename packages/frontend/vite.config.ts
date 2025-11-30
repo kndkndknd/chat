@@ -1,10 +1,15 @@
 import { defineConfig } from "vite";
+import path from "path";
 
 export default defineConfig({
   build: {
     rollupOptions: {
       input: {
         main: "./html/index.html",
+        "chat-processor": path.resolve(
+          __dirname,
+          "./src/audioWorklet/chat-processor.js"
+        ),
         form: "./html/form.html",
         vosk: "./html/vosk.html",
         rotate: "./html/rotate.html",
@@ -13,7 +18,13 @@ export default defineConfig({
       },
       output: {
         dir: "../backend/static",
-        entryFileNames: "[name].js",
+        entryFileNames: (chunk) => {
+          if (chunk.name === "chat-processor") {
+            return "chat-processor.js";
+          }
+          return "[name].js";
+        },
+        // entryFileNames: "[name].js",
       },
     },
     sourcemap: true,
