@@ -194,7 +194,7 @@ socketState.socket.on("textFromServer", (data: { text: string }) => {
 });
 
 socketState.socket.on("chatReqFromServer", () => {
-  chatReq(String(socketState.socket.id));
+  // chatReq(String(socketState.socket.id));
   audioWorkletState.flag.CHAT = true;
   setTimeout(() => {
     erasePrint();
@@ -230,26 +230,45 @@ socketState.socket.on(
     console.log("chatFromServer");
     audioWorkletState.flag.CHAT = true;
 
-    if (quantizeState.flag && quantizeState.stream.includes("CHAT")) {
-      const chunk = {
-        source: "CHAT",
-        audio: data.audio,
-        video: data.video,
-        sampleRate: data.sampleRate,
-        glitch: data.glitch,
-        bufferSize: data.bufferSize,
-        duration: data.duration,
-      };
-      // data.source = "CHAT";
-      streamChunk.CHAT = chunk;
-    } else {
-      if (data.floating === undefined || !data.floating) {
-        streamPlay("CHAT", socketState.socket, data);
-      } else {
-        // const position = positionFloatingImage(data.target);
-        showImage(data.video, data.position);
-      }
-    }
+    // if (quantizeState.flag && quantizeState.stream.includes("CHAT")) {
+    //   const chunk = {
+    //     source: "CHAT",
+    //     audio: data.audio,
+    //     video: data.video,
+    //     sampleRate: data.sampleRate,
+    //     glitch: data.glitch,
+    //     bufferSize: data.bufferSize,
+    //     duration: data.duration,
+    //   };
+    //   // data.source = "CHAT";
+    //   streamChunk.CHAT = chunk;
+    // } else {
+    //   if (data.floating === undefined || !data.floating) {
+    //     streamPlay("CHAT", socketState.socket, data);
+    //   } else {
+    //     // const position = positionFloatingImage(data.target);
+    //     showImage(data.video, data.position);
+    //   }
+    // }
+  }
+);
+
+socketState.socket.on(
+  "audiobufferFromServer",
+  (data: { buffer: ArrayBuffer; type: string }) => {
+    console.log("audiobufferFromServer");
+    console.log(data);
+    // data.bufferをfloat32Arrayに変換
+    const float32Array = new Float32Array(data.buffer);
+    const streamData = {
+      audio: float32Array,
+      sampleRate: 44100,
+      glitch: false,
+      bufferSize: 8192,
+    };
+    const streamType = data.type === "CHAT" ? "CHAT" : "STREAM";
+    streamPlay(streamType, socketState.socket, streamData);
+    audioWorkletState.flag[data.type] = true;
   }
 );
 
