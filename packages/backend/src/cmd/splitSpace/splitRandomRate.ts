@@ -47,10 +47,27 @@ export const splitRandomRate = (stringArr: string[], io) => {
             sampleRateState.randomraterange[key].min = Number(rateRangeArr[0]);
             sampleRateState.randomraterange[key].max = Number(rateRangeArr[1]);
           }
+          stringEmit(
+            io,
+            "SAMPLERATE RANDOM RATE RANGE: " +
+              String(rateRangeArr[0]) +
+              "-" +
+              String(rateRangeArr[1]) +
+              "Hz"
+          );
         } else {
           stringEmit(io, "OUT RATE RANGE: 4000-132300", true);
         }
       }
+    } else if (
+      stringArr.length === 3 &&
+      (stringArr[2] === "TRUE" || stringArr[2] === "FALSE")
+    ) {
+      const boolValue = stringArr[2] === "TRUE" ? true : false;
+      for (let key in sampleRateState.randomrate) {
+        sampleRateState.randomrate[key] = boolValue;
+      }
+      stringEmit(io, "SAMPLERATE RANDOM: " + String(boolValue));
     } else if (
       stringArr.length === 4 &&
       Object.keys(sampleRateState.randomrate).includes(stringArr[2])
@@ -67,6 +84,23 @@ export const splitRandomRate = (stringArr: string[], io) => {
         );
         sampleRateState.randomraterange[stringArr[2]].max = Number(
           rateRangeArr[1]
+        );
+        stringEmit(
+          io,
+          "SAMPLERATE RANDOM RATE RANGE(" +
+            stringArr[2] +
+            "): " +
+            String(rateRangeArr[0]) +
+            "-" +
+            String(rateRangeArr[1]) +
+            "Hz"
+        );
+      } else if (stringArr[3] === "TRUE" || stringArr[3] === "FALSE") {
+        const boolValue = stringArr[3] === "TRUE" ? true : false;
+        sampleRateState.randomrate[stringArr[2]] = boolValue;
+        stringEmit(
+          io,
+          "SAMPLERATE RANDOM(" + stringArr[2] + "): " + String(boolValue)
         );
       }
     } else if (stringArr.length === 3 && stringArr[2] === "NOTE") {

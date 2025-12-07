@@ -1,5 +1,5 @@
 import { Socket } from "socket.io-client";
-import { initialize } from "./main";
+// import { initialize } from "./main";
 import { textPrint, erasePrint, eraseText } from "./canvasEvent";
 import { bass } from "./webaudio";
 // import { frontState } from "./globalVariable";

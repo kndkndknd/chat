@@ -31,6 +31,10 @@ import { sendCharWebSocket } from "../webSocket/sendChar";
 // rotate
 import { m5Switch } from "../rotate/m5Access";
 
+// webRtc
+import { iceCandidateEmit, offerEmit, answerEmit } from "../webRTC";
+import { join } from "path";
+
 let strings = "";
 const previousFace = { x: 0, y: 0 };
 
@@ -115,6 +119,27 @@ export const ioServer = (
     socket.on("startRotationFromSmartphone", () => {
       m5Switch();
     });
+
+    // webRtc
+    socket.on("joinFromClient", () => {});
+    socket.on("iceCandidateFromClient", (candidate: RTCIceCandidate) => {
+      console.log("iceCandidateFromClient", candidate);
+      iceCandidateEmit(io, candidate, String(socket.id));
+      // socket.broadcast.emit("iceCandidateFromServer", candidate);
+    });
+
+    socket.on("offerFromClient", (offer: RTCSessionDescriptionInit) => {
+      console.log("offerFromClient", offer);
+      offerEmit(io, offer, String(socket.id));
+    });
+
+    socket.on(
+      "answerFromClient",
+      (data: { answer: RTCSessionDescription; targetId: string }) => {
+        console.log("answerFromClient", data.answer);
+        answerEmit(io, data.answer, data.targetId);
+      }
+    );
 
     socket.on("disconnect", () => {
       console.log("disconnect:", String(socket.id));

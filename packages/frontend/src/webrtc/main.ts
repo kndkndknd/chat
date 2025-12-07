@@ -330,32 +330,36 @@ socketState.socket.on(
 //   }
 // });
 
-// WebRTC
-const localVideo = <HTMLVideoElement>document.getElementById("local");
-const remoteVideo = <HTMLVideoElement>document.getElementById("remote");
-
-socketState.socket.on("rtcConnectionFromServer", async (data) => {
-  console.log("rtcConnectionFromServer");
-  if (data.type === "offer") {
-    console.log("offer");
-    await webRtcState.peerConnection?.setRemoteDescription(data);
-    const answer = await webRtcState.peerConnection?.createAnswer();
-    if (answer) {
-      await webRtcState.peerConnection?.setLocalDescription(answer);
-      socketState.socket.emit(
-        "rtcConnectionFromClient",
-        JSON.stringify(webRtcState.peerConnection?.localDescription)
-      );
-      console.log("send answer");
-    }
-  } else if (data.type === "answer") {
-    console.log("reseive answer and set remote description");
-    await webRtcState.peerConnection?.setRemoteDescription(data);
-  } else if (data.type === "candidate") {
-    console.log("add candidate");
-    await webRtcState.peerConnection?.addIceCandidate(data.candidate);
-  }
+// // WebRTC
+socketState.socket.on("candidateReqFromServer", (data: { peers: string[] }) => {
+  textPrint("room: " + data.peers.join(","));
 });
+
+// const localVideo = <HTMLVideoElement>document.getElementById("local");
+// const remoteVideo = <HTMLVideoElement>document.getElementById("remote");
+
+// socketState.socket.on("rtcConnectionFromServer", async (data) => {
+//   console.log("rtcConnectionFromServer");
+//   if (data.type === "offer") {
+//     console.log("offer");
+//     await webRtcState.peerConnection?.setRemoteDescription(data);
+//     const answer = await webRtcState.peerConnection?.createAnswer();
+//     if (answer) {
+//       await webRtcState.peerConnection?.setLocalDescription(answer);
+//       socketState.socket.emit(
+//         "rtcConnectionFromClient",
+//         JSON.stringify(webRtcState.peerConnection?.localDescription)
+//       );
+//       console.log("send answer");
+//     }
+//   } else if (data.type === "answer") {
+//     console.log("reseive answer and set remote description");
+//     await webRtcState.peerConnection?.setRemoteDescription(data);
+//   } else if (data.type === "candidate") {
+//     console.log("add candidate");
+//     await webRtcState.peerConnection?.addIceCandidate(data.candidate);
+//   }
+// });
 
 /*
 socketState.socket.on("clockModeFromServer", (data: { clockMode: boolean }) => {
@@ -487,9 +491,9 @@ export const initialize = async () => {
         );
       }
     };
-    if (localVideo.srcObject === null) {
-      localVideo.srcObject = stream;
-    }
+    // if (localVideo.srcObject === null) {
+    //   localVideo.srcObject = stream;
+    // }
     stream.getTracks().forEach((track) => {
       console.log(track);
       webRtcState.peerConnection?.addTrack(track, stream);
@@ -499,14 +503,14 @@ export const initialize = async () => {
       erasePrint();
       webRtcState.peerConnection.ontrack = (event) => {
         console.log("ontrack");
-        if (
-          remoteVideo.srcObject === null &&
-          webRtcState.isConnected &&
-          event.streams !== null &&
-          event.streams.length > 0
-        ) {
-          remoteVideo.srcObject = event.streams[0];
-        }
+        // if (
+        //   remoteVideo.srcObject === null &&
+        //   webRtcState.isConnected &&
+        //   event.streams !== null &&
+        //   event.streams.length > 0
+        // ) {
+        //   remoteVideo.srcObject = event.streams[0];
+        // }
       };
     }, 500);
   } else {

@@ -20,6 +20,7 @@ export const connectFromClient = (data, socket, io) => {
     console.log("aruidino host is " + ipAddress);
     arduinoState.host = ipAddress;
   }
+  const snowLeopard = data.urlPathName.includes("snowleopard") ? true : false;
   if (data.clientMode === "client") {
     if (!streamState.timelapse) streamState.timelapse = true;
     console.log(
@@ -43,6 +44,8 @@ export const connectFromClient = (data, socket, io) => {
             width: data.width,
             height: data.height,
           },
+          self: false,
+          snowLeopard,
         };
       } else {
         // const floatingPosition = {
@@ -60,6 +63,8 @@ export const connectFromClient = (data, socket, io) => {
           projection: false,
           position,
           mobile: data.isMobile,
+          self: false,
+          snowLeopard,
         };
       }
     if (!data.urlPathName.includes("exc")) {
@@ -130,6 +135,8 @@ export const connectFromClient = (data, socket, io) => {
       projection: false,
       position,
       mobile: data.isMobile,
+      self: false,
+      snowLeopard,
     };
     return true;
   }

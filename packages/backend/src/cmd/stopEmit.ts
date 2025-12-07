@@ -35,23 +35,45 @@ export const stopEmit = (
     voiceEmit(io, "STOP", source);
   }
 
-  // stop cmd / sinewave
+  // stop cmd / sinewave | self判定あり
   if (client === undefined) {
     // current -> previous && current -> stop
-    Object.keys(clientState.client).forEach((element) => {
-      io.to(element).emit("stopFromServer", {
+    if (
+      clientState.client[source] === undefined ||
+      !clientState.client[source].self
+    ) {
+      Object.keys(clientState.client).forEach((element) => {
+        io.to(element).emit("stopFromServer", {
+          target: target === undefined ? "ALL" : target,
+          fadeOutVal: cmdState.FADE.OUT,
+        });
+      });
+      for (let cmd in currentState.cmd) {
+        previousState.cmd[cmd] = currentState.cmd[cmd];
+        currentState.cmd[cmd] = [];
+      }
+      previousState.sinewave = currentState.sinewave;
+      currentState.sinewave = {};
+      if (target !== "ExceptHls") {
+        // state.hls = [];
+      }
+    } else {
+      io.to(source).emit("stopFromServer", {
         target: target === undefined ? "ALL" : target,
         fadeOutVal: cmdState.FADE.OUT,
       });
-    });
-    for (let cmd in currentState.cmd) {
-      previousState.cmd[cmd] = currentState.cmd[cmd];
-      currentState.cmd[cmd] = [];
-    }
-    previousState.sinewave = currentState.sinewave;
-    currentState.sinewave = {};
-    if (target !== "ExceptHls") {
-      // state.hls = [];
+      for (let cmd in currentState.cmd) {
+        if (currentState.cmd[cmd].includes(source)) {
+          previousState.cmd[cmd] = currentState.cmd[cmd];
+          currentState.cmd[cmd] = currentState.cmd[cmd].filter(
+            (element) => element !== source
+          );
+        }
+      }
+      if (currentState.sinewave[source] !== undefined) {
+        previousState.sinewave[source] = currentState.sinewave[source];
+        delete currentState.sinewave[source];
+      }
     }
     // state.hls = [];
   } else if (Object.keys(clientState.client).includes(client)) {

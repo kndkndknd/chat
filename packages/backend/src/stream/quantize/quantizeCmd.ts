@@ -21,11 +21,17 @@ import { quantize } from "./quantize";
  * parameterにbeat, bpm, flagを指定することで、クオンタイズの設定を変更できます。
  * もしparameterが指定されない場合、平均値を基にしたクオンタイズ設定が行われます。
  */
-export const quantizeCmd = (io) => {
+export const quantizeCmd = (io, id?: string) => {
   const bpmStreamState = {};
-  for (const client in bpmState) {
-    bpmStreamState[client] = {
-      ...bpmState[client].stream,
+  if (id === undefined) {
+    for (const client in bpmState) {
+      bpmStreamState[client] = {
+        ...bpmState[client].stream,
+      };
+    }
+  } else {
+    bpmStreamState[id] = {
+      ...bpmState[id].stream,
     };
   }
   const quntizeStreamObj = quantize({ splited: false });

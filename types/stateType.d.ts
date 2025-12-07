@@ -104,6 +104,8 @@ export type clientStateType = {
         width: number;
         height: number;
       };
+      self: boolean;
+      snowLeopard: boolean;
     };
   };
   cmdClient: string[];

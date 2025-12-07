@@ -16,15 +16,15 @@ export const sampleRateState: sampleRateStateType = {
   randomratekey: "A",
   randomraterange: {
     CHAT: {
-      min: 4300,
+      min: 4000,
       max: 132300,
     },
     PLAYBACK: {
-      min: 4300,
+      min: 4000,
       max: 132300,
     },
     TIMELAPSE: {
-      min: 4300,
+      min: 4000,
       max: 132300,
     },
   },
