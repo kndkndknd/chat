@@ -11,6 +11,11 @@ export type bpmClientStateType = {
     bpm: number;
     beat: number;
   };
+  TORCH: {
+    flag: boolean;
+    type: "BLINK" | "STEADY";
+    bpm: number;
+  };
   stream: bpmStreamStateType;
 };
 

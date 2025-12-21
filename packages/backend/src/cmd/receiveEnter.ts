@@ -83,7 +83,9 @@ export const receiveEnter = async (
     strings === "SOLFEGIO" ||
     strings === "FILTER" ||
     strings === "QUANTIZE" ||
-    strings === "SELF"
+    strings === "SELF" ||
+    strings === "TORCH" ||
+    strings === "BLINK"
   ) {
     execCmd(strings, io, id);
   } else if (strings === "STOP") {

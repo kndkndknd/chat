@@ -8,6 +8,7 @@ import {
   streamFlagState,
   streamState,
   timelapseState,
+  torchState,
   webRtcState,
 } from "./state";
 import {
@@ -29,6 +30,8 @@ import {
   receiveOffer,
   receiveAnswer,
 } from "./webrtc";
+
+import { torchToggle, startBlink, stopBlink } from "./stream/torch";
 
 export const socket = (): void => {
   socketState.socket.on(
@@ -158,6 +161,9 @@ export const socket = (): void => {
       }
     }
   );
+  socketState.socket.on("quantizeFromServer", (data: bpmStreamStateType) => {
+    quantizeFromServer(data);
+  });
 
   // CHAT以外のSTREAM向け
   socketState.socket.on(
@@ -188,6 +194,25 @@ export const socket = (): void => {
     }
   );
 
+  socketState.socket.on("gainFromServer", (data) => {
+    gainChange(data);
+  });
+
+  socketState.socket.on("windowReqFromServer", (data: newWindowReqType) => {
+    window.open(
+      data.URL,
+      "_blank",
+      "width=" +
+        String(data.width) +
+        ",height=" +
+        String(data.height) +
+        ",top=" +
+        String(data.top) +
+        ",left=" +
+        String(data.left)
+    );
+    click(1.0);
+  });
   socketState.socket.on(
     "voiceFromServer",
     (data: { text: string; lang: string }) => {
@@ -217,30 +242,6 @@ export const socket = (): void => {
       // }
     }
   );
-
-  socketState.socket.on("gainFromServer", (data) => {
-    gainChange(data);
-  });
-
-  socketState.socket.on("windowReqFromServer", (data: newWindowReqType) => {
-    window.open(
-      data.URL,
-      "_blank",
-      "width=" +
-        String(data.width) +
-        ",height=" +
-        String(data.height) +
-        ",top=" +
-        String(data.top) +
-        ",left=" +
-        String(data.left)
-    );
-    click(1.0);
-  });
-
-  socketState.socket.on("quantizeFromServer", (data: bpmStreamStateType) => {
-    quantizeFromServer(data);
-  });
 
   // socketState.socket.on(
   //   "clockFromServer",
@@ -321,6 +322,32 @@ export const socket = (): void => {
       textPrint("This device is not mobile");
     }
   });
+
+  socketState.socket.on(
+    "torchCmdFromServer",
+    (data: { flag: boolean; type: "BLINK" | "STEADY"; bpm: number }) => {
+      if (
+        torchState.isSupported &&
+        flagState.isMobile &&
+        streamState.videoTrack !== null
+      ) {
+        console.log("torchCmdFromServer", data);
+        if (data.type === "BLINK") {
+          if (data.flag) {
+            torchState.torchMode = "blink";
+            startBlink(data.bpm);
+          } else {
+            stopBlink();
+          }
+        } else {
+          torchState.torchMode = "steady";
+          torchToggle(data.flag);
+        }
+      } else {
+        console.log("Torch is not supported on this device");
+      }
+    }
+  );
 
   socketState.socket.on("bufferFromServer", (data) => {
     const uint8Array = new Uint8Array(data);

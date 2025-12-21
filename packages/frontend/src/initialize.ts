@@ -1,5 +1,11 @@
 import { Socket } from "socket.io-client";
-import { flagState, sensorState, timelapseState } from "./state";
+import {
+  flagState,
+  sensorState,
+  streamState,
+  timelapseState,
+  torchState,
+} from "./state";
 import { initAudio } from "./webaudio";
 import {
   initVideo,
@@ -11,16 +17,23 @@ import { initAudioStream } from "./stream";
 import { getAcceleration } from "./sensor";
 import { getGPSPosition } from "./gps";
 import { accelarateOsc, gpsOsc } from "./webaudio";
+// import { initTorch } from "./stream/torch";
 
 export const initialize = async (
   socket: Socket
 ): Promise<MediaStream | null> => {
+  // ): Promise<void> => {
   erasePrint();
 
   await initVideo();
   await initAudio();
 
   const SUPPORTS_MEDIA_DEVICES = "mediaDevices" in navigator;
+  const SUPPORTED_CONSTRAINTS =
+    navigator.mediaDevices.getSupportedConstraints();
+  console.log("SUPPORTED_CONSTRAINTS:", SUPPORTED_CONSTRAINTS);
+  const torchSupported = "torch" in SUPPORTED_CONSTRAINTS;
+  torchState.isSupported = torchSupported;
   if (SUPPORTS_MEDIA_DEVICES && navigator.mediaDevices.getUserMedia) {
     const devices = await navigator.mediaDevices.enumerateDevices();
     /*
@@ -62,6 +75,8 @@ export const initialize = async (
           autoGainControl: false,
         };
 
+    // streamState.stream = !flagState.isMobile
+    // const stream = !flagState.isMobile ?
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
         //facingMode: 'environment'
@@ -72,9 +87,18 @@ export const initialize = async (
       },
       audio: audioOption,
     });
+    // : await navigator.mediaDevices.getUserMedia({
+    //     video: {
+    //       facingMode: "environment",
+    //       torch: true,
+    //     },
+    //     audio: audioOption,
+    //   });
     await initAudioStream(stream);
     await initVideoStream(stream);
-    await console.log(stream);
+    // await initAudioStream(streamState.stream);
+    // await initVideoStream(streamState.stream);
+    // await console.log(stream);
     await textPrint("initialized");
     await socket.emit("connectFromClient", {
       clientMode:
@@ -152,6 +176,7 @@ export const initialize = async (
     }, 500);
 
     flagState.start = true;
+
     // streamFlag.timelapse = true;
     timelapseState.flag = true;
     timelapseState.trriger = false;
@@ -160,6 +185,7 @@ export const initialize = async (
         timelapseState.trriger = true;
       }
     }, 60000);
+
     return stream;
   } else {
     // "not support navigator.mediaDevices.getUserMedia";

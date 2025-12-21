@@ -27,6 +27,9 @@ import { voiceState } from "./voiceState";
 // acceleration and GPS
 import { sensorState } from "./sensorState";
 
+// torch
+import { torchState } from "./torchState";
+
 export {
   // webAudioState,
   canvasState,
@@ -46,6 +49,7 @@ export {
   streamChunk,
   streamState,
   timelapseState,
+  torchState,
   webRtcFrontState,
   webRtcState,
   voiceState,

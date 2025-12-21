@@ -88,6 +88,11 @@ export const connectFromClient = (data, socket, io) => {
           beat: bpmStateDefault.beat,
           flag: bpmStateDefault.modulationFlag,
         },
+        TORCH: {
+          bpm: bpmStateDefault.bpm,
+          flag: bpmStateDefault.torchBlinkFlag,
+          type: bpmStateDefault.torchType,
+        },
         stream: {},
       };
       ["CHAT", ...streamList].forEach((stream) => {
@@ -123,6 +128,7 @@ export const connectFromClient = (data, socket, io) => {
         stream: {},
         METRONOME: { bpm: 60, beat: 4, flag: false },
         MODULATION: { bpm: 60, beat: 4, flag: false },
+        TORCH: { bpm: 60, flag: false, type: "STEADY" },
       };
     }
     console.log(sockId + " is noStream Client");

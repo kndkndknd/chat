@@ -15,6 +15,7 @@ export const metronomeEmit = (io, cmd, target?) => {
         stream: {},
         METRONOME: { bpm: 60, beat: 4, flag: false },
         MODULATION: { bpm: 60, beat: 4, flag: false },
+        TORCH: { bpm: 60, type: "STEADY", flag: false },
       };
       for (const stream of streamList) {
         bpmState[target].stream[stream] = {

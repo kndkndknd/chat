@@ -20,6 +20,8 @@ import { textPrint, canvasSizing } from "./canvasEvent";
 
 import { keyDown } from "./textInput";
 
+import { initTorch, torchToggle } from "./stream/torch";
+
 // let mediaStream: MediaStream | null = null;
 
 const ua = navigator.userAgent.toLowerCase();
@@ -39,6 +41,8 @@ eListener.addEventListener(
       initialize(socketState.socket).then((stream) => {
         if (stream !== null) {
           streamState.stream = stream;
+          // initTorch();
+          // torchToggle(false);
         } else {
           textPrint("not support navigator.mediaDevices.getUserMedia");
         }
