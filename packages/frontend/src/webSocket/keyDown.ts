@@ -9,7 +9,7 @@ export const keyDown = (
   stx = <CanvasRenderingContext2D>(
     (document.getElementById("cnvs") as HTMLCanvasElement).getContext("2d")
   ),
-  start?
+  start?,
 ) => {
   const character = e.key;
 
@@ -40,7 +40,7 @@ export const keyDown = (
           type: "char",
           clientId: clientId,
           character: character.toUpperCase(),
-        })
+        }),
       );
     } else {
       ws.send(
@@ -48,7 +48,7 @@ export const keyDown = (
           type: "char",
           clientId: clientId,
           character: character,
-        })
+        }),
       );
     }
 
@@ -57,7 +57,7 @@ export const keyDown = (
     if (character === "Enter" && stringsClient != "VOICE") stringsClient = "";
     //  erasePrint('strings', stx, strCnvs)
     erasePrint(stx, strCnvs);
-    textPrint(stringsClient, stx, strCnvs);
+    textPrint(stringsClient);
     //  if(ctx) erasePrint('canvas', ctx, cnvs)
   }
 

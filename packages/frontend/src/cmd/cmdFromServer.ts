@@ -32,10 +32,10 @@ export const cmdFromServer = (cmd: {
       if (cmd.flag) {
         textPrint(cmd.cmd);
       } else {
-        textPrint(`STOP ${cmd.cmd}`);
-        setTimeout(() => {
-          erasePrint();
-        }, 500);
+        textPrint(`STOP ${cmd.cmd}`, { timeout: true, timeoutDuration: 500 });
+        // setTimeout(() => {
+        //   erasePrint();
+        // }, 500);
       }
       // if(cmd.fade && cmd.gain)
       whitenoise(cmd.flag, cmd.fade, cmd.gain);
@@ -52,10 +52,10 @@ export const cmdFromServer = (cmd: {
       if (cmd.flag) {
         textPrint(cmdString);
       } else {
-        textPrint(`STOP ${cmdString}`);
-        setTimeout(() => {
-          erasePrint();
-        }, 500);
+        textPrint(`STOP ${cmdString}`, { timeout: true, timeoutDuration: 500 });
+        // setTimeout(() => {
+        //   erasePrint();
+        // }, 500);
       }
       // textPrint(cmdString);
       // if(cmd.fade && cmd.portament && cmd.gain) {
@@ -73,10 +73,10 @@ export const cmdFromServer = (cmd: {
       if (cmd.flag) {
         textPrint(cmd.cmd);
       } else {
-        textPrint(`STOP ${cmd.cmd}`);
-        setTimeout(() => {
-          erasePrint();
-        }, 500);
+        textPrint(`STOP ${cmd.cmd}`, { timeout: true, timeoutDuration: 500 });
+        // setTimeout(() => {
+        //   erasePrint();
+        // }, 500);
       }
       // if(cmd.fade && cmd.gain)
       feedback(cmd.flag, cmd.fade, cmd.gain);
@@ -94,10 +94,10 @@ export const cmdFromServer = (cmd: {
       if (cmd.flag) {
         textPrint(cmd.cmd);
       } else {
-        textPrint(`STOP ${cmd.cmd}`);
-        setTimeout(() => {
-          erasePrint();
-        }, 500);
+        textPrint(`STOP ${cmd.cmd}`, { timeout: true, timeoutDuration: 500 });
+        // setTimeout(() => {
+        //   erasePrint();
+        // }, 500);
       }
       // if (cinemaFlag) {
       //   setTimeout(() => {
@@ -110,10 +110,10 @@ export const cmdFromServer = (cmd: {
       click(cmd.gain);
       // erasePrint(stx, strCnvs)
       erasePrint();
-      textPrint("CLICK");
-      setTimeout(() => {
-        erasePrint();
-      }, 300);
+      textPrint("CLICK", { timeout: true, timeoutDuration: 300 });
+      // setTimeout(() => {
+      //   erasePrint();
+      // }, 300);
       break;
     case "SIMULATE":
       simulate(cmd.gain);
@@ -129,10 +129,13 @@ export const cmdFromServer = (cmd: {
       break;
     case "LATENCY":
       flagState.recLatency = !flagState.recLatency;
-      textPrint(`LATENCY: ${flagState.recLatency}`);
-      setTimeout(() => {
-        erasePrint();
-      }, 500);
+      textPrint(`LATENCY: ${flagState.recLatency}`, {
+        timeout: true,
+        timeoutDuration: 500,
+      });
+      // setTimeout(() => {
+      //   erasePrint();
+      // }, 500);
       break;
     default:
       break;

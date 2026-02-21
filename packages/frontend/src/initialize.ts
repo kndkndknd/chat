@@ -20,7 +20,7 @@ import { accelarateOsc, gpsOsc } from "./webaudio";
 // import { initTorch } from "./stream/torch";
 
 export const initialize = async (
-  socket: Socket
+  socket: Socket,
 ): Promise<MediaStream | null> => {
   // ): Promise<void> => {
   erasePrint();
@@ -99,7 +99,7 @@ export const initialize = async (
     // await initAudioStream(streamState.stream);
     // await initVideoStream(streamState.stream);
     // await console.log(stream);
-    await textPrint("initialized");
+    await textPrint("initialized", { timeout: true });
     await socket.emit("connectFromClient", {
       clientMode:
         window.location.pathname.includes("noStream") ||
@@ -140,13 +140,13 @@ export const initialize = async (
                 Math.pow(
                   sensorState.gpsPosition.latitude -
                     sensorState.gpsPosition.originlat,
-                  2
+                  2,
                 ) +
                   Math.pow(
                     sensorState.gpsPosition.longitude -
                       sensorState.gpsPosition.originlng,
-                    2
-                  )
+                    2,
+                  ),
               );
           gpsOsc(true, frequency, 0, 1, 1);
           textPrint(String(frequency) + "Hz");
@@ -160,7 +160,7 @@ export const initialize = async (
               Math.sqrt(
                 Math.pow(sensorState.accelerationData.x, 2) +
                   Math.pow(sensorState.accelerationData.y, 2) +
-                  Math.pow(sensorState.accelerationData.z, 2)
+                  Math.pow(sensorState.accelerationData.z, 2),
               );
           accelarateOsc(true, frequency, 0, 1, 1);
           textPrint(String(frequency) + "Hz");
@@ -171,9 +171,6 @@ export const initialize = async (
     } else {
       console.log("GPSまたは加速度センサーがサポートされていません");
     }
-    await setTimeout(() => {
-      erasePrint();
-    }, 500);
 
     flagState.start = true;
 

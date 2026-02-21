@@ -16,17 +16,23 @@ export const torchToggle = async (flag: boolean): Promise<void> => {
       });
     } else {
       torchState.isSupported = false;
-      textPrint("Torch is not supported on this device");
-      setTimeout(() => {
-        erasePrint();
-      }, 500);
+      textPrint("Torch is not supported on this device", {
+        timeout: true,
+        timeoutDuration: 500,
+      });
+      // setTimeout(() => {
+      //   erasePrint();
+      // }, 500);
       return;
     }
   } catch (e) {
-    textPrint("Cannot access video track for torch control");
-    setTimeout(() => {
-      erasePrint();
-    }, 500);
+    textPrint("Cannot access video track for torch control", {
+      timeout: true,
+      timeoutDuration: 500,
+    });
+    // setTimeout(() => {
+    //   erasePrint();
+    // }, 500);
   }
   // console.log("track length:", streamState.stream?.getVideoTracks().length);
   // try {
@@ -41,10 +47,13 @@ export const torchToggle = async (flag: boolean): Promise<void> => {
 
 export const startBlink = (bpm: number) => {
   let isOn = false;
-  torchState.torchIntervalId = window.setInterval(async () => {
-    isOn = !isOn;
-    await torchToggle(isOn);
-  }, (60 / bpm) * 1000);
+  torchState.torchIntervalId = window.setInterval(
+    async () => {
+      isOn = !isOn;
+      await torchToggle(isOn);
+    },
+    (60 / bpm) * 1000,
+  );
 };
 
 export const stopBlink = async (): Promise<void> => {

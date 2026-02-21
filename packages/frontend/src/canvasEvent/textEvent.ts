@@ -4,10 +4,16 @@ import * as emoji from "node-emoji";
 
 export function textPrint(
   text: string,
-  stx: CanvasRenderingContext2D = canvasElement.ctx,
-  strCnvs: HTMLCanvasElement = canvasElement.cnvs,
-  clear?: boolean
+  option?: {
+    stx?: CanvasRenderingContext2D;
+    strCnvs?: HTMLCanvasElement;
+    timeout?: boolean;
+    timeoutDuration?: number;
+  },
 ) {
+  const stx = !option || !option.stx ? canvasElement.ctx : option.stx;
+  const strCnvs =
+    !option || !option.strCnvs ? canvasElement.cnvs : option.strCnvs;
   stx.clearRect(0, 0, strCnvs.width, strCnvs.height);
 
   // if (clear) {
@@ -17,10 +23,23 @@ export function textPrint(
   //   stx.fillRect(0, 0, strCnvs.width, strCnvs.height);
   // }
   console.log("textPrint", text);
-  if (!flagState.emoji) {
-    print(text, stx, strCnvs);
+  if (option && option.timeout) {
+    const duration = option.timeoutDuration ? option.timeoutDuration : 500;
+    if (!flagState.emoji) {
+      print(text, stx, strCnvs);
+    } else {
+      print(emoji.random().emoji, stx, strCnvs);
+    }
+    setTimeout(() => {
+      eraseText(stx, strCnvs);
+    }, duration);
+    return;
   } else {
-    print(emoji.random().emoji, stx, strCnvs);
+    if (!flagState.emoji) {
+      print(text, stx, strCnvs);
+    } else {
+      print(emoji.random().emoji, stx, strCnvs);
+    }
   }
   /*
   if (hlsElement.played.length > 0) {
@@ -33,7 +52,7 @@ export function textPrint(
 
 export function eraseText(
   stx: CanvasRenderingContext2D = canvasElement.ctx,
-  strCnvs: HTMLCanvasElement = canvasElement.cnvs
+  strCnvs: HTMLCanvasElement = canvasElement.cnvs,
 ) {
   stx.clearRect(0, 0, strCnvs.width, strCnvs.height);
 }
@@ -41,7 +60,7 @@ export function eraseText(
 export function clearTextPrint(
   text: string,
   stx: CanvasRenderingContext2D = canvasElement.ctx,
-  strCnvs: HTMLCanvasElement = canvasElement.cnvs
+  strCnvs: HTMLCanvasElement = canvasElement.cnvs,
 ) {
   stx.clearRect(0, 0, strCnvs.width, strCnvs.height);
   print(text, stx, strCnvs);
@@ -49,7 +68,7 @@ export function clearTextPrint(
 
 export function erasePrint(
   ctx: CanvasRenderingContext2D = canvasElement.ctx,
-  cnvs: HTMLCanvasElement = canvasElement.cnvs
+  cnvs: HTMLCanvasElement = canvasElement.cnvs,
 ) {
   ctx.clearRect(0, 0, cnvs.width, cnvs.height);
   //  ctx.fillStyle = 'white';
@@ -59,7 +78,7 @@ export function erasePrint(
 const print = (
   text: string,
   target: CanvasRenderingContext2D,
-  cnvs: HTMLCanvasElement = canvasElement.cnvs
+  cnvs: HTMLCanvasElement = canvasElement.cnvs,
 ) => {
   // console.log("print: ", text);
   let fontSize = 20;
@@ -117,12 +136,12 @@ const print = (
       target.strokeText(
         element,
         cnvs.width / 2,
-        cnvs.height / 2 + fontSize * (index - Math.round(textArr.length / 2))
+        cnvs.height / 2 + fontSize * (index - Math.round(textArr.length / 2)),
       );
       target.fillText(
         element,
         cnvs.width / 2,
-        cnvs.height / 2 + fontSize * (index - Math.round(textArr.length / 2))
+        cnvs.height / 2 + fontSize * (index - Math.round(textArr.length / 2)),
       );
     });
   }

@@ -44,12 +44,15 @@ eListener.addEventListener(
           // initTorch();
           // torchToggle(false);
         } else {
-          textPrint("not support navigator.mediaDevices.getUserMedia");
+          textPrint("not support navigator.mediaDevices.getUserMedia", {
+            timeout: true,
+            timeoutDuration: 5000,
+          });
         }
       });
     }
   },
-  false
+  false,
 );
 
 window.addEventListener("resize", (e) => {
@@ -67,7 +70,10 @@ document.addEventListener("keydown", (e) => {
       if (stream !== null) {
         streamState.stream = stream;
       } else {
-        textPrint("not support navigator.mediaDevices.getUserMedia");
+        textPrint("not support navigator.mediaDevices.getUserMedia", {
+          timeout: true,
+          timeoutDuration: 5000,
+        });
       }
     });
   } else {

@@ -76,7 +76,7 @@ eListener.addEventListener(
       initialize();
     }
   },
-  false
+  false,
 );
 
 window.addEventListener("resize", (e) => {
@@ -103,18 +103,18 @@ socketState.socket.on(
     erasePrint();
     console.log("stringsFromServer", data);
     stringsClient = data.strings;
-    textPrint(stringsClient);
-    if (data.timeout) {
-      setTimeout(() => {
-        erasePrint();
-      }, 500);
-    }
+    textPrint(stringsClient, { timeout: data.timeout });
+    // if (data.timeout) {
+    //   setTimeout(() => {
+    //     erasePrint();
+    //   }, 500);
+    // }
     if (cinemaFlag) {
       setTimeout(() => {
         erasePrint();
       }, 500);
     }
-  }
+  },
 );
 socketState.socket.on("erasePrintFromServer", () => {
   // erasePrint(stx, strCnvs)
@@ -137,7 +137,7 @@ socketState.socket.on(
   }) => {
     cmdFromServer(cmd);
     stringsClient = "";
-  }
+  },
 );
 
 socketState.socket.on(
@@ -150,11 +150,11 @@ socketState.socket.on(
       stopCmd(data.fadeOutVal, "HLS");
     }
     // erasePrint(stx, strCnvs)
-    textPrint("STOP");
-    setTimeout(() => {
-      erasePrint();
-    }, 800);
-  }
+    textPrint("STOP", { timeout: true });
+    // setTimeout(() => {
+    //   erasePrint();
+    // }, 800);
+  },
 );
 
 socketState.socket.on("textFromServer", (data: { text: string }) => {
@@ -178,11 +178,11 @@ socketState.socket.on(
   "recordReqFromServer",
   (data: { source: string; timeout: number }) => {
     recordReqFromServer(data);
-    textPrint("RECORD");
-    setTimeout(() => {
-      erasePrint();
-    }, data.timeout);
-  }
+    textPrint("RECORD", { timeout: true, timeoutDuration: data.timeout });
+    // setTimeout(() => {
+    //   erasePrint();
+    // }, data.timeout);
+  },
 );
 
 // CHATのみ向けにする
@@ -221,7 +221,7 @@ socketState.socket.on(
         showImage(data.video, data.position);
       }
     }
-  }
+  },
 );
 
 // CHAT以外のSTREAM向け
@@ -249,14 +249,14 @@ socketState.socket.on(
         showImage(data.video, data.position);
       }
     }
-  }
+  },
 );
 
 socketState.socket.on(
   "voiceFromServer",
   (data: { text: string; lang: string }) => {
     // speechVoice(data);
-  }
+  },
 );
 
 socketState.socket.on("gainFromServer", (data) => {
@@ -274,7 +274,7 @@ socketState.socket.on("windowReqFromServer", (data: newWindowReqType) => {
       ",top=" +
       String(data.top) +
       ",left=" +
-      String(data.left)
+      String(data.left),
   );
   click(1.0);
 });
@@ -302,18 +302,18 @@ socketState.socket.on(
       clockBase = 0;
       clockModeId = disableClockMode(clockModeId);
     }
-  }
+  },
 );
 
 socketState.socket.on(
   "emojiFromServer",
   (data: { state: boolean; text: string }) => {
-    textPrint(data.text);
-    setTimeout(() => {
-      erasePrint();
-    }, 500);
+    textPrint(data.text, { timeout: true });
+    // setTimeout(() => {
+    //   erasePrint();
+    // }, 500);
     emojiState(data.state);
-  }
+  },
 );
 
 // socketState.socket.on("bpmFromServer", (data: { bpm: number; bar: number }) => {
@@ -487,7 +487,7 @@ export const initialize = async () => {
           JSON.stringify({
             type: "candidate",
             candidate: event.candidate,
-          })
+          }),
         );
       }
     };

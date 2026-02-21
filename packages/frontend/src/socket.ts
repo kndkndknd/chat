@@ -41,18 +41,18 @@ export const socket = (): void => {
       erasePrint();
       console.log("stringsFromServer", data);
       canvasState.stringsClient = data.strings;
-      textPrint(canvasState.stringsClient);
-      if (data.timeout) {
-        setTimeout(() => {
-          erasePrint();
-        }, 500);
-      }
+      textPrint(canvasState.stringsClient, { timeout: data.timeout });
+      // if (data.timeout) {
+      //   setTimeout(() => {
+      //     erasePrint();
+      //   }, 500);
+      // }
       // if (cinemaFlag) {
       //   setTimeout(() => {
       //     erasePrint();
       //   }, 500);
       // }
-    }
+    },
   );
   socketState.socket.on("erasePrintFromServer", () => {
     // erasePrint(stx, strCnvs)
@@ -75,7 +75,7 @@ export const socket = (): void => {
     }) => {
       cmdFromServer(cmd);
       canvasState.stringsClient = "";
-    }
+    },
   );
 
   socketState.socket.on(
@@ -88,11 +88,11 @@ export const socket = (): void => {
         stopCmd(data.fadeOutVal, "HLS");
       }
       // erasePrint(stx, strCnvs)
-      textPrint("STOP");
-      setTimeout(() => {
-        erasePrint();
-      }, 800);
-    }
+      textPrint("STOP", { timeout: true, timeoutDuration: 800 });
+      // setTimeout(() => {
+      //   erasePrint();
+      // }, 800);
+    },
   );
 
   socketState.socket.on("textFromServer", (data: { text: string }) => {
@@ -116,11 +116,11 @@ export const socket = (): void => {
     "recordReqFromServer",
     (data: { source: string; timeout: number }) => {
       recordReqFromServer(data);
-      textPrint("RECORD");
-      setTimeout(() => {
-        erasePrint();
-      }, data.timeout);
-    }
+      textPrint("RECORD", { timeout: true, timeoutDuration: data.timeout });
+      // setTimeout(() => {
+      //   erasePrint();
+      // }, data.timeout);
+    },
   );
 
   // CHATのみ向けにする
@@ -159,7 +159,7 @@ export const socket = (): void => {
           showImage(data.video, data.position);
         }
       }
-    }
+    },
   );
   socketState.socket.on("quantizeFromServer", (data: bpmStreamStateType) => {
     quantizeFromServer(data);
@@ -191,7 +191,7 @@ export const socket = (): void => {
           showImage(data.video, data.position);
         }
       }
-    }
+    },
   );
 
   socketState.socket.on("gainFromServer", (data) => {
@@ -209,7 +209,7 @@ export const socket = (): void => {
         ",top=" +
         String(data.top) +
         ",left=" +
-        String(data.left)
+        String(data.left),
     );
     click(1.0);
   });
@@ -240,7 +240,7 @@ export const socket = (): void => {
       // if (voiceState.flag && voiceState.speechSynthesis.text.length > 0) {
       //   speechVoice(voiceState.speechSynthesis);
       // }
-    }
+    },
   );
 
   // socketState.socket.on(
@@ -259,12 +259,12 @@ export const socket = (): void => {
   socketState.socket.on(
     "emojiFromServer",
     (data: { state: boolean; text: string }) => {
-      textPrint(data.text);
-      setTimeout(() => {
-        erasePrint();
-      }, 500);
+      textPrint(data.text, { timeout: true });
+      // setTimeout(() => {
+      //   erasePrint();
+      // }, 500);
       emojiState(data.state);
-    }
+    },
   );
 
   socketState.socket.on(
@@ -281,13 +281,15 @@ export const socket = (): void => {
         //   beat: quantizeState.beat,
         // });
       }
-    }
+    },
   );
 
   socketState.socket.on("timelapseFromServer", (data) => {
     console.log("timelapseFromServer", data);
     if (data.cmd === "FALSE") {
       timelapseState.flag = false;
+    } else if (data.cmd === "TRUE") {
+      timelapseState.flag = true;
     } else if (data.cmd === "GET") {
       timelapseState.trriger = true;
       if (!timelapseState.flag) {
@@ -297,6 +299,10 @@ export const socket = (): void => {
         }, 5000);
       }
     }
+    textPrint(`TIMELAPSE ${data.cmd}`, { timeout: true });
+    // setTimeout(() => {
+    //   erasePrint();
+    // }, 800);
   });
 
   socketState.socket.on("gpsFlagFromServer", () => {
@@ -307,7 +313,7 @@ export const socket = (): void => {
         flagState.gpsFlag = false;
       }
     } else {
-      textPrint("This device is not mobile");
+      textPrint("This device is not mobile", { timeout: false });
     }
   });
 
@@ -346,7 +352,7 @@ export const socket = (): void => {
       } else {
         console.log("Torch is not supported on this device");
       }
-    }
+    },
   );
 
   socketState.socket.on("bufferFromServer", (data) => {
@@ -365,7 +371,7 @@ export const socket = (): void => {
       initRtpPeerConnection(
         socketState.socket,
         streamState.stream as MediaStream,
-        peers
+        peers,
       );
     }
   });

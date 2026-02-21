@@ -75,6 +75,7 @@ const onAudioProcess = (e: AudioProcessingEvent) => {
     socketState.socket.emit("chatFromClient", bufferData);
   }
   if (timelapseState.flag && timelapseState.trriger) {
+    // console.log("timelapse emit");
     let bufferData = {
       source: "TIMELAPSE",
       video: toBase64(),
