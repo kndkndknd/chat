@@ -335,7 +335,7 @@ export const splitSpace = async (
       deleteLog();
     }
   } else if (stringArr[0] === "PA") {
-    splitPaTarget(stringArr, io);
+    splitPaTarget(stringArr, arrTypeArr, io);
   } else if (stringArr[0] === "QUANTIZE") {
     splitQuantize(stringArr.splice(1), io);
   } else if (

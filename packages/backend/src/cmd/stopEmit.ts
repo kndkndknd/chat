@@ -107,6 +107,9 @@ export const stopEmit = (
   Object.keys(streamState.target).forEach((element) => {
     streamState.target[element] = [];
   });
+  Object.keys(streamState.pa).forEach((element)=> {
+    streamState.pa[element] = false;
+  })
   // console.log("client", state.client);
   // console.log("hls", state.hls);
   // console.log("previous", state.previous);

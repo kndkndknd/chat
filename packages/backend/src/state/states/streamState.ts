@@ -43,6 +43,12 @@ export const streamState: streamStateType = {
   loop: false,
   timelapse: false,
   floating: false,
+  pa: {
+    CHAT: false,
+    PLAYBACK: false,
+    TIMELAPSE: false,
+    EMPTY: false
+  }
 };
 
 export const defaultFilterState: filterStateType = {

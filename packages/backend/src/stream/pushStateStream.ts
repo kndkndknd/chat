@@ -26,6 +26,8 @@ export const pushStateStream = (
   sampleRateState.randomrate[streamName] = false;
   streamState.target[streamName] = [];
   streamState.filter[streamName] = defaultFilterState;
+  streamState.pa[streamName] = false;
+
   sampleRateState.randomratemode = "random";
   sampleRateState.randomraterange[streamName] = {
     min: 4000,

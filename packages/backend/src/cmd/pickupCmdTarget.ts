@@ -10,8 +10,9 @@ interface Cmd {
   gain?: number;
 }
 
-export const pickupCmdTarget = (
+const commonPickupCmdTarget = (
   cmdString: string,
+  clientArr: string[],
   option?: {
     target?: string;
     value?: number;
@@ -26,7 +27,7 @@ export const pickupCmdTarget = (
     switch (cmd) {
       case "CLICK":
         return [
-          clientState.cmdClient[
+          clientArr[
             Math.floor(Math.random() * clientState.cmdClient.length)
           ],
         ];
@@ -36,7 +37,7 @@ export const pickupCmdTarget = (
       case "FEEDBACK":
         if (currentState.cmd[cmd].length === 0) {
           return [
-            clientState.cmdClient[
+            clientArr[
               Math.floor(Math.random() * clientState.cmdClient.length)
             ],
           ];
@@ -48,7 +49,7 @@ export const pickupCmdTarget = (
         if (Object.keys(currentState.sinewave).length === 0) {
           //どの端末も音を出していない場合
           return [
-            clientState.cmdClient[
+            clientArr[
               Math.floor(Math.random() * clientState.cmdClient.length)
             ],
           ];
@@ -68,13 +69,13 @@ export const pickupCmdTarget = (
 
             // 同じ周波数の音を出している端末がない場合（上記でreturnされなかった場合）
             // 音が出ていない端末があれば、その中からランダムに発音、全部音が出てたら完全にランダム
-            const unsoundArr = clientState.cmdClient.filter(
+            const unsoundArr = clientArr.filter(
               (client) => !Object.keys(currentState.sinewave).includes(client)
             );
             return unsoundArr.length > 0
               ? [unsoundArr[Math.floor(Math.random() * unsoundArr.length)]]
               : [
-                  clientState.cmdClient[
+                  clientArr[
                     Math.floor(Math.random() * clientState.cmdClient.length)
                   ],
                 ];
@@ -85,6 +86,29 @@ export const pickupCmdTarget = (
     }
   }
 };
+
+export const pickupCmdTarget = (
+  cmdString: string,
+  option?: {
+    target?: string;
+    value?: number;
+  }
+): string[] => {
+  return commonPickupCmdTarget(cmdString, clientState.cmdClient, option)
+};
+
+export const pickupPaCmdTarget = (
+  cmdString: string,
+  option?: {
+    target?: string;
+    value?: number;
+  }
+): string[] => {
+  return commonPickupCmdTarget(cmdString, clientState.paCmdClient, option)
+};
+
+
+
 
 /*
 export const pickupCmdTarget = (state, cmdString: string, target?) => {

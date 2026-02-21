@@ -45,6 +45,9 @@ export type streamStateType = {
   loop: boolean;
   timelapse: boolean;
   floating: boolean;
+  pa: {
+    [key: string]: boolean;
+  };
 };
 
 export type filterStateType = {
