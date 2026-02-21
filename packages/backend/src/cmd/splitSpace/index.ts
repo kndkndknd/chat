@@ -16,6 +16,7 @@ import { numTarget } from "./numTarget";
 import { fadeCmd } from "./fadeCmd";
 import { splitStop } from "./splitStop";
 import { solo } from "./solo";
+import { splitPaTarget } from "./splitPaTarget";
 
 import { recordEmit, recordAsOtherEmit } from "../../stream/recordEmit";
 import { chatPreparation } from "../../stream/chatPreparation";
@@ -138,14 +139,24 @@ export const splitSpace = async (
   } else if (stringArr[0] === "ALL") {
     voiceEmit(io, stringArr.join(" "), source !== undefined ? source : "all");
 
-    if (arrTypeArr[1] === "string") {
-      Object.keys(clientState.client).forEach((target) => {
-        cmdEmit(stringArr[1], io, target);
+    if (arrTypeArr[1] === "string" && !streamList.includes(stringArr[1])) {
+      clientState.cmdClient.forEach((client, index) => {
+        cmdEmit(stringArr[1], io, client);
       });
+      // Object.keys(clientState.client).forEach((target) => {
+      //   cmdEmit(stringArr[1], io, target);
+      // });
     } else if (arrTypeArr[1] === "number") {
-      Object.keys(clientState.client).forEach((target) => {
-        sinewaveEmit(Number(stringArr[1]), io, target);
+      clientState.cmdClient.forEach((client, index) => {
+        // Object.keys(clientState.client).forEach((target) => {
+        sinewaveEmit(Number(stringArr[1]), io, client);
       });
+    } else if (streamList.includes(stringArr[1])) {
+      streamState.target[stringArr[1]] = [];
+      streamEmit(stringArr[1], io);
+    } else if (stringArr[1] === "CHAT") {
+      streamState.target["CHAT"] = clientState.streamClient;
+      chatPreparation(io);
     }
   } else if (
     stringArr[0] === "BUFFER" ||
@@ -323,6 +334,8 @@ export const splitSpace = async (
     } else if (stringArr[1] === "CLEAR") {
       deleteLog();
     }
+  } else if (stringArr[0] === "PA") {
+    splitPaTarget(stringArr, io);
   } else if (stringArr[0] === "QUANTIZE") {
     splitQuantize(stringArr.splice(1), io);
   } else if (

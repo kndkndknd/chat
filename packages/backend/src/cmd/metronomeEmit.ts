@@ -3,6 +3,7 @@ import { notTargetEmit } from "./notTargetEmit";
 import { millisecondsPerBeat } from "../../../util/bpmCalc";
 import { currentState, cmdState, bpmState, clientState } from "../state";
 import { streamList } from "../data";
+import { pickupCmdTarget } from "./pickupCmdTarget";
 
 export const metronomeEmit = (io, cmd, target?) => {
   cmd = {
@@ -48,9 +49,13 @@ export const metronomeEmit = (io, cmd, target?) => {
     if (currentState.cmd.METRONOME.length === 0) {
       cmd.flag = true;
       cmd.gain = cmdState.GAIN.METRONOME;
-      target = Object.keys(clientState.client)[
-        Math.floor(Math.random() * Object.keys(clientState.client).length)
-      ];
+      const targetIdArr = target
+        ? pickupCmdTarget("METRONOME", { target: target })
+        : pickupCmdTarget("METRONOME");
+      target = targetIdArr[0];
+      // target = Object.keys(clientState.client)[
+      //   Math.floor(Math.random() * Object.keys(clientState.client).length)
+      // ];
       currentState.cmd[cmd.cmd].push(target);
       cmd.value = millisecondsPerBeat(bpmState[target].METRONOME.bpm);
       // cmd.value = cmdState.METRONOME[target];

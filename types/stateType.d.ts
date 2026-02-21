@@ -110,7 +110,9 @@ export type clientStateType = {
   };
   cmdClient: string[];
   streamClient: string[];
-  sinewaveClient: Array<string>;
+  sinewaveClient: string[];
+  paCmdClient: string[];
+  paStreamClient: string[];
 };
 
 export type currentStateType = {
