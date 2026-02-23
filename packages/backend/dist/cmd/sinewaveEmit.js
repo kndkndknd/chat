@@ -1,9 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sinewaveEmit = void 0;
-const putCmd_js_1 = require("./putCmd.js");
+const putCmd_1 = require("./putCmd");
 // import { notTargetEmit } from "./notTargetEmit";
-const pickupCmdTarget_js_1 = require("./pickupCmdTarget.js");
+const pickupCmdTarget_1 = require("./pickupCmdTarget");
 const sinewaveEmit = (frequencyStr, io, state, target) => {
     // サイン波の処理
     let cmd = {
@@ -14,6 +14,7 @@ const sinewaveEmit = (frequencyStr, io, state, target) => {
         portament: state.cmd.PORTAMENT,
         gain: state.cmd.GAIN.SINEWAVE,
     };
+    console.log("target;", target);
     if (target !== undefined) {
         state.previous.sinewave[target] = state.current.sinewave[target];
     }
@@ -21,13 +22,17 @@ const sinewaveEmit = (frequencyStr, io, state, target) => {
         state.previous.sinewave = state.current.sinewave;
     }
     let targetIdArr = target !== undefined
-        ? (0, pickupCmdTarget_js_1.pickupCmdTarget)(state, "SINEWAVE", target)
-        : (0, pickupCmdTarget_js_1.pickupCmdTarget)(state, "SINEWAVE");
+        ? (0, pickupCmdTarget_1.pickupCmdTarget)(state, "SINEWAVE", { value: frequencyStr, target })
+        : (0, pickupCmdTarget_1.pickupCmdTarget)(state, "SINEWAVE", { value: frequencyStr });
+    console.log("targetArr", targetIdArr);
+    console.log("client", state.client);
+    console.log("cmdClient", state.cmdClient);
     targetIdArr.forEach((id) => {
+        console.log("id", id);
         if (!Object.keys(state.current.sinewave).includes(id)) {
             cmd.flag = true;
             cmd.fade = state.cmd.FADE.IN;
-            state.current.sinewave[id] == cmd.value;
+            state.current.sinewave[id] = cmd.value;
         }
         else if (state.current.sinewave[id] !== cmd.value) {
             cmd.flag = true;
@@ -40,6 +45,7 @@ const sinewaveEmit = (frequencyStr, io, state, target) => {
             delete state.current.sinewave[id];
         }
     });
+    console.log(targetIdArr);
     /*
     if (target) {
       targetId = target;
@@ -99,9 +105,9 @@ const sinewaveEmit = (frequencyStr, io, state, target) => {
       }
     }
     */
-    console.log(state.current.sinewave);
-    console.log(targetIdArr);
-    (0, putCmd_js_1.putCmd)(io, targetIdArr, cmd, state);
+    console.log("current sinewave", state.current.sinewave);
+    // console.log(targetIdArr);
+    (0, putCmd_1.putCmd)(io, targetIdArr, cmd, state);
     // putCmd(io, targetId, cmd, state);
     // if (target === undefined) {
     //   notTargetEmit(targetId, state.client, io);

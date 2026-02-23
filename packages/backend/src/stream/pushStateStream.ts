@@ -1,19 +1,46 @@
-import { streamList } from "../states";
-import { cmdStateType } from "../types/global";
+import {
+  streamState,
+  currentState,
+  previousState,
+  sampleRateState,
+  glitchState,
+  clientState,
+  bpmState,
+  defaultFilterState,
+} from "../state";
+import { streamList } from "../data";
 
 export const pushStateStream = (
   streamName: string,
-  states: cmdStateType,
+  // states: cmdStateType,
   random?: boolean
 ) => {
   streamList.push(streamName);
-  states.current.stream[streamName] = false;
-  states.previous.stream[streamName] = false;
-  states.stream.sampleRate[streamName] = 44100;
-  states.stream.glitch[streamName] = false;
-  states.stream.grid[streamName] = false;
-  states.stream.latency[streamName] = 1000;
-  states.stream.random[streamName] = random !== undefined ? random : false;
-  states.stream.randomrate[streamName] = false;
-  states.stream.target[streamName] = [];
+  currentState.stream[streamName] = false;
+  previousState.stream[streamName] = false;
+  sampleRateState.sampleRate[streamName] = 44100;
+  glitchState.glitch[streamName] = false;
+  // streamState.grid[streamName] = true;
+  // streamState.latency[streamName] = 1000;
+  streamState.random[streamName] = random !== undefined ? random : true;
+  sampleRateState.randomrate[streamName] = false;
+  streamState.target[streamName] = [];
+  streamState.filter[streamName] = defaultFilterState;
+  streamState.pa[streamName] = false;
+
+  sampleRateState.randomratemode = "random";
+  sampleRateState.randomraterange[streamName] = {
+    min: 4000,
+    max: 132300,
+  };
+  // bpmState.stream[streamName] = {};
+  for (const client in bpmState) {
+    bpmState[client].stream[streamName] = {
+      bpm: 60,
+      beat: 0,
+      gridFlag: true,
+      quantizeFlag: false,
+      latency: 0,
+    };
+  }
 };

@@ -1,4 +1,4 @@
-import { streams } from "../states";
+import { streams } from "../data";
 
 export const clearBuffer = (source?: string) => {
   if (source === "BUFFER" || source === undefined) {

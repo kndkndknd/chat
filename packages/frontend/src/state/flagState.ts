@@ -1,0 +1,17 @@
+export const flagState = {
+  start: false,
+  recLatency: true,
+  recordFlag: false,
+  timelapseFlag: false,
+  otherStreamFlag: "",
+  chatFlag: false,
+  simulate: false,
+  timelapse: false,
+  emoji: false,
+  socketId: "",
+  gpsFlag: false,
+  accelarateFlag: false,
+  gpsOscFlag: false,
+  accelarateOscFlag: false,
+  isMobile: false,
+};

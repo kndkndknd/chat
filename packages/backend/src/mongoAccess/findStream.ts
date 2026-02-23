@@ -1,12 +1,15 @@
 import SocketIO from "socket.io";
 import dotenv from "dotenv";
-import { cmdList, streamList, parameterList, states, streams } from "../states";
+import path from "path";
+import { cmdList, streamList, parameterList, streams } from "../data";
 // import { stringEmit } from "../socket/ioEmit.js";
 import { pushStateStream } from "../stream/pushStateStream";
 
-dotenv.config();
+const dotenvPath = path.resolve(__dirname, "../../../../.env");
+dotenv.config({ path: dotenvPath });
 
 const ipaddress = process.env.DB_HOST;
+console.log("IP Address:", ipaddress);
 
 interface streamInterface {
   _id: string;
@@ -69,7 +72,7 @@ const pushStream = (streamArray: Array<streamInterface>) => {
   streams[type] = {
     audio: [],
     video: [],
-    index: [],
+    index: 0,
     bufferSize: 8192,
   };
   streamArray.forEach((element: streamInterface, index: number) => {
@@ -83,11 +86,11 @@ const pushStream = (streamArray: Array<streamInterface>) => {
     ).buffer;
     console.log(audio);
 
-    streams[type].audio.push(audio);
+    // streams[type].audio.push(audio);
     streams[type].video.push(element.video);
-    streams[type].index.push(index);
+    // streams[type].index.push(index);
   });
   console.log(streams[type].audio[0]);
   streamList.push(type);
-  pushStateStream(type, states);
+  pushStateStream(type);
 };

@@ -1,33 +1,30 @@
 // const pcm = require("pcm");
-import { execa } from "execa";
-import { awaitGetPcmData } from "./getPcmData";
+// import { execa } from "execa";
+import { promiseGetPcmData } from "./getPcmData";
 import { pushStateStream } from "../pushStateStream";
 
-import {
-  streams,
-  cmdList,
-  streamList,
-  parameterList,
-  states,
-  uploadParams,
-  basisBufferSize,
-} from "../../states";
+import { streamState } from "../../state";
+import { streams } from "../../data";
 // import { pushStateStream } from "../pushStateStream.js";
 
 export const uploadAudio = async (f: string, mediaDirPath: string) => {
-  let tmpBuff = new Float32Array(basisBufferSize);
+  let tmpBuff = new Float32Array(streamState.basisBufferSize);
   let rtnBuff = [];
   let i = 0;
   const fSplit = f.split(".");
   console.log("debug start");
   const filePath = `${mediaDirPath}/${f}`;
   const option = { stereo: true, sampleRate: 22050 };
-
+  console.log("debug start2");
   try {
-    await pushStateStream(fSplit[0], states);
+    await pushStateStream(fSplit[0]);
     // const result = <boolean>await getPcmData(filePath, fSplit[0], option);
-    const result = await awaitGetPcmData(filePath, fSplit[0], option);
+    const result = <Float32Array[]>(
+      await promiseGetPcmData(filePath, 8192, option)
+    );
+    console.log("result", result.length);
     if (result) {
+      streams[fSplit[0]].audio = result;
       return true;
     } else {
       return false;

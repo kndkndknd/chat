@@ -1,19 +1,21 @@
 import SocketIO from "socket.io";
 
-import { cmdStateType } from "../types/global";
-import { cmdList } from "../states";
+import { clientState, cmdState, currentState } from "../state";
+import { cmdList } from "../data";
 
 import { stopEmit } from "./stopEmit";
 import { putCmd } from "./putCmd";
 import { notTargetEmit } from "./notTargetEmit";
 import { previousCmd } from "./previousCmd";
 import { pickupCmdTarget } from "./pickupCmdTarget";
+// import { getLengthFromBPM } from "../../../util/getLengthFromBPM";
+import { metronomeEmit } from "./metronomeEmit";
 
 export const cmdEmit = (
   cmdStrings: string,
   io: SocketIO.Server,
-  state: cmdStateType,
-  target?: string
+  target?: string,
+  flag?: boolean,
 ) => {
   let targetId = "";
   let cmd: {
@@ -24,43 +26,49 @@ export const cmdEmit = (
     fade?: number;
     gain?: number;
   };
+  const targetIdArr = target
+    ? pickupCmdTarget(cmdStrings, { target: target })
+    : pickupCmdTarget(cmdStrings);
+
   switch (cmdStrings) {
     case "STOP":
       const client = "all";
-      stopEmit(io, state, "ALL", client);
+      stopEmit(io, "", "ALL", client);
       break;
     case "WHITENOISE":
     case "FEEDBACK":
     case "BASS":
-      const targetIdArr = target
-        ? pickupCmdTarget(state, cmdStrings, target)
-        : pickupCmdTarget(state, cmdStrings);
       const cmdKey = cmdStrings as keyof typeof cmdList;
       cmd = {
         cmd: cmdList[cmdKey],
-        gain: state.cmd.GAIN[cmdKey],
+        gain: cmdState.GAIN[cmdKey],
       };
 
       if (
-        state.current.cmd[cmd.cmd].filter((id) => targetIdArr.includes(id))
+        currentState.cmd[cmd.cmd].filter((id) => targetIdArr.includes(id))
           .length > 0
       ) {
         cmd.flag = false;
-        cmd.fade = state.cmd.FADE.OUT;
-        state.current.cmd[cmd.cmd]
+        cmd.fade = cmdState.FADE.OUT;
+        currentState.cmd[cmd.cmd]
           .filter((id) => targetIdArr.includes(id))
           .forEach((id) => {
-            delete state.current.cmd[cmd.cmd][id];
+            delete currentState.cmd[cmd.cmd][id];
           });
       } else {
         cmd.flag = true;
-        cmd.fade = state.cmd.FADE.IN;
-        state.current.cmd[cmd.cmd] = [
-          ...state.current.cmd[cmd.cmd],
-          targetIdArr,
+        cmd.fade = cmdState.FADE.IN;
+        currentState.cmd[cmd.cmd] = [
+          ...currentState.cmd[cmd.cmd],
+          ...targetIdArr,
         ];
+        console.log(`current ${cmd.cmd}`, currentState.cmd[cmd.cmd]);
       }
-      putCmd(io, targetIdArr, cmd, state);
+      if (flag !== undefined) cmd.flag = flag;
+
+      console.log("flag", flag);
+      console.log("cmd", cmd);
+      putCmd(io, targetIdArr, cmd);
       /*
       state.previous.cmd[cmd.cmd] = state.current.cmd[cmd.cmd];
       if (target) {
@@ -105,10 +113,10 @@ export const cmdEmit = (
       // }
       break;
     case "CLICK":
-      console.log(state.cmd.GAIN.CLICK);
+      console.log(cmdState.GAIN.CLICK);
       cmd = {
         cmd: "CLICK",
-        gain: state.cmd.GAIN.CLICK,
+        gain: cmdState.GAIN.CLICK,
       };
       // cmd.gain = state.cmd.GAIN.CLICK
       /*
@@ -119,74 +127,39 @@ export const cmdEmit = (
           state.client[Math.floor(Math.random() * state.client.length)];
       }
       */
-      const targeIdArr =
-        target !== undefined
-          ? pickupCmdTarget(state, cmdStrings, target)
-          : pickupCmdTarget(state, cmdStrings);
+      // const targeIdArr =
+      //   target !== undefined
+      //     ? pickupCmdTarget(cmdStrings, { target: target })
+      //     : pickupCmdTarget(cmdStrings);
       // io.to(targetId).emit('cmdFromServer', cmd)
-      putCmd(io, targeIdArr, cmd, state);
+      putCmd(io, targetIdArr, cmd);
       // notTargetEmit(targetId, state.client, io);
       break;
     case "SIMULATE":
-      console.log(state.cmd.GAIN.SIMULATE);
+      console.log(cmdState.GAIN.SIMULATE);
       cmd = {
         cmd: "SIMULATE",
-        gain: state.cmd.GAIN.SIMULATE,
-      };
-      if (target) {
-        targetId = target;
-      } else {
-        targetId =
-          state.client[Math.floor(Math.random() * state.client.length)];
-      }
-      putCmd(io, [targetId], cmd, state);
-      notTargetEmit(targetId, state.client, io);
-      break;
-    case "METRONOME":
-      cmd = {
-        cmd: "METRONOME",
+        gain: cmdState.GAIN.SIMULATE,
       };
 
-      if (target) {
-        if (state.current.cmd[cmd.cmd].includes(target)) {
-          cmd.flag = false;
-          cmd.gain = state.cmd.GAIN.METRONOME;
-          for (let id in state.current.cmd.METRONOME) {
-            if (target === state.current.cmd.METRONOME[id]) {
-              cmd.value = state.cmd.METRONOME[target];
-              delete state.current.cmd[cmd.cmd][id];
-            }
-          }
-          console.log(state.current.cmd.METRONOME);
-        } else {
-          cmd.flag = true;
-          cmd.gain = state.cmd.GAIN.METRONOME;
-          state.current.cmd.METRONOME.push(target);
-          cmd.value = state.cmd.METRONOME[target];
-        }
-      } else {
-        if (state.current.cmd.METRONOME.length === 0) {
-          cmd.flag = true;
-          cmd.gain = state.cmd.GAIN.METRONOME;
-          target =
-            state.client[Math.floor(Math.random() * state.client.length)];
-          state.current.cmd[cmd.cmd].push(target);
-          cmd.value = state.cmd.METRONOME[target];
-        } else {
-          cmd.flag = false;
-          cmd.gain = state.cmd.GAIN.METRONOME;
-          target = state.current.cmd.METRONOME.shift();
-          cmd.value = state.cmd.METRONOME[target];
-        }
-      }
-      putCmd(io, [target], cmd, state);
-      notTargetEmit(target, state.client, io);
-      console.log("metronome");
+      // if (target) {
+      //   targetId = target;
+      // } else {
+      //   targetId = Object.keys(clientState.client)[
+      //     Math.floor(Math.random() * Object.keys(clientState.client).length)
+      //   ];
+      // }
+      // putCmd(io, [targetId], cmd);
+      putCmd(io, targetIdArr, cmd);
+      // notTargetEmit(targetId, Object.keys(clientState.client), io);
+      break;
+    case "METRONOME":
+      metronomeEmit(io, cmd, target);
       break;
     case "PREVIOUS":
     case "PREV":
       console.log("previous");
-      previousCmd(io, state);
+      previousCmd(io);
       break;
     /*
     case 'RECORD':

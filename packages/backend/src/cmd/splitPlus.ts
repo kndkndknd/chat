@@ -1,63 +1,65 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global";
 import { cmdEmit } from "./cmdEmit";
 import { sinewaveEmit } from "./sinewaveEmit";
 import { chatPreparation } from "../stream/chatPreparation";
 import { streamEmit } from "../stream/streamEmit";
 import { stopEmit } from "./stopEmit";
-import { cmdList, streamList, parameterList } from "../states";
+import { clientState, cmdState, currentState, streamState } from "../state";
+import { cmdList, streamList, parameterList } from "../data";
 import { sinewaveChange } from "./sinewaveChange";
-import { parameterChange } from "./parameterChange";
+import { parameterChange } from "../parameterChange";
+import { getTypeArr } from "./splitSpace/getTypeArr";
+import { mergeStreamTarget } from "../stream/mergeStreamTarget";
 
 export const splitPlus = (
   stringArr: Array<string>,
   io: SocketIO.Server,
-  state: cmdStateType
+  // state: cmdStateType
 ) => {
-  const arrTypeArr = stringArr.map((string) => {
-    if (/^([1-9]\d*|0)(\.\d+)?$/.test(string)) {
-      return "number";
-    } else if (/^[A-Za-z]*$/.test(string)) {
-      return "string";
-    } else {
-      return "other";
-    }
-  });
+  const arrTypeArr = getTypeArr(stringArr);
 
   stringArr.forEach((string, index) => {
-    const target = state.client[Number(stringArr[0])];
+    // const target = Object.keys(clientState.client)[Number(stringArr[0])];
     if (string === "CHAT") {
-      chatPreparation(io, state);
+      chatPreparation(io);
     } else if (string === "RECORD" || string === "REC") {
-      if (!state.current.RECORD) {
-        state.current.RECORD = true;
+      if (!currentState.RECORD) {
+        currentState.RECORD = true;
         io.emit("recordReqFromServer", { target: "PLAYBACK", timeout: 10000 });
-        if (state.cmd.VOICE.length > 0) {
-          state.cmd.VOICE.forEach((element) => {
+        if (cmdState.VOICE.length > 0) {
+          cmdState.VOICE.forEach((element) => {
             io.to(element).emit("voiceFromServer", {
               text: "RECORD",
-              lang: state.cmd.voiceLang,
+              lang: cmdState.voiceLang,
             });
           });
         }
       } else {
-        state.current.RECORD = false;
+        currentState.RECORD = false;
       }
     } else if (streamList.includes(string)) {
-      state.current.stream[string] = true;
-      streamEmit(string, io, state);
+      currentState.stream[string] = true;
+      streamEmit(string, io);
     } else if (Object.keys(cmdList).includes(string)) {
-      cmdEmit(cmdList[string], io, state, target);
+      const target = clientState.cmdClient[Number(stringArr[0])];
+      cmdEmit(cmdList[string], io, target);
     } else if (Number.isFinite(Number(string))) {
-      sinewaveEmit(Number(string), io, state, target);
+      const target = clientState.cmdClient[Number(stringArr[0])];
+      sinewaveEmit(Number(string), io, target);
     } else if (string === "TWICE" || string === "HALF") {
-      sinewaveChange(string, io, state);
+      sinewaveChange(string, io);
       // } else if (strings === 'PREVIOUS' || strings === 'PREV') {
       // previousCmd(io, state)
     } else if (Object.keys(parameterList).includes(string)) {
-      parameterChange(parameterList[string], io, state, { source: target });
+      const target =
+        string === "PORTAMENT"
+          ? clientState.cmdClient[Number(stringArr[0])]
+          : string === "VOICE" || string === "BPM"
+            ? Object.keys(clientState.client)[Number(stringArr[0])]
+            : mergeStreamTarget(streamState)[Number(stringArr[0])];
+      parameterChange(parameterList[string], io, { source: target });
     } else if (string === "STOP") {
-      stopEmit(io, state, "ALL");
+      stopEmit(io, "", "ALL");
     }
   });
 };

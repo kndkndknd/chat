@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.helpList = exports.uploadParams = exports.parameterList = exports.streamList = exports.cmdList = exports.chat_web = exports.streams = exports.basisBufferSize = exports.states = void 0;
+exports.streamApiUrl = exports.helpList = exports.uploadParams = exports.parameterList = exports.streamList = exports.cmdList = exports.chat_web = exports.streams = exports.oneshots = exports.chats = exports.states = void 0;
 exports.states = {
     cmd: {
         GAIN: {
@@ -25,7 +25,9 @@ exports.states = {
         voiceLang: "en-US",
         METRONOME: {},
     },
-    client: [],
+    client: {},
+    cmdClient: [],
+    streamClient: [],
     sinewaveClient: [],
     current: {
         cmd: {
@@ -43,6 +45,27 @@ exports.states = {
         },
         RECORD: false,
     },
+    form: {
+        hls: {
+            knd: "KND",
+        },
+        cmd: {
+            ノイズ: "WHITENOISE",
+            サイン波: "SINEWAVE",
+            クリック: "CLICK",
+            フィードバック: "FEEDBACK",
+            ハウリング: "FEEDBACK",
+            発振: "FEEDBACK",
+            チャット: "CHAT",
+            話: "CHAT",
+            録: "RECORD",
+            再生: "PLAYBACK",
+            振り返: "TIMELAPSE",
+            前: "PREVIOUS",
+            低温: "BASS",
+        },
+    },
+    hls: [],
     previous: {
         text: "",
         cmd: {
@@ -61,6 +84,7 @@ exports.states = {
         RECORD: false,
     },
     stream: {
+        basisBufferSize: 8192,
         sampleRate: {
             CHAT: 44100,
             PLAYBACK: 44100,
@@ -98,17 +122,19 @@ exports.states = {
             PLAYBACK: false,
             TIMELAPSE: false,
         },
+        randomratemode: "random",
+        randomratekey: "A",
         randomraterange: {
             CHAT: {
-                min: 5000,
+                min: 4300,
                 max: 132300,
             },
             PLAYBACK: {
-                min: 5000,
+                min: 4300,
                 max: 132300,
             },
             TIMELAPSE: {
-                min: 5000,
+                min: 4300,
                 max: 132300,
             },
         },
@@ -117,9 +143,10 @@ exports.states = {
             PLAYBACK: false,
             TIMELAPSE: false,
         },
-        quantize: false,
+        quantize: {},
         loop: false,
         timelapse: false,
+        floating: false,
     },
     web: {
         flag: false,
@@ -129,51 +156,63 @@ exports.states = {
     bpm: {},
     clockMode: false,
     arduino: {
-        host: "localhost",
+        // host: "localhost",
+        host: "pi5.local",
+        // host: "192.168.15.166",
         port: 5050,
         connected: false,
         relay: "off",
     },
+    emoji: false,
+    timer: true,
 };
-exports.basisBufferSize = 8192;
-exports.streams = {
-    CHAT: [],
+exports.chats = [];
+exports.oneshots = {
     KICK: {
         audio: [],
         video: [],
-        bufferSize: exports.basisBufferSize,
+        bufferSize: exports.states.stream.basisBufferSize,
     },
     SNARE: {
         audio: [],
         video: [],
-        bufferSize: exports.basisBufferSize,
+        bufferSize: exports.states.stream.basisBufferSize,
     },
     HAT: {
         audio: [],
         video: [],
-        bufferSize: exports.basisBufferSize,
+        bufferSize: exports.states.stream.basisBufferSize,
     },
     SILENCE: {
         audio: [],
         video: [],
-        bufferSize: exports.basisBufferSize,
+        bufferSize: exports.states.stream.basisBufferSize,
     },
-    PLAYBACK: [],
+};
+exports.streams = {
+    PLAYBACK: {
+        audio: [],
+        video: [],
+        index: 0,
+        bufferSize: exports.states.stream.basisBufferSize,
+    },
     TIMELAPSE: {
         audio: [],
         video: [],
         index: 0,
-        bufferSize: exports.basisBufferSize,
+        bufferSize: exports.states.stream.basisBufferSize,
     },
     INTERNET: {
         audio: [],
         video: [],
         index: 0,
+        bufferSize: exports.states.stream.basisBufferSize,
     },
     EMPTY: {
         audio: [],
         video: [],
-        index: [],
+        index: 0,
+        bufferSize: exports.states.stream.basisBufferSize,
     },
 };
 exports.chat_web = true;
@@ -225,4 +264,5 @@ exports.helpList = {
     PREVIOUS: "STOPする直前に再生されていた内容をまとめて再生する。PREVでも可",
     INSERT: "自宅のサーバのDBにPLAYBACK等を保存する INSERT (STREAM名) (場所) (日付)の形式で実行する",
 };
+exports.streamApiUrl = "http://127.0.0.1:8088/getLiveStream";
 //# sourceMappingURL=states.js.map

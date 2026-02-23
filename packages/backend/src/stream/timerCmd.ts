@@ -1,11 +1,10 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global";
-import { receiveEnter } from "./receiveEnter";
-import { stopEmit } from "./stopEmit";
+import { receiveEnter } from "../cmd/receiveEnter";
+import { stopEmit } from "../cmd/stopEmit";
+import { clientState, currentState } from "../state";
 
 export const timerCmd = (
   io: SocketIO.Server,
-  state: cmdStateType,
   stringArr: string[],
   timeStampArr: string[]
 ) => {
@@ -36,21 +35,22 @@ export const timerCmd = (
 
   if (timerVal > 0) {
     setTimeout(() => {
-      const targetId =
-        state.client[Math.floor(Math.random() * state.client.length)];
+      const targetId = Object.keys(clientState.client)[
+        Math.floor(Math.random() * Object.keys(clientState.client).length)
+      ];
       if (
-        Object.keys(state.current.cmd).includes(
+        Object.keys(currentState.cmd).includes(
           stringArr[stringArr.length - 1]
         ) ||
-        Object.keys(state.current.stream).includes(
+        Object.keys(currentState.stream).includes(
           stringArr[stringArr.length - 1]
         )
       ) {
-        receiveEnter(cmdString, targetId, io, state);
+        receiveEnter(cmdString, targetId, io);
       } else if (stringArr[1] === "STOP") {
         if (stringArr.length === 2) {
           const client = "all";
-          stopEmit(io, state, "ALL", client);
+          stopEmit(io, "", "ALL", client);
           /*
         } else if(stringArr.length === 3) {
           if(stringArr[2] === 'SINEWAVECLIENT') {

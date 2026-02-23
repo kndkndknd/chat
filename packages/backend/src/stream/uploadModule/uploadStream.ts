@@ -1,6 +1,7 @@
 import * as path from "path";
-import * as fs from "fs";
-import { fileURLToPath } from "url";
+// import * as fs from "fs";
+// import { fileURLToPath } from "url";
+// import { pushStateStream } from "../pushStateStream";
 
 // const pcm = require("pcm");
 // const util = require("util");
@@ -9,17 +10,9 @@ import { fileURLToPath } from "url";
 // var readFile = util.promisify(fs.readFile);
 // var execPromise = util.promisify(exec);
 
-import {
-  streams,
-  cmdList,
-  streamList,
-  parameterList,
-  states,
-  uploadParams,
-  basisBufferSize,
-} from "../../states";
+import { streams, uploadParams } from "../../data";
+import { streamState } from "../../state";
 // import SocketIO from "socket.io";
-// import { cmdStateType } from "../..//types/global.js";
 
 import { getFilePath } from "./getFilePath";
 import { getDuration } from "./getDuration";
@@ -49,7 +42,8 @@ export const uploadStream = async (stringArr) => {
     streams[f.split(".")[0]] = {
       audio: [],
       video: [],
-      bufferSize: basisBufferSize,
+      bufferSize: streamState.basisBufferSize,
+      index: 0,
     };
   }
 
@@ -60,6 +54,7 @@ export const uploadStream = async (stringArr) => {
     case "webm":
       const duration = <number>await getDuration(mediaDirPath, f);
       const durationArr = durationPattern(duration, stringArr);
+      console.log("durationArr", durationArr);
       const videoUploadResult = await uploadVideo(f, durationArr, mediaDirPath);
       if (videoUploadResult) {
         return `${f.split(".")[0]} UPLOADED`;
@@ -76,10 +71,12 @@ export const uploadStream = async (stringArr) => {
       const audioUploadResult = await uploadAudio(f, mediaDirPath);
       if (audioUploadResult) {
         await console.log("audioUploadResult", audioUploadResult);
-        console.log(
+        await console.log(
           `${f.split(".")[0]} length: `,
           streams[f.split(".")[0]].audio.length
         );
+        // pushStateStream(f.split(".")[0], states, true);
+
         return await `${f.split(".")[0]} UPLOADED`;
       } else {
         console.log("audioUploadResult", audioUploadResult);

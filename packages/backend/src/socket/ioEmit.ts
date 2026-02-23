@@ -9,6 +9,7 @@ export const stringEmit = (
   console.log(strings);
   if (timeout === undefined) timeout = true;
   if (target === undefined) {
+    console.log("target is undefined", strings);
     io.emit("stringsFromServer", {
       strings: strings,
       timeout: timeout,

@@ -1,30 +1,31 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global";
+import { previousState } from "../state";
 import { cmdEmit } from "./cmdEmit";
 import { streamEmit } from "../stream/streamEmit";
 import { sinewaveEmit } from "./sinewaveEmit";
 import { chatPreparation } from "../stream/chatPreparation";
 
-export const previousCmd = (io: SocketIO.Server, state: cmdStateType) => {
-  console.log(state.previous.sinewave);
-  console.log(state.previous.cmd);
-  for (let cmd in state.previous.cmd) {
-    state.previous.cmd[cmd].forEach((target) => {
-      cmdEmit(cmd, io, state, target);
+export const previousCmd = (io: SocketIO.Server) => {
+  console.log("previous sinewave", previousState.sinewave);
+  console.log("previous cmd", previousState.cmd);
+  console.log("previous stream", previousState.stream);
+  for (let cmd in previousState.cmd) {
+    previousState.cmd[cmd].forEach((target) => {
+      cmdEmit(cmd, io, target);
     });
   }
-  for (let stream in state.previous.stream) {
-    if (state.previous.stream[stream]) {
+  for (let stream in previousState.stream) {
+    if (previousState.stream[stream]) {
       if (stream === "CHAT") {
         console.log("chat previous");
-        chatPreparation(io, state);
+        chatPreparation(io);
       } else {
-        streamEmit(stream, io, state);
+        streamEmit(stream, io);
       }
     }
   }
-  for (let target in state.previous.sinewave) {
-    console.log(state.previous.sinewave[target]);
-    sinewaveEmit(state.previous.sinewave[target], io, state, target);
+  for (let target in previousState.sinewave) {
+    console.log(previousState.sinewave[target]);
+    sinewaveEmit(previousState.sinewave[target], io, target);
   }
 };

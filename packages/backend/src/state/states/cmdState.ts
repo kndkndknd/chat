@@ -1,0 +1,25 @@
+import { cmdStateType } from "../../../../../types";
+
+export const cmdState: cmdStateType = {
+  GAIN: {
+    MASTER: 1.0,
+    SINEWAVE: 0.4,
+    FEEDBACK: 1,
+    WHITENOISE: 1.0,
+    CLICK: 0.9,
+    BASS: 1.5,
+    CHAT: 1.5,
+    GLITCH: 2,
+    SIMULATE: 1.0,
+    METRONOME: 0.9,
+  },
+  FADE: {
+    IN: 0,
+    OUT: 0,
+  },
+  SINEWAVE: {},
+  PORTAMENT: 0,
+  VOICE: [],
+  voiceLang: "en-US",
+  METRONOME: {},
+};

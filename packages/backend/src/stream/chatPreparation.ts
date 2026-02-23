@@ -1,21 +1,71 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global";
-import { pickupStreamTarget } from "./pickupStreamTarget";
+import { pickupStreamTarget, pickupPaStreamTarget } from "./pickupStreamTarget";
+import { currentState } from "../state";
 
-export const chatPreparation = (io: SocketIO.Server, state: cmdStateType) => {
-  console.log(state.current.stream.CHAT);
-  if (!state.current.stream.CHAT) {
-    console.log(state.client);
-    state.current.stream.CHAT = true;
-    const targetId = pickupStreamTarget(state, "CHAT");
-    console.log(targetId);
-    io.to(targetId).emit("chatReqFromServer");
-    if (state.cmd.VOICE.length > 0) {
-      state.cmd.VOICE.forEach((element) => {
-        io.to(element).emit("voiceFromServer", "CHAT");
-      });
+export const chatPreparation = async (io: SocketIO.Server) => {
+  console.log(currentState.stream.CHAT);
+  if (!currentState.stream.CHAT) {
+    // console.log(state.client);
+    currentState.stream.CHAT = true;
+    const targetId = pickupStreamTarget("CHAT");
+    if(targetId === "") {
+      return
     }
+
+    console.log(targetId);
+    // if (targetId !== "arduino") {
+    io.to(targetId).emit("chatReqFromServer");
+    // if (state.cmd.VOICE.length > 0) {
+    //   state.cmd.VOICE.forEach((element) => {
+    //     io.to(element).emit("voiceFromServer", "CHAT");
+    //   });
+    // }
+    // } else {
+    //   const crampResult = await switchCramp();
+    //   if (crampResult) {
+    //     await chatEmit(io);
+    //   } else {
+    //     setTimeout(() => {
+    //       chatEmit(io);
+    //     }, 500);
+    //   }
+    // }
   } else {
-    state.current.stream.CHAT = false;
+    currentState.stream.CHAT = false;
   }
 };
+
+export const paChatPreparation = async(io: SocketIO.Server) => {
+  if (!currentState.stream.CHAT) {
+    // console.log(state.client);
+    currentState.stream.CHAT = true;
+    const targetId = pickupPaStreamTarget();
+    if(targetId === "") {
+      return
+    }
+
+    console.log(targetId);
+    // if (targetId !== "arduino") {
+    io.to(targetId).emit("chatReqFromServer");
+    // if (state.cmd.VOICE.length > 0) {
+    //   state.cmd.VOICE.forEach((element) => {
+    //     io.to(element).emit("voiceFromServer", "CHAT");
+    //   });
+    // }
+    // } else {
+    //   const crampResult = await switchCramp();
+    //   if (crampResult) {
+    //     await chatEmit(io);
+    //   } else {
+    //     setTimeout(() => {
+    //       chatEmit(io);
+    //     }, 500);
+    //   }
+    // }
+  } else {
+    currentState.stream.CHAT = false;
+  }
+
+}
+
+// 20Hzを44100Hzのときの基準値としてみよう

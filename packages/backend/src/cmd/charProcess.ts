@@ -1,26 +1,36 @@
 import SocketIO from "socket.io";
-import { cmdStateType } from "../types/global";
+import { previousState } from "../state";
 import { receiveEnter } from "./receiveEnter";
 import { stopEmit } from "./stopEmit";
 import { metronomeBpmSet } from "./metronomeBpmSet";
 import { stringEmit } from "../socket/ioEmit";
+import { getLogCmd, resetCmdLogNum } from "../logging/getLogCmd";
+import { cmdLogging } from "../logging/cmdLogging";
+// import { get } from "http";
+
+let cmdLogNum = 0;
 
 export function charProcess(
   character: string,
   strings: string,
   id: string,
-  io: SocketIO.Server,
-  state: cmdStateType
+  io: SocketIO.Server
 ) {
   //console.log(character)
   if (character === "Enter") {
-    receiveEnter(strings, id, io, state);
+    receiveEnter(strings, id, io);
+    resetCmdLogNum();
     strings = "";
-  } else if (
-    character === "Tab" ||
-    character === "ArrowRight" ||
-    character === "ArrowDown"
-  ) {
+  } else if (character === "ArrowUp" || character === "ArrowDown") {
+    // if (character === "ArrowUp") {
+    //   cmdLogNum++;
+    // } else if (character === "ArrowDown" && cmdLogNum > 0) {
+    //   cmdLogNum--;
+    // }
+    // strings = getLogCmd(cmdLogNum);
+    strings = getLogCmd(character);
+    stringEmit(io, strings, false);
+  } else if (character === "Tab" || character === "ArrowRight") {
     io.emit("erasePrintFromServer", "");
     strings = "";
   } else if (character === "ArrowLeft" || character === "Backspace") {
@@ -29,29 +39,31 @@ export function charProcess(
   } else if (character === "Escape") {
     // const client: 'client' | 'sinewaveClient' = state.sinewaveMode ? "sinewaveClient" : "client";
     // console.log(client)
-    stopEmit(io, state, "ALL", "all");
+    cmdLogging("STOP");
+    stopEmit(io, id, "ALL");
     strings = "";
   } else if (character === "BASS") {
+    cmdLogging("BASS");
     console.log(
       "io.to(" + id + ').emit("cmdFromSever",{"cmd":"BASS","property":"LOW"})'
     );
     io.to(id).emit("cmdFromServer", { cmd: "BASS", property: "LOW" });
-    state.previous.text = "BASS";
+    previousState.text = "BASS";
   } else if (character === "BASSS") {
     console.log(
       "io.to(" + id + ').emit("cmdFromSever",{"cmd":"BASS","property":"HIGH"})'
     );
     io.to(id).emit("cmdFromServer", { cmd: "BASS", property: "HIGH" });
-    state.previous.text = "BASSS";
+    previousState.text = "BASSS";
   } else if (character === "ArrowDown") {
     strings = "";
   } else if (character === "ArrowUp") {
     console.log("up arrow");
-    console.log(state.previous.text);
-    strings = state.previous.text;
+    console.log(previousState.text);
+    strings = previousState.text;
     io.emit("stringFromServer", { strings: strings, timeout: false });
   } else if (character === " " && strings === "") {
-    metronomeBpmSet(io, state, id);
+    metronomeBpmSet(io, id);
   } else if (character === "Shift") {
   } else if (character != undefined) {
     strings = strings + character;

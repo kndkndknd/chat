@@ -7,15 +7,7 @@ import * as path from "path";
 // var readFile = util.promisify(fs.readFile);
 // var execPromise = util.promisify(exec);
 
-import {
-  streams,
-  cmdList,
-  streamList,
-  parameterList,
-  states,
-  uploadParams,
-  basisBufferSize,
-} from "../../states";
+import { uploadParams } from "../../data";
 
 export const getFilePath = async (fileString, mediaDirPath) => {
   console.log(uploadParams);

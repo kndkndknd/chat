@@ -2,9 +2,11 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parameterChange = void 0;
 // import { putString } from './putString'
-const states_js_1 = require("../states.js");
-const putCmd_js_1 = require("./putCmd.js");
-const ioEmit_js_1 = require("../socket/ioEmit.js");
+const states_1 = require("../states");
+const putCmd_1 = require("./putCmd");
+const ioEmit_1 = require("../socket/ioEmit");
+const notTargetEmit_1 = require("./notTargetEmit");
+const bpmCalc_1 = require("./bpmCalc");
 const parameterChange = (param, io, state, arg) => {
     switch (param) {
         case "PORTAMENT":
@@ -20,7 +22,7 @@ const parameterChange = (param, io, state, arg) => {
                 }
             }
             // io.emit('stringsFromServer',{strings: 'PORTAMENT: ' + String(state.cmd.PORTAMENT) + 'sec', timeout: true})
-            (0, ioEmit_js_1.stringEmit)(io, "PORTAMENT: " + String(state.cmd.PORTAMENT) + "sec");
+            (0, ioEmit_1.stringEmit)(io, "PORTAMENT: " + String(state.cmd.PORTAMENT) + "sec");
             break;
         case "SAMPLERATE":
             let sampleRate = 44100;
@@ -47,49 +49,53 @@ const parameterChange = (param, io, state, arg) => {
                 }
             }
             if (arg && arg.property) {
-                console.log("hit source");
+                // console.log("hit source");
                 state.stream.sampleRate[arg.property] = sampleRate;
                 // io.emit('stringsFromServer',{strings: 'SampleRate: ' + String(state.stream.sampleRate[arg.source]) + 'Hz', timeout: true})
-                (0, ioEmit_js_1.stringEmit)(io, "SampleRate: " + String(state.stream.sampleRate[arg.property]) + "Hz"
+                (0, ioEmit_1.stringEmit)(io, "SampleRate: " + String(state.stream.sampleRate[arg.property]) + "Hz"
                 // state
                 );
             }
             else {
                 console.log(arg);
-                for (let source in state.stream.sampleRate) {
-                    state.stream.sampleRate[source] = sampleRate;
+                for (let target in state.stream.sampleRate) {
+                    state.stream.sampleRate[target] = sampleRate;
                 }
                 // io.emit('stringsFromServer',{strings: 'SampleRate: ' + String(state.stream.sampleRate.CHAT) + 'Hz', timeout: true})
-                (0, ioEmit_js_1.stringEmit)(io, "SampleRate: " + String(state.stream.sampleRate.CHAT) + "Hz"
+                (0, ioEmit_1.stringEmit)(io, "SampleRate: " + String(state.stream.sampleRate.CHAT) + "Hz"
                 // state
                 );
             }
             break;
         case "GLITCH":
             if (arg && arg.property) {
-                state.stream.glitch[arg.source] = !state.stream.glitch[arg.source];
+                state.stream.glitch[arg.property] = !state.stream.glitch[arg.property];
                 // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(state.stream.glitch[arg.source]), timeout: true})
-                (0, ioEmit_js_1.stringEmit)(io, "GLITCH: " + String(state.stream.glitch[arg.source])
+                // console.log(arg.property, state.stream.glitch);
+                // console.log(
+                //   `GLITCH ${arg.property}: ${state.stream.glitch[arg.property]}`
+                // );
+                (0, ioEmit_1.stringEmit)(io, `GLITCH ${arg.property}: ${state.stream.glitch[arg.property]}`, true
                 // state
                 );
             }
             else {
                 let flag = false;
-                if (Object.values(states_js_1.states.stream.glitch).includes(false)) {
+                if (Object.values(states_1.states.stream.glitch).includes(false)) {
                     flag = true;
                 }
-                for (let source in state.stream.glitch) {
-                    state.stream.glitch[source] = flag;
+                for (let target in state.stream.glitch) {
+                    state.stream.glitch[target] = flag;
                 }
                 // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(state.stream.glitch.CHAT), timeout: true})
-                (0, ioEmit_js_1.stringEmit)(io, "GLITCH: " + String(state.stream.glitch.CHAT));
+                (0, ioEmit_1.stringEmit)(io, "GLITCH: " + String(state.stream.glitch.CHAT), true);
             }
             break;
         case "GRID":
             if (arg && arg.property) {
                 state.stream.grid[arg.property] = !state.stream.grid[arg.property];
                 // io.emit('stringsFromServer',{strings: 'GRID: ' + String(state.stream.grid[arg.property]) + '(' + arg.property + ')', timeout: true})
-                (0, ioEmit_js_1.stringEmit)(io, "GRID: " +
+                (0, ioEmit_1.stringEmit)(io, "GRID: " +
                     String(state.stream.grid[arg.property]) +
                     "(" +
                     arg.property +
@@ -99,33 +105,36 @@ const parameterChange = (param, io, state, arg) => {
             }
             else {
                 let flag = false;
-                if (Object.values(states_js_1.states.stream.grid).includes(false)) {
+                if (Object.values(states_1.states.stream.grid).includes(false)) {
                     flag = true;
                 }
-                for (let source in state.stream.grid) {
-                    state.stream.grid[source] = flag;
+                for (let target in state.stream.grid) {
+                    state.stream.grid[target] = flag;
                 }
                 // io.emit('stringsFromServer',{strings: 'GRID: ' + String(state.stream.grid.CHAT), timeout: true})
-                (0, ioEmit_js_1.stringEmit)(io, "GRID: " + String(state.stream.grid.CHAT));
+                (0, ioEmit_1.stringEmit)(io, "GRID: " + String(state.stream.grid.CHAT));
             }
             break;
         case "BPM":
             if (arg && arg.value) {
                 const latency = (60 * 1000) / arg.value;
+                const bar = (0, bpmCalc_1.millisecondsPerBar)(arg.value);
                 if (arg.property) {
                     // propertyがSTREAMを指定している場合
                     if (Object.keys(state.stream.latency).includes(arg.property)) {
                         state.stream.latency[arg.property] = latency;
-                        (0, ioEmit_js_1.stringEmit)(io, "BPM: " + String(arg.value) + "(" + arg.property + ")"
+                        // state.cmd.METRONOME = {};
+                        (0, ioEmit_1.stringEmit)(io, "BPM: " + String(arg.value) + "(" + arg.property + ")"
                         // state
                         );
                         // propertyが端末番号を指定している場合
                     }
                     else if (/^([1-9]\d*|0)(\.\d+)?$/.test(arg.property)) {
-                        const target = state.client[Number(arg.property)];
+                        const target = Object.keys(state.client)[Number(arg.property)];
                         if (Object.keys(state.cmd.METRONOME).includes(target)) {
                             state.cmd.METRONOME[target] = latency;
-                            (0, ioEmit_js_1.stringEmit)(io, "BPM: " + String(arg.value) + "(client " + arg.property + ")"
+                            state.bpm[target] = arg.value;
+                            (0, ioEmit_1.stringEmit)(io, "BPM: " + String(arg.value) + "(client " + arg.property + ")"
                             // state
                             );
                         }
@@ -136,7 +145,11 @@ const parameterChange = (param, io, state, arg) => {
                                 gain: state.cmd.GAIN.METRONOME,
                                 value: latency,
                             };
-                            (0, putCmd_js_1.putCmd)(io, [target], cmd, state);
+                            (0, putCmd_1.putCmd)(io, [target], cmd, state);
+                            io.to(target).emit("bpmFromServer", {
+                                bpm: arg.value,
+                                bar: bar,
+                            });
                         }
                     }
                     // io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value)  + '(' + arg.property + ')', timeout: true})
@@ -148,6 +161,9 @@ const parameterChange = (param, io, state, arg) => {
                     for (let target in state.cmd.METRONOME) {
                         state.cmd.METRONOME[target] = latency;
                     }
+                    for (let target in state.bpm) {
+                        state.bpm[target] = arg.value;
+                    }
                     if (state.current.cmd.METRONOME.length > 0) {
                         state.current.cmd.METRONOME.forEach((target) => {
                             const cmd = {
@@ -156,58 +172,85 @@ const parameterChange = (param, io, state, arg) => {
                                 gain: state.cmd.GAIN.METRONOME,
                                 value: latency,
                             };
-                            (0, putCmd_js_1.putCmd)(io, [target], cmd, state);
+                            (0, putCmd_1.putCmd)(io, [target], cmd, state);
                         });
                     }
-                    (0, ioEmit_js_1.stringEmit)(io, "BPM: " + String(arg.value));
+                    (0, ioEmit_1.stringEmit)(io, "BPM: " + String(arg.value));
+                    io.emit("bpmFromServer", {
+                        bpm: arg.value,
+                        bar: bar,
+                    });
                     // io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value), timeout: true})
                 }
             }
             break;
         case "RANDOM":
-            if (arg && arg.source) {
-                state.stream.random[arg.source] = !state.stream.random[arg.source];
-                // io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random[arg.source]), timeout: true})
-                (0, ioEmit_js_1.stringEmit)(io, "RANDOM: " + String(state.stream.random[arg.source])
-                // state
-                );
+            // if (arg && arg.source) {
+            //   state.stream.random[arg.source] = !state.stream.random[arg.source];
+            //   // io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random[arg.source]), timeout: true})
+            //   stringEmit(
+            //     io,
+            //     "RANDOM: " + String(state.stream.random[arg.source])
+            //     // state
+            //   );
+            // } else {
+            let flag = false;
+            console.log(Object.values(states_1.states.stream.random));
+            if (Object.values(states_1.states.stream.random).includes(false)) {
+                flag = true;
             }
-            else {
-                let flag = false;
-                if (Object.values(states_js_1.states.stream.random).includes(false)) {
-                    flag = true;
-                }
-                for (let target in state.stream.random) {
-                    state.stream.random[target] = flag;
-                }
-                //io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random.CHAT), timeout: true})
-                (0, ioEmit_js_1.stringEmit)(io, "RANDOM: " + String(state.stream.random.CHAT));
+            for (let target in state.stream.random) {
+                console.log(target, flag);
+                state.stream.random[target] = flag;
             }
+            //io.emit('stringsFromServer',{strings: 'RANDOM: ' + String(state.stream.random.CHAT), timeout: true})
+            (0, ioEmit_1.stringEmit)(io, "RANDOM: " + String(state.stream.random.CHAT));
+            // }
+            console.log(state.stream.random);
             break;
         case "VOICE":
             if (arg && arg.source) {
-                let flag = false;
-                if (state.cmd.VOICE.includes(arg.source)) {
-                    const arr = [];
-                    for (let i = 0; i < state.cmd.VOICE.length; i++) {
-                        if (state.cmd.VOICE[i] === arg.source) {
-                            continue;
+                if (arg.value === undefined) {
+                    let flag = false;
+                    if (state.cmd.VOICE.includes(arg.source)) {
+                        // sourceが既にVOICEに含まれている場合取り除く
+                        const arr = [];
+                        for (let i = 0; i < state.cmd.VOICE.length; i++) {
+                            if (state.cmd.VOICE[i] === arg.source) {
+                                continue;
+                            }
+                            else {
+                                arr.push(state.cmd.VOICE[i]);
+                            }
                         }
-                        else {
-                            arr.push(state.cmd.VOICE[i]);
-                        }
+                        state.cmd.VOICE = arr;
+                        // state.cmd.VOICE.filter((id) => {
+                        // })
+                        console.log(state.cmd.VOICE);
                     }
-                    state.cmd.VOICE = arr;
-                    // state.cmd.VOICE.filter((id) => {
-                    // })
-                    console.log(state.cmd.VOICE);
+                    else {
+                        state.cmd.VOICE.push(arg.source);
+                        flag = true;
+                    }
+                    // io.emit('stringsFromServer',{strings: 'VOICE: ' + String(flag), timeout: true})
+                    (0, ioEmit_1.stringEmit)(io, "VOICE: " + String(flag), true, arg.source);
+                    (0, notTargetEmit_1.notTargetEmit)(arg.source, Object.keys(state.client), io);
                 }
                 else {
-                    state.cmd.VOICE.push(arg.source);
-                    flag = true;
+                    if (arg.value === 0) {
+                        let filtered = state.cmd.VOICE.filter((element) => element !== arg.source);
+                        state.cmd.VOICE = filtered;
+                        (0, ioEmit_1.stringEmit)(io, "VOICE: false", true, arg.source);
+                        (0, notTargetEmit_1.notTargetEmit)(arg.source, Object.keys(state.client), io);
+                    }
+                    else {
+                        if (!state.cmd.VOICE.includes(arg.source)) {
+                            state.cmd.VOICE.push(arg.source);
+                        }
+                        (0, ioEmit_1.stringEmit)(io, "VOICE: true", true, arg.source);
+                        (0, notTargetEmit_1.notTargetEmit)(arg.source, Object.keys(state.client), io);
+                    }
                 }
-                // io.emit('stringsFromServer',{strings: 'VOICE: ' + String(flag), timeout: true})
-                (0, ioEmit_js_1.stringEmit)(io, "VOICE: " + String(flag));
             }
             break;
     }
