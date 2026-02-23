@@ -44,7 +44,6 @@ import {
   initAudioStream,
   streamPlay,
 } from "../stream";
-import { quantize, quantizePlay, quantizeStop } from "../quantize";
 
 import { cmdFromServer, stopCmd } from "../cmd";
 
@@ -76,7 +75,7 @@ eListener.addEventListener(
       initialize();
     }
   },
-  false
+  false,
 );
 
 window.addEventListener("resize", (e) => {
@@ -103,18 +102,18 @@ socketState.socket.on(
     erasePrint();
     console.log("stringsFromServer", data);
     stringsClient = data.strings;
-    textPrint(stringsClient);
-    if (data.timeout) {
-      setTimeout(() => {
-        erasePrint();
-      }, 500);
-    }
+    textPrint(stringsClient, { timeout: data.timeout });
+    // if (data.timeout) {
+    //   setTimeout(() => {
+    //     erasePrint();
+    //   }, 500);
+    // }
     if (cinemaFlag) {
       setTimeout(() => {
         erasePrint();
       }, 500);
     }
-  }
+  },
 );
 socketState.socket.on("erasePrintFromServer", () => {
   // erasePrint(stx, strCnvs)
@@ -137,7 +136,7 @@ socketState.socket.on(
   }) => {
     cmdFromServer(cmd);
     stringsClient = "";
-  }
+  },
 );
 
 socketState.socket.on(
@@ -150,11 +149,11 @@ socketState.socket.on(
       stopCmd(data.fadeOutVal, "HLS");
     }
     // erasePrint(stx, strCnvs)
-    textPrint("STOP");
-    setTimeout(() => {
-      erasePrint();
-    }, 800);
-  }
+    textPrint("STOP", { timeout: true });
+    // setTimeout(() => {
+    //   erasePrint();
+    // }, 800);
+  },
 );
 
 socketState.socket.on("textFromServer", (data: { text: string }) => {
@@ -178,11 +177,11 @@ socketState.socket.on(
   "recordReqFromServer",
   (data: { source: string; timeout: number }) => {
     recordReqFromServer(data);
-    textPrint("RECORD");
-    setTimeout(() => {
-      erasePrint();
-    }, data.timeout);
-  }
+    textPrint("RECORD", { timeout: true, timeoutDuration: data.timeout });
+    // setTimeout(() => {
+    //   erasePrint();
+    // }, data.timeout);
+  },
 );
 
 // CHATのみ向けにする
@@ -221,7 +220,7 @@ socketState.socket.on(
         showImage(data.video, data.position);
       }
     }
-  }
+  },
 );
 
 // CHAT以外のSTREAM向け
@@ -249,14 +248,14 @@ socketState.socket.on(
         showImage(data.video, data.position);
       }
     }
-  }
+  },
 );
 
 socketState.socket.on(
   "voiceFromServer",
   (data: { text: string; lang: string }) => {
     // speechVoice(data);
-  }
+  },
 );
 
 socketState.socket.on("gainFromServer", (data) => {
@@ -274,7 +273,7 @@ socketState.socket.on("windowReqFromServer", (data: newWindowReqType) => {
       ",top=" +
       String(data.top) +
       ",left=" +
-      String(data.left)
+      String(data.left),
   );
   click(1.0);
 });
@@ -302,18 +301,18 @@ socketState.socket.on(
       clockBase = 0;
       clockModeId = disableClockMode(clockModeId);
     }
-  }
+  },
 );
 
 socketState.socket.on(
   "emojiFromServer",
   (data: { state: boolean; text: string }) => {
-    textPrint(data.text);
-    setTimeout(() => {
-      erasePrint();
-    }, 500);
+    textPrint(data.text, { timeout: true });
+    // setTimeout(() => {
+    //   erasePrint();
+    // }, 500);
     emojiState(data.state);
-  }
+  },
 );
 
 // socketState.socket.on("bpmFromServer", (data: { bpm: number; bar: number }) => {
@@ -330,32 +329,36 @@ socketState.socket.on(
 //   }
 // });
 
-// WebRTC
-const localVideo = <HTMLVideoElement>document.getElementById("local");
-const remoteVideo = <HTMLVideoElement>document.getElementById("remote");
-
-socketState.socket.on("rtcConnectionFromServer", async (data) => {
-  console.log("rtcConnectionFromServer");
-  if (data.type === "offer") {
-    console.log("offer");
-    await webRtcState.peerConnection?.setRemoteDescription(data);
-    const answer = await webRtcState.peerConnection?.createAnswer();
-    if (answer) {
-      await webRtcState.peerConnection?.setLocalDescription(answer);
-      socketState.socket.emit(
-        "rtcConnectionFromClient",
-        JSON.stringify(webRtcState.peerConnection?.localDescription)
-      );
-      console.log("send answer");
-    }
-  } else if (data.type === "answer") {
-    console.log("reseive answer and set remote description");
-    await webRtcState.peerConnection?.setRemoteDescription(data);
-  } else if (data.type === "candidate") {
-    console.log("add candidate");
-    await webRtcState.peerConnection?.addIceCandidate(data.candidate);
-  }
+// // WebRTC
+socketState.socket.on("candidateReqFromServer", (data: { peers: string[] }) => {
+  textPrint("room: " + data.peers.join(","));
 });
+
+// const localVideo = <HTMLVideoElement>document.getElementById("local");
+// const remoteVideo = <HTMLVideoElement>document.getElementById("remote");
+
+// socketState.socket.on("rtcConnectionFromServer", async (data) => {
+//   console.log("rtcConnectionFromServer");
+//   if (data.type === "offer") {
+//     console.log("offer");
+//     await webRtcState.peerConnection?.setRemoteDescription(data);
+//     const answer = await webRtcState.peerConnection?.createAnswer();
+//     if (answer) {
+//       await webRtcState.peerConnection?.setLocalDescription(answer);
+//       socketState.socket.emit(
+//         "rtcConnectionFromClient",
+//         JSON.stringify(webRtcState.peerConnection?.localDescription)
+//       );
+//       console.log("send answer");
+//     }
+//   } else if (data.type === "answer") {
+//     console.log("reseive answer and set remote description");
+//     await webRtcState.peerConnection?.setRemoteDescription(data);
+//   } else if (data.type === "candidate") {
+//     console.log("add candidate");
+//     await webRtcState.peerConnection?.addIceCandidate(data.candidate);
+//   }
+// });
 
 /*
 socketState.socket.on("clockModeFromServer", (data: { clockMode: boolean }) => {
@@ -483,13 +486,13 @@ export const initialize = async () => {
           JSON.stringify({
             type: "candidate",
             candidate: event.candidate,
-          })
+          }),
         );
       }
     };
-    if (localVideo.srcObject === null) {
-      localVideo.srcObject = stream;
-    }
+    // if (localVideo.srcObject === null) {
+    //   localVideo.srcObject = stream;
+    // }
     stream.getTracks().forEach((track) => {
       console.log(track);
       webRtcState.peerConnection?.addTrack(track, stream);
@@ -499,14 +502,14 @@ export const initialize = async () => {
       erasePrint();
       webRtcState.peerConnection.ontrack = (event) => {
         console.log("ontrack");
-        if (
-          remoteVideo.srcObject === null &&
-          webRtcState.isConnected &&
-          event.streams !== null &&
-          event.streams.length > 0
-        ) {
-          remoteVideo.srcObject = event.streams[0];
-        }
+        // if (
+        //   remoteVideo.srcObject === null &&
+        //   webRtcState.isConnected &&
+        //   event.streams !== null &&
+        //   event.streams.length > 0
+        // ) {
+        //   remoteVideo.srcObject = event.streams[0];
+        // }
       };
     }, 500);
   } else {

@@ -120,19 +120,13 @@ export const ioServer = (
 
     // audioWorklet buffer
     socket.on(
-      "audiobufferFromClient",
-      (data: { buffer: ArrayBuffer; type: string }) => {
-        console.log("audiobufferFromClient");
-        console.log(data);
-        socket.emit("audiobufferFromServer", {
-          buffer: data.buffer,
-          type: data.type,
-        });
-      },
-    );
-    socket.on(
       "workletBufferFromClient",
-      (data: { video: string; audio: ArrayBuffer; source: string }) => {
+      (data: {
+        video: string;
+        audio: ArrayBuffer;
+        source: string;
+        bufferSize: number;
+      }) => {
         workletBufferFromClient(data, io);
       },
     );

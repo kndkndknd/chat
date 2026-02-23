@@ -43,7 +43,7 @@ async function init() {
   // model = await Vosk.createModel("model/vosk-model-small-en-us-0.15.tar.gz");
   model = await Vosk.createModel(
     // "../voskModel/vosk-model-en-us-0.22-lgraph.tar.gz"
-    "../voskModel/vosk-model-small-fr-0.22.tar.gz"
+    "../voskModel/vosk-model-small-fr-0.22.tar.gz",
     // "../voskModel/vosk-model-small-ja-0.22.tar.gz" // 日本語モデルを使用
   );
 
@@ -160,7 +160,7 @@ function initAndSpeak(text: string) {
       utterance.voice = frenchVoice;
     } else {
       console.warn(
-        "フランス語の音声が見つかりません。デフォルト音声を使用します。"
+        "フランス語の音声が見つかりません。デフォルト音声を使用します。",
       );
     }
     utterance.lang = "fr-FR";
@@ -198,7 +198,7 @@ const button = document.getElementById("wrapper");
 
 button.addEventListener("click", clickWrapper);
 
-textPrint("click screen 2 time", ctx);
+textPrint("click screen 2 time");
 
 socketState.socket.on("voskCtrlFromServer", (data) => {
   if (data.type === "flag") {
@@ -218,13 +218,16 @@ socketState.socket.on("voskCtrlFromServer", (data) => {
     if (voskState.interval) {
       clearInterval(voskState.interval);
     }
-    setTimeout(() => {
-      initAndSpeak(voskState.text);
-      voskState.text = "";
-      voskState.interval = window.setInterval(() => {
-        voskInterval();
-      }, voskState.intervalValue);
-    }, data.value - (now - voskState.startTime));
+    setTimeout(
+      () => {
+        initAndSpeak(voskState.text);
+        voskState.text = "";
+        voskState.interval = window.setInterval(() => {
+          voskInterval();
+        }, voskState.intervalValue);
+      },
+      data.value - (now - voskState.startTime),
+    );
     textPrint(`interval changed to ${voskState.intervalValue} ms`);
   }
   setTimeout(() => {

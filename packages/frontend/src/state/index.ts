@@ -6,6 +6,8 @@ import { bufferSizeState } from "./stream/bufferSizeState";
 import { quantizeState } from "./quantizeState";
 import { socketState } from "./socketState";
 import { timelapseState } from "./timelapseState";
+import { streamState } from "./streamState";
+import { canvasState } from "./canvasState";
 // import { webAudioState } from "./webAudioState";
 
 // webaudio
@@ -19,6 +21,7 @@ import { filterState } from "./webAudio/filterState";
 
 // webRTC
 import { webRtcState } from "./webRtcState";
+import { webRtcFrontState } from "./webRTC/webRtcFrontState";
 
 // voice
 import { voiceState } from "./voiceState";
@@ -26,9 +29,13 @@ import { voiceState } from "./voiceState";
 // audioWorklet
 import { audioWorkletState } from "./webAudio/audioWorkletState";
 
+import { torchState } from "./torchState";
+import { sensorState } from "./sensorState";
+
 export {
   audioWorkletState,
   bufferSizeState,
+  canvasState,
   contextState,
   convolverState,
   filterState,
@@ -39,11 +46,15 @@ export {
   otherNodeState,
   quantizeState,
   scriptProcessorState,
+  sensorState,
   socketState,
   streamFlagState,
   streamChunk,
+  streamState,
   timelapseState,
+  torchState,
   // webAudioState,
+  webRtcFrontState,
   webRtcState,
   voiceState,
 };

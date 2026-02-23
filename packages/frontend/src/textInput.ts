@@ -1,5 +1,4 @@
 import { Socket } from "socket.io-client";
-import { initialize } from "./main";
 import { textPrint, erasePrint, eraseText } from "./canvasEvent";
 import { bass } from "./webaudio";
 // import { frontState } from "./globalVariable";
@@ -13,7 +12,7 @@ export const keyDown = (
   stx = <CanvasRenderingContext2D>(
     (document.getElementById("cnvs") as HTMLCanvasElement).getContext("2d")
   ),
-  start?
+  start?,
 ) => {
   let character: string;
 
@@ -28,7 +27,7 @@ export const keyDown = (
     stringsClient = "BASS";
     bass(bassFlag, 0.4);
     if (bassFlag) {
-      textPrint(stringsClient, stx, strCnvs);
+      textPrint(stringsClient);
     } else {
       erasePrint(stx, strCnvs);
     }
@@ -55,7 +54,7 @@ export const keyDown = (
     if (character === "Enter" && stringsClient != "VOICE") stringsClient = "";
     //  erasePrint('strings', stx, strCnvs)
     eraseText(stx, strCnvs);
-    textPrint(stringsClient, stx, strCnvs);
+    textPrint(stringsClient);
     //  if(ctx) erasePrint('canvas', ctx, cnvs)
   }
 

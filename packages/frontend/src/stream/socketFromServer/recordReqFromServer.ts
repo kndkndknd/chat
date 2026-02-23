@@ -8,10 +8,12 @@ export const recordReqFromServer = (recordReq: {
   switch (recordReq.source) {
     case "PLAYBACK":
       // flagState.recordFlag = true;
+      console.log(`start record as ${recordReq.source}`);
       audioWorkletState.flag.PLAYBACK = true;
       setTimeout(() => {
         // flagState.recordFlag = false;
         audioWorkletState.flag.PLAYBACK = false;
+        console.log(`stop record as ${recordReq.source}`);
       }, recordReq.timeout);
       break;
     default:

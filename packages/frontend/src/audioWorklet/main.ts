@@ -29,6 +29,7 @@ export async function initAudioWorklet(stream: MediaStream, socket: Socket) {
     //   audioWorkletState.flag.PLAYBACK === false &&
     //   audioWorkletState.flag.TIMELAPSE === false
     // ) {
+    //   // console.log("no stream source flag is true, skip sending buffer");
     //   return;
     // }
     const { type, payload } = event.data ?? {};

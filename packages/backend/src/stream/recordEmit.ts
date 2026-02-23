@@ -39,7 +39,9 @@ export const recordAsOtherEmit = (
   source: string,
   target?: string,
 ) => {
+  console.log("target", target);
   if (!currentState.RECORD) {
+    console.log(`start record as ${source}`);
     currentState.RECORD = true;
     pushStateStream(source);
     if (target && target !== undefined) {
@@ -62,7 +64,7 @@ export const recordAsOtherEmit = (
       });
     }
   } else {
-    console.log("stop record");
+    console.log(`stop record as ${source}`);
     currentState.RECORD = false;
   }
 };
