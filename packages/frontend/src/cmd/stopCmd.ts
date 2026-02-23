@@ -4,6 +4,7 @@ import {
   metronomeState,
   flagState,
   streamFlagState,
+  audioWorkletState,
 } from "../state";
 
 export const stopCmd = (fade: number, except?: string) => {
@@ -33,6 +34,11 @@ export const stopCmd = (fade: number, except?: string) => {
   for (let key in streamFlagState) {
     streamFlagState[key] = false;
   }
+
+  for (const key in audioWorkletState.flag) {
+    audioWorkletState.flag[key] = false;
+  }
+
   console.log("stopCmd", streamFlagState);
   // const hlsVideo = document.getElementById("hls") as HTMLVideoElement;
 };

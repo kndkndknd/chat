@@ -37,7 +37,7 @@ export const recordAsOtherEmit = (
   io: SocketIO.Server,
   // state: cmdStateType,
   source: string,
-  target?: string
+  target?: string,
 ) => {
   if (!currentState.RECORD) {
     currentState.RECORD = true;
@@ -62,6 +62,7 @@ export const recordAsOtherEmit = (
       });
     }
   } else {
+    console.log("stop record");
     currentState.RECORD = false;
   }
 };

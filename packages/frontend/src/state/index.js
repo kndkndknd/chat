@@ -1,7 +1,8 @@
 import { flagState } from "./flagState";
 import { metronomeState } from "./metronomeState";
-import { streamFlagState } from "./streamFlagState";
-import { streamChunk } from "./streamChunk";
+import { streamFlagState } from "./stream/streamFlagState";
+import { streamChunk } from "./stream/streamChunk";
+import { bufferSizeState } from "./stream/bufferSizeState";
 import { quantizeState } from "./quantizeState";
 import { socketState } from "./socketState";
 import { timelapseState } from "./timelapseState";
@@ -20,6 +21,6 @@ import { webRtcState } from "./webRtcState";
 import { voiceState } from "./voiceState";
 // audioWorklet
 import { audioWorkletState } from "./webAudio/audioWorkletState";
-export { audioWorkletState, contextState, convolverState, filterState, flagState, gainState, metronomeState, oscState, otherNodeState, quantizeState, scriptProcessorState, socketState, streamFlagState, streamChunk, timelapseState, 
+export { audioWorkletState, bufferSizeState, contextState, convolverState, filterState, flagState, gainState, metronomeState, oscState, otherNodeState, quantizeState, scriptProcessorState, socketState, streamFlagState, streamChunk, timelapseState, 
 // webAudioState,
 webRtcState, voiceState, };

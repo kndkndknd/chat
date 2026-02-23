@@ -25,6 +25,8 @@ import { enterFromForm } from "../cmd/form/enterFromForm";
 import { stopEmit } from "../cmd/stopEmit";
 import { connectFromClient } from "../clientSetting/connectFromClient";
 
+import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
+
 // websocket
 import { sendCharWebSocket } from "../webSocket/sendChar";
 
@@ -38,7 +40,7 @@ export const ioServer = (
   httpserver: Http.Server<
     typeof Http.IncomingMessage,
     typeof Http.ServerResponse
-  >
+  >,
 ) => {
   const io = new Server(httpserver, {
     path: "/socket.io",
@@ -126,7 +128,13 @@ export const ioServer = (
           buffer: data.buffer,
           type: data.type,
         });
-      }
+      },
+    );
+    socket.on(
+      "workletBufferFromClient",
+      (data: { video: string; audio: ArrayBuffer; source: string }) => {
+        workletBufferFromClient(data, io);
+      },
     );
 
     socket.on("disconnect", () => {
@@ -143,7 +151,7 @@ export const ioServer = (
         clientState.streamClient = clientState.streamClient.filter(
           (element) => {
             return element !== sockId;
-          }
+          },
         );
       }
       if (clientState.cmdClient.includes(sockId)) {

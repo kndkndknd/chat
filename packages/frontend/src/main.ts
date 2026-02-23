@@ -102,7 +102,7 @@ eListener.addEventListener(
       initialize();
     }
   },
-  false
+  false,
 );
 
 window.addEventListener("resize", (e) => {
@@ -140,7 +140,7 @@ socketState.socket.on(
         erasePrint();
       }, 500);
     }
-  }
+  },
 );
 socketState.socket.on("erasePrintFromServer", () => {
   // erasePrint(stx, strCnvs)
@@ -163,7 +163,7 @@ socketState.socket.on(
   }) => {
     cmdFromServer(cmd);
     stringsClient = "";
-  }
+  },
 );
 
 socketState.socket.on(
@@ -180,7 +180,7 @@ socketState.socket.on(
     setTimeout(() => {
       erasePrint();
     }, 800);
-  }
+  },
 );
 
 socketState.socket.on("textFromServer", (data: { text: string }) => {
@@ -209,26 +209,40 @@ socketState.socket.on(
     setTimeout(() => {
       erasePrint();
     }, data.timeout);
-  }
+  },
 );
 
 // CHATのみ向けにする
 socketState.socket.on(
   "chatFromServer",
-  (data: {
-    audio: Float32Array;
-    video?: string;
-    sampleRate: number;
-    source?: string;
-    glitch: boolean;
-    bufferSize: number;
-    duration: number;
-    floating?: boolean;
-    position?: { top: number; left: number; width: number; height: number };
-    target?: string;
-  }) => {
+  (data: { video: string; audio: ArrayBuffer; source: string }) => {
+    // (data: {
+    //   audio: Float32Array;
+    //   video?: string;
+    //   sampleRate: number;
+    //   source?: string;
+    //   glitch: boolean;
+    //   bufferSize: number;
+    //   duration: number;
+    //   floating?: boolean;
+    //   position?: { top: number; left: number; width: number; height: number };
+    //   target?: string;
+    // }) => {
     console.log("chatFromServer");
-    audioWorkletState.flag.CHAT = true;
+    console.log(data);
+    // data.bufferをfloat32Arrayに変換
+    const float32Array = new Float32Array(data.audio);
+    const streamData = {
+      audio: float32Array,
+      sampleRate: 44100,
+      glitch: false,
+      bufferSize: 8192,
+      video: data.video,
+      source: data.source,
+    };
+    const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
+    streamPlay(streamType, socketState.socket, streamData);
+    audioWorkletState.flag[data.source] = true;
 
     // if (quantizeState.flag && quantizeState.stream.includes("CHAT")) {
     //   const chunk = {
@@ -250,7 +264,7 @@ socketState.socket.on(
     //     showImage(data.video, data.position);
     //   }
     // }
-  }
+  },
 );
 
 socketState.socket.on(
@@ -269,7 +283,28 @@ socketState.socket.on(
     const streamType = data.type === "CHAT" ? "CHAT" : "STREAM";
     streamPlay(streamType, socketState.socket, streamData);
     audioWorkletState.flag[data.type] = true;
-  }
+  },
+);
+
+socketState.socket.on(
+  "chatWorkletFromServer",
+  (data: { video: string; audio: ArrayBuffer; source: string }) => {
+    console.log("chatWorkletFromServer");
+    console.log(data);
+    // data.bufferをfloat32Arrayに変換
+    const float32Array = new Float32Array(data.audio);
+    const streamData = {
+      audio: float32Array,
+      sampleRate: 44100,
+      glitch: false,
+      bufferSize: 8192,
+      video: data.video,
+      source: data.source,
+    };
+    const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
+    streamPlay(streamType, socketState.socket, streamData);
+    audioWorkletState.flag[data.source] = true;
+  },
 );
 
 // CHAT以外のSTREAM向け
@@ -298,7 +333,7 @@ socketState.socket.on(
         showImage(data.video, data.position);
       }
     }
-  }
+  },
 );
 
 socketState.socket.on(
@@ -328,7 +363,7 @@ socketState.socket.on(
     // if (voiceState.flag && voiceState.speechSynthesis.text.length > 0) {
     //   speechVoice(voiceState.speechSynthesis);
     // }
-  }
+  },
 );
 
 socketState.socket.on("gainFromServer", (data) => {
@@ -346,7 +381,7 @@ socketState.socket.on("windowReqFromServer", (data: newWindowReqType) => {
       ",top=" +
       String(data.top) +
       ",left=" +
-      String(data.left)
+      String(data.left),
   );
   click(1.0);
 });
@@ -365,7 +400,7 @@ socketState.socket.on(
       clockBase = 0;
       clockModeId = disableClockMode(clockModeId);
     }
-  }
+  },
 );
 
 socketState.socket.on(
@@ -376,7 +411,7 @@ socketState.socket.on(
       erasePrint();
     }, 500);
     emojiState(data.state);
-  }
+  },
 );
 
 socketState.socket.on("bpmFromServer", (data: { bpm: number; bar: number }) => {
@@ -564,7 +599,7 @@ export const initialize = async () => {
             440 *
               Math.sqrt(
                 Math.pow(gpsPosition.latitude - originlat, 2) +
-                  Math.pow(gpsPosition.longitude - originlng, 2)
+                  Math.pow(gpsPosition.longitude - originlng, 2),
               );
           gpsOsc(true, frequency, 0, 1, 1);
           textPrint(String(frequency) + "Hz");
@@ -578,7 +613,7 @@ export const initialize = async () => {
               Math.sqrt(
                 Math.pow(accelerationData.x, 2) +
                   Math.pow(accelerationData.y, 2) +
-                  Math.pow(accelerationData.z, 2)
+                  Math.pow(accelerationData.z, 2),
               );
           accelarateOsc(true, frequency, 0, 1, 1);
           textPrint(String(frequency) + "Hz");
@@ -602,10 +637,12 @@ export const initialize = async () => {
   flagState.start = true;
   // streamFlag.timelapse = true;
   timelapseState.flag = true;
-  timelapseState.trriger = false;
+  // timelapseState.trriger = false;
+  audioWorkletState.flag.TIMELAPSE = false;
   timelapseState.setIntervalId = window.setInterval(() => {
     if (timelapseState.flag) {
-      timelapseState.trriger = true;
+      // timelapseState.trriger = true;
+      audioWorkletState.flag.TIMELAPSE = true;
     }
   }, 60000);
 

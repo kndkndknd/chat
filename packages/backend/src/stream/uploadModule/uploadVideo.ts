@@ -8,7 +8,6 @@ import { streams } from "../../data";
 import { promiseGetPcmData } from "./getPcmData";
 import { promiseGetImageData } from "./getImageData";
 import { pushStateStream } from "../pushStateStream";
-import { get } from "http";
 
 // const fs = require("fs");
 // const pcm = require("pcm");
@@ -35,11 +34,11 @@ export const uploadVideo = async (f: string, durationArr, mediaDirPath) => {
         ss: duration.ss,
         t: duration.t,
       };
-      const getPcmResult = <Float32Array[]>await promiseGetPcmData(
+      const getPcmResult = <ArrayBuffer[]>await promiseGetPcmData(
         `${mediaDirPath}/${f}`,
         8192,
         // fName,
-        getPcmOption
+        getPcmOption,
       );
       console.log("getPcmResult", getPcmResult.length);
       const getImageResult = <string[]>(
