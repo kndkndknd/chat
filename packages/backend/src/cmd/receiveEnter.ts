@@ -34,6 +34,7 @@ import { execScenario } from "../scenario/execScenario";
 import { putCmd } from "./putCmd";
 import { cmdLogging } from "../logging/cmdLogging";
 import { quantizeCmd } from "../stream/quantize";
+import { mergeStreamTarget } from "../stream/mergeStreamTarget";
 import { millisecondsPerBar } from "../../../util/bpmCalc";
 
 import { execStream } from "../cmd/execStream";
@@ -43,7 +44,7 @@ import { changeCmdParam } from "./changeCmdParam";
 export const receiveEnter = async (
   strings: string,
   id: string,
-  io: SocketIO.Server
+  io: SocketIO.Server,
   // state: cmdStateType
 ) => {
   cmdLogging(strings);
@@ -82,7 +83,10 @@ export const receiveEnter = async (
     strings === "CLOCK" ||
     strings === "SOLFEGIO" ||
     strings === "FILTER" ||
-    strings === "QUANTIZE"
+    strings === "QUANTIZE" ||
+    strings === "SELF" ||
+    strings === "TORCH" ||
+    strings === "BLINK"
   ) {
     execCmd(strings, io, id);
   } else if (strings === "STOP") {
@@ -138,7 +142,7 @@ export const receiveEnter = async (
     streamState.floating = !streamState.floating;
     stringEmit(io, "FLOATING: " + streamState.floating, true);
   } else if (strings === "LATENCY") {
-    putCmd(io, Object.keys(clientState.client), { cmd: "LATENCY" });
+    putCmd(io, mergeStreamTarget(streamState), { cmd: "LATENCY" });
   } else if (
     strings === "TWITCASTING" ||
     strings === "TWICAS" ||

@@ -20,6 +20,7 @@ export const connectFromClient = (data, socket, io) => {
     console.log("aruidino host is " + ipAddress);
     arduinoState.host = ipAddress;
   }
+  const snowLeopard = data.urlPathName.includes("snowleopard") ? true : false;
   if (data.clientMode === "client") {
     if (!streamState.timelapse) streamState.timelapse = true;
     console.log(
@@ -43,6 +44,8 @@ export const connectFromClient = (data, socket, io) => {
             width: data.width,
             height: data.height,
           },
+          self: false,
+          snowLeopard,
         };
       } else {
         // const floatingPosition = {
@@ -60,6 +63,8 @@ export const connectFromClient = (data, socket, io) => {
           projection: false,
           position,
           mobile: data.isMobile,
+          self: false,
+          snowLeopard,
         };
       }
     if (!data.urlPathName.includes("exc")) {
@@ -82,6 +87,11 @@ export const connectFromClient = (data, socket, io) => {
           bpm: bpmStateDefault.bpm,
           beat: bpmStateDefault.beat,
           flag: bpmStateDefault.modulationFlag,
+        },
+        TORCH: {
+          bpm: bpmStateDefault.bpm,
+          flag: bpmStateDefault.torchBlinkFlag,
+          type: bpmStateDefault.torchType,
         },
         stream: {},
       };
@@ -118,6 +128,7 @@ export const connectFromClient = (data, socket, io) => {
         stream: {},
         METRONOME: { bpm: 60, beat: 4, flag: false },
         MODULATION: { bpm: 60, beat: 4, flag: false },
+        TORCH: { bpm: 60, flag: false, type: "STEADY" },
       };
     }
     console.log(sockId + " is noStream Client");
@@ -130,6 +141,8 @@ export const connectFromClient = (data, socket, io) => {
       projection: false,
       position,
       mobile: data.isMobile,
+      self: false,
+      snowLeopard,
     };
     return true;
   }

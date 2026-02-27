@@ -395,6 +395,7 @@ export const socket = (): void => {
   //   },
   // );
 
+
   socketState.socket.on("bufferFromServer", (data) => {
     const uint8Array = new Uint8Array(data);
     const blob = new Blob([uint8Array]);

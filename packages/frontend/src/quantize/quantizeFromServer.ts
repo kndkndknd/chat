@@ -54,8 +54,8 @@ export const quantizeFromServer = (data: bpmStreamStateType) => {
       }, beat:${quantizeObj.beat}`
     : "QUANTIZE:false";
   // 文字表示
-  textPrint(string);
-  setTimeout(() => {
-    erasePrint();
-  }, 800);
+  textPrint(string, { timeout: true, timeoutDuration: 800 });
+  // setTimeout(() => {
+  //   erasePrint();
+  // }, 800);
 };

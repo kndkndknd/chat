@@ -26,9 +26,11 @@ export const pushStateStream = (
   sampleRateState.randomrate[streamName] = false;
   streamState.target[streamName] = [];
   streamState.filter[streamName] = defaultFilterState;
+  streamState.pa[streamName] = false;
+
   sampleRateState.randomratemode = "random";
   sampleRateState.randomraterange[streamName] = {
-    min: 5000,
+    min: 4000,
     max: 132300,
   };
   // bpmState.stream[streamName] = {};

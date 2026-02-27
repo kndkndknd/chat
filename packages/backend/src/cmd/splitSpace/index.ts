@@ -9,13 +9,14 @@ import { putCmd } from "../putCmd";
 import { stringEmit } from "../../socket/ioEmit";
 // import { putString } from "./putString";
 
-import { insertStream } from "../../mongoAccess/insertStream";
-import { findStream } from "../../mongoAccess/findStream";
+// import { insertStream } from "../../mongoAccess/insertStream";
+// import { findStream } from "../../mongoAccess/findStream";
 import { stopEmit } from "../stopEmit";
 import { numTarget } from "./numTarget";
 import { fadeCmd } from "./fadeCmd";
 import { splitStop } from "./splitStop";
 import { solo } from "./solo";
+import { splitPaTarget } from "./splitPaTarget";
 
 import { recordEmit, recordAsOtherEmit } from "../../stream/recordEmit";
 import { chatPreparation } from "../../stream/chatPreparation";
@@ -46,14 +47,17 @@ import { splitModulation } from "./splitModulation";
 import { splitArduino } from "./splitArduino";
 import { quantizeObjType } from "../../../../../types";
 import { splitVoskCmd } from "./splitVoskCmd";
+import { splitRotate } from "./splitRotate";
+import { splitToPostgres } from "./splitToPostgres";
+
 import { millisecondsPerBar } from "../../../../util/bpmCalc";
-import { m5Switch } from "../../rotate/m5Access";
+import { joinOrLeave, offerReq, answerReq } from "../../webRTC";
 
 export const splitSpace = async (
   stringArr: Array<string>,
   io: SocketIO.Server,
   // state: cmdStateType,
-  source?: string
+  source?: string,
 ) => {
   const arrTypeArr = getTypeArr(stringArr);
   // console.log(arrTypeArr)
@@ -65,7 +69,7 @@ export const splitSpace = async (
       voiceEmit(
         io,
         stringArr.slice(1).join(" "),
-        source !== undefined ? source : "all"
+        source !== undefined ? source : "all",
       );
     }
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
@@ -135,14 +139,24 @@ export const splitSpace = async (
   } else if (stringArr[0] === "ALL") {
     voiceEmit(io, stringArr.join(" "), source !== undefined ? source : "all");
 
-    if (arrTypeArr[1] === "string") {
-      Object.keys(clientState.client).forEach((target) => {
-        cmdEmit(stringArr[1], io, target);
+    if (arrTypeArr[1] === "string" && !streamList.includes(stringArr[1])) {
+      clientState.cmdClient.forEach((client, index) => {
+        cmdEmit(stringArr[1], io, client);
       });
+      // Object.keys(clientState.client).forEach((target) => {
+      //   cmdEmit(stringArr[1], io, target);
+      // });
     } else if (arrTypeArr[1] === "number") {
-      Object.keys(clientState.client).forEach((target) => {
-        sinewaveEmit(Number(stringArr[1]), io, target);
+      clientState.cmdClient.forEach((client, index) => {
+        // Object.keys(clientState.client).forEach((target) => {
+        sinewaveEmit(Number(stringArr[1]), io, client);
       });
+    } else if (streamList.includes(stringArr[1])) {
+      streamState.target[stringArr[1]] = [];
+      streamEmit(stringArr[1], io);
+    } else if (stringArr[1] === "CHAT") {
+      streamState.target["CHAT"] = clientState.streamClient;
+      chatPreparation(io);
     }
   } else if (
     stringArr[0] === "BUFFER" ||
@@ -151,6 +165,33 @@ export const splitSpace = async (
     const input = Number(stringArr[1]);
     streamState.basisBufferSize = bufferSizeChange(input);
     stringEmit(io, `BufferSize: ${streamState.basisBufferSize}`);
+  } else if (
+    (stringArr[1] === "CHAT" ||
+      (streamList.includes(stringArr[1]) && stringArr[0] !== "GET")) &&
+    (stringArr[0].includes("-") || arrTypeArr[0] === "number")
+  ) {
+    console.log("route", stringArr);
+    const targetArr = stringArr[0].split("-");
+    if (
+      targetArr.length > 1 &&
+      targetArr.every((el) => {
+        return !isNaN(Number(el)) && el !== "";
+      })
+    ) {
+      console.log("targetArr", targetArr);
+      const targetIdArr = targetArr.map((el) => {
+        return Object.keys(clientState.client)[Number(el)];
+      });
+      console.log("targetIdArr", targetIdArr);
+      streamState.target[stringArr[1]] = targetIdArr;
+      console.log(streamState.target);
+      if (stringArr[1] === "CHAT") {
+        console.log("debug");
+        chatPreparation(io);
+      } else {
+        streamEmit(stringArr[1], io);
+      }
+    }
   } else if (stringArr[0] === "CLEAR") {
     if (stringArr[1] === "BUFFER") {
       for (let stream in streams) {
@@ -177,8 +218,6 @@ export const splitSpace = async (
   } else if (stringArr[0] === "FADE") {
     fadeCmd(stringArr, arrTypeArr, io);
     voiceEmit(io, stringArr.join(" "), source);
-  } else if (stringArr[0] === "FIND") {
-    findStream("test", "test", io);
   } else if (
     stringArr[0] === "GAIN" &&
     stringArr.length === 3 &&
@@ -199,7 +238,7 @@ export const splitSpace = async (
     stringEmit(
       io,
       `${stringArr[1]} GAIN: ${String(cmdState.GAIN[stringArr[1]])}`,
-      true
+      true,
     );
 
     // } else if (stringArr[0] === 'FIND' && stringArr.length === 3) {
@@ -237,21 +276,8 @@ export const splitSpace = async (
     }
   } else if (stringArr[0] === "HELP") {
     helpPrint(stringArr.slice(1), io);
-  } else if (stringArr[0] === "INSERT") {
-    if (stringArr[1] === "HELP" || stringArr[1] === "?") {
-      stringEmit(io, `INSERT (STREAM) (PLACE) (YYYMMDD)`, false);
-    } else if (streamList.includes(stringArr[1])) {
-      if (
-        stringArr.length === 4 &&
-        arrTypeArr[3] === "number" &&
-        stringArr[3].length === 8
-      ) {
-        insertStream(stringArr[1], io, stringArr[2], stringArr[3]);
-      } else {
-        stringEmit(io, `INSERT (STREAM) (PLACE) (YYYMMDD)`, false);
-      }
-      // insertStream(stringArr[1], io);
-    }
+  } else if (stringArr[0] === "INSERT" || stringArr[0] === "FIND") {
+    splitToPostgres(stringArr, arrTypeArr, io);
 
     /*
     if (
@@ -261,6 +287,26 @@ export const splitSpace = async (
       insertStream(stringArr[1], io);
     }
     */
+  } else if (
+    (stringArr[0] === "JOIN" ||
+      stringArr[0] === "OFFER" ||
+      stringArr[0] === "ANSWER") &&
+    stringArr[1] === "ALL"
+  ) {
+    console.log(`${stringArr[0]} ALL clients to WebRTC room`);
+    if (stringArr[0] === "JOIN") {
+      Object.keys(clientState.client).forEach((id) => {
+        joinOrLeave("JOIN", io, id);
+      });
+    } else if (stringArr[0] === "OFFER") {
+      Object.keys(clientState.client).forEach((id) => {
+        offerReq(io, id);
+      });
+    } else if (stringArr[0] === "ANSWER") {
+      Object.keys(clientState.client).forEach((id) => {
+        answerReq(io, id);
+      });
+    }
   } else if (stringArr[0] === "LOG") {
     if (
       stringArr[1] === "FILE" ||
@@ -288,6 +334,8 @@ export const splitSpace = async (
     } else if (stringArr[1] === "CLEAR") {
       deleteLog();
     }
+  } else if (stringArr[0] === "PA") {
+    splitPaTarget(stringArr, arrTypeArr, io);
   } else if (stringArr[0] === "QUANTIZE") {
     splitQuantize(stringArr.splice(1), io);
   } else if (
@@ -297,14 +345,7 @@ export const splitSpace = async (
   ) {
     recordAsOtherEmit(io, stringArr[2]);
   } else if (stringArr[0] === "ROTATE") {
-    if (stringArr[1] === "ON" || stringArr[1] === "OFF") {
-      const result = await m5Switch(stringArr[1].toLowerCase() as "on" | "off");
-      if (result) {
-        stringEmit(io, `M5STACK SWITCH ${stringArr[1]}: SUCCESS`);
-      } else {
-        stringEmit(io, `M5STACK SWITCH ${stringArr[1]}: FAILED`);
-      }
-    }
+    splitRotate(stringArr.splice(1), io);
   } else if (stringArr[0] === "SCENARIO" || stringArr[0] === "START") {
     const scenario = await loadScenario(stringArr[1]);
     await execScenario(scenario, io);
@@ -322,6 +363,10 @@ export const splitSpace = async (
     if (stringArr[1] === "FALSE" || stringArr[1] === "OFF") {
       io.emit("timelapseFromServer", {
         cmd: "FALSE",
+      });
+    } else if (stringArr[1] === "TRUE" || stringArr[1] === "ON") {
+      io.emit("timelapseFromServer", {
+        cmd: "TRUE",
       });
     } else if (stringArr[1] === "GET" || stringArr[1] === "FETCH") {
       io.emit("timelapseFromServer", {
@@ -366,33 +411,6 @@ export const splitSpace = async (
     splitVoskCmd(stringArr.splice(1), arrTypeArr.splice(1), io);
   } else if (stringArr[0].includes(":")) {
     scheduleSplitCmd(stringArr, source, io);
-  } else if (
-    (stringArr[1] === "CHAT" ||
-      (streamList.includes(stringArr[1]) && stringArr[0] !== "GET")) &&
-    (stringArr[0].includes("-") || arrTypeArr[0] === "number")
-  ) {
-    console.log("route", stringArr);
-    const targetArr = stringArr[0].split("-");
-    if (
-      targetArr.length > 1 &&
-      targetArr.every((el) => {
-        return !isNaN(Number(el)) && el !== "";
-      })
-    ) {
-      console.log("targetArr", targetArr);
-      const targetIdArr = targetArr.map((el) => {
-        return Object.keys(clientState.client)[Number(el)];
-      });
-      console.log("targetIdArr", targetIdArr);
-      streamState.target[stringArr[1]] = targetIdArr;
-      console.log(streamState.target);
-      if (stringArr[1] === "CHAT") {
-        console.log("debug");
-        chatPreparation(io);
-      } else {
-        streamEmit(stringArr[1], io);
-      }
-    }
   } else if (
     arrTypeArr[1] === "number" &&
     (stringArr[0] === "MODULATION" || stringArr[0] === "MOD")

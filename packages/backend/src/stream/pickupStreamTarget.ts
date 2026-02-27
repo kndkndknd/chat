@@ -59,7 +59,12 @@ export const pickupStreamTarget = (stream: string, from?: string): string => {
     //   console.log("push arduino");
     //   targetArr.push("arduino");
     // }
-
-    return targetArr[Math.floor(Math.random() * targetArr.length)];
+    
+    return targetArr.length > 0 ? targetArr[Math.floor(Math.random() * targetArr.length)] : "";
   }
 };
+
+export const pickupPaStreamTarget = (): string => {
+  console.log('pa')
+  return clientState.paStreamClient.length > 0 ? clientState.paStreamClient[Math.floor(Math.random() * clientState.paStreamClient.length)] : "";
+}

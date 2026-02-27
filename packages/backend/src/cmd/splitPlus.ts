@@ -4,21 +4,22 @@ import { sinewaveEmit } from "./sinewaveEmit";
 import { chatPreparation } from "../stream/chatPreparation";
 import { streamEmit } from "../stream/streamEmit";
 import { stopEmit } from "./stopEmit";
-import { clientState, cmdState, currentState } from "../state";
+import { clientState, cmdState, currentState, streamState } from "../state";
 import { cmdList, streamList, parameterList } from "../data";
 import { sinewaveChange } from "./sinewaveChange";
 import { parameterChange } from "../parameterChange";
 import { getTypeArr } from "./splitSpace/getTypeArr";
+import { mergeStreamTarget } from "../stream/mergeStreamTarget";
 
 export const splitPlus = (
   stringArr: Array<string>,
-  io: SocketIO.Server
+  io: SocketIO.Server,
   // state: cmdStateType
 ) => {
   const arrTypeArr = getTypeArr(stringArr);
 
   stringArr.forEach((string, index) => {
-    const target = Object.keys(clientState.client)[Number(stringArr[0])];
+    // const target = Object.keys(clientState.client)[Number(stringArr[0])];
     if (string === "CHAT") {
       chatPreparation(io);
     } else if (string === "RECORD" || string === "REC") {
@@ -40,14 +41,22 @@ export const splitPlus = (
       currentState.stream[string] = true;
       streamEmit(string, io);
     } else if (Object.keys(cmdList).includes(string)) {
+      const target = clientState.cmdClient[Number(stringArr[0])];
       cmdEmit(cmdList[string], io, target);
     } else if (Number.isFinite(Number(string))) {
+      const target = clientState.cmdClient[Number(stringArr[0])];
       sinewaveEmit(Number(string), io, target);
     } else if (string === "TWICE" || string === "HALF") {
       sinewaveChange(string, io);
       // } else if (strings === 'PREVIOUS' || strings === 'PREV') {
       // previousCmd(io, state)
     } else if (Object.keys(parameterList).includes(string)) {
+      const target =
+        string === "PORTAMENT"
+          ? clientState.cmdClient[Number(stringArr[0])]
+          : string === "VOICE" || string === "BPM"
+            ? Object.keys(clientState.client)[Number(stringArr[0])]
+            : mergeStreamTarget(streamState)[Number(stringArr[0])];
       parameterChange(parameterList[string], io, { source: target });
     } else if (string === "STOP") {
       stopEmit(io, "", "ALL");

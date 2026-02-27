@@ -5,6 +5,7 @@ import {
   timelapseState,
   torchState,
   audioWorkletState,
+  streamState,
 } from "./state";
 import { initAudio } from "./webaudio";
 import {

@@ -34,4 +34,6 @@ export const bpmStateDefault = {
   latency: 60000 / 60 / 4,
   metronomeFlag: false,
   modulationFlag: false,
+  torchBlinkFlag: false,
+  torchType: <"STEADY" | "BLINK">"STEADY",
 };

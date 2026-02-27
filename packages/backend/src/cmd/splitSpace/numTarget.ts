@@ -9,11 +9,12 @@ import { notTargetEmit } from "../notTargetEmit";
 import { stringEmit } from "../../socket/ioEmit";
 import { chatPreparation } from "../../stream/chatPreparation";
 import { splitQuantize } from "./splitQuantize";
+import { numPaSwitch } from "./numPaSwitch";
 
 export const numTarget = (
   stringArr: Array<string>,
   arrTypeArr: Array<string>,
-  io
+  io,
 ) => {
   console.log("num target: ", stringArr);
   // 送信先を指定したコマンド/SINEWAVE
@@ -25,10 +26,14 @@ export const numTarget = (
     arrTypeArr[1] === "string" &&
     Object.keys(cmdList).includes(stringArr[1])
   ) {
-    const cmd = cmdList[stringArr[1]];
-    console.log("currend cmd", currentState.cmd[stringArr[1]]);
-    const flag = !currentState.cmd[cmd].includes(target);
-    cmdEmit(stringArr[1], io, target, flag);
+    if (clientState.cmdClient.includes(target)) {
+      const cmd = cmdList[stringArr[1]];
+      console.log("currend cmd", currentState.cmd[stringArr[1]]);
+      const flag = !currentState.cmd[cmd].includes(target);
+      cmdEmit(stringArr[1], io, target, flag);
+    } else {
+      stringEmit(io, "target is not cmd client", true, target);
+    }
   } else if (
     arrTypeArr[1] === "string" &&
     (streamList.includes(stringArr[1]) || stringArr[1] === "CHAT")
@@ -66,6 +71,8 @@ export const numTarget = (
     //   stringEmit(io, "quantize failed", true, target);
     // } else {
     // }
+  } else if (stringArr[1] === "PA") {
+    numPaSwitch(target, io);
   } else if (stringArr[1] === "GPS") {
     io.to(target).emit("gpsFlagFromServer");
   } else if (stringArr[1] === "ACCELARATE") {

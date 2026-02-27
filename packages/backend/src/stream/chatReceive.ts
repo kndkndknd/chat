@@ -13,7 +13,7 @@ import { chats, streams } from "../data";
 import { glitchStream } from "./glitchStream";
 import { pushStateStream } from "./pushStateStream";
 // import { pickupTarget } from "../route";
-import { pickupStreamTarget } from "./pickupStreamTarget";
+import { pickupPaStreamTarget, pickupStreamTarget } from "./pickupStreamTarget";
 import { switchCramp } from "../arduinoAccess/arduinoAccess";
 import { sampleRateRandomize } from "./sampleRateRandomize";
 import { stat } from "fs";
@@ -95,10 +95,13 @@ export const chatEmit = async (io, from?) => {
     // console.log(io.sockets.adapter.rooms);
     // console.log(io.sockets.adapter.rooms.size);
     // console.log(io.sockets.adapter.rooms.get(buffer.from));
-    const targetId =
+    let targetId =
       from !== undefined
         ? pickupStreamTarget("CHAT", from)
         : pickupStreamTarget("CHAT");
+    if(streamState.pa.CHAT) {
+      targetId = pickupPaStreamTarget();
+    }
     console.log("chatEmit targetId: ", targetId);
     console.log("bpmState", targetId, bpmState[targetId]);
     // const targetId =

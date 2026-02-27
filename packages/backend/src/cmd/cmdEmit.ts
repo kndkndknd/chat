@@ -15,7 +15,7 @@ export const cmdEmit = (
   cmdStrings: string,
   io: SocketIO.Server,
   target?: string,
-  flag?: boolean
+  flag?: boolean,
 ) => {
   let targetId = "";
   let cmd: {
@@ -26,6 +26,9 @@ export const cmdEmit = (
     fade?: number;
     gain?: number;
   };
+  const targetIdArr = target
+    ? pickupCmdTarget(cmdStrings, { target: target })
+    : pickupCmdTarget(cmdStrings);
 
   switch (cmdStrings) {
     case "STOP":
@@ -35,9 +38,6 @@ export const cmdEmit = (
     case "WHITENOISE":
     case "FEEDBACK":
     case "BASS":
-      const targetIdArr = target
-        ? pickupCmdTarget(cmdStrings, { target: target })
-        : pickupCmdTarget(cmdStrings);
       const cmdKey = cmdStrings as keyof typeof cmdList;
       cmd = {
         cmd: cmdList[cmdKey],
@@ -127,12 +127,12 @@ export const cmdEmit = (
           state.client[Math.floor(Math.random() * state.client.length)];
       }
       */
-      const targeIdArr =
-        target !== undefined
-          ? pickupCmdTarget(cmdStrings, { target: target })
-          : pickupCmdTarget(cmdStrings);
+      // const targeIdArr =
+      //   target !== undefined
+      //     ? pickupCmdTarget(cmdStrings, { target: target })
+      //     : pickupCmdTarget(cmdStrings);
       // io.to(targetId).emit('cmdFromServer', cmd)
-      putCmd(io, targeIdArr, cmd);
+      putCmd(io, targetIdArr, cmd);
       // notTargetEmit(targetId, state.client, io);
       break;
     case "SIMULATE":
@@ -141,15 +141,17 @@ export const cmdEmit = (
         cmd: "SIMULATE",
         gain: cmdState.GAIN.SIMULATE,
       };
-      if (target) {
-        targetId = target;
-      } else {
-        targetId = Object.keys(clientState.client)[
-          Math.floor(Math.random() * Object.keys(clientState.client).length)
-        ];
-      }
-      putCmd(io, [targetId], cmd);
-      notTargetEmit(targetId, Object.keys(clientState.client), io);
+
+      // if (target) {
+      //   targetId = target;
+      // } else {
+      //   targetId = Object.keys(clientState.client)[
+      //     Math.floor(Math.random() * Object.keys(clientState.client).length)
+      //   ];
+      // }
+      // putCmd(io, [targetId], cmd);
+      putCmd(io, targetIdArr, cmd);
+      // notTargetEmit(targetId, Object.keys(clientState.client), io);
       break;
     case "METRONOME":
       metronomeEmit(io, cmd, target);

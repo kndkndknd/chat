@@ -1,5 +1,5 @@
 import { metronomeState } from "../../state";
-import { textPrint, erasePrint } from "../../canvasEvent";
+import { textPrint } from "../../canvasEvent";
 import { click } from "./click";
 
 export const metronome = (flag: boolean, latency: number, gain: number) => {
@@ -10,10 +10,10 @@ export const metronome = (flag: boolean, latency: number, gain: number) => {
       console.log("metronome");
       console.log(gain);
       click(gain);
-      textPrint("CLICK");
-      setTimeout(() => {
-        erasePrint();
-      }, 500);
+      textPrint("CLICK", { timeout: true });
+      // setTimeout(() => {
+      //   erasePrint();
+      // }, 500);
     }, latency);
   } else if (flag) {
     textPrint("METRONOME");
@@ -21,10 +21,10 @@ export const metronome = (flag: boolean, latency: number, gain: number) => {
     clearInterval(metronomeState.intervalId);
     metronomeState.intervalId = window.setInterval(() => {
       click(gain);
-      textPrint("CLICK");
-      setTimeout(() => {
-        erasePrint();
-      }, 500);
+      textPrint("CLICK", { timeout: true });
+      // setTimeout(() => {
+      //   erasePrint();
+      // }, 500);
     }, latency);
   } else {
     console.log("metronome stop");

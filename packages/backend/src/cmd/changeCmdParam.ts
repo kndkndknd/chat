@@ -2,7 +2,7 @@ import SocketIO from "socket.io";
 import { sinewaveChange } from "./sinewaveChange";
 import { parameterChange } from "../parameterChange";
 
-import { flagState } from "../state";
+import { flagState, clientState } from "../state";
 import { parameterList } from "../data";
 
 export const changeCmdParam = async (
@@ -11,7 +11,11 @@ export const changeCmdParam = async (
   io: SocketIO.Server
 ): Promise<void> => {
   if (strings === "TWICE" || strings === "HALF") {
-    sinewaveChange(strings, io);
+    if (!clientState.client[id].self) {
+      sinewaveChange(strings, io);
+    } else {
+      sinewaveChange(strings, io, { id });
+    }
   } else if (Object.keys(parameterList).includes(strings)) {
     parameterChange(parameterList[strings], io, { source: id });
   } else if (strings === "FUSEJI" || strings === "EMOJI") {

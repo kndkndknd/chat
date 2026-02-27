@@ -184,10 +184,13 @@ const clickWrapper = () => {
     textPrint("initialized. click screen once more");
   } else {
     start();
-    textPrint("voice recognition start...");
-    setTimeout(() => {
-      erasePrint();
-    }, 1000);
+    textPrint("voice recognition start...", {
+      timeout: true,
+      timeoutDuration: 1000,
+    });
+    // setTimeout(() => {
+    //   erasePrint();
+    // }, 1000);
   }
 };
 
@@ -205,13 +208,22 @@ socketState.socket.on("voskCtrlFromServer", (data) => {
     voskState.voiceFlag = data.flag;
     voskState.recognitionFlag = data.flag;
     if (voskState.voiceFlag) {
-      textPrint("voice recognition start");
+      textPrint("voice recognition start", {
+        timeout: true,
+        timeoutDuration: 1000,
+      });
     } else {
-      textPrint("voice recognition stop");
+      textPrint("voice recognition stop", {
+        timeout: true,
+        timeoutDuration: 1000,
+      });
       voskState.text = "";
     }
   } else if (data.type === "interval change") {
-    textPrint(`interval changed to ${data.value} sec`);
+    textPrint(`interval changed to ${data.value} sec`, {
+      timeout: true,
+      timeoutDuration: 1000,
+    });
     voskState.intervalValue = data.value * 1000;
     const now = Date.now();
     // 既存のインターバルをクリア
@@ -228,15 +240,17 @@ socketState.socket.on("voskCtrlFromServer", (data) => {
       },
       data.value - (now - voskState.startTime),
     );
-    textPrint(`interval changed to ${voskState.intervalValue} ms`);
+    textPrint(`interval changed to ${voskState.intervalValue} ms`, {
+      timeout: true,
+      timeoutDuration: 1000,
+    });
   }
-  setTimeout(() => {
-    erasePrint();
-  }, 1000);
+  // setTimeout(() => {
+  //   erasePrint();
+  // }, 1000);
 });
 
 socketState.socket.on("voskCallFromServer", () => {
-  textPrint("test");
   voskState.startTime = Date.now();
   const wait = voskState.text.length * 300;
   voskState.recognitionFlag = false;

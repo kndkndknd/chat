@@ -45,6 +45,9 @@ export type streamStateType = {
   loop: boolean;
   timelapse: boolean;
   floating: boolean;
+  pa: {
+    [key: string]: boolean;
+  };
 };
 
 export type filterStateType = {
@@ -104,11 +107,15 @@ export type clientStateType = {
         width: number;
         height: number;
       };
+      self: boolean;
+      snowLeopard: boolean;
     };
   };
   cmdClient: string[];
   streamClient: string[];
-  sinewaveClient: Array<string>;
+  sinewaveClient: string[];
+  paCmdClient: string[];
+  paStreamClient: string[];
 };
 
 export type currentStateType = {

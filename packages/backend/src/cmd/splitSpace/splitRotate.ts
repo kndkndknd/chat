@@ -1,0 +1,35 @@
+import { stringEmit } from "../../socket/ioEmit";
+import { m5Switch, m5SetIpAddress, m5Test } from "../../rotate/m5Access";
+
+export const splitRotate = async (stringArr: string[], io) => {
+  if (
+    stringArr.length === 1 &&
+    (stringArr[0] === "ON" || stringArr[0] === "OFF")
+  ) {
+    const result = await m5Switch(stringArr[0].toLowerCase() as "on" | "off");
+    if (result) {
+      stringEmit(io, `M5STACK SWITCH ${stringArr[1]}: SUCCESS`);
+    } else {
+      stringEmit(io, `M5STACK SWITCH ${stringArr[1]}: FAILED`);
+    }
+  } else if (
+    stringArr.length === 2 &&
+    (stringArr[0] === "IP" || stringArr[0] === "SET")
+  ) {
+    const result = await m5SetIpAddress(stringArr[1]);
+    if (result) {
+      stringEmit(io, `M5STACK SET IP ${stringArr[1]}: SUCCESS`);
+    } else {
+      stringEmit(io, `M5STACK SET IP ${stringArr[1]}: FAILED`);
+    }
+  } else if (stringArr.length === 1 && stringArr[0] === "TEST") {
+    const result = await m5Test();
+    if (result) {
+      stringEmit(io, `M5STACK TEST: SUCCESS`);
+    } else {
+      stringEmit(io, `M5STACK TEST: FAILED`);
+    }
+  } else {
+    stringEmit(io, `M5STACK COMMAND INVALID`);
+  }
+};

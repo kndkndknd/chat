@@ -1,3 +1,4 @@
+import { canvasState } from "./canvasState";
 import { flagState } from "./flagState";
 import { metronomeState } from "./metronomeState";
 import { streamFlagState } from "./stream/streamFlagState";
@@ -5,6 +6,7 @@ import { streamChunk } from "./stream/streamChunk";
 import { bufferSizeState } from "./stream/bufferSizeState";
 import { quantizeState } from "./quantizeState";
 import { socketState } from "./socketState";
+import { streamState } from "./streamState";
 import { timelapseState } from "./timelapseState";
 import { streamState } from "./streamState";
 import { canvasState } from "./canvasState";

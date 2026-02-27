@@ -1,7 +1,7 @@
 import { formState } from "../../states";
 import { receiveEnter } from "../receiveEnter";
 import SocketIO from "socket.io";
-import { playHLS } from "../../stream/hls/playHls";
+// import { playHLS } from "../../stream/hls/playHls";
 
 export const enterFromForm = (string: string, io: SocketIO.Server) => {
   const cmdArr = Object.keys(formState.cmd).filter((key) => {
@@ -20,13 +20,13 @@ export const enterFromForm = (string: string, io: SocketIO.Server) => {
     });
     if (hlsArr.length > 0) {
       hlsArr.forEach((hls) => {
-        playHLS(formState.hls[hls], io);
+        // playHLS(formState.hls[hls], io);
       });
     }
   } else {
     if (hlsArr.length > 0) {
       hlsArr.forEach((hls) => {
-        playHLS(formState.hls[hls], io);
+        // playHLS(formState.hls[hls], io);
       });
     } else {
       return false;
