@@ -7,8 +7,8 @@ import { streamState } from "../../state";
 export const promiseGetPcmData = (
   filePath: string,
   bufferSize: number,
-  options
-) => {
+  options,
+): Promise<ArrayBuffer[]> => {
   return new Promise((resolve, reject) => {
     var outputStr = "";
     var oddByte = null;
@@ -58,7 +58,7 @@ export const promiseGetPcmData = (
     console.log(ffmpegOption);
 
     const proc = spawn("ffmpeg", ffmpegOption);
-    const buffArr: Float32Array[] = [];
+    const buffArr: ArrayBuffer[] = [];
     proc.stdout.on("data", (buff) => {
       // const { stdout } = await execa(ffmpegPath, [
       // await execa(ffmpegPath, ffmpegOption).then((execaReturnData) => {
@@ -88,7 +88,7 @@ export const promiseGetPcmData = (
         chunkIndex++;
         console.log("chunkIndex(oddByte)", chunkIndex);
         if (chunkIndex === bufferSize) {
-          buffArr.push(tmpBuff);
+          buffArr.push(tmpBuff.buffer);
           tmpBuff = new Float32Array(bufferSize);
           chunkIndex = 0;
           // console.log("buffArr(oddByte)", buffArr.length);
@@ -104,7 +104,7 @@ export const promiseGetPcmData = (
         // console.log("chunkIndex", chunkIndex);
 
         if (chunkIndex === bufferSize) {
-          buffArr.push(tmpBuff);
+          buffArr.push(tmpBuff.buffer);
           tmpBuff = new Float32Array(bufferSize);
           chunkIndex = 0;
           // console.log("buffArr", buffArr.length);
@@ -130,7 +130,7 @@ export const promiseGetPcmData = (
 export const promiseGetBitCrashed = (
   filePath: string,
   bufferSize: number,
-  options
+  options,
 ) => {
   return new Promise((resolve, reject) => {
     var outputStr = "";
@@ -181,7 +181,7 @@ export const promiseGetBitCrashed = (
     console.log(ffmpegOption);
 
     const proc = spawn("ffmpeg", ffmpegOption);
-    const buffArr: Float32Array[] = [];
+    const buffArr: ArrayBuffer[] = [];
     proc.stdout.on("data", (buff) => {
       // const { stdout } = await execa(ffmpegPath, [
       // await execa(ffmpegPath, ffmpegOption).then((execaReturnData) => {
@@ -195,7 +195,7 @@ export const promiseGetBitCrashed = (
         // console.log(chunkIndex, value);
         chunkIndex++;
         if (chunkIndex === bufferSize) {
-          buffArr.push(tmpBuff);
+          buffArr.push(tmpBuff.buffer);
           tmpBuff = new Float32Array(bufferSize);
           chunkIndex = 0;
           console.log("buffArr", buffArr.length);
@@ -216,7 +216,7 @@ export const promiseGetBitCrashed = (
 export const awaitGetBitCracshedData = async (
   filePath,
   streamName,
-  options
+  options,
 ) => {
   // var outputStr = "";
   var oddByte = null;

@@ -2,9 +2,10 @@ import { Socket } from "socket.io-client";
 import {
   flagState,
   sensorState,
-  streamState,
   timelapseState,
   torchState,
+  audioWorkletState,
+  streamState,
 } from "./state";
 import { initAudio } from "./webaudio";
 import {
@@ -17,6 +18,7 @@ import { initAudioStream } from "./stream";
 import { getAcceleration } from "./sensor";
 import { getGPSPosition } from "./gps";
 import { accelarateOsc, gpsOsc } from "./webaudio";
+import { initAudioWorklet } from "./audioWorklet/main";
 // import { initTorch } from "./stream/torch";
 
 export const initialize = async (
@@ -99,6 +101,7 @@ export const initialize = async (
     // await initAudioStream(streamState.stream);
     // await initVideoStream(streamState.stream);
     // await console.log(stream);
+    await initAudioWorklet(stream, socket);
     await textPrint("initialized", { timeout: true });
     await socket.emit("connectFromClient", {
       clientMode:
@@ -176,10 +179,11 @@ export const initialize = async (
 
     // streamFlag.timelapse = true;
     timelapseState.flag = true;
-    timelapseState.trriger = false;
+    // timelapseState.trriger = false;
+    audioWorkletState.flag.TIMELAPSE = false;
     timelapseState.setIntervalId = window.setInterval(() => {
       if (timelapseState.flag) {
-        timelapseState.trriger = true;
+        audioWorkletState.flag.TIMELAPSE = true;
       }
     }, 60000);
 

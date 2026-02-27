@@ -1,12 +1,15 @@
 import { canvasState } from "./canvasState";
 import { flagState } from "./flagState";
 import { metronomeState } from "./metronomeState";
-import { streamFlagState } from "./streamFlagState";
-import { streamChunk } from "./streamChunk";
+import { streamFlagState } from "./stream/streamFlagState";
+import { streamChunk } from "./stream/streamChunk";
+import { bufferSizeState } from "./stream/bufferSizeState";
 import { quantizeState } from "./quantizeState";
 import { socketState } from "./socketState";
 import { streamState } from "./streamState";
 import { timelapseState } from "./timelapseState";
+import { streamState } from "./streamState";
+import { canvasState } from "./canvasState";
 // import { webAudioState } from "./webAudioState";
 
 // webaudio
@@ -22,22 +25,24 @@ import { filterState } from "./webAudio/filterState";
 import { webRtcState } from "./webRtcState";
 import { webRtcFrontState } from "./webRTC/webRtcFrontState";
 
+// voice
 import { voiceState } from "./voiceState";
 
-// acceleration and GPS
+// audioWorklet
+import { audioWorkletState } from "./webAudio/audioWorkletState";
+
+import { torchState } from "./torchState";
 import { sensorState } from "./sensorState";
 
-// torch
-import { torchState } from "./torchState";
-
 export {
-  // webAudioState,
+  audioWorkletState,
+  bufferSizeState,
   canvasState,
   contextState,
-  gainState,
   convolverState,
   filterState,
   flagState,
+  gainState,
   metronomeState,
   oscState,
   otherNodeState,
@@ -50,6 +55,7 @@ export {
   streamState,
   timelapseState,
   torchState,
+  // webAudioState,
   webRtcFrontState,
   webRtcState,
   voiceState,

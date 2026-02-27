@@ -44,7 +44,6 @@ import {
   initAudioStream,
   streamPlay,
 } from "./stream";
-import { quantize, quantizePlay, quantizeStop } from "./quantize";
 
 import { cmdFromServer, stopCmd } from "./cmd";
 
@@ -77,7 +76,7 @@ eListener.addEventListener(
       initialize();
     }
   },
-  false
+  false,
 );
 
 window.addEventListener("resize", (e) => {
@@ -447,7 +446,7 @@ export const initialize = async () => {
       JSON.stringify({
         type: "register",
         clientId: clientId,
-      })
+      }),
     );
     // await socketState.socket.emit("connectFromClient", {
     //   clientMode:

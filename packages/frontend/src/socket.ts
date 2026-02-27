@@ -10,7 +10,9 @@ import {
   timelapseState,
   torchState,
   webRtcState,
+  audioWorkletState,
 } from "./state";
+
 import {
   bpmStreamStateType,
   filterStateType,
@@ -22,16 +24,16 @@ import { quantizeFromServer } from "./quantize/quantizeFromServer";
 import { chatReq, recordReqFromServer, streamPlay } from "./stream";
 import { click, gainChange } from "./webaudio";
 
-import {
-  initRtpPeerConnection,
-  receiveIceCandidate,
-  createOffer,
-  createAnswer,
-  receiveOffer,
-  receiveAnswer,
-} from "./webrtc";
+// import {
+//   initRtpPeerConnection,
+//   receiveIceCandidate,
+//   createOffer,
+//   createAnswer,
+//   receiveOffer,
+//   receiveAnswer,
+// } from "./webrtc";
 
-import { torchToggle, startBlink, stopBlink } from "./stream/torch";
+// import { torchToggle, startBlink, stopBlink } from "./stream/torch";
 
 export const socket = (): void => {
   socketState.socket.on(
@@ -126,39 +128,55 @@ export const socket = (): void => {
   // CHATのみ向けにする
   socketState.socket.on(
     "chatFromServer",
-    (data: {
-      audio: Float32Array;
-      video?: string;
-      sampleRate: number;
-      source?: string;
-      glitch: boolean;
-      bufferSize: number;
-      duration: number;
-      floating?: boolean;
-      position?: { top: number; left: number; width: number; height: number };
-      target?: string;
-    }) => {
+    (data: { video: string; audio: ArrayBuffer; source: string }) => {
+      // (data: {
+      //   audio: Float32Array;
+      //   video?: string;
+      //   sampleRate: number;
+      //   source?: string;
+      //   glitch: boolean;
+      //   bufferSize: number;
+      //   duration: number;
+      //   floating?: boolean;
+      //   position?: { top: number; left: number; width: number; height: number };
+      //   target?: string;
+      // }) => {
       console.log("chatFromServer");
-      if (quantizeState.flag && quantizeState.stream.includes("CHAT")) {
-        const chunk = {
-          source: "CHAT",
-          audio: data.audio,
-          video: data.video,
-          sampleRate: data.sampleRate,
-          glitch: data.glitch,
-          bufferSize: data.bufferSize,
-          duration: data.duration,
-        };
-        // data.source = "CHAT";
-        streamChunk.CHAT = chunk;
-      } else {
-        if (data.floating === undefined || !data.floating) {
-          streamPlay("CHAT", socketState.socket, data);
-        } else {
-          // const position = positionFloatingImage(data.target);
-          showImage(data.video, data.position);
-        }
-      }
+      console.log(data);
+      // data.bufferをfloat32Arrayに変換
+      const float32Array = new Float32Array(data.audio);
+      const streamData = {
+        audio: float32Array,
+        sampleRate: 44100,
+        glitch: false,
+        bufferSize: 8192,
+        video: data.video,
+        source: data.source,
+      };
+      const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
+      streamPlay(streamType, socketState.socket, streamData);
+      audioWorkletState.flag[data.source] = true;
+
+      // if (quantizeState.flag && quantizeState.stream.includes("CHAT")) {
+      //   const chunk = {
+      //     source: "CHAT",
+      //     audio: data.audio,
+      //     video: data.video,
+      //     sampleRate: data.sampleRate,
+      //     glitch: data.glitch,
+      //     bufferSize: data.bufferSize,
+      //     duration: data.duration,
+      //   };
+      //   // data.source = "CHAT";
+      //   streamChunk.CHAT = chunk;
+      // } else {
+      //   if (data.floating === undefined || !data.floating) {
+      //     streamPlay("CHAT", socketState.socket, data);
+      //   } else {
+      //     // const position = positionFloatingImage(data.target);
+      //     showImage(data.video, data.position);
+      //   }
+      // }
     },
   );
   socketState.socket.on("quantizeFromServer", (data: bpmStreamStateType) => {
@@ -191,6 +209,27 @@ export const socket = (): void => {
           showImage(data.video, data.position);
         }
       }
+    },
+  );
+
+  socketState.socket.on(
+    "workletBufferFromServer",
+    (data: { video: string; audio: ArrayBuffer; source: string }) => {
+      console.log("workletBufferFromServer");
+      console.log(data);
+      // data.bufferをfloat32Arrayに変換
+      const float32Array = new Float32Array(data.audio);
+      const streamData = {
+        audio: float32Array,
+        sampleRate: 44100,
+        glitch: false,
+        bufferSize: 8192,
+        video: data.video,
+        source: data.source,
+      };
+      const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
+      streamPlay(streamType, socketState.socket, streamData);
+      audioWorkletState.flag[data.source] = true;
     },
   );
 
@@ -291,7 +330,8 @@ export const socket = (): void => {
     } else if (data.cmd === "TRUE") {
       timelapseState.flag = true;
     } else if (data.cmd === "GET") {
-      timelapseState.trriger = true;
+      // timelapseState.trriger = true;
+      audioWorkletState.flag.TIMELAPSE = true;
       if (!timelapseState.flag) {
         timelapseState.flag = true;
         setTimeout(() => {
@@ -329,31 +369,32 @@ export const socket = (): void => {
     }
   });
 
-  socketState.socket.on(
-    "torchCmdFromServer",
-    (data: { flag: boolean; type: "BLINK" | "STEADY"; bpm: number }) => {
-      if (
-        torchState.isSupported &&
-        flagState.isMobile &&
-        streamState.videoTrack !== null
-      ) {
-        console.log("torchCmdFromServer", data);
-        if (data.type === "BLINK") {
-          if (data.flag) {
-            torchState.torchMode = "blink";
-            startBlink(data.bpm);
-          } else {
-            stopBlink();
-          }
-        } else {
-          torchState.torchMode = "steady";
-          torchToggle(data.flag);
-        }
-      } else {
-        console.log("Torch is not supported on this device");
-      }
-    },
-  );
+  // socketState.socket.on(
+  //   "torchCmdFromServer",
+  //   (data: { flag: boolean; type: "BLINK" | "STEADY"; bpm: number }) => {
+  //     if (
+  //       torchState.isSupported &&
+  //       flagState.isMobile &&
+  //       streamState.videoTrack !== null
+  //     ) {
+  //       console.log("torchCmdFromServer", data);
+  //       if (data.type === "BLINK") {
+  //         if (data.flag) {
+  //           torchState.torchMode = "blink";
+  //           startBlink(data.bpm);
+  //         } else {
+  //           stopBlink();
+  //         }
+  //       } else {
+  //         torchState.torchMode = "steady";
+  //         torchToggle(data.flag);
+  //       }
+  //     } else {
+  //       console.log("Torch is not supported on this device");
+  //     }
+  //   },
+  // );
+
 
   socketState.socket.on("bufferFromServer", (data) => {
     const uint8Array = new Uint8Array(data);
@@ -365,36 +406,36 @@ export const socket = (): void => {
   });
 
   // webRtc関連
-  socketState.socket.on("candidateReqFromServer", (peers: string[]) => {
-    textPrint("room " + peers.join(","));
-    if (streamState.stream !== null) {
-      initRtpPeerConnection(
-        socketState.socket,
-        streamState.stream as MediaStream,
-        peers,
-      );
-    }
-  });
+  // socketState.socket.on("candidateReqFromServer", (peers: string[]) => {
+  //   textPrint("room " + peers.join(","));
+  //   if (streamState.stream !== null) {
+  //     initRtpPeerConnection(
+  //       socketState.socket,
+  //       streamState.stream as MediaStream,
+  //       peers,
+  //     );
+  //   }
+  // });
 
-  socketState.socket.on("iceCandidateFromServer", async (candidate) => {
-    await receiveIceCandidate(candidate);
-  });
+  // socketState.socket.on("iceCandidateFromServer", async (candidate) => {
+  //   await receiveIceCandidate(candidate);
+  // });
 
-  socketState.socket.on("offerRequestFromServer", async () => {
-    await createOffer(socketState.socket);
-  });
+  // socketState.socket.on("offerRequestFromServer", async () => {
+  //   await createOffer(socketState.socket);
+  // });
 
-  socketState.socket.on("offerFromServer", async (data) => {
-    await receiveOffer(socketState.socket, data);
-  });
+  // socketState.socket.on("offerFromServer", async (data) => {
+  //   await receiveOffer(socketState.socket, data);
+  // });
 
-  socketState.socket.on("answerReqFromServer", async () => {
-    await createAnswer(socketState.socket);
-  });
+  // socketState.socket.on("answerReqFromServer", async () => {
+  //   await createAnswer(socketState.socket);
+  // });
 
-  socketState.socket.on("answerFromServer", async (answer) => {
-    await receiveAnswer(answer);
-  });
+  // socketState.socket.on("answerFromServer", async (answer) => {
+  //   await receiveAnswer(answer);
+  // });
 
   // disconnect時、1秒後再接続
   socketState.socket.on("disconnect", () => {

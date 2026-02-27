@@ -37,9 +37,11 @@ export const recordAsOtherEmit = (
   io: SocketIO.Server,
   // state: cmdStateType,
   source: string,
-  target?: string
+  target?: string,
 ) => {
+  console.log("target", target);
   if (!currentState.RECORD) {
+    console.log(`start record as ${source}`);
     currentState.RECORD = true;
     pushStateStream(source);
     if (target && target !== undefined) {
@@ -62,6 +64,7 @@ export const recordAsOtherEmit = (
       });
     }
   } else {
+    console.log(`stop record as ${source}`);
     currentState.RECORD = false;
   }
 };

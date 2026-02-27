@@ -3,7 +3,7 @@
   "packageManager": "pnpm@8.12.1",
   "private": true,
   "scripts": {
-    "dev": "ts-node src/app.ts",
+    "dev": "tsx src/app.ts",
     "backend": "node --loader ts-node/esm src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",

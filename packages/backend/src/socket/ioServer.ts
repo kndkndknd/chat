@@ -25,6 +25,8 @@ import { enterFromForm } from "../cmd/form/enterFromForm";
 import { stopEmit } from "../cmd/stopEmit";
 import { connectFromClient } from "../clientSetting/connectFromClient";
 
+import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
+
 // websocket
 import { sendCharWebSocket } from "../webSocket/sendChar";
 
@@ -42,7 +44,7 @@ export const ioServer = (
   httpserver: Http.Server<
     typeof Http.IncomingMessage,
     typeof Http.ServerResponse
-  >
+  >,
 ) => {
   const io = new Server(httpserver, {
     path: "/socket.io",
@@ -120,6 +122,18 @@ export const ioServer = (
       m5Switch();
     });
 
+    // audioWorklet buffer
+    socket.on(
+      "workletBufferFromClient",
+      (data: {
+        video: string;
+        audio: ArrayBuffer;
+        source: string;
+        bufferSize: number;
+    }) => {
+      workletBufferFromClient(data, io);
+    });
+    
     // webRtc
     socket.on("joinFromClient", () => {});
     socket.on("iceCandidateFromClient", (candidate: RTCIceCandidate) => {
@@ -155,7 +169,7 @@ export const ioServer = (
         clientState.streamClient = clientState.streamClient.filter(
           (element) => {
             return element !== sockId;
-          }
+          },
         );
       }
       if (clientState.cmdClient.includes(sockId)) {

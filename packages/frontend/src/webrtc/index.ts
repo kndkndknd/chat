@@ -4,7 +4,7 @@ import { webRtcFrontState } from "../state";
 export const initRtpPeerConnection = (
   io,
   localStream: MediaStream,
-  peers: string[]
+  peers: string[],
 ): void => {
   if (!webRtcFrontState.isInitialized) {
     console.log("initRtpPeerConnection");
@@ -18,7 +18,7 @@ export const initRtpPeerConnection = (
 
     // remote streamの受信時動作
     webRtcFrontState.remoteVideo = document.getElementById(
-      "remoteVideo"
+      "remoteVideo",
     ) as HTMLVideoElement;
     webRtcFrontState.peerConnection.ontrack = (event) => {
       console.log("Remote track received: ", event.streams[0]);
@@ -73,7 +73,7 @@ export const receiveOffer = async (
   data: {
     offer: RTCSessionDescriptionInit;
     sourceId: string;
-  }
+  },
 ): Promise<void> => {
   console.log("reseiveOffer");
   try {
@@ -105,7 +105,7 @@ export const createAnswer = async (io): Promise<void> => {
       console.log("Local description set with answer: ", answer);
       await io.emit(
         "answerFromClient",
-        webRtcFrontState.peerConnection?.localDescription
+        webRtcFrontState.peerConnection?.localDescription,
       );
     } else {
       textPrint("Answer creation failed");
@@ -114,13 +114,13 @@ export const createAnswer = async (io): Promise<void> => {
     textPrint("Error creating or setting local description for answer");
     console.error(
       "Error creating or setting local description for answer",
-      error
+      error,
     );
   }
 };
 
 export const receiveAnswer = async (
-  answer: RTCSessionDescription
+  answer: RTCSessionDescription,
 ): Promise<void> => {
   console.log("reseiveAnswer", answer);
   await webRtcFrontState.peerConnection?.setRemoteDescription(answer);

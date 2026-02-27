@@ -44,7 +44,6 @@ import {
   initAudioStream,
   streamPlay,
 } from "../stream";
-import { quantize, quantizePlay, quantizeStop } from "../quantize";
 
 import { cmdFromServer, stopCmd } from "../cmd";
 

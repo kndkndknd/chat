@@ -16,7 +16,7 @@ import { gridTimeoutVal } from "./gridTimeoutVal";
 export const streamEmit = async (
   source: string,
   io: SocketIO.Server,
-  from?: string
+  from?: string,
 ) => {
   // if(streams[source].length > 0) {
   currentState.stream[source] = true;
@@ -42,10 +42,11 @@ export const streamEmit = async (
     for (let i = 0; i < streamState.basisBufferSize; i++) {
       audioBuff[i] = 1.0;
     }
+    // audioBuff = audioBuff.buffer as ArrayBuffer;
     buff = {
       source: source,
       bufferSize: streamState.basisBufferSize,
-      audio: audioBuff,
+      audio: audioBuff.buffer,
       video: streams[source].video.shift(),
       duration: streamState.basisBufferSize / 44100,
     };
@@ -73,7 +74,7 @@ export const streamEmit = async (
           audio:
             streams[source].audio.length > streams[source].index
               ? streams[source].audio[streams[source].index]
-              : new Float32Array(streams[source].bufferSize),
+              : new Float32Array(streams[source].bufferSize).buffer,
           video:
             streams[source].video.length > streams[source].index
               ? streams[source].video[streams[source].index]
@@ -138,7 +139,7 @@ export const streamEmit = async (
         Math.floor(
           Math.random() *
             (sampleRateState.randomraterange[source].max -
-              sampleRateState.randomraterange[source].min)
+              sampleRateState.randomraterange[source].min),
         );
 
       // stream.sampleRate = sampleRateRandomize(source);
@@ -150,7 +151,7 @@ export const streamEmit = async (
     // if (!streamState.grid[source]) {
     console.log(
       "bpmState, gridFlag:",
-      bpmState[targetId].stream[source].gridFlag
+      bpmState[targetId].stream[source].gridFlag,
     );
     if (!bpmState[targetId].stream[source].gridFlag) {
       // io.to(targetId).emit("streamFromServer", stream);
