@@ -18,7 +18,7 @@ import { initAudioStream } from "./stream";
 import { getAcceleration } from "./sensor";
 import { getGPSPosition } from "./gps";
 import { accelarateOsc, gpsOsc } from "./webaudio";
-import { initAudioWorklet } from "./audioWorklet/main";
+import { chatWorklet } from "./audioWorklet/chatWorklet";
 // import { initTorch } from "./stream/torch";
 
 export const initialize = async (
@@ -101,7 +101,7 @@ export const initialize = async (
     // await initAudioStream(streamState.stream);
     // await initVideoStream(streamState.stream);
     // await console.log(stream);
-    await initAudioWorklet(stream, socket);
+    await chatWorklet(stream, socket);
     await textPrint("initialized", { timeout: true });
     await socket.emit("connectFromClient", {
       clientMode:
@@ -180,10 +180,10 @@ export const initialize = async (
     // streamFlag.timelapse = true;
     timelapseState.flag = true;
     // timelapseState.trriger = false;
-    audioWorkletState.flag.TIMELAPSE = false;
+    audioWorkletState.chat.flag.TIMELAPSE = false;
     timelapseState.setIntervalId = window.setInterval(() => {
       if (timelapseState.flag) {
-        audioWorkletState.flag.TIMELAPSE = true;
+        audioWorkletState.chat.flag.TIMELAPSE = true;
       }
     }, 60000);
 

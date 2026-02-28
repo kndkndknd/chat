@@ -17,7 +17,6 @@ import { contextState } from "./webAudio/contextState";
 import { oscState } from "./webAudio/oscState";
 import { gainState } from "./webAudio/gainState";
 import { convolverState } from "./webAudio/convolverState";
-import { scriptProcessorState } from "./webAudio/scriptProcessorState";
 import { otherNodeState } from "./webAudio/otherNodeState";
 import { filterState } from "./webAudio/filterState";
 
@@ -47,7 +46,6 @@ export {
   oscState,
   otherNodeState,
   quantizeState,
-  scriptProcessorState,
   sensorState,
   socketState,
   streamFlagState,

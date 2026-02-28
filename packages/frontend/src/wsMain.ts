@@ -15,9 +15,9 @@ import {
   oscState,
   gainState,
   convolverState,
-  scriptProcessorState,
   otherNodeState,
 } from "./state";
+``;
 
 import {
   initVideo,

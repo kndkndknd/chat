@@ -3,10 +3,10 @@ import { Socket } from "socket.io-client";
 import { toBase64 } from "../canvasEvent/toBase64";
 import { bufferSizeState } from "../state";
 
-export async function initAudioWorklet(stream: MediaStream, socket: Socket) {
+export async function chatWorklet(stream: MediaStream, socket: Socket) {
   await contextState.audioContext.audioWorklet.addModule("chat-processor.js");
   const source = contextState.audioContext.createMediaStreamSource(stream);
-  audioWorkletState.audioWorklet = new AudioWorkletNode(
+  audioWorkletState.chat.audioWorklet = new AudioWorkletNode(
     contextState.audioContext,
     "chat-processor",
     {
@@ -14,14 +14,16 @@ export async function initAudioWorklet(stream: MediaStream, socket: Socket) {
       numberOfOutputs: 0,
       channelCount: 1,
       processorOptions: {
-        initialBufferLength: audioWorkletState.length,
+        initialBufferLength: audioWorkletState.chat.length,
       },
     },
   );
 
   // メッセージ受信（ワークレット → メイン）
-  audioWorkletState.audioWorklet.port.onmessage = async (event) => {
-    if (Object.values(audioWorkletState.flag).every((flag) => flag === false)) {
+  audioWorkletState.chat.audioWorklet.port.onmessage = async (event) => {
+    if (
+      Object.values(audioWorkletState.chat.flag).every((flag) => flag === false)
+    ) {
       return;
     }
     // if (
@@ -38,9 +40,9 @@ export async function initAudioWorklet(stream: MediaStream, socket: Socket) {
       // 必要ならメタを付けて送る。ここでは生バイナリでPOST
       try {
         const ab: ArrayBuffer = payload; // Float32Array.buffer
-        console.log(Object.keys(audioWorkletState.flag));
-        Object.keys(audioWorkletState.flag).forEach((streamSource) => {
-          if (audioWorkletState.flag[streamSource]) {
+        console.log(Object.keys(audioWorkletState.chat.flag));
+        Object.keys(audioWorkletState.chat.flag).forEach((streamSource) => {
+          if (audioWorkletState.chat.flag[streamSource]) {
             // socket.emit("audiobufferFromClient", {
             //   buffer: ab,
             //   type: streamSource,
@@ -54,7 +56,7 @@ export async function initAudioWorklet(stream: MediaStream, socket: Socket) {
             });
             if (streamSource === "CHAT" || streamSource === "TIMELAPSE") {
               // CHAT と TIMELAPSE は送信後にフラグを下ろす
-              audioWorkletState.flag[streamSource] = false;
+              audioWorkletState.chat.flag[streamSource] = false;
             }
           }
         });
@@ -67,16 +69,16 @@ export async function initAudioWorklet(stream: MediaStream, socket: Socket) {
   };
 
   // 接続（source -> worklet）
-  source.connect(audioWorkletState.audioWorklet);
+  source.connect(audioWorkletState.chat.audioWorklet);
 }
 
 // 動的に bufferLengthState を変更したい場合
 export function setBufferLengthState(next: number) {
-  audioWorkletState.length = Math.max(1, next | 0); // 1以上の整数に
-  if (audioWorkletState.audioWorklet) {
-    audioWorkletState.audioWorklet.port.postMessage({
+  audioWorkletState.chat.length = Math.max(1, next | 0); // 1以上の整数に
+  if (audioWorkletState.chat.audioWorklet) {
+    audioWorkletState.chat.audioWorklet.port.postMessage({
       type: "updateBufferLengthState",
-      payload: audioWorkletState.length,
+      payload: audioWorkletState.chat.length,
     });
   }
 }

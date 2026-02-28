@@ -8,7 +8,11 @@ export default defineConfig({
         main: "./html/index.html",
         "chat-processor": path.resolve(
           __dirname,
-          "./src/audioWorklet/chat-processor.js"
+          "./src/audioWorklet/chat-processor.js",
+        ),
+        "whitenoise-processor": path.resolve(
+          __dirname,
+          "./src/audioWorklet/whitenoise-processor.js",
         ),
         form: "./html/form.html",
         vosk: "./html/vosk.html",
@@ -21,6 +25,9 @@ export default defineConfig({
         entryFileNames: (chunk) => {
           if (chunk.name === "chat-processor") {
             return "chat-processor.js";
+          }
+          if (chunk.name === "whitenoise-processor") {
+            return "whitenoise-processor.js";
           }
           return "[name].js";
         },
