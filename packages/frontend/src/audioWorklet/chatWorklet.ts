@@ -21,19 +21,13 @@ export async function chatWorklet(stream: MediaStream, socket: Socket) {
 
   // メッセージ受信（ワークレット → メイン）
   audioWorkletState.chat.audioWorklet.port.onmessage = async (event) => {
+    // console.log("audioWorkletState.chat.flag:", audioWorkletState.chat.flag);
     if (
       Object.values(audioWorkletState.chat.flag).every((flag) => flag === false)
     ) {
       return;
     }
-    // if (
-    //   audioWorkletState.flag.CHAT === false &&
-    //   audioWorkletState.flag.PLAYBACK === false &&
-    //   audioWorkletState.flag.TIMELAPSE === false
-    // ) {
-    //   // console.log("no stream source flag is true, skip sending buffer");
-    //   return;
-    // }
+    console.log("Received message from AudioWorklet:", event.data);
     const { type, payload } = event.data ?? {};
     if (type === "buffer") {
       // payload は Transfer された ArrayBuffer（Float32Array の中身）

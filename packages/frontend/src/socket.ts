@@ -155,7 +155,7 @@ export const socket = (): void => {
       };
       const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
       streamPlay(streamType, socketState.socket, streamData);
-      audioWorkletState.flag[data.source] = true;
+      audioWorkletState.chat.flag[data.source] = true;
 
       // if (quantizeState.flag && quantizeState.stream.includes("CHAT")) {
       //   const chunk = {
@@ -229,7 +229,7 @@ export const socket = (): void => {
       };
       const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
       streamPlay(streamType, socketState.socket, streamData);
-      audioWorkletState.flag[data.source] = true;
+      audioWorkletState.chat.flag[data.source] = true;
     },
   );
 
@@ -331,7 +331,7 @@ export const socket = (): void => {
       timelapseState.flag = true;
     } else if (data.cmd === "GET") {
       // timelapseState.trriger = true;
-      audioWorkletState.flag.TIMELAPSE = true;
+      audioWorkletState.chat.flag.TIMELAPSE = true;
       if (!timelapseState.flag) {
         timelapseState.flag = true;
         setTimeout(() => {
@@ -394,7 +394,6 @@ export const socket = (): void => {
   //     }
   //   },
   // );
-
 
   socketState.socket.on("bufferFromServer", (data) => {
     const uint8Array = new Uint8Array(data);
