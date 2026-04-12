@@ -77,9 +77,6 @@ export type cmdStateType_old = {
     };
   };
   form: {
-    hls: {
-      [key: string]: string;
-    };
     cmd: {
       [key: string]: string;
     };

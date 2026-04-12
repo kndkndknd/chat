@@ -1,6 +1,7 @@
 import { canvasElement } from "./canvasElement";
 
 export function initVideo() {
+  console.log(canvasElement.video)
   canvasElement.video.play();
   canvasElement.video.volume = 0;
 }

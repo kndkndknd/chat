@@ -156,9 +156,6 @@ export type previousStateType = {
 };
 
 export type formStateType = {
-  hls: {
-    [key: string]: string;
-  };
   cmd: {
     [key: string]: string;
   };

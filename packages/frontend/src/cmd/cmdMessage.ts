@@ -5,15 +5,9 @@ import {
   feedback,
   bass,
   click,
-  simulate,
-  metronome,
 } from "../webaudio";
 import { textPrint, erasePrint } from "../canvasEvent";
-// import { hlsVideoPlay } from "../hlsVideo";
-import { flagState } from "../state";
 import { stopCmd } from "./stopCmd";
-import { text } from "stream/consumers";
-// import { frontState } from "./globalVariable";
 
 export const cmdMessage = ({type, payload}: cmdSocketType) => {
   console.log(payload.cmd);

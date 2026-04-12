@@ -44,12 +44,9 @@ export const stopEmit = (
       }
       previousState.sinewave = currentState.sinewave;
       currentState.sinewave = {};
-      if (target !== "ExceptHls") {
-        // state.hls = [];
-      }
     } else {
       targetEmit(source, {
-        type: "STOP",
+        type: "stop",
         payload: {
           target: target === undefined ? "ALL" : target,
           fadeOutVal: cmdState.FADE.OUT,
@@ -68,10 +65,9 @@ export const stopEmit = (
         delete currentState.sinewave[source];
       }
     }
-    // state.hls = [];
   } else if (Object.keys(clientState.client).includes(client)) {
     targetEmit(client, {
-      type: "STOP",
+      type: "stop",
       payload: {
         target: target === undefined ? "ALL" : target,
         fadeOutVal: cmdState.FADE.OUT,
@@ -89,10 +85,6 @@ export const stopEmit = (
       previousState.sinewave[client] = currentState.sinewave[client];
       delete currentState.sinewave[client];
     }
-    // if (target !== "ExceptHls") {
-    //   state.hls = state.hls.filter((element) => element !== client);
-    // }
-    // state.hls = state.hls.filter((element) => element !== client);
   }
 
   // stop stream
@@ -106,7 +98,4 @@ export const stopEmit = (
   Object.keys(streamState.pa).forEach((element) => {
     streamState.pa[element] = false;
   });
-  // console.log("client", state.client);
-  // console.log("hls", state.hls);
-  // console.log("previous", state.previous);
 };

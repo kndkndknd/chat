@@ -29,9 +29,6 @@ export const stopCmd = (fade: number, except?: string) => {
   if (metronomeState.intervalId && except !== "METRONOME") {
     clearInterval(metronomeState.intervalId);
   }
-  // if (except !== "HLS") {
-  //   hlsVideoStop();
-  // }
   flagState.simulate = false;
   for (let key in streamFlagState) {
     streamFlagState[key] = false;
@@ -42,5 +39,4 @@ export const stopCmd = (fade: number, except?: string) => {
   }
 
   console.log("stopCmd", streamFlagState);
-  // const hlsVideo = document.getElementById("hls") as HTMLVideoElement;
 };
