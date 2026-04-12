@@ -1,24 +1,24 @@
-import SocketIO from "socket.io";
-import { chatPreparation } from "../stream/chatPreparation";
+import { emitChatReq } from "../stream/chat/emitChatReq";
 import { recordEmit } from "../stream/recordEmit";
 import { voiceEmit } from "./voiceEmit";
-import { streamEmit } from "../stream/streamEmit";
+import { emitStream } from "../stream/emitStream";
 import { streamList } from "../data";
+import { currentState } from "../state";
 
 export const execStream = async (
   strings: string,
-  io: SocketIO.Server,
-  id: string
+  id: string,
 ): Promise<void> => {
   if (strings === "CHAT") {
-    chatPreparation(io);
-    voiceEmit(io, strings, id);
+    currentState.stream.CHAT = true;
+    emitChatReq();
   } else if (strings === "RECORD" || strings === "REC") {
-    recordEmit(io);
-    voiceEmit(io, "RECORD", id);
+    recordEmit();
   } else if (streamList.includes(strings)) {
     console.log("in stream");
-    streamEmit(strings, io);
-    voiceEmit(io, strings, id);
+    currentState.stream[strings] = true;
+    emitStream(strings);
   }
+  voiceEmit(strings, id);
 };
+

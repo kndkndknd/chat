@@ -1,11 +1,18 @@
-import { bpmStreamStateType } from "../../../../../types";
+import { bpmStreamStateType, paramsSocketType } from "../../../../../types";
+import { targetEmit } from "../../webSocket";
 
-export const emitQuantize = (
-  quantizeObj: { [client: string]: bpmStreamStateType },
-  io
-) => {
+export const emitQuantize = (quantizeObj: {
+  [client: string]: bpmStreamStateType;
+}) => {
   console.log("emitQuantize", quantizeObj);
   for (const client in quantizeObj) {
-    io.to(client).emit("quantizeFromServer", quantizeObj[client]);
+    const data: paramsSocketType = {
+      type: "params",
+      payload: {
+        type: "quantize",
+        param: quantizeObj[client],
+      },
+    };
+    targetEmit(client, data);
   }
 };

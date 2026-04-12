@@ -1,4 +1,4 @@
-import { CmdType } from "./cmdType";
+import { CmdType, CmdOptionType } from "./cmdType";
 import { buffStateType, buffArrayType, StreamsType } from "./streamType";
 import {
   cmdStateType,
@@ -24,6 +24,8 @@ import {
   bpmStreamStateType,
   quantizeParamClass,
 } from "./bpmType";
+import { messageType } from "./webSocket/messageType";
+import { webSocketType, stringSocketType, cmdSocketType, streamReqSocketType, streamSocketType, paramsSocketType, initSocketType } from "./webSocketType";
 
 export {
   CmdType,
@@ -33,6 +35,7 @@ export {
   buffArrayType,
   StreamsType,
   cmdStateType,
+  CmdOptionType,
   clientStateType,
   streamStateType,
   filterStateType,
@@ -51,4 +54,12 @@ export {
   arduinoStateType,
   newWindowReqType,
   quantizeParamClass,
+  messageType,
+  webSocketType,
+  stringSocketType,
+  cmdSocketType,
+  streamReqSocketType,
+  streamSocketType,
+  paramsSocketType,
+  initSocketType,
 };

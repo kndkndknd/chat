@@ -4,17 +4,22 @@ import express from "express";
 import * as path from "path";
 import { default as favicon } from "serve-favicon";
 import * as Https from "https";
-import { fileURLToPath } from "url";
-import { ioServer } from "./socket/ioServer";
-import { spawn } from "child_process";
-// import { states } from "./states";
-// import { switchCtrl } from "./arduinoAccess/switch";
+import * as http from "http";
 import { networkInterfaces } from "os";
 import SocketIO from "socket.io";
 
-import { getLiveStream } from "./stream/getLiveStream";
 import { stringEmit } from "./socket/ioEmit";
-import { webSocket } from "./webSocket/webSocketConnection";
+
+import { WebSocketServer, WebSocket } from "ws";
+import { webSocketState } from "./state/states/webSocketState";
+import { receiveMessage } from "./webSocket";
+import { charProcess } from "./cmd/charProcess";
+import { connectClient } from "./clientProcess/connectClient";
+import { disconnectClient } from "./clientProcess/disconnectClient"
+
+import { buffStateType } from "../../../types/streamType";
+import { receiveStream } from "./stream/receiveStream";
+import { reqStream } from "./stream/reqStream";
 
 // import { io as socketIoClient, Socket } from "socket.io-client";
 
@@ -46,7 +51,7 @@ const allowCrossDomain = function (req, res, next) {
   res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE");
   res.header(
     "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, access_token"
+    "Content-Type, Authorization, access_token",
   );
   // intercept OPTIONS method
   if ("OPTIONS" === req.method) {
@@ -60,10 +65,10 @@ app.use(allowCrossDomain);
 //const httpsserver = Https.createServer(options,app).listen(port);
 const options = {
   key: fs.readFileSync(
-    path.join(__dirname, "../../../..", "keys/chat/private.key")
+    path.join(__dirname, "../../../..", "keys/chat/private.key"),
   ),
   cert: fs.readFileSync(
-    path.join(__dirname, "../../../..", "keys/chat/selfsigned.crt")
+    path.join(__dirname, "../../../..", "keys/chat/selfsigned.crt"),
   ),
   passphrase: "chat",
 };
@@ -79,9 +84,33 @@ function getIpAddress() {
 const host = getIpAddress();
 console.log(`Server listening on ${host}:${port}`);
 
-const io: SocketIO.Server = ioServer(httpserver);
-
 // webSocket(io);
+
+webSocketState.wss = new WebSocketServer({ server: httpserver });
+
+webSocketState.wss.on("connection", (ws: WebSocket, request: http.IncomingMessage) => {
+  // const clientId = randomUUID();
+  // const clientIdObj = { id: String(clientId), ws, ip: request.socket.remoteAddress ?? "" };
+  // console.log(clientIdObj);
+  // webSocketState.clientId.push(clientIdObj);
+
+  connectClient(request.socket.remoteAddress ?? "", ws);  
+
+  ws.on("message", (data) => {
+    receiveMessage(data, ws);
+  });
+
+  ws.on("close", () => {
+    disconnectClient(ws);
+    // webSocketState.clientId = webSocketState.clientId.filter(
+    //   (client) => client.ws !== ws,
+    // );
+  });
+
+  ws.on("error", (error) => {
+    console.error("WebSocket error:", error);
+  });
+});
 
 app.get("/", function (req, res, next) {
   try {
@@ -96,7 +125,7 @@ app.get("/snowleopard", function (req, res, next) {
   try {
     console.log("snowleopard");
     res.sendFile(
-      path.join(__dirname, "..", "static", "html", "snowleopard.html")
+      path.join(__dirname, "..", "static", "html", "snowleopard.html"),
     );
   } catch (error) {
     console.log(error);
@@ -137,6 +166,16 @@ app.get("/hls", function (req, res, next) {
   try {
     console.log("hls test");
     res.sendFile(path.join(__dirname, "..", "static", "html", "hlstest.html"));
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Something went wrong" });
+  }
+});
+
+app.get("/ws", function (req, res, next) {
+  try {
+    console.log("ws test");
+    res.sendFile(path.join(__dirname, "..", "static", "html", "wsClient.html"));
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Something went wrong" });
@@ -217,15 +256,51 @@ app.post("/api/form", function (req, res, next) {
     console.log("enter");
   } else {
     console.log("chat:", req.body.chat);
-    stringEmit(io, req.body.chat, false);
+    stringEmit(req.body.chat, false);
   }
   res.json({ success: true, message: "Data received" });
 });
 
 app.post("/api/char", function (req, res, next) {
-  console.log("POST /api/char", req.body);
-  console.log("ip:", req.ip);
+  const char = <string>req.body.char;
+  const ip = req.ip;
+  const id = webSocketState.clientId.find((client) => client.ip === ip)?.id;
+  if (!id) {
+    console.error("Client ID not found for IP:", ip);
+    return res.status(400).json({ success: false, message: "Client ID not found" });
+  } else {
+    charProcess(char, id);
+  }
+  // console.log("POST /api/char", req.body);
+  // console.log("ip:", req.ip);
   res.json({ success: true, message: "char received" });
+});
+
+app.post("/api/chunk", function (req, res, next) {
+  // console.log("POST /api/chunk", req.body);
+  // console.log("ip:", req.ip);
+  const stream: buffStateType = req.body;
+  receiveStream(stream);
+  // console.log("chunk added to chats, total chunks:", chats.length);
+  res.json({ success: true, message: "chunk received" });
+});
+
+let i = 0;
+
+app.post("/api/streamReq", function (req, res, next) {
+  console.log("POST /api/streamReq", req.body);
+  console.log("ip:", req.ip);
+  console.log("streamReq count:", ++i);
+  const { source } = req.body;
+  const ip = req.ip;
+  reqStream(source, ip);
+  res.json({ success: true, message: "streamReq received" });
+});
+
+app.post("/api/videoBuffer", function (req, res, next) {
+  console.log("POST /api/videoBuffer", req.body);
+  console.log("ip:", req.ip);
+  res.json({ success: true, message: "videoBuffer received" });
 });
 
 /*

@@ -80,7 +80,7 @@ const print = (
   target: CanvasRenderingContext2D,
   cnvs: HTMLCanvasElement = canvasElement.cnvs,
 ) => {
-  // console.log("print: ", text);
+  console.log("print: ", text);
   let fontSize = 20;
   let zenkakuFlag = false;
   target.globalAlpha = 1;

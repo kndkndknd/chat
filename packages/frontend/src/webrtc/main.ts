@@ -14,7 +14,6 @@ import {
   oscState,
   gainState,
   convolverState,
-  scriptProcessorState,
   otherNodeState,
   webRtcState,
 } from "../state";

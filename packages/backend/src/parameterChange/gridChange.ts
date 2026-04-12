@@ -1,7 +1,7 @@
 import { bpmState } from "../state";
 import { stringEmit } from "../socket/ioEmit";
 
-export const gridChange = (arg, io) => {
+export const gridChange = (arg) => {
   if (arg && arg.property) {
     if (arg.property !== "TRUE" && arg.property !== "FALSE") {
       let averageFlag = 0;
@@ -24,14 +24,13 @@ export const gridChange = (arg, io) => {
         }
       }
       stringEmit(
-        io,
         "GRID: " +
           String(
-            bpmState[Object.keys(bpmState)[0]].stream[arg.property].gridFlag
+            bpmState[Object.keys(bpmState)[0]].stream[arg.property].gridFlag,
           ) +
           "(" +
           arg.property +
-          ")"
+          ")",
         // state
       );
     } else {
@@ -42,24 +41,11 @@ export const gridChange = (arg, io) => {
         }
       }
       stringEmit(
-        io,
-        "GRID: " + arg.property
+        "GRID: " + arg.property,
         // state
       );
     }
-
-    // streamState.grid[arg.property] = !streamState.grid[arg.property];
-    // io.emit('stringsFromServer',{strings: 'GRID: ' + String(streamState.grid[arg.property]) + '(' + arg.property + ')', timeout: true})
   } else {
-    // let flag = false;
-    // if (Object.values(streamState.grid).includes(false)) {
-    //   flag = true;
-    // }
-    // for (let target in streamState.grid) {
-    //   streamState.grid[target] = flag;
-    // }
-    // // io.emit('stringsFromServer',{strings: 'GRID: ' + String(streamState.grid.CHAT), timeout: true})
-    // stringEmit(io, "GRID: " + String(streamState.grid.CHAT));
     let averageFlag = 0;
     let denominator = 0;
     for (const client in bpmState) {
@@ -82,10 +68,9 @@ export const gridChange = (arg, io) => {
       }
     }
     stringEmit(
-      io,
       "GRID: " +
         String(bpmState[Object.keys(bpmState)[0]].stream.CHAT.gridFlag),
-      true
+      true,
     );
   }
 };

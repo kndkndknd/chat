@@ -1,13 +1,9 @@
-import SocketIO from "socket.io";
 import { receiveEnter } from "../cmd/receiveEnter";
 import { stopEmit } from "../cmd/stopEmit";
 import { clientState, currentState } from "../state";
+import { stringEmit } from "../socket/ioEmit";
 
-export const timerCmd = (
-  io: SocketIO.Server,
-  stringArr: string[],
-  timeStampArr: string[]
-) => {
+export const timerCmd = (stringArr: string[], timeStampArr: string[]) => {
   let dt = new Date();
   let y = String(dt.getFullYear());
   let m =
@@ -27,10 +23,11 @@ export const timerCmd = (
   const cmdString =
     stringArr.length > 2 ? stringArr.slice(1).join(" ") : stringArr[1];
   const string = cmdString + " SCHEDULED " + String(timerVal) + "ms LATER";
-  io.emit("stringsFromServer", {
-    strings: string,
-    timeout: true,
-  });
+  stringEmit(string, true);
+  // io.emit("stringsFromServer", {
+  //   strings: string,
+  //   timeout: true,
+  // });
   console.log(string);
 
   if (timerVal > 0) {
@@ -40,17 +37,17 @@ export const timerCmd = (
       ];
       if (
         Object.keys(currentState.cmd).includes(
-          stringArr[stringArr.length - 1]
+          stringArr[stringArr.length - 1],
         ) ||
         Object.keys(currentState.stream).includes(
-          stringArr[stringArr.length - 1]
+          stringArr[stringArr.length - 1],
         )
       ) {
-        receiveEnter(cmdString, targetId, io);
+        receiveEnter(cmdString, targetId);
       } else if (stringArr[1] === "STOP") {
         if (stringArr.length === 2) {
           const client = "all";
-          stopEmit(io, "", "ALL", client);
+          stopEmit("", "ALL", client);
           /*
         } else if(stringArr.length === 3) {
           if(stringArr[2] === 'SINEWAVECLIENT') {
@@ -63,10 +60,11 @@ export const timerCmd = (
           */
         }
       } else {
-        io.emit("stringsFromServer", {
-          strings: cmdString,
-          timeout: false,
-        });
+        stringEmit(cmdString, false);
+        // io.emit("stringsFromServer", {
+        //   strings: cmdString,
+        //   timeout: false,
+        // });
       }
     }, timerVal);
   }

@@ -1,9 +1,11 @@
 import { contextState, audioWorkletState } from "../state";
-import { Socket } from "socket.io-client";
+// import { Socket } from "socket.io-client";
 import { toBase64 } from "../canvasEvent/toBase64";
-import { bufferSizeState } from "../state";
+import { bufferSizeState, webSocketState } from "../state";
+import { postStream } from "../postMessage/postStream";
+import { buffStateType } from "../../../../types/streamType";
 
-export async function chatWorklet(stream: MediaStream, socket: Socket) {
+export async function chatWorklet(stream: MediaStream) {
   await contextState.audioContext.audioWorklet.addModule("chat-processor.js");
   const source = contextState.audioContext.createMediaStreamSource(stream);
   audioWorkletState.chat.audioWorklet = new AudioWorkletNode(
@@ -42,12 +44,22 @@ export async function chatWorklet(stream: MediaStream, socket: Socket) {
             //   type: streamSource,
             // });
             console.log("workletFromClient emit:", streamSource);
-            socket.emit("workletBufferFromClient", {
-              video: toBase64(),
-              audio: ab,
+            const stream: buffStateType = {
               source: streamSource,
+              audio: ab,
+              video: toBase64(),
               bufferSize: bufferSizeState.bufferSize,
-            });
+              duration: ab.byteLength / 128 / 44100, // 仮の計算
+              sampleRate: 44100,
+              glitch: false,
+            }
+            postStream(stream);
+            // webSocketState.socket.emit("workletBufferFromClient", {
+            //   video: toBase64(),
+            //   audio: ab,
+            //   source: streamSource,
+            //   bufferSize: bufferSizeState.bufferSize,
+            // });
             if (streamSource === "CHAT" || streamSource === "TIMELAPSE") {
               // CHAT と TIMELAPSE は送信後にフラグを下ろす
               audioWorkletState.chat.flag[streamSource] = false;

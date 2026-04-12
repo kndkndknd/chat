@@ -9,6 +9,7 @@ import {
 
 export const stopCmd = (fade: number, except?: string) => {
   const currentTime = contextState.audioContext.currentTime;
+  console.log("stopCmd", fade);
   if (except !== "BASS") {
     gainState.bassGain.gain.setValueAtTime(0, 0);
   }
@@ -17,6 +18,7 @@ export const stopCmd = (fade: number, except?: string) => {
   }
   if (except !== "WHITENOISE") {
     gainState.whitenoiseGain.gain.setTargetAtTime(0, currentTime, fade);
+    console.log('stopCmd whitenoise');
   }
   if (except !== "SINEWAVE") {
     gainState.oscGain.gain.setTargetAtTime(0, currentTime, fade);

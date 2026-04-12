@@ -2,7 +2,7 @@
 
 // socketState.socket = io();
 // socketState.socketId = socketState.socket.id;
-import { connectWebSocket } from "./webSocket/connectWebSocket";
+import { initWebSocket } from "./webSocket";
 import { clientId } from "./webSocket/clientId";
 
 import {
@@ -58,7 +58,7 @@ import { setQuantize } from "./quantize/setQuantize";
 
 // let start = false;
 
-const ws = connectWebSocket();
+const ws = initWebSocket();
 
 let cinemaFlag = false;
 let clockModeId: number = 0;

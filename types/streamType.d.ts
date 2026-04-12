@@ -3,12 +3,21 @@ import { filterStateType } from "./stateType";
 export type buffStateType = {
   source: string;
   audio: ArrayBuffer;
-  video: string;
+  video?: string;
   bufferSize: number;
   duration: number;
+  sampleRate: number;
+  glitch: boolean;
   from?: string;
   floating?: boolean;
   filter?: filterStateType;
+  target?: string;
+  position?: {
+    top: number;
+    left: number;
+    width: number;
+    height: number;
+  };
 };
 
 export type buffArrayType = {

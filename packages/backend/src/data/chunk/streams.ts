@@ -1,5 +1,6 @@
 import { streamState } from '../../state';
 import { StreamsType } from '../../../../../types';
+import { buffStateType } from '../../../../../types/streamType';
 
 export const streams: StreamsType = {
   PLAYBACK: {
@@ -28,5 +29,5 @@ export const streams: StreamsType = {
   },
 };
 
-export const chats = [];
+export const chats: buffStateType[] = [];
 

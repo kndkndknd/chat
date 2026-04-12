@@ -1,24 +1,13 @@
 import { playAudioStream } from "./playAudioStream";
-import { chatReq } from "../chatReq";
 import { showImage, textPrint, erasePrint } from "../../canvasEvent";
-import { flagState } from "../../state";
-import { Socket } from "socket.io-client";
-import { filterStateType } from "../../../../../types";
+import { flagState, streamFlagState, audioWorkletState } from "../../state";
+import { buffStateType, filterStateType } from "../../../../../types";
+import { postStreamReq } from "../../postMessage/postStreamReq";
+
 
 export const streamPlay = (
   type: "CHAT" | "STREAM",
-  socket: Socket,
-  stream: {
-    audio: Float32Array;
-    sampleRate: number;
-    glitch: boolean;
-    bufferSize: number;
-    duration?: number;
-    video?: string;
-    source?: string;
-    floating?: boolean;
-    filter?: filterStateType;
-  },
+  stream: buffStateType,
   cinemaFlag?: boolean
 ) => {
   // if (!frontState.quantize.flag) {
@@ -46,16 +35,20 @@ export const streamPlay = (
   if (flagState.recLatency) {
     setTimeout(() => {
       if (type === "CHAT") {
-        chatReq(String(socket.id));
+        streamFlagState.CHAT = true;
+        audioWorkletState.chat.flag.CHAT = true;
       } else {
-        socket.emit("streamReqFromClient", stream.source);
+        // socket.emit("streamReqFromClient", stream.source);
+        postStreamReq(stream.source)
       }
     }, (stream.bufferSize / stream.sampleRate) * 1000);
   } else {
     if (type === "CHAT") {
-      chatReq(String(socket.id));
+      streamFlagState.CHAT = true;
+      audioWorkletState.chat.flag.CHAT = true;  
     } else {
-      socket.emit("streamReqFromClient", stream.source);
+      postStreamReq(stream.source)
+      // socket.emit("streamReqFromClient", stream.source);
     }
   }
 };

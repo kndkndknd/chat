@@ -1,7 +1,7 @@
 import { sampleRateState } from "../state";
 import { stringEmit } from "../socket/ioEmit";
 
-export const sampleRateChange = (arg, io) => {
+export const sampleRateChange = (arg) => {
   let sampleRate = 44100;
   if (arg && isFinite(Number(arg.value))) {
     sampleRate = arg.value;
@@ -26,8 +26,7 @@ export const sampleRateChange = (arg, io) => {
     sampleRateState.sampleRate[arg.property] = sampleRate;
     // io.emit('stringsFromServer',{strings: 'SampleRate: ' + String(sampleRateState.sampleRate[arg.source]) + 'Hz', timeout: true})
     stringEmit(
-      io,
-      "SampleRate: " + String(sampleRateState.sampleRate[arg.property]) + "Hz"
+      "SampleRate: " + String(sampleRateState.sampleRate[arg.property]) + "Hz",
       // state
     );
   } else {
@@ -37,8 +36,7 @@ export const sampleRateChange = (arg, io) => {
     }
     // io.emit('stringsFromServer',{strings: 'SampleRate: ' + String(sampleRateState.sampleRate.CHAT) + 'Hz', timeout: true})
     stringEmit(
-      io,
-      "SampleRate: " + String(sampleRateState.sampleRate.CHAT) + "Hz"
+      "SampleRate: " + String(sampleRateState.sampleRate.CHAT) + "Hz",
       // state
     );
   }

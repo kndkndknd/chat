@@ -1,14 +1,10 @@
-import SocketIO from "socket.io";
 import { webRtcServerState, clientState } from "../state";
 import { stringEmit } from "../socket/ioEmit";
+import { targetEmit } from "../webSocket";
 
-export const joinOrLeave = (
-  type: "JOIN" | "LEAVE",
-  io: SocketIO.Server,
-  id: string
-): void => {
+export const joinOrLeave = (type: "JOIN" | "LEAVE", id: string): void => {
   if (clientState.client[id]?.snowLeopard) {
-    stringEmit(io, "Snow Leopard client cannot join room.", true, id);
+    stringEmit("Snow Leopard client cannot join room.", true, id);
     return;
   }
   const room = webRtcServerState.rooms.get(webRtcServerState.roomId);
@@ -21,11 +17,25 @@ export const joinOrLeave = (
     room?.members.add(id);
     // const peers = Array.from(room?.members || []);
     webRtcServerState.member.push(id);
-    io.to(id).emit("candidateReqFromServer", webRtcServerState.member);
+    // io.to(id).emit("candidateReqFromServer", webRtcServerState.member);
+    targetEmit(id, {
+      type: "webrtc",
+      payload: {
+        type: "candidateReq",
+        member: webRtcServerState.member,
+      },
+    });
     // Notify existing members about the new member
     webRtcServerState.member.forEach((memberId) => {
       if (memberId !== id) {
-        io.to(memberId).emit("joinInfoFromServer", id);
+        // io.to(memberId).emit("joinInfoFromServer", id);
+        targetEmit(memberId, {
+          type: "webrtc",
+          payload: {
+            type: "joinInfo",
+            id,
+          },
+        });
       }
     });
   } else if (type === "LEAVE") {
@@ -37,34 +47,59 @@ export const joinOrLeave = (
       webRtcServerState.rooms.delete(webRtcServerState.roomId);
     }
     webRtcServerState.member = webRtcServerState.member.filter(
-      (element) => element !== id
+      (element) => element !== id,
     );
     webRtcServerState.member.forEach((memberId) => {
-      io.to(memberId).emit("leaveInfoFromServer", id);
+      targetEmit(memberId, {
+        type: "webrtc",
+        payload: {
+          type: "leaveInfo",
+          id,
+        },
+      });
+      // io.to(memberId).emit("leaveInfoFromServer", id);
     });
   }
   console.log("member: ", webRtcServerState.member);
 };
 
-export const offerReq = (io: SocketIO.Server, id: string): void => {
+export const offerReq = (id: string): void => {
   console.log("offer Req " + id);
-  io.to(id).emit("offerRequestFromServer");
+  // io.to(id).emit("offerRequestFromServer");
+  targetEmit(id, {
+    type: "webrtc",
+    payload: {
+      type: "offerReq",
+    },
+  });
 };
 
-export const answerReq = (io: SocketIO.Server, id: string): void => {
+export const answerReq = (id: string): void => {
   console.log("answer Req " + id);
-  io.to(id).emit("answerReqFromServer");
+  // io.to(id).emit("answerReqFromServer");
+  targetEmit(id, {
+    type: "webrtc",
+    payload: {
+      type: "answerReq",
+    },
+  });
 };
 
 export const iceCandidateEmit = (
-  io: SocketIO.Server,
   candidate: RTCIceCandidateInit,
-  id: string
+  id: string,
 ): void => {
   console.log("iceCandidateEmit to members except ", id);
   webRtcServerState.member.forEach((memberId) => {
     if (memberId !== id) {
-      io.to(memberId).emit("iceCandidateFromServer", candidate);
+      // io.to(memberId).emit("iceCandidateFromServer", candidate);
+      targetEmit(memberId, {
+        type: "webrtc",
+        payload: {
+          type: "iceCandidate",
+          candidate,
+        },
+      });
     }
   });
   // webRtcServerState.rooms
@@ -77,14 +112,21 @@ export const iceCandidateEmit = (
 };
 
 export const offerEmit = (
-  io: SocketIO.Server,
   offer: RTCSessionDescriptionInit,
-  id: string
+  id: string,
 ): void => {
   console.log("offerEmit to members except ", id);
   webRtcServerState.member.forEach((memberId) => {
     if (memberId !== id) {
-      io.to(memberId).emit("offerFromServer", { offer, sourceId: id });
+      // io.to(memberId).emit("offerFromServer", { offer, sourceId: id });
+      targetEmit(memberId, {
+        type: "webrtc",
+        payload: {
+          type: "offer",
+          offer,
+          sourceId: id,
+        },
+      });
     }
   });
   // webRtcServerState.rooms
@@ -97,13 +139,19 @@ export const offerEmit = (
 };
 
 export const answerEmit = (
-  io: SocketIO.Server,
   answer: RTCSessionDescription,
-  targetId: string
+  targetId: string,
 ): void => {
   console.log("answerEmit to ", targetId);
   if (webRtcServerState.member.includes(targetId)) {
-    io.to(targetId).emit("answerFromServer", answer);
+    // io.to(targetId).emit("answerFromServer", answer);
+    targetEmit(targetId, {
+      type: "webrtc",
+      payload: {
+        type: "answer",
+        answer,
+      },
+    });
   }
   // webRtcServerState.member.forEach((memberId) => {
   //   if (memberId !== id) {

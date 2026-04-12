@@ -1,12 +1,8 @@
-import SocketIO from "socket.io";
 import { execSchedule } from "./execSchedule";
+import { stringEmit } from "../socket/ioEmit";
 
 // exec 'HH:MM:SS cmd' or 'MM:SS cmd' from splitSpace.ts
-export const splitTimerCmd = (
-  io: SocketIO.Server,
-  stringArr: string[],
-  timeStampArr: string[]
-) => {
+export const splitTimerCmd = (stringArr: string[], timeStampArr: string[]) => {
   let dt = new Date();
   let y = String(dt.getFullYear());
   let m =
@@ -26,16 +22,13 @@ export const splitTimerCmd = (
   const cmdString =
     stringArr.length > 2 ? stringArr.slice(1).join(" ") : stringArr[1];
   const string = cmdString + " SCHEDULED " + String(timerVal) + "ms LATER";
-  io.emit("stringsFromServer", {
-    strings: string,
-    timeout: true,
-  });
+  stringEmit(string, true);
   console.log(string);
 
   if (timerVal > 0 && timerVal < 10800000) {
     console.log("absolute time", timerVal);
     setTimeout(() => {
-      execSchedule(io, cmdString);
+      execSchedule(cmdString);
     }, timerVal);
   } else {
     const timerValue =
@@ -47,7 +40,7 @@ export const splitTimerCmd = (
           1000;
     console.log("relative time", timerValue);
     setTimeout(() => {
-      execSchedule(io, cmdString);
+      execSchedule(cmdString);
     }, timerValue);
   }
 };

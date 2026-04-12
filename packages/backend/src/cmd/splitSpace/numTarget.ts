@@ -1,20 +1,25 @@
-import { clientState, currentState, streamState } from "../../state";
+import {
+  clientState,
+  currentState,
+  streamState,
+  webSocketState,
+} from "../../state";
 import { cmdList, streamList } from "../../data";
 import { cmdEmit } from "../cmdEmit";
 import { recordEmit } from "../../stream/recordEmit";
 import { sinewaveEmit } from "../sinewaveEmit";
-import { streamEmit } from "../../stream/streamEmit";
+import { emitStream } from "../../stream/emitStream";
 import { parameterChange } from "../../parameterChange";
 import { notTargetEmit } from "../notTargetEmit";
 import { stringEmit } from "../../socket/ioEmit";
-import { chatPreparation } from "../../stream/chatPreparation";
+import { emitChatReq } from "../../stream/chat/emitChatReq";
 import { splitQuantize } from "./splitQuantize";
 import { numPaSwitch } from "./numPaSwitch";
+import { broadcastEmit, targetEmit } from "../../webSocket";
 
 export const numTarget = (
   stringArr: Array<string>,
   arrTypeArr: Array<string>,
-  io,
 ) => {
   console.log("num target: ", stringArr);
   // 送信先を指定したコマンド/SINEWAVE
@@ -30,9 +35,9 @@ export const numTarget = (
       const cmd = cmdList[stringArr[1]];
       console.log("currend cmd", currentState.cmd[stringArr[1]]);
       const flag = !currentState.cmd[cmd].includes(target);
-      cmdEmit(stringArr[1], io, target, flag);
+      cmdEmit(stringArr[1], target, flag);
     } else {
-      stringEmit(io, "target is not cmd client", true, target);
+      stringEmit("target is not cmd client", true, target);
     }
   } else if (
     arrTypeArr[1] === "string" &&
@@ -42,43 +47,45 @@ export const numTarget = (
     streamState.target[stringArr[1]] = [target];
     console.log(`set ${stringArr[1]} stream`, streamState.target[stringArr[1]]);
     if (stringArr[1] === "CHAT") {
-      chatPreparation(io);
+      emitChatReq();
     } else {
-      streamEmit(stringArr[1], io, target);
+      emitStream(stringArr[1], target);
     }
   } else if (stringArr[1] === "RECORD" || stringArr[1] === "REC") {
-    recordEmit(io, target);
+    recordEmit({target: target});
   } else if (arrTypeArr[1] === "number") {
-    sinewaveEmit(Number(stringArr[1]), io, target);
+    sinewaveEmit(Number(stringArr[1]), target);
   } else if (stringArr[1] === "VOICE") {
     // console.log("VOICE", target);
     if (stringArr.length === 2) {
-      parameterChange("VOICE", io, { source: target });
+      parameterChange("VOICE", { source: target });
     } else {
       if (
         stringArr[2] === "ON" ||
         stringArr[2] === "TRUE" ||
         stringArr[2] === "ENABLE"
       ) {
-        parameterChange("VOICE", io, { source: target, value: 1 });
+        parameterChange("VOICE", { source: target, value: 1 });
       } else {
-        parameterChange("VOICE", io, { source: target, value: 0 });
+        parameterChange("VOICE", { source: target, value: 0 });
       }
     }
   } else if (stringArr[1] === "QUANTIZE") {
-    splitQuantize(stringArr.slice(2), io, target);
+    splitQuantize(stringArr.slice(2), target);
     // if (quantizeObj === "quantize failed") {
     //   stringEmit(io, "quantize failed", true, target);
     // } else {
     // }
   } else if (stringArr[1] === "PA") {
-    numPaSwitch(target, io);
+    numPaSwitch(target);
   } else if (stringArr[1] === "GPS") {
-    io.to(target).emit("gpsFlagFromServer");
+    // io.to(target).emit("gpsFlagFromServer");
+    targetEmit(target, { type: "sensor", payload: { sensor: "gps" } });
   } else if (stringArr[1] === "ACCELARATE") {
-    io.emit("accelarateFlagFromServer");
+    // io.emit("accelarateFlagFromServer");
+    broadcastEmit({ type: "sensor", payload: { sensor: "accelarate" } });
   } else {
-    stringEmit(io, "not cmd", true, target);
+    stringEmit("not cmd", true, target);
   }
-  notTargetEmit(target, Object.keys(clientState.client), io);
+  notTargetEmit(target, Object.keys(clientState.client));
 };

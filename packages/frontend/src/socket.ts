@@ -23,6 +23,7 @@ import { stopCmd, cmdFromServer } from "./cmd";
 import { quantizeFromServer } from "./quantize/quantizeFromServer";
 import { chatReq, recordReqFromServer, streamPlay } from "./stream";
 import { click, gainChange } from "./webaudio";
+import { playVideo, emitCtrl } from "./video";
 
 // import {
 //   initRtpPeerConnection,
@@ -403,6 +404,63 @@ export const socket = (): void => {
     webRtcState.videoPlayer.src = webRtcState.videoPlayer !== null ? url : null;
     textPrint("buffer");
   });
+
+  // videoBuffer関連
+  socketState.socket.on("videoRecordRequestFromServer", () => {
+    console.log("videoRecordRequestFromServer");
+    if (streamState.stream !== null) {
+      emitCtrl(streamState.stream);
+    } else {
+      textPrint("MediaStream not initialized");
+    }
+  });
+
+  socketState.socket.on(
+    "videoRequestFromServer",
+    (data: { video: boolean }) => {
+      console.log("videoRequestFromServer", data);
+      socketState.socket.emit("videoRequestFromClient");
+      // videoBufferState.flag = data.video;
+      // if (videoBufferState.flag) {
+      //   videoBufferState.mediaRecorder?.start(1000);
+      // } else {
+      //   videoBufferState.mediaRecorder?.stop();
+      // }
+      // textPrint(`Video Buffering: ${videoBufferState.flag}`);
+      // setTimeout(() => {
+      //   erasePrint();
+      // }, 1000);
+    },
+  );
+
+  socketState.socket.on(
+    "videoFromServer",
+    async ({ chunk: videoBuffer }: { chunk: ArrayBuffer }) => {
+      console.log("videoFromServer", videoBuffer);
+
+      // videoBufferState.queue.push(videoBuffer);
+      await playVideo(videoBuffer, socketState.socket);
+      // socketState.socket.emit("videoRequestFromClient");
+
+      // await playVideo(videoBuffer);
+
+      // const videoElement = <HTMLVideoElement>document.getElementById("videoBuffer");
+      // videoElement.controls = true;
+      // const mediaSource = new MediaSource();
+      // videoElement.src = URL.createObjectURL(mediaSource);
+
+      // mediaSource.addEventListener("sourceopen", () => {
+      //   const sourceBuffer = mediaSource.addSourceBuffer(
+      //     'video/webm; codecs="vp8, opus"'
+      //   );
+      //   sourceBuffer.addEventListener("updateend", () => {
+      //     mediaSource.endOfStream();
+      //     videoElement.play();
+      //   });
+      //   sourceBuffer.appendBuffer(new Uint8Array(videoBuffer as any));
+      // });
+    },
+  );
 
   // webRtc関連
   // socketState.socket.on("candidateReqFromServer", (peers: string[]) => {

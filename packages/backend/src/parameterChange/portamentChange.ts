@@ -1,7 +1,7 @@
 import { cmdState } from "../state";
 import { stringEmit } from "../socket/ioEmit";
 
-export const portamentChange = (arg, io) => {
+export const portamentChange = (arg) => {
   if (arg && arg.value && isFinite(Number(arg.value))) {
     cmdState.PORTAMENT = arg.value;
   } else {
@@ -12,5 +12,5 @@ export const portamentChange = (arg, io) => {
     }
   }
   // io.emit('stringsFromServer',{strings: 'PORTAMENT: ' + String(cmdState.PORTAMENT) + 'sec', timeout: true})
-  stringEmit(io, "PORTAMENT: " + String(cmdState.PORTAMENT) + "sec");
+  stringEmit("PORTAMENT: " + String(cmdState.PORTAMENT) + "sec");
 };

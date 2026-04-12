@@ -1,22 +1,28 @@
 import { flagState } from "../../state";
+import { broadcastEmit } from "../../webSocket";
 
-export const splitVoskCmd = (stringArr: string[], arrTypeArr: string[], io) => {
+export const splitVoskCmd = (stringArr: string[], arrTypeArr: string[]) => {
   console.log("splitQuantize: ", stringArr);
   console.log("arrTypeArr: ", arrTypeArr);
 
   if (stringArr.length === 0) {
     // flagState.vosk = !flagState.vosk;
-    io.emit("voskCallFromServer");
+    broadcastEmit({ type: "vosk", payload: { type: "call" } });
+    // io.emit("voskCallFromServer");
 
     // io.emit("voskCtrlFromServer", {
     //   type: "flag",
     //   flag: flagState.vosk,
     // });
   } else if (stringArr.length === 1 && arrTypeArr[0] === "number") {
-    io.emit("voskCtrlFromServer", {
-      type: "interval change",
-      value: Number(stringArr[0]),
+    broadcastEmit({
+      type: "vosk",
+      payload: { type: "interval change", value: Number(stringArr[0]) },
     });
+    // io.emit("voskCtrlFromServer", {
+    //   type: "interval change",
+    //   value: Number(stringArr[0]),
+    // });
   } else if (
     stringArr.length === 1 &&
     (stringArr[0] === "ON" ||
@@ -24,10 +30,14 @@ export const splitVoskCmd = (stringArr: string[], arrTypeArr: string[], io) => {
       stringArr[0] === "START")
   ) {
     flagState.vosk = true;
-    io.emit("voskCtrlFromServer", {
-      type: "flag",
-      flag: flagState.vosk,
+    broadcastEmit({
+      type: "vosk",
+      payload: { type: "flag", flag: flagState.vosk },
     });
+    // io.emit("voskCtrlFromServer", {
+    //   type: "flag",
+    //   flag: flagState.vosk,
+    // });
   } else if (
     stringArr.length === 1 &&
     (stringArr[0] === "OFF" ||
@@ -35,9 +45,9 @@ export const splitVoskCmd = (stringArr: string[], arrTypeArr: string[], io) => {
       stringArr[0] === "STOP")
   ) {
     flagState.vosk = false;
-    io.emit("voskCtrlFromServer", {
-      type: "flag",
-      flag: flagState.vosk,
-    });
+    // broadcastEmit({type: "vosk", payload: {type: "flag", flag: flagState.vosk}});
+    //   type: "flag",
+    //   flag: flagState.vosk,
+    // });
   }
 };

@@ -1,6 +1,5 @@
 import { Server } from "socket.io";
 import { streams } from "../../data/chunk/streams";
-import { pickupStreamTarget } from "../pickupStreamTarget";
 import { chatReceive } from "../chatReceive";
 import { buffStateType } from "../../../../../types";
 import { pushStateStream } from "../pushStateStream";
@@ -21,14 +20,11 @@ export const workletBufferFromClient = (
       audio: data.audio,
       bufferSize: data.audio.byteLength,
       duration: data.audio.byteLength / 44100 / 4, // 4はFloat32Arrayのバイト数
+      sampleRate: 44100,
+      glitch: false,
     };
     chatReceive(io, buff);
-    // const target = pickupStreamTarget(data.source);
-    // io.to(target).emit("chatFromServer", {
-    //   video: data.video,
-    //   audio: data.audio,
-    //   source: data.source,
-    // });
+
   } else if (data.source === "TIMELAPSE") {
     streams.TIMELAPSE.audio.push(data.audio);
     streams.TIMELAPSE.video.push(data.video);

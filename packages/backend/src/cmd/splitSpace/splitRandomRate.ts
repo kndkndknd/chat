@@ -1,7 +1,7 @@
 import { sampleRateState } from "../../state";
 import { stringEmit } from "../../socket/ioEmit";
 
-export const splitRandomRate = (stringArr: string[], io) => {
+export const splitRandomRate = (stringArr: string[]) => {
   if (stringArr[1] === "RATE") {
     // SAMPLERATEのランダマイズ
     console.log("random rate");
@@ -11,8 +11,7 @@ export const splitRandomRate = (stringArr: string[], io) => {
       }
       // io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM: ' + String(sampleRateState.randomrate.CHAT), timeout: true})
       stringEmit(
-        io,
-        "SAMPLERATE RANDOM: " + String(sampleRateState.randomrate.CHAT)
+        "SAMPLERATE RANDOM: " + String(sampleRateState.randomrate.CHAT),
         // state
       );
     } else if (
@@ -23,11 +22,10 @@ export const splitRandomRate = (stringArr: string[], io) => {
         !sampleRateState.randomrate[stringArr[2]];
       //io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM(' + stringArr[2] + '): ' + String(sampleRateState.randomrate[stringArr[2]]), timeout: true})
       stringEmit(
-        io,
         "SAMPLERATE RANDOM(" +
           stringArr[2] +
           "): " +
-          String(sampleRateState.randomrate[stringArr[2]])
+          String(sampleRateState.randomrate[stringArr[2]]),
         // state
       );
     } else if (stringArr.length === 3 && stringArr[2].includes("-")) {
@@ -48,15 +46,14 @@ export const splitRandomRate = (stringArr: string[], io) => {
             sampleRateState.randomraterange[key].max = Number(rateRangeArr[1]);
           }
           stringEmit(
-            io,
             "SAMPLERATE RANDOM RATE RANGE: " +
               String(rateRangeArr[0]) +
               "-" +
               String(rateRangeArr[1]) +
-              "Hz"
+              "Hz",
           );
         } else {
-          stringEmit(io, "OUT RATE RANGE: 4000-132300", true);
+          stringEmit("OUT RATE RANGE: 4000-132300", true);
         }
       }
     } else if (
@@ -67,7 +64,7 @@ export const splitRandomRate = (stringArr: string[], io) => {
       for (let key in sampleRateState.randomrate) {
         sampleRateState.randomrate[key] = boolValue;
       }
-      stringEmit(io, "SAMPLERATE RANDOM: " + String(boolValue));
+      stringEmit("SAMPLERATE RANDOM: " + String(boolValue));
     } else if (
       stringArr.length === 4 &&
       Object.keys(sampleRateState.randomrate).includes(stringArr[2])
@@ -80,27 +77,25 @@ export const splitRandomRate = (stringArr: string[], io) => {
         })
       ) {
         sampleRateState.randomraterange[stringArr[2]].min = Number(
-          rateRangeArr[0]
+          rateRangeArr[0],
         );
         sampleRateState.randomraterange[stringArr[2]].max = Number(
-          rateRangeArr[1]
+          rateRangeArr[1],
         );
         stringEmit(
-          io,
           "SAMPLERATE RANDOM RATE RANGE(" +
             stringArr[2] +
             "): " +
             String(rateRangeArr[0]) +
             "-" +
             String(rateRangeArr[1]) +
-            "Hz"
+            "Hz",
         );
       } else if (stringArr[3] === "TRUE" || stringArr[3] === "FALSE") {
         const boolValue = stringArr[3] === "TRUE" ? true : false;
         sampleRateState.randomrate[stringArr[2]] = boolValue;
         stringEmit(
-          io,
-          "SAMPLERATE RANDOM(" + stringArr[2] + "): " + String(boolValue)
+          "SAMPLERATE RANDOM(" + stringArr[2] + "): " + String(boolValue),
         );
       }
     } else if (stringArr.length === 3 && stringArr[2] === "NOTE") {
@@ -110,9 +105,8 @@ export const splitRandomRate = (stringArr: string[], io) => {
       }
       // io.emit('stringsFromServer',{strings: 'SAMPLERATE RANDOM: ' + String(sampleRateState.randomrate.CHAT), timeout: true})
       stringEmit(
-        io,
         "SAMPLERATE RANDOM(NOTE): " +
-          String(sampleRateState.randomratenote.CHAT)
+          String(sampleRateState.randomratenote.CHAT),
         // state
       );
     }

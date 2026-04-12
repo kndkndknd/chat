@@ -1,11 +1,12 @@
-import { putCmd } from "./putCmd";
+import { putCmd } from "./cmdEmit";
 import { notTargetEmit } from "./notTargetEmit";
 import { millisecondsPerBeat } from "../../../util/bpmCalc";
 import { currentState, cmdState, bpmState, clientState } from "../state";
 import { streamList } from "../data";
-import { pickupCmdTarget } from "./pickupCmdTarget";
+// import { pickupCmdTarget } from "./pickupCmdTarget";
+import { pickupTarget } from "../clientProcess/pickupTarget";
 
-export const metronomeEmit = (io, cmd, target?) => {
+export const metronomeEmit = (cmd, target?) => {
   cmd = {
     cmd: "METRONOME",
   };
@@ -50,8 +51,8 @@ export const metronomeEmit = (io, cmd, target?) => {
       cmd.flag = true;
       cmd.gain = cmdState.GAIN.METRONOME;
       const targetIdArr = target
-        ? pickupCmdTarget("METRONOME", { target: target })
-        : pickupCmdTarget("METRONOME");
+        ? pickupTarget("METRONOME", "CMD", { target: target })
+        : pickupTarget("METRONOME", "CMD");
       target = targetIdArr[0];
       // target = Object.keys(clientState.client)[
       //   Math.floor(Math.random() * Object.keys(clientState.client).length)
@@ -67,7 +68,7 @@ export const metronomeEmit = (io, cmd, target?) => {
       cmd.value = millisecondsPerBeat(bpmState[target].METRONOME.bpm);
     }
   }
-  putCmd(io, [target], cmd);
-  notTargetEmit(target, Object.keys(clientState.client), io);
+  putCmd([target], cmd);
+  notTargetEmit(target, Object.keys(clientState.client));
   console.log("metronome");
 };

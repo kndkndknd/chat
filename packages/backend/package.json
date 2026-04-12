@@ -11,11 +11,13 @@
   },
   "devDependencies": {
     "@types/sharp": "0.31.1",
+    "@types/ws": "8.18.1",
     "dotenv": "16.3.1"
   },
   "dependencies": {
     "axios": "1.6.7",
     "cors": "2.8.5",
+    "crypto": "1.0.1",
     "pcm": "1.0.3",
     "serve-favicon": "2.5.0",
     "sharp": "0.33.2",

@@ -3,6 +3,7 @@ import { textPrint, erasePrint, emojiState, eraseText } from "./textEvent";
 import { toBase64 } from "./toBase64";
 import { canvasSizing } from "./canvasSizing";
 import { initVideo, initVideoStream } from "./initVideo";
+import { canvasElement } from "./canvasElement";
 
 export {
   showImage,
@@ -14,4 +15,5 @@ export {
   canvasSizing,
   initVideo,
   initVideoStream,
+  canvasElement,
 };

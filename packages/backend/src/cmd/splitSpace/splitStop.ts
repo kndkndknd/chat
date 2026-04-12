@@ -1,5 +1,5 @@
 import { stringEmit } from "../../socket/ioEmit";
-import { putCmd } from "../putCmd";
+import { putCmd } from "../cmdEmit";
 import { stopEmit } from "../stopEmit";
 import { notTargetEmit } from "../notTargetEmit";
 import {
@@ -9,7 +9,7 @@ import {
   cmdState,
 } from "../../state";
 
-export const splitStop = (stringArr: string[], io) => {
+export const splitStop = (stringArr: string[]) => {
   console.log("splitStop", stringArr);
   // stringArr[0] === "STOP"
   if (
@@ -19,14 +19,14 @@ export const splitStop = (stringArr: string[], io) => {
     console.log("stream stop", stringArr[1]);
     previousState.stream[stringArr[1]] = currentState.stream[stringArr[1]];
     currentState.stream[stringArr[1]] = false;
-    stringEmit(io, stringArr[0] + " " + stringArr[1]);
+    stringEmit(stringArr[0] + " " + stringArr[1]);
   } else if (stringArr.length === 2 && stringArr[1] === "STREAM") {
     console.log("all stream stop");
     previousState.stream = currentState.stream;
     Object.keys(currentState.stream).forEach(
-      (key) => (currentState.stream[key] = false)
+      (key) => (currentState.stream[key] = false),
     );
-    stringEmit(io, stringArr[0] + " " + stringArr[1]);
+    stringEmit(stringArr[0] + " " + stringArr[1]);
   } else if (
     stringArr.length === 2 &&
     Object.keys(currentState.cmd).includes(stringArr[1])
@@ -43,23 +43,25 @@ export const splitStop = (stringArr: string[], io) => {
         cmd.fade = cmdState.FADE.OUT;
       }
       console.log(cmdTarget, stringArr);
-      putCmd(io, [cmdTarget], cmd);
-      notTargetEmit(cmdTarget, Object.keys(clientState.client), io);
+      putCmd([cmdTarget], {
+        cmd: stringArr[1],
+        option: { fade: cmd.fade, flag: false },
+      });
+      notTargetEmit(cmdTarget, Object.keys(clientState.client));
     });
     currentState.cmd[stringArr[1]] = [];
   } else if (stringArr.length === 2 && stringArr[1] === "SINEWAVE") {
     previousState.sinewave = currentState.sinewave;
     Object.keys(currentState.sinewave).forEach((target) => {
-      const sinewaveCmd = {
-        cmd: "SINEWAVE",
+      const sinewaveOption = {
         value: currentState.sinewave[target],
         flag: false,
         fade: cmdState.FADE.IN,
         portament: cmdState.PORTAMENT,
         gain: cmdState.GAIN.SINEWAVE,
       };
-      putCmd(io, [target], sinewaveCmd);
-      notTargetEmit(target, Object.keys(clientState.client), io);
+      putCmd([target], { cmd: "SINEWAVE", option: sinewaveOption });
+      notTargetEmit(target, Object.keys(clientState.client));
     });
     currentState.sinewave = {};
   } else if (
@@ -70,31 +72,29 @@ export const splitStop = (stringArr: string[], io) => {
     previousState.sinewave = currentState.sinewave;
     Object.keys(currentState.cmd).forEach((cmdTarget) => {
       currentState.cmd[cmdTarget].forEach((target) => {
-        const cmd: { cmd: string; flag: boolean; fade?: number } = {
-          cmd: cmdTarget,
+        const cmdOption: { flag: boolean; fade?: number } = {
           flag: false,
         };
 
         if (cmdTarget === "WHITENOISE" || cmdTarget === "FEEDBACK") {
-          cmd.fade = cmdState.FADE.OUT;
+          cmdOption.fade = cmdState.FADE.OUT;
         }
-        putCmd(io, [target], cmd);
+        putCmd([target], { cmd: cmdTarget, option: cmdOption });
         currentState.cmd[cmdTarget] = [];
       });
     });
     Object.keys(currentState.sinewave).forEach((key) => {
-      const sinewaveCmd = {
-        cmd: "SINEWAVE",
+      const sinewaveOption = {
         value: currentState.sinewave[key],
         flag: false,
         fade: cmdState.FADE.IN,
         portament: cmdState.PORTAMENT,
         gain: cmdState.GAIN.SINEWAVE,
       };
-      putCmd(io, [key], sinewaveCmd);
+      putCmd([key], { cmd: "SINEWAVE", option: sinewaveOption });
     });
     currentState.sinewave = {};
   } else if (stringArr[1] === "ALL") {
-    stopEmit(io, "", "ALL");
+    stopEmit("", "ALL");
   }
 };

@@ -13,3 +13,13 @@ export type CmdType = {
   fade?: number;
   gain?: number;
 };
+
+export type CmdOptionType = {
+  property?: string;
+  value?: number;
+  flag?: boolean;
+  fade?: number;
+  gain?: number;
+  solo?: boolean;
+  portament?: number;
+};

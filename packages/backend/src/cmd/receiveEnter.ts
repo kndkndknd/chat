@@ -1,5 +1,3 @@
-import SocketIO from "socket.io";
-
 import {
   cmdState,
   clientState,
@@ -9,44 +7,29 @@ import {
   previousState,
   bpmStateDefault,
   bpmState,
+  webSocketState,
 } from "../state";
 
 import { cmdList, parameterList, streamList } from "../data";
 
-import { streamEmit } from "../stream/streamEmit";
-import { cmdEmit } from "./cmdEmit";
 import { stopEmit } from "./stopEmit";
 import { splitSpace } from "./splitSpace";
 import { splitPlus } from "./splitPlus";
-import { sinewaveEmit } from "./sinewaveEmit";
-import { sinewaveChange } from "./sinewaveChange";
-import { parameterChange } from "../parameterChange";
 import { voiceEmit } from "./voiceEmit";
-import { chatPreparation } from "../stream/chatPreparation";
-// import { putString } from "./putString";
-import { recordEmit } from "../stream/recordEmit";
-import { switchCtrl } from "../arduinoAccess/arduinoAccess";
 import { stringEmit } from "../socket/ioEmit";
-import { previousCmd } from "./previousCmd";
 import { getLiveStream } from "../stream/getLiveStream";
 import { loadScenario } from "../scenario/loadScenario";
 import { execScenario } from "../scenario/execScenario";
-import { putCmd } from "./putCmd";
+import { putCmd } from "./cmdEmit";
 import { cmdLogging } from "../logging/cmdLogging";
-import { quantizeCmd } from "../stream/quantize";
 import { mergeStreamTarget } from "../stream/mergeStreamTarget";
-import { millisecondsPerBar } from "../../../util/bpmCalc";
 
 import { execStream } from "../cmd/execStream";
 import { execCmd } from "./execCmd";
 import { changeCmdParam } from "./changeCmdParam";
+import { broadcastEmit, targetEmit } from "../webSocket";
 
-export const receiveEnter = async (
-  strings: string,
-  id: string,
-  io: SocketIO.Server,
-  // state: cmdStateType
-) => {
+export const receiveEnter = async (strings: string, id: string) => {
   cmdLogging(strings);
 
   //VOICE
@@ -66,11 +49,11 @@ export const receiveEnter = async (
     strings === "REC" ||
     streamList.includes(strings)
   ) {
-    execStream(strings, io, id);
+    execStream(strings, id);
   } else if (strings.includes(" ") /*&& strings.split(" ").length < 4*/) {
-    splitSpace(strings.split(" "), io, id);
+    splitSpace(strings.split(" "), id);
   } else if (strings.includes("+")) {
-    splitPlus(strings.split("+"), io);
+    splitPlus(strings.split("+"));
   } else if (
     Object.keys(cmdList).includes(strings) ||
     Number.isFinite(Number(strings)) ||
@@ -88,11 +71,11 @@ export const receiveEnter = async (
     strings === "TORCH" ||
     strings === "BLINK"
   ) {
-    execCmd(strings, io, id);
+    execCmd(strings, id);
   } else if (strings === "STOP") {
     console.log("stop");
-    voiceEmit(io, strings, id);
-    stopEmit(io, id, "ALL");
+    voiceEmit(strings, id);
+    stopEmit(id, "ALL");
     // io.emit("quantizeFromServer", quantizeObj[client].stream);
   } else if (
     Object.keys(parameterList).includes(strings) ||
@@ -101,10 +84,10 @@ export const receiveEnter = async (
     strings === "FUSEJI" ||
     strings === "EMOJI"
   ) {
-    changeCmdParam(strings, id, io);
+    changeCmdParam(strings, id);
   } else if (strings === "START" || strings === "SCENARIO") {
     const scenario = await loadScenario();
-    await execScenario(scenario, io);
+    await execScenario(scenario);
     //   const result = await getLiveStream("TWITCH");
     //   console.log("get livestream as ", strings, result);
     //   if (result) {
@@ -135,14 +118,14 @@ export const receiveEnter = async (
     console.log("scenario", strings);
     if (cmdState.VOICE.length > 0) {
       console.log("voiceEmit scenario");
-      voiceEmit(io, strings, "scenario");
+      voiceEmit(strings, "scenario");
     }
-    stringEmit(io, strings, false);
+    stringEmit(strings, false);
   } else if (strings === "FLOATING") {
     streamState.floating = !streamState.floating;
-    stringEmit(io, "FLOATING: " + streamState.floating, true);
+    stringEmit("FLOATING: " + streamState.floating, true);
   } else if (strings === "LATENCY") {
-    putCmd(io, mergeStreamTarget(streamState), { cmd: "LATENCY" });
+    putCmd(mergeStreamTarget(streamState), { cmd: "LATENCY" });
   } else if (
     strings === "TWITCASTING" ||
     strings === "TWICAS" ||
@@ -153,17 +136,29 @@ export const receiveEnter = async (
     const result = await getLiveStream("LIVESTREAM", qWord);
     console.log("get livestream", result);
     if (result) {
-      stringEmit(io, "GET LIVESTREAM: SUCCESS");
+      stringEmit("GET LIVESTREAM: SUCCESS", true);
     } else {
-      stringEmit(io, "GET LIVESTREAM: FAILED");
+      stringEmit("GET LIVESTREAM: FAILED", true);
     }
   } else if (strings === "CALL") {
-    io.to(id).emit("webRtcOfferReqFromServer");
+    // io.to(id).emit("webRtcOfferReqFromServer");
+    targetEmit(id, { type: "webrtc", payload: { type: "offerReq" } });
   } else if (strings === "VOSK") {
     console.log("VOSK CALL");
-    io.emit("voskCallFromServer");
+    // io.emit("voskCallFromServer");
+    // broadcastEmit({ type: "vosk", payload: { type: "call" } });
+    broadcastEmit({ type: "params", payload: { type: "vosk", param: "call" } });
+  } else if (strings === "VIDEO") {
+    // flagState.video = !flagState.video;
+    console.log("videoRequestFromServer");
+    // io.emit("videoRequestFromServer");
+    broadcastEmit({ type: "streamReq", payload: { source: "video" } });
+  } else if (strings === "VIDEORECORD") {
+    console.log("videoRecordRequestFromServer");
+    // io.to(id).emit("videoRecordRequestFromServer");
+    broadcastEmit({ type: "streamReq", payload: { source: "videoRecord" } });
   } else {
-    voiceEmit(io, strings, id);
+    voiceEmit(strings, id);
   }
 
   if (strings !== "STOP") {

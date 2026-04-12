@@ -7,7 +7,7 @@ import {
 import { filterStateType } from "../../../../../types";
 
 export const playAudioStream = (
-  bufferArray: Float32Array,
+  bufferArray: ArrayBuffer,
   sampleRate: number,
   glitch: boolean,
   bufferSize: number,

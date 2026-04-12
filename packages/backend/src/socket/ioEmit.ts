@@ -1,23 +1,25 @@
-import SocketIO from "socket.io";
+import { broadcastEmit, targetEmit } from "../webSocket";
+import { stringSocketType } from "../../../../types";
 
 export const stringEmit = (
-  io: SocketIO.Server,
   strings: string,
   timeout?: boolean,
-  target?: string
+  target?: string,
 ) => {
   console.log(strings);
   if (timeout === undefined) timeout = true;
   if (target === undefined) {
     console.log("target is undefined", strings);
-    io.emit("stringsFromServer", {
-      strings: strings,
-      timeout: timeout,
-    });
+    const stringSocket: stringSocketType = {
+      type: "string",
+      payload: { string: strings, timeout: timeout },
+    };
+    broadcastEmit(stringSocket);
   } else {
-    io.to(target).emit("stringsFromServer", {
-      strings: strings,
-      timeout: timeout,
-    });
+    const stringSocket: stringSocketType = {
+      type: "string",
+      payload: { string: strings, timeout: timeout },
+    };
+    targetEmit(target, stringSocket);
   }
 };

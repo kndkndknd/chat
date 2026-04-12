@@ -1,19 +1,32 @@
-import SocketIO from "socket.io";
-import { cmdState } from "../state";
+import { cmdState, webSocketState } from "../state";
+import { targetEmit, broadcastEmit } from "../webSocket";
 
-export const voiceEmit = (io: SocketIO.Server, strings: string, id: string) => {
+export const voiceEmit = (strings: string, id: string) => {
   console.log("id", id);
   console.log("VOICE", cmdState.VOICE);
   if (cmdState.VOICE.length > 0) {
-    cmdState.VOICE.forEach((element) => {
-      if (element === id || id === "all" || id === "ALL" || id === "scenario") {
-        io.to(element).emit("voiceFromServer", {
+    if (id === "all" || id === "ALL" || id === "scenario") {
+      broadcastEmit({
+        type: "voice",
+        payload: {
           text: strings,
           lang: cmdState.voiceLang,
-        });
-      } else {
-        console.log("not voice id");
-      }
-    });
+        },
+      });
+    } else {
+      cmdState.VOICE.forEach((element) => {
+        if (element === id) {
+          targetEmit(element, {
+            type: "voice",
+            payload: {
+              text: strings,
+              lang: cmdState.voiceLang,
+            },
+          });
+        } else {
+          console.log("not voice id");
+        }
+      });
+    }
   }
 };

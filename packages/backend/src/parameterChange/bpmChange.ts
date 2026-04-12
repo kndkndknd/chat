@@ -1,5 +1,3 @@
-import SocketIO from "socket.io";
-
 import {
   cmdState,
   currentState,
@@ -7,15 +5,18 @@ import {
   clientState,
   bpmStateDefault,
 } from "../state";
-import { putCmd } from "../cmd/putCmd";
+import { putCmd } from "../cmd/cmdEmit";
 import { stringEmit } from "../socket/ioEmit";
 import { millisecondsPerBar } from "../../../util/bpmCalc";
 import { streamList } from "../data";
+import { broadcastEmit, targetEmit } from "../webSocket";
+import { paramsSocketType } from "../../../../types";
 
-export const bpmChange = (
-  io: SocketIO.Server,
-  arg?: { source?: string; value?: number; property?: string }
-) => {
+export const bpmChange = (arg?: {
+  source?: string;
+  value?: number;
+  property?: string;
+}) => {
   if (arg && arg.value) {
     const latency = (60 * 1000) / arg.value;
     const bar = millisecondsPerBar(arg.value);
@@ -42,7 +43,16 @@ export const bpmChange = (
         }
         // streamState.latency[arg.property] = latency;
         // cmdState.METRONOME = {};
-        io.emit("bpmFromServer", { bpm: arg.value, bar: bar });
+        // io.emit("bpmFromServer", { bpm: arg.value, bar: bar });
+        const data: paramsSocketType = {
+          type: "params",
+          payload: {
+            type: "bpm",
+            bpm: arg.value,
+            bar: bar,
+          },
+        };
+        broadcastEmit(data);
 
         // stringEmit(
         //   io,
@@ -72,10 +82,19 @@ export const bpmChange = (
                     latency: latency,
                   };
           }
-          io.to(target).emit("bpmFromServer", {
-            bpm: arg.value,
-            bar: bar,
-          });
+          const data: paramsSocketType = {
+            type: "params",
+            payload: {
+              type: "bpm",
+              bpm: arg.value,
+              bar: bar,
+            },
+          };
+          targetEmit(target, data);
+          // io.to(target).emit("bpmFromServer", {
+          //   bpm: arg.value,
+          //   bar: bar,
+          // });
           // stringEmit(
           //   io,
           //   "BPM: " + String(arg.value) + "(client " + arg.property + ")"
@@ -96,11 +115,16 @@ export const bpmChange = (
             gain: cmdState.GAIN.METRONOME,
             value: latency,
           };
-          putCmd(io, [target], cmd);
-          io.to(target).emit("bpmFromServer", {
-            bpm: arg.value,
-            bar: bar,
-          });
+          putCmd([target], cmd);
+          const data: paramsSocketType = {
+            type: "params",
+            payload: {
+              type: "bpm",
+              bpm: arg.value,
+              bar: bar,
+            },
+          };
+          targetEmit(target, data);
         }
       }
       // io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value)  + '(' + arg.property + ')', timeout: true})
@@ -156,16 +180,21 @@ export const bpmChange = (
             gain: cmdState.GAIN.METRONOME,
             value: latency,
           };
-          putCmd(io, [target], cmd);
+          putCmd([target], cmd);
         });
       }
-      io.emit("bpmFromServer", { bpm: arg.value, bar: bar });
+      // io.emit("bpmFromServer", { bpm: arg.value, bar: bar });
+      const data: paramsSocketType = {
+        type: "params",
+        payload: {
+          type: "bpm",
+          bpm: arg.value,
+          bar: bar,
+        },
+      };
+      broadcastEmit(data);
 
-      stringEmit(io, "BPM: " + String(arg.value));
-      io.emit("bpmFromServer", {
-        bpm: arg.value,
-        bar: bar,
-      });
+      stringEmit("BPM: " + String(arg.value));
       // io.emit('stringsFromServer',{strings: 'BPM: ' + String(arg.value), timeout: true})
     }
   }

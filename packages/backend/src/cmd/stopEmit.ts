@@ -1,4 +1,3 @@
-import SocketIO from "socket.io";
 import { voiceEmit } from "./voiceEmit";
 import {
   clientState,
@@ -7,32 +6,15 @@ import {
   currentState,
   previousState,
 } from "../state";
+import { broadcastEmit, targetEmit } from "../webSocket";
 
 export const stopEmit = (
-  io: SocketIO.Server,
   source: string,
   target?: "ALL" | "STREAM" | "CMD" | "ExceptHls",
-  client?: string
+  client?: string,
 ) => {
-  /*
-  io.emit('stopFromServer', {
-    target: target,
-    fadeOut: state.cmd.FADE.OUT
-  })
-  */
-  // STOPは個別の関数があるのでVOICEはそこに相乗り
-
-  // if (state.cmd.VOICE.length > 0) {
-  //   state.cmd.VOICE.forEach((element) => {
-  //     //      io.to(element).emit('voiceFromServer', "STOP")
-  //     io.to(element).emit("voiceFromServer", {
-  //       text: "STOP",
-  //       lang: state.cmd.voiceLang,
-  //     });
-  //   });
-  // }
   if (source !== undefined && source !== "") {
-    voiceEmit(io, "STOP", source);
+    voiceEmit("STOP", source);
   }
 
   // stop cmd / sinewave | self判定あり
@@ -42,12 +24,20 @@ export const stopEmit = (
       clientState.client[source] === undefined ||
       !clientState.client[source].self
     ) {
-      Object.keys(clientState.client).forEach((element) => {
-        io.to(element).emit("stopFromServer", {
+      broadcastEmit({
+        type: "stop",
+        payload: {
           target: target === undefined ? "ALL" : target,
           fadeOutVal: cmdState.FADE.OUT,
-        });
+        },
       });
+      // Object.keys(clientState.client).forEach((element) => {
+      //   targetEmit(element, {
+      //     type: "STOP",
+      //     target: target === undefined ? "ALL" : target,
+      //     fadeOutVal: cmdState.FADE.OUT,
+      //   });
+      // });
       for (let cmd in currentState.cmd) {
         previousState.cmd[cmd] = currentState.cmd[cmd];
         currentState.cmd[cmd] = [];
@@ -58,15 +48,18 @@ export const stopEmit = (
         // state.hls = [];
       }
     } else {
-      io.to(source).emit("stopFromServer", {
-        target: target === undefined ? "ALL" : target,
-        fadeOutVal: cmdState.FADE.OUT,
+      targetEmit(source, {
+        type: "STOP",
+        payload: {
+          target: target === undefined ? "ALL" : target,
+          fadeOutVal: cmdState.FADE.OUT,
+        },
       });
       for (let cmd in currentState.cmd) {
         if (currentState.cmd[cmd].includes(source)) {
           previousState.cmd[cmd] = currentState.cmd[cmd];
           currentState.cmd[cmd] = currentState.cmd[cmd].filter(
-            (element) => element !== source
+            (element) => element !== source,
           );
         }
       }
@@ -77,15 +70,18 @@ export const stopEmit = (
     }
     // state.hls = [];
   } else if (Object.keys(clientState.client).includes(client)) {
-    io.to(client).emit("stopFromServer", {
-      target: target === undefined ? "ALL" : target,
-      fadeOutVal: cmdState.FADE.OUT,
+    targetEmit(client, {
+      type: "STOP",
+      payload: {
+        target: target === undefined ? "ALL" : target,
+        fadeOutVal: cmdState.FADE.OUT,
+      },
     });
     for (let cmd in currentState.cmd) {
       if (currentState.cmd[cmd].includes(client)) {
         previousState.cmd[cmd] = currentState.cmd[cmd];
         currentState.cmd[cmd] = currentState.cmd[cmd].filter(
-          (element) => element !== client
+          (element) => element !== client,
         );
       }
     }
@@ -107,9 +103,9 @@ export const stopEmit = (
   Object.keys(streamState.target).forEach((element) => {
     streamState.target[element] = [];
   });
-  Object.keys(streamState.pa).forEach((element)=> {
+  Object.keys(streamState.pa).forEach((element) => {
     streamState.pa[element] = false;
-  })
+  });
   // console.log("client", state.client);
   // console.log("hls", state.hls);
   // console.log("previous", state.previous);

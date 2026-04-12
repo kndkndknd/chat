@@ -1,4 +1,4 @@
-import { streamList } from "../packages/backend/src/stream/streamList";
+import { streamList } from "../packages/backend/src/data/list/streamList";
 
 export type bpmClientStateType = {
   METRONOME: {

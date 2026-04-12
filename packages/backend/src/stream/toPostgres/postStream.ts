@@ -14,14 +14,13 @@ export const postChunk = async (
     date: string;
     index: number;
   },
-  io: SocketIO.Server,
-  ipaddress: string
+  ipaddress: string,
 ): Promise<string> => {
   if (
     streams[params.type].audio.length <= params.index &&
     streams[params.type].video.length <= params.index
   ) {
-    stringEmit(io, "NO STREAM DATA", false);
+    stringEmit("NO STREAM DATA", false);
     return;
   }
   const audioArray = streams[params.type].audio[params.index];
@@ -45,7 +44,7 @@ export const postChunk = async (
     try {
       const res = await fetch(
         "http://" + ipaddress + ":3030/insertStream",
-        options
+        options,
       );
       if (res.body != null) {
         const reader = res.body
@@ -69,16 +68,13 @@ export const postChunk = async (
   }
 };
 
-export const postStream = async (
-  params: {
-    type: string;
-    place: string;
-    date: string;
-    from: number;
-    to: number;
-  },
-  io: SocketIO.Server
-): Promise<string> => {
+export const postStream = async (params: {
+  type: string;
+  place: string;
+  date: string;
+  from: number;
+  to: number;
+}): Promise<string> => {
   dotenv.config({ path: dotenvPath });
 
   const ipaddress = process.env.DB_HOST;
@@ -94,8 +90,7 @@ export const postStream = async (
         date: params.date,
         index: index,
       },
-      io,
-      ipaddress
+      ipaddress,
     );
     if (result === "SUCCESS") count++;
   }

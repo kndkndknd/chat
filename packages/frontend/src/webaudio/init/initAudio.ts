@@ -34,6 +34,7 @@ export const initAudio = async () => {
   // feedback
   gainState.feedbackGain = contextState.audioContext.createGain();
   gainState.feedbackGain.gain.setValueAtTime(0, 0);
+
   //whitenoise
   // oscState.whitenoiseOsc = contextState.audioContext.createOscillator();
   await initWhitenoiseWorklet();

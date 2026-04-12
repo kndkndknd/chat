@@ -1,7 +1,7 @@
-import { cmdState, glitchState } from "../state";
+import { glitchState } from "../state";
 import { stringEmit } from "../socket/ioEmit";
 
-export const glitchChange = (arg, io) => {
+export const glitchChange = (arg) => {
   if (arg && arg.property) {
     glitchState.glitch[arg.property] = !glitchState.glitch[arg.property];
     // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(glitchState.glitch[arg.source]), timeout: true})
@@ -10,9 +10,8 @@ export const glitchChange = (arg, io) => {
     //   `GLITCH ${arg.property}: ${glitchState.glitch[arg.property]}`
     // );
     stringEmit(
-      io,
       `GLITCH ${arg.property}: ${glitchState.glitch[arg.property]}`,
-      true
+      true,
       // state
     );
   } else {
@@ -24,6 +23,6 @@ export const glitchChange = (arg, io) => {
       glitchState.glitch[target] = flag;
     }
     // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(glitchState.glitch.CHAT), timeout: true})
-    stringEmit(io, "GLITCH: " + String(glitchState.glitch.CHAT), true);
+    stringEmit("GLITCH: " + String(glitchState.glitch.CHAT), true);
   }
 };

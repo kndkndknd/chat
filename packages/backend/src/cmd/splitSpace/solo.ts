@@ -5,8 +5,9 @@ import {
   cmdState,
 } from "../../state";
 import { cmdList, streamList } from "../../data";
+import { putCmd } from "../cmdEmit";
 
-export const solo = (stringArr: string[], arrTypeArr: string[], io) => {
+export const solo = (stringArr: string[], arrTypeArr: string[]) => {
   if (Object.keys(cmdList).includes(stringArr[0])) {
     // コマンドソロ
     previousState.text = stringArr.join(" ");
@@ -34,12 +35,16 @@ export const solo = (stringArr: string[], arrTypeArr: string[], io) => {
         currentState.cmd[currendCmd] = [];
       }
     }
-    io.to(soloTarget).emit("cmdFromServer", {
+    putCmd([soloTarget], {
       cmd: cmd,
-      flag: true,
-      gain: cmdState.GAIN[cmd],
-      solo: true,
+      option: { flag: true, gain: cmdState.GAIN[cmd], solo: true },
     });
+    // io.to(soloTarget).emit("cmdFromServer", {
+    //   cmd: cmd,
+    //   flag: true,
+    //   gain: cmdState.GAIN[cmd],
+    //   solo: true,
+    // });
     console.log("solo: コマンドソロ", cmd, soloTarget);
   } else if (streamList.includes(stringArr[0])) {
     // STREAMソロ

@@ -1,13 +1,9 @@
-import SocketIO from "socket.io";
 import { receiveEnter } from "../cmd/receiveEnter";
 
-export const execScenario = async (
-  scenario: {
-    format: "relative" | "absolute";
-    timetable: { [key: string]: string };
-  },
-  io: SocketIO.Server
-) => {
+export const execScenario = async (scenario: {
+  format: "relative" | "absolute";
+  timetable: { [key: string]: string };
+}) => {
   const now = new Date();
   console.log("now", now.getTime());
   if (scenario.format === "relative") {
@@ -33,7 +29,7 @@ export const execScenario = async (
     for (let i = 0; i < timetableArr.length; i++) {
       setTimeout(() => {
         console.log("scenario", timetableArr[i].time, timetableArr[i].cmd);
-        receiveEnter(timetableArr[i].cmd, "scenario", io);
+        receiveEnter(timetableArr[i].cmd, "scenario");
       }, timetableArr[i].time);
     }
   } else if (scenario.format === "absolute") {
@@ -55,7 +51,7 @@ export const execScenario = async (
       if (now.getTime() - execTime.getTime() < 0) {
         setTimeout(() => {
           console.log(scenario[key]);
-          receiveEnter(scenario[key], "all", io);
+          receiveEnter(scenario[key], "all");
         }, execTime.getTime() - now.getTime());
       }
     }
