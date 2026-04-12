@@ -31,7 +31,7 @@ import { voiceEmit } from "../voiceEmit";
 
 import { loadScenario } from "../../scenario/loadScenario";
 import { execScenario } from "../../scenario/execScenario";
-import { bufferSizeChange } from "../../stream/bufferSizeChange";
+import { bufferSizeChange } from "../../stream/buffer/bufferSizeChange";
 import { modulationByBPM } from "./modulationByBPM";
 
 import { putLogFile } from "../../logging/putLogFile";

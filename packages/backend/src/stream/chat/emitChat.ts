@@ -33,6 +33,8 @@ export const emitChat = async (from?: string) => {
               const randomizedRate = sampleRateRandomize("CHAT");
               chunk.sampleRate = randomizedRate !== undefined ? randomizedRate : chunk.sampleRate;
             }
+          } else {
+            chunk.sampleRate = sampleRateState.sampleRate.CHAT;
           }
           if (glitchState.glitch.CHAT && chunk.video) {
             chunk.video = await glitchStream(chunk.video);

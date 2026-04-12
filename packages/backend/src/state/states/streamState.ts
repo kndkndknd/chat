@@ -42,6 +42,8 @@ export const streamState: streamStateType = {
   },
   loop: false,
   timelapse: false,
+  timelapseInterval: null,
+  timelapseIntervalValue: 30000,
   floating: false,
   pa: {
     CHAT: false,

@@ -2,12 +2,16 @@ import { randomUUID } from "crypto";
 import { WebSocket } from "ws";
 import { clientState, bpmState, bpmStateDefault, webSocketState } from "../state"
 import { streamList } from "../data/list/streamList";
+import { timelapseInterval } from "../stream/timelapse/timelapseInterval";
 
 export const connectClient = (ip: string, ws: WebSocket, urlPathName: string = "") => {
-    const clientId = randomUUID();
-    const clientIdObj = { id: String(clientId), ws, ip: ip };
-    console.log(clientIdObj);
-    webSocketState.clientId.push(clientIdObj);
+  const clientId = randomUUID();
+  const clientIdObj = { id: String(clientId), ws, ip: ip };
+  console.log(clientIdObj);
+  if(webSocketState.clientId.length === 0) {
+    timelapseInterval(true);
+  }
+  webSocketState.clientId.push(clientIdObj);
   
   if(clientState.client[clientId] === undefined) {
     // IP重複を許容しない場合入れる。同じPCから複数出す場合があるのでいったん入れない

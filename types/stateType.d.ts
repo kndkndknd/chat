@@ -44,6 +44,8 @@ export type streamStateType = {
   };
   loop: boolean;
   timelapse: boolean;
+  timelapseInterval: NodeJS.Timeout | null;
+  timelapseIntervalValue: number;
   floating: boolean;
   pa: {
     [key: string]: boolean;

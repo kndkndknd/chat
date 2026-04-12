@@ -303,6 +303,13 @@ app.post("/api/videoBuffer", function (req, res, next) {
   res.json({ success: true, message: "videoBuffer received" });
 });
 
+
+// person detection test
+app.post("/api/personDetection", function (req, res, next) {
+  console.log("POST /api/personDetection", req.body);
+  console.log("ip:", req.ip);
+  res.json({ success: true, message: "personDetection received" });
+});
 /*
 const socketOptions = {
   cors: {
