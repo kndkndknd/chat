@@ -37,7 +37,8 @@ import { reqStream } from "./stream/reqStream";
 
 const port = 8888;
 const app = Express();
-app.use(Express.json());
+app.use(Express.json({limit: '50mb' }));
+app.use(Express.urlencoded({ limit: '50mb', extended: true }));
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = path.dirname(__filename);
 // const __dirname = import.meta.dirname;
