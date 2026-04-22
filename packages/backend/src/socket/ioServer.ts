@@ -30,6 +30,9 @@ import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFro
 // websocket
 import { sendCharWebSocket } from "../webSocket/sendChar";
 
+// whole
+import { receiveWholeReq } from "../stream/receiveWholeReq";
+
 // rotate
 import { m5Switch } from "../rotate/m5Access";
 
@@ -154,6 +157,11 @@ export const ioServer = (
         answerEmit(io, data.answer, data.targetId);
       }
     );
+
+    socket.on("wholeReqFromClient", (data: {audio: ArrayBuffer; video: string; source: string; bufferSize: number} | undefined) => {
+      console.log("wholeReqFromClient", data);
+      receiveWholeReq(io, data);
+    });
 
     socket.on("disconnect", () => {
       console.log("disconnect:", String(socket.id));

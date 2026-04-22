@@ -45,6 +45,9 @@ const commonPickupCmdTarget = (
           return currentState.cmd[cmd];
         }
         break;
+      case "SIMULATE":
+        console.log("SIMULATE:", clientArr);
+        return clientArr;
       case "SINEWAVE":
         if (Object.keys(currentState.sinewave).length === 0) {
           //どの端末も音を出していない場合

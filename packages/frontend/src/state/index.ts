@@ -30,6 +30,8 @@ import { voiceState } from "./voiceState";
 // audioWorklet
 import { audioWorkletState } from "./webAudio/audioWorkletState";
 
+import { wholeState } from "./wholeState";
+
 import { torchState } from "./torchState";
 import { sensorState } from "./sensorState";
 
@@ -57,4 +59,5 @@ export {
   webRtcFrontState,
   webRtcState,
   voiceState,
+  wholeState,
 };

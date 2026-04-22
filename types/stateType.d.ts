@@ -133,6 +133,7 @@ export type currentStateType = {
     [key: string]: boolean;
   };
   RECORD: boolean;
+  WHOLE: boolean;
 };
 
 export type previousStateType = {

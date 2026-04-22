@@ -24,6 +24,13 @@ import {
   bpmStreamStateType,
   quantizeParamClass,
 } from "./bpmType";
+import { 
+  wholeCmdOption,
+  wholeSinewaveOption,
+  wholeStreamOption,
+  wholeCmdExceptSinewaveOption
+} from "./wholeOption";
+
 
 export {
   CmdType,
@@ -51,4 +58,8 @@ export {
   arduinoStateType,
   newWindowReqType,
   quantizeParamClass,
+  wholeCmdOption,
+  wholeSinewaveOption,
+  wholeStreamOption,
+  wholeCmdExceptSinewaveOption
 };

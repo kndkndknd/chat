@@ -7,6 +7,7 @@ import {
   currentState,
   previousState,
 } from "../state";
+import { wholeParams } from "../data/list/wholeParams";
 
 export const stopEmit = (
   io: SocketIO.Server,
@@ -34,6 +35,9 @@ export const stopEmit = (
   if (source !== undefined && source !== "") {
     voiceEmit(io, "STOP", source);
   }
+
+  wholeParams.targetArr = [];
+  currentState.WHOLE = false;
 
   // stop cmd / sinewave | self判定あり
   if (client === undefined) {

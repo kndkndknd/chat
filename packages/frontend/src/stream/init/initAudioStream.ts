@@ -19,8 +19,8 @@ export const initAudioStream = (stream) => {
   // scriptProcessorState.javascriptnode.connect(gainState.masterGain);
   //rec
 
-  //SIMULATE
-  otherNodeState.analyser = contextState.audioContext.createAnalyser();
-  mediastreamsource.connect(otherNodeState.simFilter);
-  otherNodeState.simFilter.connect(otherNodeState.analyser);
+  //SIMULATE(old)
+  // otherNodeState.analyser = contextState.audioContext.createAnalyser();
+  // mediastreamsource.connect(otherNodeState.simFilter);
+  // otherNodeState.simFilter.connect(otherNodeState.analyser);
 };

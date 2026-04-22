@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx src/app.ts",
+    "watch": "tsx watch src/app.ts",
     "backend": "node --loader ts-node/esm src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",

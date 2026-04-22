@@ -17,12 +17,14 @@ import {
   bpmStreamStateType,
   filterStateType,
   newWindowReqType,
+  wholeCmdOption
 } from "../../../types";
 import { emojiState, erasePrint, textPrint, showImage } from "./canvasEvent";
 import { stopCmd, cmdFromServer } from "./cmd";
 import { quantizeFromServer } from "./quantize/quantizeFromServer";
 import { chatReq, recordReqFromServer, streamPlay } from "./stream";
 import { click, gainChange } from "./webaudio";
+import { wholeCmd } from "./cmd/wholeCmd";
 
 // import {
 //   initRtpPeerConnection,
@@ -403,6 +405,11 @@ export const socket = (): void => {
     webRtcState.videoPlayer.src = webRtcState.videoPlayer !== null ? url : null;
     textPrint("buffer");
   });
+
+  // whole
+  socketState.socket.on("wholeCmdFromServer", (option: wholeCmdOption) => {
+    wholeCmd(option);
+  })
 
   // webRtc関連
   // socketState.socket.on("candidateReqFromServer", (peers: string[]) => {

@@ -11,6 +11,7 @@ export const sampleRateState: sampleRateStateType = {
     CHAT: false,
     PLAYBACK: false,
     TIMELAPSE: false,
+    EMPTY: false,
   },
   randomratemode: "random",
   randomratekey: "A",
@@ -24,6 +25,10 @@ export const sampleRateState: sampleRateStateType = {
       max: 132300,
     },
     TIMELAPSE: {
+      min: 4000,
+      max: 132300,
+    },
+    EMPTY: {
       min: 4000,
       max: 132300,
     },

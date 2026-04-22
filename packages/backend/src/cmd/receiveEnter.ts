@@ -2,13 +2,9 @@ import SocketIO from "socket.io";
 
 import {
   cmdState,
-  clientState,
-  arduinoState,
+  currentState,
   streamState,
-  flagState,
   previousState,
-  bpmStateDefault,
-  bpmState,
 } from "../state";
 
 import { cmdList, parameterList, streamList } from "../data";
@@ -40,6 +36,8 @@ import { millisecondsPerBar } from "../../../util/bpmCalc";
 import { execStream } from "../cmd/execStream";
 import { execCmd } from "./execCmd";
 import { changeCmdParam } from "./changeCmdParam";
+
+import { wholeEmit } from "../stream/wholeEmit";
 
 export const receiveEnter = async (
   strings: string,
@@ -162,9 +160,19 @@ export const receiveEnter = async (
   } else if (strings === "VOSK") {
     console.log("VOSK CALL");
     io.emit("voskCallFromServer");
+  } else if (strings === "WHOLE") {
+    if(currentState.WHOLE){
+      currentState.WHOLE = false;
+      stringEmit(io, "WHOLE CMD STOP", true);
+    } else {
+      currentState.WHOLE = true;
+      wholeEmit(io);
+      // stringEmit(io, "WHOLE CMD", true);
+    }
   } else {
     voiceEmit(io, strings, id);
   }
+
 
   if (strings !== "STOP") {
     previousState.text = strings;

@@ -1,7 +1,7 @@
 import { contextState, audioWorkletState } from "../state";
 import { Socket } from "socket.io-client";
 import { toBase64 } from "../canvasEvent/toBase64";
-import { bufferSizeState } from "../state";
+import { bufferSizeState, wholeState } from "../state";
 
 export async function chatWorklet(stream: MediaStream, socket: Socket) {
   await contextState.audioContext.audioWorklet.addModule("chat-processor.js");
@@ -34,6 +34,7 @@ export async function chatWorklet(stream: MediaStream, socket: Socket) {
       // 必要ならメタを付けて送る。ここでは生バイナリでPOST
       try {
         const ab: ArrayBuffer = payload; // Float32Array.buffer
+        const video = toBase64();
         console.log(Object.keys(audioWorkletState.chat.flag));
         Object.keys(audioWorkletState.chat.flag).forEach((streamSource) => {
           if (audioWorkletState.chat.flag[streamSource]) {
@@ -43,7 +44,7 @@ export async function chatWorklet(stream: MediaStream, socket: Socket) {
             // });
             console.log("workletFromClient emit:", streamSource);
             socket.emit("workletBufferFromClient", {
-              video: toBase64(),
+              video: video,
               audio: ab,
               source: streamSource,
               bufferSize: bufferSizeState.bufferSize,
@@ -54,6 +55,10 @@ export async function chatWorklet(stream: MediaStream, socket: Socket) {
             }
           }
         });
+        if(wholeState.flag) {
+          wholeState.audio = ab;
+          wholeState.video = video;
+        }
       } catch (err) {
         console.error("POST failed:", err);
       }

@@ -17,12 +17,9 @@ import {
 } from "./state";
 
 import { textPrint, canvasSizing } from "./canvasEvent";
-
 import { keyDown } from "./textInput";
 
-import { initTorch, torchToggle } from "./stream/torch";
-
-// let mediaStream: MediaStream | null = null;
+import { simulateWorklet } from "./audioWorklet/simulateWorklet";
 
 const ua = navigator.userAgent.toLowerCase();
 flagState.isMobile = /iphone|ipad|ipod|android/.test(ua);
@@ -38,11 +35,12 @@ eListener.addEventListener(
   "click",
   () => {
     if (!flagState.start) {
-      initialize(socketState.socket).then((stream) => {
+      initialize(socketState.socket).then(async(stream) => {
         if (stream !== null) {
           streamState.stream = stream;
           // initTorch();
           // torchToggle(false);
+          await simulateWorklet();
         } else {
           textPrint("not support navigator.mediaDevices.getUserMedia", {
             timeout: true,
@@ -69,6 +67,7 @@ document.addEventListener("keydown", (e) => {
     initialize(socketState.socket).then((stream) => {
       if (stream !== null) {
         streamState.stream = stream;
+
       } else {
         textPrint("not support navigator.mediaDevices.getUserMedia", {
           timeout: true,

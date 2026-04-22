@@ -15,4 +15,5 @@ export const currentState: currentStateType = {
     TIMELAPSE: false,
   },
   RECORD: false,
+  WHOLE: false,
 };

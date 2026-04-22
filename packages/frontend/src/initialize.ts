@@ -26,7 +26,6 @@ export const initialize = async (
 ): Promise<MediaStream | null> => {
   // ): Promise<void> => {
   erasePrint();
-
   await initVideo();
   await initAudio();
 
@@ -37,6 +36,7 @@ export const initialize = async (
   const torchSupported = "torch" in SUPPORTED_CONSTRAINTS;
   torchState.isSupported = torchSupported;
   if (SUPPORTS_MEDIA_DEVICES && navigator.mediaDevices.getUserMedia) {
+
     const devices = await navigator.mediaDevices.enumerateDevices();
     /*
     const cameras = devices.filter((device) => device.kind === "videoinput");

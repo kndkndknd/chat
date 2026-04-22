@@ -15,6 +15,7 @@ export const putCmd = (
     gain?: number;
   }
 ) => {
+  console.log('idArr', idArr);
   idArr.forEach((id) => {
     io.to(id).emit("cmdFromServer", cmd);
     console.log(id);
