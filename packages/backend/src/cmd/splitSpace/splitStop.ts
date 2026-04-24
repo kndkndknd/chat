@@ -8,6 +8,7 @@ import {
   clientState,
   cmdState,
 } from "../../state";
+import { wholeParams } from "../../data/list/wholeParams";
 
 export const splitStop = (stringArr: string[], io) => {
   console.log("splitStop", stringArr);
@@ -47,6 +48,9 @@ export const splitStop = (stringArr: string[], io) => {
       notTargetEmit(cmdTarget, Object.keys(clientState.client), io);
     });
     currentState.cmd[stringArr[1]] = [];
+  } else if (stringArr.length === 2 && stringArr[1] === "WHOLE") {
+      wholeParams.targetArr = [];
+      currentState.WHOLE = false;
   } else if (stringArr.length === 2 && stringArr[1] === "SINEWAVE") {
     previousState.sinewave = currentState.sinewave;
     Object.keys(currentState.sinewave).forEach((target) => {

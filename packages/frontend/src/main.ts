@@ -40,7 +40,7 @@ eListener.addEventListener(
           streamState.stream = stream;
           // initTorch();
           // torchToggle(false);
-          await simulateWorklet();
+          await simulateWorklet(stream);
         } else {
           textPrint("not support navigator.mediaDevices.getUserMedia", {
             timeout: true,

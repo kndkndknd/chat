@@ -27,9 +27,6 @@ import { connectFromClient } from "../clientSetting/connectFromClient";
 
 import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
 
-// websocket
-import { sendCharWebSocket } from "../webSocket/sendChar";
-
 // whole
 import { receiveWholeReq } from "../stream/receiveWholeReq";
 
@@ -67,7 +64,6 @@ export const ioServer = (
       console.log("socket.id: " + String(socket.id));
       console.log("client: " + clientState.client);
       strings = charProcess(character, strings, socket.id, io);
-      // sendCharWebSocket(character);
     });
 
     socket.on("chatFromClient", (buffer: buffStateType) => {

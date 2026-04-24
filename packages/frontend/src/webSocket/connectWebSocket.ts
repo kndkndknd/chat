@@ -1,26 +1,27 @@
-import { clientId } from "./clientId";
 import { cmdMessage } from "./cmdMessage";
+import { wsState } from "../state/webSocketState";
 
-const wsUrl = "wss://localhost:8888";
+const wsUrl = `wss://${location.host}/ws`;
 
 export const connectWebSocket = () => {
   const ws = new WebSocket(wsUrl);
+  wsState.ws = ws;
+
   ws.onopen = () => {
     console.log("WebSocket connection opened");
-    ws.send(JSON.stringify({ type: "register", id: clientId }));
   };
   ws.onmessage = (event) => {
-    // console.log("websocket data:", event.data);
     const message = JSON.parse(event.data);
 
-    if (message.type === "cmd") {
+    if (message.type === "connected") {
+      wsState.clientId = message.payload.id;
+      console.log("connected:", message);
+    } else if (message.type === "cmd") {
       cmdMessage(message);
     } else if (message.type === "sinewave") {
     } else if (message.type === "streamReq") {
     } else if (message.type === "stop") {
     }
-    //   }
-    // }
   };
 
   ws.onclose = () => {

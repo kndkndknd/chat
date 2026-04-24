@@ -1,4 +1,5 @@
 import { contextState, flagState, oscState } from "../state";
+import { textPrint } from "../canvasEvent";
 
 const NOTE_NAMES = [
   "C",
@@ -26,6 +27,8 @@ export function freqToNote(
   return { name: NOTE_NAMES[noteIndex], octave, cents };
 }
 
+// let textPrintTime: number = 0;
+
 export async function simulateWorklet(stream: MediaStream): Promise<void> {
   try {
     const wasmModule = await import("../wasm/simulate.js");
@@ -37,7 +40,6 @@ export async function simulateWorklet(stream: MediaStream): Promise<void> {
 
     const ctx = contextState.audioContext;
     const sampleRate = ctx.sampleRate;
-    const currentTime = ctx.currentTime;
 
     await ctx.audioWorklet.addModule("/simulate-worklet.js");
     const simulateWorkletNode = new AudioWorkletNode(
@@ -55,11 +57,15 @@ export async function simulateWorklet(stream: MediaStream): Promise<void> {
       const samples: Float32Array = e.data;
       const freq = find_dominant_frequency(samples, sampleRate);
 
-      if (freq >= 1) {
+      if (freq >= 20 && freq <= 20000) {
         console.log(`[Simulate] Frequency: ${freq.toFixed(1)} Hz`);
-        oscState.simulateOsc.frequency.setTargetAtTime(freq, currentTime, 0.1);
+        // if (textPrintTime % 3 === 0) {
+          textPrint(`${freq.toFixed(1)} Hz`);
+          oscState.simulateOsc.frequency.setTargetAtTime(freq, ctx.currentTime, 0.1);
+        // }
         // const { name, octave, cents } = freqToNote(freq);
         // console.log(`[Simulate] Note: ${name}${octave}, Cents: ${cents}`);
+        // textPrintTime++;
       }
     };
 

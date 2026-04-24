@@ -13,9 +13,6 @@ import { webState } from "./states/webState";
 import { hlsState } from "./states/hlsState";
 import { webRtcServerState } from "./states/webRtcServerState";
 
-// webSocket
-import { webSocketIdState } from "./states/webSocketIdState";
-
 export {
   arduinoState,
   bpmState,
@@ -31,6 +28,5 @@ export {
   sampleRateState,
   streamState,
   webRtcServerState,
-  webSocketIdState,
   webState,
 };

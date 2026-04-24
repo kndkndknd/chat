@@ -52,6 +52,8 @@ import { splitToPostgres } from "./splitToPostgres";
 
 import { millisecondsPerBar } from "../../../../util/bpmCalc";
 import { joinOrLeave, offerReq, answerReq } from "../../webRTC";
+import { getStream, decodeAudio } from "../../stream/toPostgres/getStream";
+import { pushStateStream } from "../../stream/pushStateStream";
 
 export const splitSpace = async (
   stringArr: Array<string>,
@@ -244,36 +246,61 @@ export const splitSpace = async (
     // } else if (stringArr[0] === 'FIND' && stringArr.length === 3) {
     // findStream(stringArr[1], stringArr[2], io);
   } else if (stringArr[0] === "GET" || stringArr[0] === "YOUTUBE") {
-    stringEmit(io, `GETTING ${stringArr.slice(1).join(" ")}...`, true);
-    if (stringArr[1] === "LIVESTREAM") {
-      if (stringArr.length === 2) {
-        const result = await getLiveStream("LIVESTREAM");
-        console.log("get livestream", result);
-        if (result) {
-          stringEmit(io, "GET LIVESTREAM: SUCCESS");
+    // if(stringArr[1] === "BUSHBASH") {
+    //   stringEmit(io, "GETTING BUSHBASH MEMORY...", true);
+    //   const result = await getStream("BUSHBASH");
+    //   console.log("get bushbash memory", result);
+    //   if(streams["BUSHBASH"] === undefined) {
+    //     pushStateStream("BUSHBASH", true);
+    //     streams.BUSHBASH = {
+    //       audio: [],
+    //       video: [],
+    //       index: 0,
+    //       bufferSize: streamState.basisBufferSize,
+    //     };
+    //   }
+    //   await result.forEach((record) => {
+    //     streams.BUSHBASH.video.push(record.video);
+    //     streams.BUSHBASH.audio.push(decodeAudio(record.audio));
+    //   });
+
+    //   if(result.length > 0) {
+    //     stringEmit(io, "GET BUSHBASH MEMORY: SUCCESS");
+    //   } else {
+    //     stringEmit(io, "GET BUSHBASH MEMORY: FAILED");
+    //   }
+    // } else {
+      stringEmit(io, `GETTING ${stringArr.slice(1).join(" ")}...`, true);
+      if (stringArr[1] === "LIVESTREAM") {
+        if (stringArr.length === 2) {
+          const result = await getLiveStream("LIVESTREAM");
+          console.log("get livestream", result);
+          if (result) {
+            stringEmit(io, "GET LIVESTREAM: SUCCESS");
+          } else {
+            stringEmit(io, "GET LIVESTREAM: FAILED");
+          }
         } else {
-          stringEmit(io, "GET LIVESTREAM: FAILED");
+          const qWord = stringArr.slice(1).join(" ");
+          console.log("qWord", qWord);
+          const result = await getLiveStream("LIVESTREAM", qWord);
+          console.log("get livestream", result);
+          if (result) {
+            stringEmit(io, "GET LIVESTREAM: SUCCESS");
+          } else {
+            stringEmit(io, "GET LIVESTREAM: FAILED");
+          }
         }
       } else {
-        const qWord = stringArr.slice(1).join(" ");
-        console.log("qWord", qWord);
-        const result = await getLiveStream("LIVESTREAM", qWord);
-        console.log("get livestream", result);
+        const result = await getLiveStream(stringArr[1]);
+        console.log("get livestream as ", stringArr[1], result);
         if (result) {
           stringEmit(io, "GET LIVESTREAM: SUCCESS");
         } else {
           stringEmit(io, "GET LIVESTREAM: FAILED");
         }
       }
-    } else {
-      const result = await getLiveStream(stringArr[1]);
-      console.log("get livestream as ", stringArr[1], result);
-      if (result) {
-        stringEmit(io, "GET LIVESTREAM: SUCCESS");
-      } else {
-        stringEmit(io, "GET LIVESTREAM: FAILED");
-      }
-    }
+    // }
   } else if (stringArr[0] === "HELP") {
     helpPrint(stringArr.slice(1), io);
   } else if (stringArr[0] === "INSERT" || stringArr[0] === "FIND") {
