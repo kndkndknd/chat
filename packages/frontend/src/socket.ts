@@ -130,7 +130,7 @@ export const socket = (): void => {
   // CHATのみ向けにする
   socketState.socket.on(
     "chatFromServer",
-    (data: { video: string; audio: ArrayBuffer; source: string, bufferSize: number, duration: number, sampleRate: number, glitch: boolean }) => {
+    (data: { video: string; audio: ArrayBuffer; source: string, bufferSize: number, sampleRate: number, glitch: boolean,duration?: number }) => {
       // (data: {
       //   audio: Float32Array;
       //   video?: string;
@@ -143,8 +143,8 @@ export const socket = (): void => {
       //   position?: { top: number; left: number; width: number; height: number };
       //   target?: string;
       // }) => {
-      console.log("chatFromServer");
-      console.log(data);
+      // console.log("chatFromServer");
+      // console.log(data);
       // data.bufferをfloat32Arrayに変換
       const float32Array = new Float32Array(data.audio);
       const streamData = {
@@ -157,7 +157,7 @@ export const socket = (): void => {
       };
       const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
       streamPlay(streamType, socketState.socket, streamData);
-      audioWorkletState.chat.flag[data.source] = true;
+      // audioWorkletState.chat.flag[data.source] = true;
 
       // if (quantizeState.flag && quantizeState.stream.includes("CHAT")) {
       //   const chunk = {

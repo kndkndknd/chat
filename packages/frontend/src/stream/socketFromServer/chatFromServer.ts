@@ -27,8 +27,9 @@ export const chatFromServer = (
       sampleRate: data.sampleRate,
       glitch: data.glitch,
       bufferSize: data.bufferSize,
-      duration: data.duration,
+      duration: 1000 * data.bufferSize / data.sampleRate,
     };
+    console.log("chunk:", chunk);
     // data.source = "CHAT";
     streamChunk.CHAT = chunk;
   } else {

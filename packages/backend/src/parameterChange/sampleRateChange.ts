@@ -4,6 +4,14 @@ import { stringEmit } from "../socket/ioEmit";
 export const sampleRateChange = (arg, io) => {
   let sampleRate = 44100;
   if (arg && isFinite(Number(arg.value))) {
+    if(arg.value < 4000 || arg.value > 132300){ 
+      stringEmit(
+      io,
+      "out of range",
+      // state
+      );
+      return;
+    }
     sampleRate = arg.value;
   } else {
     const sampleArr = Object.values(sampleRateState.sampleRate);
