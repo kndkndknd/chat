@@ -25,6 +25,7 @@ export const keyDown = (
   if (character === "\\") {
     bassFlag = !bassFlag;
     stringsClient = "BASS";
+    socket.emit("charFromClient", "BASS");
     bass(bassFlag, 0.4);
     if (bassFlag) {
       textPrint(stringsClient);

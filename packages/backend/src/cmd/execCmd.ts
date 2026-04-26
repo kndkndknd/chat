@@ -20,7 +20,7 @@ export const execCmd = async (
   if (Object.keys(cmdList).includes(strings)) {
     console.log("in cmd");
     voiceEmit(io, cmdList[strings], id);
-    if (clientState.client[id].self) {
+    if (id !== "all" && clientState.client[id] !== undefined && clientState.client[id].self) {
       cmdEmit(cmdList[strings], io, id);
     } else {
       cmdEmit(cmdList[strings], io);
@@ -53,7 +53,7 @@ export const execCmd = async (
     voiceEmit(io, "PREVIOUS", id);
     previousCmd(io);
   } else if (strings === "QUANTIZE") {
-    if (clientState.client[id].self) {
+    if (id !== "all" && clientState.client[id] !== undefined && clientState.client[id].self) {
       quantizeCmd(io, id);
     } else {
       quantizeCmd(io);
@@ -87,7 +87,7 @@ export const execCmd = async (
     const frequency = 20 + Math.random() * 19980;
     voiceEmit(io, frequency + "Hz", id);
     sinewaveEmit(frequency, io);
-    if (clientState.client[id].self) {
+    if (id !== "all" && clientState.client[id] !== undefined && clientState.client[id].self) {
       sinewaveEmit(frequency, io, id);
     } else {
       sinewaveEmit(frequency, io);
@@ -104,7 +104,7 @@ export const execCmd = async (
     const solfeggioArr = [285, 396, 417, 528, 639, 741, 852, 963];
     const frequency =
       solfeggioArr[Math.floor(Math.random() * solfeggioArr.length)];
-    if (clientState.client[id].self) {
+    if (clientState.client[id] !== undefined && clientState.client[id].self) {
       sinewaveEmit(frequency, io, id);
     } else {
       sinewaveEmit(frequency, io);

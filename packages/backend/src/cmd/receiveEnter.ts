@@ -5,6 +5,7 @@ import {
   currentState,
   streamState,
   previousState,
+  flagState,
 } from "../state";
 
 import { cmdList, parameterList, streamList } from "../data";
@@ -38,6 +39,7 @@ import { execCmd } from "./execCmd";
 import { changeCmdParam } from "./changeCmdParam";
 
 import { wholeEmit } from "../stream/wholeEmit";
+import { replay } from "../scenario/replay";
 
 export const receiveEnter = async (
   strings: string,
@@ -45,7 +47,15 @@ export const receiveEnter = async (
   io: SocketIO.Server,
   // state: cmdStateType
 ) => {
-  cmdLogging(strings);
+  console.log("receiveEnter", strings, id);
+  if (strings === undefined || strings === null) {
+    return;
+  }
+  console.log("flagState.scenario", flagState.scenario);
+  if (!flagState.scenario || strings === "REPLAY") {
+    console.log("logging in receiveEnter");
+    cmdLogging(strings);
+  }
 
   //VOICE
   // if (strings.includes("VOICE ")) {
@@ -169,6 +179,8 @@ export const receiveEnter = async (
       wholeEmit(io);
       // stringEmit(io, "WHOLE CMD", true);
     }
+  } else if (strings === "REPLAY") {
+    replay(io);
   } else {
     voiceEmit(io, strings, id);
   }

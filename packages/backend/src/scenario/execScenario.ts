@@ -1,5 +1,6 @@
 import SocketIO from "socket.io";
 import { receiveEnter } from "../cmd/receiveEnter";
+import { flagState } from "../state";
 
 export const execScenario = async (
   scenario: {
@@ -8,6 +9,7 @@ export const execScenario = async (
   },
   io: SocketIO.Server
 ) => {
+  flagState.scenario = true;
   const now = new Date();
   console.log("now", now.getTime());
   if (scenario.format === "relative") {
@@ -22,6 +24,7 @@ export const execScenario = async (
             Number(execTimeArr[1]) * 60 * 1000;
       return { time: time, cmd: scenario.timetable[key] };
     });
+    console.log("timetableArr", timetableArr);
     /*
     timetableArr.forEach((item) => {
       setTimeout(() => {
@@ -37,26 +40,31 @@ export const execScenario = async (
       }, timetableArr[i].time);
     }
   } else if (scenario.format === "absolute") {
+    const diff = now.getTime() - new Date(Object.keys(scenario.timetable)[0]).getTime();
     for (let key in scenario.timetable) {
       console.log(key);
       console.log(scenario[key]);
       // keyの時刻の文字列をDate型に変換
       // const execTime = new Date(key);
-      const execTimeArr = key.split(":");
-      const execTime = new Date();
-      execTime.setHours(Number(execTimeArr[0]));
-      execTime.setMinutes(Number(execTimeArr[1]));
-      if (execTimeArr.length === 3) {
-        execTime.setSeconds(Number(execTimeArr[2]));
+      const execTimeArr = key.split(" ")[1].split(":");
+      console.log("execTimeArr", execTimeArr);
+      const timeTable = new Date();
+      timeTable.setHours(Number(execTimeArr[0]));
+      timeTable.setMinutes(Number(execTimeArr[1]));
+      if (timeTable) {
+        timeTable.setSeconds(Number(execTimeArr[2]));
       }
 
-      console.log("execTime", execTime);
-      console.log(execTime.getTime());
-      if (now.getTime() - execTime.getTime() < 0) {
+      console.log("timeTable", timeTable);
+      console.log(timeTable.getTime());
+      const execTime = timeTable.getTime() + diff - now.getTime();
+      console.log('execTiming', execTime);
+      console.log('exec: ', scenario.timetable[key]);
+
+      if (execTime >= 0 && scenario.timetable[key] !== undefined && scenario.timetable[key] !== "REPLAY") {
         setTimeout(() => {
-          console.log(scenario[key]);
-          receiveEnter(scenario[key], "all", io);
-        }, execTime.getTime() - now.getTime());
+          receiveEnter(scenario.timetable[key], "all", io);
+        }, execTime);
       }
     }
   }

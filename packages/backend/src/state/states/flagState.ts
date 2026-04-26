@@ -5,4 +5,5 @@ export const flagState: flagStateType = {
   emoji: false,
   timer: true,
   vosk: true,
+  scenario: false,
 };

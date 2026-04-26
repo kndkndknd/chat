@@ -14,6 +14,8 @@ import SocketIO from "socket.io";
 
 import { getLiveStream } from "./stream/getLiveStream";
 import { stringEmit } from "./socket/ioEmit";
+
+import { cmdLogging } from "./logging/cmdLogging";
 // import { io as socketIoClient, Socket } from "socket.io-client";
 
 // const socketClient: Socket = socketIoClient("https://localhost:8080/socket.io");
@@ -238,3 +240,5 @@ const socketOptions = {
 */
 
 // const io = new Server(httpsserver, socketOptions)
+
+cmdLogging("START");
