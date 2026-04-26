@@ -6,7 +6,6 @@ import { default as favicon } from "serve-favicon";
 import * as Https from "https";
 import { fileURLToPath } from "url";
 import { ioServer } from "./socket/ioServer";
-import { wsServer } from "./webSocket/wsServer";
 import { spawn } from "child_process";
 // import { states } from "./states";
 // import { switchCtrl } from "./arduinoAccess/switch";
@@ -79,7 +78,6 @@ const host = getIpAddress();
 console.log(`Server listening on ${host}:${port}`);
 
 const io: SocketIO.Server = ioServer(httpserver);
-const wss = wsServer(httpserver);
 
 app.get("/", function (req, res, next) {
   try {

@@ -6,7 +6,7 @@ declare function registerProcessor(
   ChatProcessor: typeof AudioWorkletProcessor,
 ): void;
 
-const DEFAULT_BUFFER_SIZE = 8192;
+const DEFAULT_BUFFER_SIZE = 8192 / 4;
 
 interface ChatProcessorOptions {
   processorOptions?: {

@@ -130,7 +130,7 @@ export const socket = (): void => {
   // CHATのみ向けにする
   socketState.socket.on(
     "chatFromServer",
-    (data: { video: string; audio: ArrayBuffer; source: string }) => {
+    (data: { video: string; audio: ArrayBuffer; source: string, bufferSize: number, duration: number, sampleRate: number, glitch: boolean }) => {
       // (data: {
       //   audio: Float32Array;
       //   video?: string;
@@ -149,9 +149,9 @@ export const socket = (): void => {
       const float32Array = new Float32Array(data.audio);
       const streamData = {
         audio: float32Array,
-        sampleRate: 44100,
-        glitch: false,
-        bufferSize: 8192,
+        sampleRate: data.sampleRate,
+        glitch: data.glitch,
+        bufferSize: data.bufferSize,
         video: data.video,
         source: data.source,
       };

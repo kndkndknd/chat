@@ -49,6 +49,7 @@ export async function chatWorklet(stream: MediaStream, socket: Socket) {
               source: streamSource,
               bufferSize: bufferSizeState.bufferSize,
             });
+            console.log("audio buffer sent for source:", streamSource);
             if (streamSource === "CHAT" || streamSource === "TIMELAPSE") {
               // CHAT と TIMELAPSE は送信後にフラグを下ろす
               audioWorkletState.chat.flag[streamSource] = false;

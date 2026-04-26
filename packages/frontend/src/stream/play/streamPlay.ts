@@ -5,7 +5,9 @@ import { flagState } from "../../state";
 import { Socket } from "socket.io-client";
 import { filterStateType } from "../../../../../types";
 
-export const streamPlay = (
+let debugCount = 0;
+
+export const streamPlay = async (
   type: "CHAT" | "STREAM",
   socket: Socket,
   stream: {
@@ -44,18 +46,21 @@ export const streamPlay = (
     textPrint(stream.source.toLowerCase());
   }
   if (flagState.recLatency) {
+    console.log("debugCount:", debugCount);
     setTimeout(() => {
-      if (type === "CHAT") {
-        chatReq(String(socket.id));
-      } else {
+      if (type !== "CHAT") {
         socket.emit("streamReqFromClient", stream.source);
+      } else {
+        console.log("debugCount in setTimeout:", debugCount);
+        chatReq(socket.id);
       }
     }, (stream.bufferSize / stream.sampleRate) * 1000);
+    debugCount++;
   } else {
-    if (type === "CHAT") {
-      chatReq(String(socket.id));
-    } else {
+    if (type !== "CHAT") {
       socket.emit("streamReqFromClient", stream.source);
+    } else {
+      chatReq(socket.id);
     }
   }
 };
