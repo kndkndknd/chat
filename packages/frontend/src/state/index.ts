@@ -19,6 +19,7 @@ import { gainState } from "./webAudio/gainState";
 import { convolverState } from "./webAudio/convolverState";
 import { otherNodeState } from "./webAudio/otherNodeState";
 import { filterState } from "./webAudio/filterState";
+import { stereoPannerState } from "./webAudio/stereoPannerState";
 
 // webRTC
 import { webRtcState } from "./webRtcState";
@@ -50,6 +51,7 @@ export {
   quantizeState,
   sensorState,
   socketState,
+  stereoPannerState,
   streamFlagState,
   streamChunk,
   streamState,

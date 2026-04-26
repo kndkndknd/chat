@@ -11,6 +11,7 @@ import { bpmStreamStateType, filterStateType } from "../../../types";
 import {
   flagState,
   socketState,
+  stereoPannerState,
   streamState,
   voiceState,
   webRtcState,
@@ -283,5 +284,13 @@ webRtcState.videoPlayer = <HTMLVideoElement>document.getElementById("video2");
 // };
 
 textPrint("click screen");
+
+if(window.location.pathname.includes("left")) {
+  textPrint("left");
+  stereoPannerState.masterPannerParam = -1;
+} else if (window.location.pathname.includes("right")) {
+  textPrint("right");
+  stereoPannerState.masterPannerParam = 1;
+}
 
 //debugOn

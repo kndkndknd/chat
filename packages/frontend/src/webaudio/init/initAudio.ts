@@ -5,6 +5,7 @@ import {
   convolverState,
   filterState,
   otherNodeState,
+  stereoPannerState,
   audioWorkletState,
 } from "../../state";
 import { initWhitenoiseWorklet } from "../../audioWorklet/whitenoiseWorklet";
@@ -17,7 +18,13 @@ export const initAudio = async () => {
   contextState.audioContext = new AudioContext();
   gainState.masterGain = contextState.audioContext.createGain();
   gainState.masterGain.gain.setValueAtTime(1, 0);
-  gainState.masterGain.connect(contextState.audioContext.destination);
+  stereoPannerState.masterPanner = contextState.audioContext.createStereoPanner();
+  stereoPannerState.masterPanner.pan.setValueAtTime(
+    stereoPannerState.masterPannerParam,
+    0,
+  );
+  gainState.masterGain.connect(stereoPannerState.masterPanner);
+  stereoPannerState.masterPanner.connect(contextState.audioContext.destination);
   // console.log(gainState.masterGain.gain.maxValue);
 
   //record/play
