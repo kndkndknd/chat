@@ -64,7 +64,7 @@ canvasSizing();
 
 document.addEventListener("keydown", (e) => {
   console.log(e);
-  if (e.key === "Enter" && !flagState.start) {
+  if (e.key === "Enter" && !flagState.start && window.location.pathname !== "noinput") {
     initialize(socketState.socket).then((stream) => {
       if (stream !== null) {
         streamState.stream = stream;
