@@ -9,9 +9,12 @@ import {
 } from "../state";
 import { streamList } from "../data";
 import { floatingPosition } from "./floatingPosition";
-import { averageBpmInfo } from "../../../util/averageBpmInfo";
 
-export const connectFromClient = (data, socket, io) => {
+export const connectFromClient = (data, socket) => {
+  if(data.urlPathName === "/nosound"){
+    console.log("nosound client connected");
+    return;
+  }
   let sockId = String(socket.id);
   const ipAddress = socket.handshake.address.split(":")[3];
   console.log("ipAddress: " + ipAddress);

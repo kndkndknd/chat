@@ -26,11 +26,13 @@ export const keyDown = (
     bassFlag = !bassFlag;
     stringsClient = "BASS";
     socket.emit("charFromClient", "BASS");
-    bass(bassFlag, 0.4);
-    if (bassFlag) {
-      textPrint(stringsClient);
-    } else {
-      erasePrint(stx, strCnvs);
+    if(!window.location.pathname.includes("nosound")){
+      bass(bassFlag, 0.4);
+      if (bassFlag) {
+        textPrint(stringsClient);
+      } else {
+        erasePrint(stx, strCnvs);
+      }
     }
   } else if (
     character === "Eisu" ||

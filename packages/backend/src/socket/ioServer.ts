@@ -52,7 +52,7 @@ export const ioServer = (
 
   io.sockets.on("connection", (socket) => {
     socket.on("connectFromClient", (data) => {
-      const result = connectFromClient(data, socket, io);
+      const result = connectFromClient(data, socket);
 
       if (result) {
         socket.emit("debugFromServer");
