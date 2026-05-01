@@ -3,10 +3,10 @@ import { cmdStateType } from "../../../../../types";
 export const cmdState: cmdStateType = {
   GAIN: {
     MASTER: 1.0,
-    SINEWAVE: 0.4,
+    SINEWAVE: 0.3,
     FEEDBACK: 1,
     WHITENOISE: 1.0,
-    CLICK: 0.9,
+    CLICK: 0.8,
     BASS: 1.5,
     CHAT: 1.5,
     GLITCH: 2,
