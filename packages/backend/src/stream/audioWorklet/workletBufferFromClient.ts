@@ -1,18 +1,17 @@
 import { Server } from "socket.io";
-import { streams } from "../../data/chunk/streams";
-import { pickupStreamTarget } from "../pickupStreamTarget";
+import { streamsRedis } from "../../data/chunk/streams";
 import { chatReceive } from "../chatReceive";
 import { buffStateType } from "../../../../../types";
 import { pushStateStream } from "../pushStateStream";
+import { streamState } from "../../state";
 
-export const workletBufferFromClient = (
+export const workletBufferFromClient = async (
   data: {
     video: string;
     audio: ArrayBuffer;
     source: string;
     bufferSize: number;
   },
-  io: Server,
 ) => {
   if (data.source === "CHAT") {
     const buff: buffStateType = {
@@ -20,40 +19,27 @@ export const workletBufferFromClient = (
       video: data.video,
       audio: data.audio,
       bufferSize: data.audio.byteLength,
-      duration: data.audio.byteLength / 44100 / 4, // 4はFloat32Arrayのバイト数
+      duration: data.audio.byteLength / 44100 / 4,
     };
-    chatReceive(io, buff);
-    // const target = pickupStreamTarget(data.source);
-    // io.to(target).emit("chatFromServer", {
-    //   video: data.video,
-    //   audio: data.audio,
-    //   source: data.source,
-    // });
+    chatReceive(buff);
   } else if (data.source === "TIMELAPSE") {
-    streams.TIMELAPSE.audio.push(data.audio);
-    streams.TIMELAPSE.video.push(data.video);
-    streams.TIMELAPSE.index++;
-    console.log("TIMELAPSE length: " + streams.TIMELAPSE.index);
+    await streamsRedis.pushAudio("TIMELAPSE", data.audio);
+    await streamsRedis.pushVideo("TIMELAPSE", data.video);
+    const idx = await streamsRedis.incrementIndex("TIMELAPSE");
+    console.log("TIMELAPSE length: " + idx);
   } else if (data.source === "PLAYBACK") {
-    streams.PLAYBACK.audio.push(data.audio);
-    streams.PLAYBACK.video.push(data.video);
-    streams.PLAYBACK.index++;
-    console.log("RECORD length: " + streams.PLAYBACK.index);
+    await streamsRedis.pushAudio("PLAYBACK", data.audio);
+    await streamsRedis.pushVideo("PLAYBACK", data.video);
+    const idx = await streamsRedis.incrementIndex("PLAYBACK");
+    console.log("RECORD length: " + idx);
   } else {
-    if (streams[data.source] === undefined) {
-      streams[data.source] = {
-        audio: [],
-        video: [],
-        index: 0,
-        bufferSize: data.bufferSize,
-      };
+    if (!(await streamsRedis.hasKey(data.source))) {
+      await streamsRedis.initKey(data.source, data.bufferSize || streamState.basisBufferSize);
       pushStateStream(data.source);
     }
-    streams[data.source].audio.push(data.audio);
-    streams[data.source].video.push(data.video);
-    streams[data.source].index++;
-    console.log(
-      `RECORD AS ${data.source} length: ${streams[data.source].index}`,
-    );
+    await streamsRedis.pushAudio(data.source, data.audio);
+    await streamsRedis.pushVideo(data.source, data.video);
+    const idx = await streamsRedis.incrementIndex(data.source);
+    console.log(`RECORD AS ${data.source} length: ${idx}`);
   }
 };

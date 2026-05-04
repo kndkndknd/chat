@@ -1,8 +1,9 @@
-import { streams } from "../data";
+import { streamsRedis } from "../data";
 
-export const clearBuffer = (source?: string) => {
+export const clearBuffer = async (source?: string) => {
   if (source === "BUFFER" || source === undefined) {
-    for (let stream in streams) {
+    const keys = await streamsRedis.getAllKeys();
+    for (const stream of keys) {
       if (
         stream !== "CHAT" &&
         stream !== "EMPTY" &&
@@ -10,12 +11,12 @@ export const clearBuffer = (source?: string) => {
         stream !== "SNARE" &&
         stream !== "HAT"
       ) {
-        streams[stream].audio = [];
-        streams[stream].video = [];
+        await streamsRedis.clearAudio(stream);
+        await streamsRedis.clearVideo(stream);
       }
     }
-  } else if (Object.keys(streams).includes(source)) {
-    streams[source].audio = [];
-    streams[source].video = [];
+  } else if (await streamsRedis.hasKey(source)) {
+    await streamsRedis.clearAudio(source);
+    await streamsRedis.clearVideo(source);
   }
 };

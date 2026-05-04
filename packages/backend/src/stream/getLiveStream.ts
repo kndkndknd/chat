@@ -1,24 +1,17 @@
-// import * as path from "path";
 import { spawn } from "child_process";
-// import { mkdir } from "fs/promises";
 import axios from "axios";
 const pcm = require("pcm");
 
 import { streamState } from "../state";
-import { streams, streamApiUrl } from "../data";
+import { streamsRedis, streamApiUrl } from "../data";
 import { putVideoStream } from "./uploadModule/putVideoStream";
 import { pushStateStream } from "./pushStateStream";
 
 export const getLiveStream = async (stream: string, qWord?: string) => {
   try {
     const streamName = stream.includes(" ") ? stream.replace(" ", "") : stream;
-    if (!Object.keys(streams).includes(stream)) {
-      streams[streamName] = {
-        video: [],
-        audio: [],
-        bufferSize: streamState.basisBufferSize,
-        index: 0,
-      };
+    if (!(await streamsRedis.hasKey(stream))) {
+      await streamsRedis.initKey(streamName, streamState.basisBufferSize);
       pushStateStream(stream);
     }
     streamState.random[stream] = true;
@@ -43,9 +36,6 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
         streamData = response.data;
       }
     }
-    // const streamData = <{ dirPath: string; fileName: string; audio: boolean }[]>(
-    //   response.data
-    // );
 
     for (let i = 0; i < streamData.length; i++) {
       const tsFileName = streamData[i].fileName;
@@ -64,6 +54,7 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
       if (audioInfo) {
         let tmpBuff = new Float32Array(streamState.basisBufferSize);
         let buffIndex = 0;
+        const audioBuffers: Float32Array[] = [];
 
         await pcm.getPcmData(
           mediaDirPath + "/" + tsFileName,
@@ -72,7 +63,7 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
             tmpBuff[buffIndex] = sample;
             buffIndex++;
             if (buffIndex === streamState.basisBufferSize) {
-              streams[streamName].audio.push(tmpBuff);
+              audioBuffers.push(tmpBuff);
               tmpBuff = new Float32Array(streamState.basisBufferSize);
               buffIndex = 0;
             }
@@ -89,23 +80,12 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
             );
           }
         );
-      } else {
-        for (let j = 0; j < streams[stream].video.length; j++) {
-          const float32Array = new Float32Array(streamState.basisBufferSize);
-          for (let k = 0; k < streamState.basisBufferSize; k++) {
-            float32Array[k] = 0;
-          }
+
+        for (const buf of audioBuffers) {
+          await streamsRedis.pushAudio(streamName, buf.buffer);
         }
       }
     }
-    /*
-    const removeResult = await removeFile(streamData[0].dirPath);
-    if (removeResult === "success") {
-      console.log("remove files");
-    } else {
-      console.log("remove files error");
-    }
-    */
 
     return await true;
   } catch (err) {

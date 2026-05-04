@@ -1,4 +1,4 @@
-import SocketIO from "socket.io";
+import { ioState } from "../state/states/ioState";
 import { voiceEmit } from "./voiceEmit";
 import {
   clientState,
@@ -10,7 +10,6 @@ import {
 import { wholeParams } from "../data/list/wholeParams";
 
 export const stopEmit = (
-  io: SocketIO.Server,
   source: string,
   target?: "ALL" | "STREAM" | "CMD" | "ExceptHls",
   client?: string
@@ -33,7 +32,7 @@ export const stopEmit = (
   //   });
   // }
   if (source !== undefined && source !== "") {
-    voiceEmit(io, "STOP", source);
+    voiceEmit("STOP", source);
   }
 
   wholeParams.targetArr = [];
@@ -47,7 +46,7 @@ export const stopEmit = (
       !clientState.client[source].self
     ) {
       Object.keys(clientState.client).forEach((element) => {
-        io.to(element).emit("stopFromServer", {
+        ioState?.io.to(element).emit("stopFromServer", {
           target: target === undefined ? "ALL" : target,
           fadeOutVal: cmdState.FADE.OUT,
         });
@@ -62,7 +61,7 @@ export const stopEmit = (
         // state.hls = [];
       }
     } else {
-      io.to(source).emit("stopFromServer", {
+      ioState?.io.to(source).emit("stopFromServer", {
         target: target === undefined ? "ALL" : target,
         fadeOutVal: cmdState.FADE.OUT,
       });
@@ -81,7 +80,7 @@ export const stopEmit = (
     }
     // state.hls = [];
   } else if (Object.keys(clientState.client).includes(client)) {
-    io.to(client).emit("stopFromServer", {
+    ioState?.io.to(client).emit("stopFromServer", {
       target: target === undefined ? "ALL" : target,
       fadeOutVal: cmdState.FADE.OUT,
     });

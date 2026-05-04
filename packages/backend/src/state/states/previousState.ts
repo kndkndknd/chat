@@ -1,6 +1,7 @@
 import { previousStateType } from "../../../../../types";
+import { createPersistedState } from "../../redis/stateRedis";
 
-export const previousState: previousStateType = {
+export const previousState = createPersistedState<previousStateType>("previousState", {
   text: "",
   cmd: {
     FEEDBACK: [],
@@ -16,4 +17,4 @@ export const previousState: previousStateType = {
     TIMELAPSE: false,
   },
   RECORD: false,
-};
+});

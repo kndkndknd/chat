@@ -1,8 +1,8 @@
-import SocketIO from "socket.io";
+import { ioState } from "../state/states/ioState";
 import { pickupStreamTarget, pickupPaStreamTarget } from "./pickupStreamTarget";
 import { currentState } from "../state";
 
-export const chatPreparation = async (io: SocketIO.Server) => {
+export const chatPreparation = async () => {
   console.log(currentState.stream.CHAT);
   if (!currentState.stream.CHAT) {
     // console.log(state.client);
@@ -14,7 +14,7 @@ export const chatPreparation = async (io: SocketIO.Server) => {
 
     console.log(targetId);
     // if (targetId !== "arduino") {
-    io.to(targetId).emit("chatReqFromServer");
+    ioState?.io.to(targetId).emit("chatReqFromServer");
     // if (state.cmd.VOICE.length > 0) {
     //   state.cmd.VOICE.forEach((element) => {
     //     io.to(element).emit("voiceFromServer", "CHAT");
@@ -35,7 +35,7 @@ export const chatPreparation = async (io: SocketIO.Server) => {
   }
 };
 
-export const paChatPreparation = async(io: SocketIO.Server) => {
+export const paChatPreparation = async() => {
   if (!currentState.stream.CHAT) {
     // console.log(state.client);
     currentState.stream.CHAT = true;
@@ -46,7 +46,7 @@ export const paChatPreparation = async(io: SocketIO.Server) => {
 
     console.log(targetId);
     // if (targetId !== "arduino") {
-    io.to(targetId).emit("chatReqFromServer");
+    ioState?.io.to(targetId).emit("chatReqFromServer");
     // if (state.cmd.VOICE.length > 0) {
     //   state.cmd.VOICE.forEach((element) => {
     //     io.to(element).emit("voiceFromServer", "CHAT");

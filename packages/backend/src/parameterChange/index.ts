@@ -11,30 +11,29 @@ import { voiceChange } from "./voiceChange";
 
 export const parameterChange = (
   param: string,
-  io: SocketIO.Server,
   arg?: { source?: string; value?: number; property?: string }
 ) => {
   switch (param) {
     case "PORTAMENT":
-      portamentChange(arg, io);
+      portamentChange(arg);
       break;
     case "SAMPLERATE":
-      sampleRateChange(arg, io);
+      sampleRateChange(arg);
       break;
     case "GLITCH":
-      glitchChange(arg, io);
+      glitchChange(arg);
       break;
     case "GRID":
-      gridChange(arg, io);
+      gridChange(arg);
       break;
     case "BPM":
-      bpmChange(io, arg);
+      bpmChange(arg);
       break;
     case "RANDOM":
-      randomStreamOrder(io);
+      randomStreamOrder();
       break;
     case "VOICE":
-      voiceChange(io, arg);
+      voiceChange(arg);
       break;
   }
 };

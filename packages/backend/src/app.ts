@@ -16,6 +16,8 @@ import { getLiveStream } from "./stream/getLiveStream";
 import { stringEmit } from "./socket/ioEmit";
 
 import { cmdLogging } from "./logging/cmdLogging";
+import { initStreams } from "./data";
+import { loadAllStates } from "./state";
 // import { io as socketIoClient, Socket } from "socket.io-client";
 
 // const socketClient: Socket = socketIoClient("https://localhost:8080/socket.io");
@@ -241,4 +243,7 @@ const socketOptions = {
 
 // const io = new Server(httpsserver, socketOptions)
 
+loadAllStates()
+  .then(() => initStreams())
+  .catch((err) => console.error("Redis init error:", err));
 cmdLogging("START");

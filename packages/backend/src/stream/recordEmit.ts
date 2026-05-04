@@ -1,25 +1,25 @@
-import SocketIO from "socket.io";
+import { ioState } from "../state/states/ioState";
 import { currentState, cmdState } from "../state";
 import { pushStateStream } from "./pushStateStream";
 
-export const recordEmit = (io: SocketIO.Server, target?: string) => {
+export const recordEmit = (target?: string) => {
   console.log("target", target);
   // if (!currentState.RECORD) {
   currentState.RECORD = true;
   if (target && target !== undefined) {
     console.log(`target: ${target}`);
-    io.to(target).emit("recordReqFromServer", {
+    ioState?.io.to(target).emit("recordReqFromServer", {
       source: "PLAYBACK",
       timeout: 10000,
     });
   } else {
     console.log("all");
-    io.emit("recordReqFromServer", { source: "PLAYBACK", timeout: 10000 });
+    ioState?.io.emit("recordReqFromServer", { source: "PLAYBACK", timeout: 10000 });
   }
   if (cmdState.VOICE.length > 0) {
     cmdState.VOICE.forEach((element) => {
       //          io.to(element).emit('voiceFromServer', 'RECORD')
-      io.to(element).emit("voiceFromServer", {
+      ioState?.io.to(element).emit("voiceFromServer", {
         text: "RECORD",
         lang: cmdState.voiceLang,
       });
@@ -34,7 +34,6 @@ export const recordEmit = (io: SocketIO.Server, target?: string) => {
 };
 
 export const recordAsOtherEmit = (
-  io: SocketIO.Server,
   // state: cmdStateType,
   source: string,
   target?: string,
@@ -46,18 +45,18 @@ export const recordAsOtherEmit = (
     pushStateStream(source);
     if (target && target !== undefined) {
       console.log(`target: ${target}`);
-      io.to(target).emit("recordReqFromServer", {
+      ioState?.io.to(target).emit("recordReqFromServer", {
         source: source,
         timeout: 10000,
       });
     } else {
       console.log("all");
-      io.emit("recordReqFromServer", { source: source, timeout: 10000 });
+      ioState?.io.emit("recordReqFromServer", { source: source, timeout: 10000 });
     }
     if (cmdState.VOICE.length > 0) {
       cmdState.VOICE.forEach((element) => {
         //          io.to(element).emit('voiceFromServer', 'RECORD')
-        io.to(element).emit("voiceFromServer", {
+        ioState?.io.to(element).emit("voiceFromServer", {
           text: source,
           lang: cmdState.voiceLang,
         });

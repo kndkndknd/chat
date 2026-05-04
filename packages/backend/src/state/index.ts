@@ -12,6 +12,7 @@ import { sampleRateState } from "./states/sampleRateState";
 import { webState } from "./states/webState";
 import { hlsState } from "./states/hlsState";
 import { webRtcServerState } from "./states/webRtcServerState";
+import { loadAllStates } from "../redis/stateRedis";
 
 export {
   arduinoState,
@@ -29,4 +30,5 @@ export {
   streamState,
   webRtcServerState,
   webState,
+  loadAllStates,
 };

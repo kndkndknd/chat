@@ -1,12 +1,11 @@
-import SocketIO from "socket.io";
+import { ioState } from "../state/states/ioState";
 
 export const notTargetEmit = (
   targetId: string,
   idArr: string[],
-  io: SocketIO.Server
 ) => {
   idArr.forEach((id) => {
     console.log("erasePrint", id);
-    if (id !== targetId) io.to(id).emit("erasePrintFromServer");
+    if (id !== targetId) ioState?.io.to(id).emit("erasePrintFromServer");
   });
 };

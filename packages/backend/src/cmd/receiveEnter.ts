@@ -1,5 +1,4 @@
-import SocketIO from "socket.io";
-
+import { ioState } from "../state/states/ioState";
 import {
   cmdState,
   currentState,
@@ -44,7 +43,6 @@ import { replay } from "../scenario/replay";
 export const receiveEnter = async (
   strings: string,
   id: string,
-  io: SocketIO.Server,
   // state: cmdStateType
 ) => {
   console.log("receiveEnter", strings, id);
@@ -74,11 +72,11 @@ export const receiveEnter = async (
     strings === "REC" ||
     streamList.includes(strings)
   ) {
-    execStream(strings, io, id);
+    execStream(strings, id);
   } else if (strings.includes(" ") /*&& strings.split(" ").length < 4*/) {
-    splitSpace(strings.split(" "), io, id);
+    splitSpace(strings.split(" "), id);
   } else if (strings.includes("+")) {
-    splitPlus(strings.split("+"), io);
+    splitPlus(strings.split("+"));
   } else if (
     Object.keys(cmdList).includes(strings) ||
     Number.isFinite(Number(strings)) ||
@@ -96,11 +94,11 @@ export const receiveEnter = async (
     strings === "TORCH" ||
     strings === "BLINK"
   ) {
-    execCmd(strings, io, id);
+    execCmd(strings, id);
   } else if (strings === "STOP") {
     console.log("stop");
-    voiceEmit(io, strings, id);
-    stopEmit(io, id, "ALL");
+    voiceEmit(strings, id);
+    stopEmit("ALL");
     // io.emit("quantizeFromServer", quantizeObj[client].stream);
   } else if (
     Object.keys(parameterList).includes(strings) ||
@@ -109,10 +107,10 @@ export const receiveEnter = async (
     strings === "FUSEJI" ||
     strings === "EMOJI"
   ) {
-    changeCmdParam(strings, id, io);
+    changeCmdParam(strings, id);
   } else if (strings === "START" || strings === "SCENARIO") {
     const scenario = await loadScenario();
-    await execScenario(scenario, io);
+    await execScenario(scenario);
     //   const result = await getLiveStream("TWITCH");
     //   console.log("get livestream as ", strings, result);
     //   if (result) {
@@ -143,14 +141,14 @@ export const receiveEnter = async (
     console.log("scenario", strings);
     if (cmdState.VOICE.length > 0) {
       console.log("voiceEmit scenario");
-      voiceEmit(io, strings, "scenario");
+      voiceEmit(strings, "scenario");
     }
-    stringEmit(io, strings, false);
+    stringEmit(strings, false);
   } else if (strings === "FLOATING") {
     streamState.floating = !streamState.floating;
-    stringEmit(io, "FLOATING: " + streamState.floating, true);
+    stringEmit("FLOATING: " + streamState.floating, true);
   } else if (strings === "LATENCY") {
-    putCmd(io, mergeStreamTarget(streamState), { cmd: "LATENCY" });
+    putCmd(mergeStreamTarget(streamState), { cmd: "LATENCY" });
   } else if (
     strings === "TWITCASTING" ||
     strings === "TWICAS" ||
@@ -161,28 +159,30 @@ export const receiveEnter = async (
     const result = await getLiveStream("LIVESTREAM", qWord);
     console.log("get livestream", result);
     if (result) {
-      stringEmit(io, "GET LIVESTREAM: SUCCESS");
+      stringEmit("GET LIVESTREAM: SUCCESS");
     } else {
-      stringEmit(io, "GET LIVESTREAM: FAILED");
+      stringEmit("GET LIVESTREAM: FAILED");
     }
   } else if (strings === "CALL") {
-    io.to(id).emit("webRtcOfferReqFromServer");
+    ioState?.io.to(id).emit("webRtcOfferReqFromServer");
+  } else if (strings === "BUFFERRECORD") {
+    ioState?.io.emit("bufferRecReqFromServer");
   } else if (strings === "VOSK") {
     console.log("VOSK CALL");
-    io.emit("voskCallFromServer");
+    ioState?.io.emit("voskCallFromServer");
   } else if (strings === "WHOLE") {
     if(currentState.WHOLE){
       currentState.WHOLE = false;
-      stringEmit(io, "WHOLE CMD STOP", true);
+      stringEmit("WHOLE CMD STOP", true);
     } else {
       currentState.WHOLE = true;
-      wholeEmit(io);
+      wholeEmit();
       // stringEmit(io, "WHOLE CMD", true);
     }
   } else if (strings === "REPLAY") {
-    replay(io);
+    replay();
   } else {
-    voiceEmit(io, strings, id);
+    voiceEmit(strings, id);
   }
 
 

@@ -1,4 +1,3 @@
-import SocketIO from "socket.io";
 import { CmdType } from "../../../../../types";
 import { cmdList } from "../../data";
 import { cmdState, currentState } from "../../state";
@@ -10,7 +9,6 @@ import { putCmd } from "../putCmd";
 export const fadeCmd = (
   stringArr: string[],
   arrTypeArr: string[],
-  io: SocketIO.Server,
   fadeSec?: number
 ) => {
   if (Object.keys(cmdList).includes(stringArr[1])) {
@@ -40,7 +38,7 @@ export const fadeCmd = (
           ? cmdState.FADE.IN
           : 5;
     }
-    putCmd(io, targetIdArr, cmd);
+    putCmd(targetIdArr, cmd);
   } else if (
     (stringArr[1] === "IN" || stringArr[1] === "OUT") &&
     stringArr.length === 2
@@ -53,7 +51,6 @@ export const fadeCmd = (
     }
     // io.emit('stringsFromServer',{strings: 'FADE ' + stringArr[1] +  ': ' + String(cmdState.FADE[stringArr[1]]), timeout: true})
     stringEmit(
-      io,
       "FADE " + stringArr[1] + ": " + String(cmdState.FADE[stringArr[1]])
       // state
     );
@@ -68,7 +65,6 @@ export const fadeCmd = (
       cmdState.FADE[stringArr[1]] = 0;
     }
     stringEmit(
-      io,
       "FADE " + stringArr[1] + ": " + String(cmdState.FADE[stringArr[1]])
       // state
     );
@@ -77,13 +73,12 @@ export const fadeCmd = (
       cmdState.FADE.IN = 0;
       cmdState.FADE.OUT = 0;
       stringEmit(
-        io,
         "FADE IN/OUT: OFF"
         // state
       );
     } else {
       stringArr[2] === "IN" ? (cmdState.FADE.IN = 0) : (cmdState.FADE.OUT = 0);
-      stringEmit(io, "FADE " + stringArr[2] + ": OFF");
+      stringEmit("FADE " + stringArr[2] + ": OFF");
       // state
     }
   } else {

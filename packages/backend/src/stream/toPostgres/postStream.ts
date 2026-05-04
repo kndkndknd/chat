@@ -1,7 +1,6 @@
-import { streams } from "../../data/chunk/streams";
+import { streamsRedis } from "../../data/chunk/streams";
 import { stringEmit } from "../../socket/ioEmit";
 
-import SocketIO from "socket.io";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -14,18 +13,16 @@ export const postChunk = async (
     date: string;
     index: number;
   },
-  io: SocketIO.Server,
   ipaddress: string
 ): Promise<string> => {
-  if (
-    streams[params.type].audio.length <= params.index &&
-    streams[params.type].video.length <= params.index
-  ) {
-    stringEmit(io, "NO STREAM DATA", false);
+  const audioLen = await streamsRedis.getAudioLength(params.type);
+  const videoLen = await streamsRedis.getVideoLength(params.type);
+  if (audioLen <= params.index && videoLen <= params.index) {
+    stringEmit("NO STREAM DATA", false);
     return;
   }
-  const audioArray = streams[params.type].audio[params.index];
-  const videoChunk = streams[params.type].video[params.index];
+  const audioArray = await streamsRedis.getAudio(params.type, params.index);
+  const videoChunk = await streamsRedis.getVideo(params.type, params.index);
   try {
     const audioChunk = btoa(String.fromCharCode(...new Uint8Array(audioArray)));
     const body = {
@@ -54,7 +51,6 @@ export const postChunk = async (
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
-            // console.log(value);
             return "SUCCESS";
           }
         }
@@ -77,7 +73,6 @@ export const postStream = async (
     from: number;
     to: number;
   },
-  io: SocketIO.Server
 ): Promise<string> => {
   dotenv.config({ path: dotenvPath });
 
@@ -94,7 +89,6 @@ export const postStream = async (
         date: params.date,
         index: index,
       },
-      io,
       ipaddress
     );
     if (result === "SUCCESS") count++;

@@ -1,11 +1,11 @@
 import { bpmStreamStateType } from "../../../../../types";
+import { ioState } from "../../state/states/ioState";
 
 export const emitQuantize = (
   quantizeObj: { [client: string]: bpmStreamStateType },
-  io
 ) => {
   console.log("emitQuantize", quantizeObj);
   for (const client in quantizeObj) {
-    io.to(client).emit("quantizeFromServer", quantizeObj[client]);
+    ioState?.io.to(client).emit("quantizeFromServer", quantizeObj[client]);
   }
 };

@@ -1,32 +1,8 @@
-import { streamState } from '../../state';
-import { StreamsType, buffStateType } from '../../../../../types';
+import { streamState } from "../../state";
+import { streamsRedis, chatsRedis } from "../../redis/streamsRedis";
 
-export const streams: StreamsType = {
-  PLAYBACK: {
-    audio: [],
-    video: [],
-    index: 0,
-    bufferSize: streamState.basisBufferSize,
-  },
-  TIMELAPSE: {
-    audio: [],
-    video: [],
-    index: 0,
-    bufferSize: streamState.basisBufferSize,
-  },
-  INTERNET: {
-    audio: [],
-    video: [],
-    index: 0,
-    bufferSize: streamState.basisBufferSize,
-  },
-  EMPTY: {
-    audio: [],
-    video: [],
-    index: 0,
-    bufferSize: streamState.basisBufferSize,
-  },
+export const initStreams = async () => {
+  await streamsRedis.initDefaultKeys(streamState.basisBufferSize);
 };
 
-export const chats: buffStateType[] = [];
-
+export { streamsRedis, chatsRedis };

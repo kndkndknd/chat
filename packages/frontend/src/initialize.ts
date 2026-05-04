@@ -19,6 +19,8 @@ import { getAcceleration } from "./sensor";
 import { getGPSPosition } from "./gps";
 import { accelarateOsc, gpsOsc } from "./webaudio";
 import { chatWorklet } from "./audioWorklet/chatWorklet";
+import { initFaceDetection } from "./faceApi";
+import { initRecordButton } from "./recording";
 // import { initTorch } from "./stream/torch";
 
 export const initialize = async (
@@ -176,6 +178,8 @@ export const initialize = async (
     }
 
     flagState.start = true;
+    initFaceDetection().catch((e) => console.error("faceDetection init error:", e));
+    initRecordButton(stream);
 
     // streamFlag.timelapse = true;
     timelapseState.flag = true;

@@ -1,7 +1,7 @@
 import { clientState } from "./../../state";
 import { stringEmit } from "../../socket/ioEmit";
 
-export const numPaSwitch = (target: string, io) => {
+export const numPaSwitch = (target: string) => {
   let textPrint = "";
   // switch cmdClient
   if (
@@ -50,7 +50,7 @@ export const numPaSwitch = (target: string, io) => {
     clientState.streamClient.splice(clientState.streamClient.indexOf(target))
   }
 
-  stringEmit(io, textPrint);
+  stringEmit(textPrint);
   console.log('cmdClient', clientState.cmdClient)
   console.log('paCmdClient', clientState.paCmdClient)
   console.log('streamClient', clientState.streamClient)

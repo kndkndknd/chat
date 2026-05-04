@@ -10,7 +10,7 @@ import {
 } from "../../state";
 import { wholeParams } from "../../data/list/wholeParams";
 
-export const splitStop = (stringArr: string[], io) => {
+export const splitStop = (stringArr: string[]) => {
   console.log("splitStop", stringArr);
   // stringArr[0] === "STOP"
   if (
@@ -20,14 +20,14 @@ export const splitStop = (stringArr: string[], io) => {
     console.log("stream stop", stringArr[1]);
     previousState.stream[stringArr[1]] = currentState.stream[stringArr[1]];
     currentState.stream[stringArr[1]] = false;
-    stringEmit(io, stringArr[0] + " " + stringArr[1]);
+    stringEmit(stringArr[0] + " " + stringArr[1]);
   } else if (stringArr.length === 2 && stringArr[1] === "STREAM") {
     console.log("all stream stop");
     previousState.stream = currentState.stream;
     Object.keys(currentState.stream).forEach(
       (key) => (currentState.stream[key] = false)
     );
-    stringEmit(io, stringArr[0] + " " + stringArr[1]);
+    stringEmit(stringArr[0] + " " + stringArr[1]);
   } else if (
     stringArr.length === 2 &&
     Object.keys(currentState.cmd).includes(stringArr[1])
@@ -44,8 +44,8 @@ export const splitStop = (stringArr: string[], io) => {
         cmd.fade = cmdState.FADE.OUT;
       }
       console.log(cmdTarget, stringArr);
-      putCmd(io, [cmdTarget], cmd);
-      notTargetEmit(cmdTarget, Object.keys(clientState.client), io);
+      putCmd([cmdTarget], cmd);
+      notTargetEmit(cmdTarget, Object.keys(clientState.client));
     });
     currentState.cmd[stringArr[1]] = [];
   } else if (stringArr.length === 2 && stringArr[1] === "WHOLE") {
@@ -62,8 +62,8 @@ export const splitStop = (stringArr: string[], io) => {
         portament: cmdState.PORTAMENT,
         gain: cmdState.GAIN.SINEWAVE,
       };
-      putCmd(io, [target], sinewaveCmd);
-      notTargetEmit(target, Object.keys(clientState.client), io);
+      putCmd([target], sinewaveCmd);
+      notTargetEmit(target, Object.keys(clientState.client));
     });
     currentState.sinewave = {};
   } else if (
@@ -82,7 +82,7 @@ export const splitStop = (stringArr: string[], io) => {
         if (cmdTarget === "WHITENOISE" || cmdTarget === "FEEDBACK") {
           cmd.fade = cmdState.FADE.OUT;
         }
-        putCmd(io, [target], cmd);
+        putCmd([target], cmd);
         currentState.cmd[cmdTarget] = [];
       });
     });
@@ -95,10 +95,10 @@ export const splitStop = (stringArr: string[], io) => {
         portament: cmdState.PORTAMENT,
         gain: cmdState.GAIN.SINEWAVE,
       };
-      putCmd(io, [key], sinewaveCmd);
+      putCmd([key], sinewaveCmd);
     });
     currentState.sinewave = {};
   } else if (stringArr[1] === "ALL") {
-    stopEmit(io, "", "ALL");
+    stopEmit("", "ALL");
   }
 };

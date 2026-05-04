@@ -25,6 +25,7 @@ import { quantizeFromServer } from "./quantize/quantizeFromServer";
 import { chatReq, recordReqFromServer, streamPlay } from "./stream";
 import { click, gainChange } from "./webaudio";
 import { wholeCmd } from "./cmd/wholeCmd";
+import { startChunkedRecording } from "./recording";
 
 // import {
 //   initRtpPeerConnection,
@@ -396,6 +397,12 @@ export const socket = (): void => {
   //     }
   //   },
   // );
+
+  socketState.socket.on("bufferRecReqFromServer", () => {
+    if (streamState.stream) {
+      startChunkedRecording(streamState.stream as MediaStream);
+    }
+  });
 
   socketState.socket.on("bufferFromServer", (data) => {
     const uint8Array = new Uint8Array(data);

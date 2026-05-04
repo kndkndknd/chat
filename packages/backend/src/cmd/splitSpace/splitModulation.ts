@@ -5,7 +5,6 @@ import { sinewaveEmit } from "../sinewaveEmit";
 export const splitModulation = (
   stringArr: string[],
   arrTypeArr: string[],
-  io
 ) => {
   const freqArr =
     stringArr.length === 3 && arrTypeArr[2] === "number"
@@ -20,6 +19,6 @@ export const splitModulation = (
           clientState.cmdClient
         );
   freqArr.forEach((freq, index) => {
-    sinewaveEmit(freq, io, clientState.cmdClient[index]);
+    sinewaveEmit(freq, clientState.cmdClient[index]);
   });
 };

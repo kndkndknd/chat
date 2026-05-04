@@ -1,3 +1,4 @@
+import { ioState } from "../../state/states/ioState";
 import {
   currentState,
   previousState,
@@ -6,7 +7,7 @@ import {
 } from "../../state";
 import { cmdList, streamList } from "../../data";
 
-export const solo = (stringArr: string[], arrTypeArr: string[], io) => {
+export const solo = (stringArr: string[], arrTypeArr: string[]) => {
   if (Object.keys(cmdList).includes(stringArr[0])) {
     // コマンドソロ
     previousState.text = stringArr.join(" ");
@@ -34,7 +35,7 @@ export const solo = (stringArr: string[], arrTypeArr: string[], io) => {
         currentState.cmd[currendCmd] = [];
       }
     }
-    io.to(soloTarget).emit("cmdFromServer", {
+    ioState?.io.to(soloTarget).emit("cmdFromServer", {
       cmd: cmd,
       flag: true,
       gain: cmdState.GAIN[cmd],

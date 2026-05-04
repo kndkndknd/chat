@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const getTimeLine = async (stringArr, io) => {
+export const getTimeLine = async (stringArr) => {
   const qWord = stringArr[1];
   try {
     const response = <string[]>await axios.post(

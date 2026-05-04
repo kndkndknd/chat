@@ -19,6 +19,7 @@ import { charProcess } from "../cmd/charProcess";
 // import { sinewaveEmit } from "../cmd/sinewaveEmit";
 import { streamEmit } from "../stream/streamEmit";
 import { clientState, cmdState, currentState, bpmState } from "../state";
+import { ioState } from "../state/states/ioState";
 import { stringEmit } from "./ioEmit";
 // import { DefaultEventsMap } from "socket.io/dist/typed-events";
 import { enterFromForm } from "../cmd/form/enterFromForm";
@@ -46,11 +47,14 @@ export const ioServer = (
     typeof Http.ServerResponse
   >,
 ) => {
-  const io = new Server(httpserver, {
+  // const io = new Server(httpserver, {
+  //   path: "/socket.io",
+  // });
+  ioState.io = new Server(httpserver, {
     path: "/socket.io",
   });
 
-  io.sockets.on("connection", (socket) => {
+  ioState.io.sockets.on("connection", (socket) => {
     socket.on("connectFromClient", (data) => {
       const result = connectFromClient(data, socket);
 
@@ -63,14 +67,14 @@ export const ioServer = (
     socket.on("charFromClient", (character) => {
       console.log("socket.id: " + String(socket.id));
       console.log("client: " + clientState.client);
-      strings = charProcess(character, strings, socket.id, io);
+      strings = charProcess(character, strings, socket.id);
     });
 
     socket.on("chatFromClient", (buffer: buffStateType) => {
       console.log("debug chatFromClient", currentState.stream);
       // console.log("socket.id: " + String(socket.id));
       if (buffer.from === undefined) buffer.from = String(socket.id);
-      chatReceive(io, buffer);
+      chatReceive(buffer);
     });
 
     socket.on("streamReqFromClient", (source: string) => {
@@ -81,40 +85,17 @@ export const ioServer = (
         //   targetStreamEmit(source, io, states, states.stream.target[source][0]);
         // } else {
         // console.log("socket.id: " + String(socket.id) + ", source: " + source);
-        streamEmit(source, io, String(socket.id));
+        streamEmit(source, String(socket.id));
         // }
       }
     });
 
-    socket.on("connectFromCtrl", () => {
-      io.emit("gainFromServer", cmdState.GAIN);
-    });
-
-    socket.on("gainFromCtrl", (gain: { target: string; val: number }) => {
-      console.log(gain);
-      cmdState.GAIN[gain.target] = gain.val;
-      io.emit("gainFromServer", cmdState.GAIN);
-    });
-
-    socket.on("stringFromForm", (strings: string) => {
-      stringEmit(io, strings, false);
-    });
-
-    socket.on("enterFromForm", (strings: string) => {
-      const formResult = enterFromForm(strings, io);
-      console.log("enterFromForm", formResult);
-    });
-
-    socket.on("escapeFromForm", () => {
-      stopEmit(io, "form", "ExceptHls");
-    });
-
     // WebRTC
-    socket.on("rtcConnectionFromClient", (data) => {
-      console.log("rtcConnectionFromClient", data);
-      if (data.type !== undefined) console.log("type: ", data.type);
-      socket.broadcast.emit("rtcConnectionFromServer", data);
-    });
+    // socket.on("rtcConnectionFromClient", (data) => {
+    //   console.log("rtcConnectionFromClient", data);
+    //   if (data.type !== undefined) console.log("type: ", data.type);
+    //   socket.broadcast.emit("rtcConnectionFromServer", data);
+    // });
 
     // rotate
     socket.on("startRotationFromSmartphone", () => {
@@ -130,33 +111,42 @@ export const ioServer = (
         source: string;
         bufferSize: number;
     }) => {
-      workletBufferFromClient(data, io);
+      workletBufferFromClient(data);
+    });
+
+    // videoBuffer
+    socket.on("bufferRecFromClient", (buffer: ArrayBuffer) => {
+      console.log("bufferRecFromClient", buffer.byteLength);
+    });
+
+    socket.on("bufferFromClient", (buffer: ArrayBuffer) => {
+      console.log("bufferFromClient", buffer.byteLength);
     });
     
-    // webRtc
-    socket.on("joinFromClient", () => {});
-    socket.on("iceCandidateFromClient", (candidate: RTCIceCandidate) => {
-      console.log("iceCandidateFromClient", candidate);
-      iceCandidateEmit(io, candidate, String(socket.id));
-      // socket.broadcast.emit("iceCandidateFromServer", candidate);
-    });
+    // // webRtc
+    // socket.on("joinFromClient", () => {});
+    // socket.on("iceCandidateFromClient", (candidate: RTCIceCandidate) => {
+    //   console.log("iceCandidateFromClient", candidate);
+    //   iceCandidateEmit(io, candidate, String(socket.id));
+    //   // socket.broadcast.emit("iceCandidateFromServer", candidate);
+    // });
 
-    socket.on("offerFromClient", (offer: RTCSessionDescriptionInit) => {
-      console.log("offerFromClient", offer);
-      offerEmit(io, offer, String(socket.id));
-    });
+    // socket.on("offerFromClient", (offer: RTCSessionDescriptionInit) => {
+    //   console.log("offerFromClient", offer);
+    //   offerEmit(io, offer, String(socket.id));
+    // });
 
-    socket.on(
-      "answerFromClient",
-      (data: { answer: RTCSessionDescription; targetId: string }) => {
-        console.log("answerFromClient", data.answer);
-        answerEmit(io, data.answer, data.targetId);
-      }
-    );
+    // socket.on(
+    //   "answerFromClient",
+    //   (data: { answer: RTCSessionDescription; targetId: string }) => {
+    //     console.log("answerFromClient", data.answer);
+    //     answerEmit(io, data.answer, data.targetId);
+    //   }
+    // );
 
     socket.on("wholeReqFromClient", (data: {audio: ArrayBuffer; video: string; source: string; bufferSize: number} | undefined) => {
       console.log("wholeReqFromClient", data);
-      receiveWholeReq(io, data);
+      receiveWholeReq(data);
     });
 
     socket.on("disconnect", () => {
@@ -192,5 +182,5 @@ export const ioServer = (
       // io.emit("statusFromServer", statusList);
     });
   });
-  return io;
+  return ioState.io;
 };

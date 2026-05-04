@@ -1,5 +1,3 @@
-import SocketIO from "socket.io";
-
 import { clientState, cmdState, currentState } from "../state";
 import { cmdList } from "../data";
 
@@ -13,7 +11,6 @@ import { metronomeEmit } from "./metronomeEmit";
 
 export const cmdEmit = (
   cmdStrings: string,
-  io: SocketIO.Server,
   target?: string,
   flag?: boolean,
 ) => {
@@ -33,7 +30,7 @@ export const cmdEmit = (
   switch (cmdStrings) {
     case "STOP":
       const client = "all";
-      stopEmit(io, "", "ALL", client);
+      stopEmit("", "ALL", client);
       break;
     case "WHITENOISE":
     case "FEEDBACK":
@@ -68,7 +65,7 @@ export const cmdEmit = (
 
       console.log("flag", flag);
       console.log("cmd", cmd);
-      putCmd(io, targetIdArr, cmd);
+      putCmd(targetIdArr, cmd);
       /*
       state.previous.cmd[cmd.cmd] = state.current.cmd[cmd.cmd];
       if (target) {
@@ -132,7 +129,7 @@ export const cmdEmit = (
       //     ? pickupCmdTarget(cmdStrings, { target: target })
       //     : pickupCmdTarget(cmdStrings);
       // io.to(targetId).emit('cmdFromServer', cmd)
-      putCmd(io, targetIdArr, cmd);
+      putCmd(targetIdArr, cmd);
       // notTargetEmit(targetId, state.client, io);
       break;
     case "SIMULATE":
@@ -150,16 +147,16 @@ export const cmdEmit = (
       //   ];
       // }
       // putCmd(io, [targetId], cmd);
-      putCmd(io, targetIdArr, cmd);
+      putCmd(targetIdArr, cmd);
       // notTargetEmit(targetId, Object.keys(clientState.client), io);
       break;
     case "METRONOME":
-      metronomeEmit(io, cmd, target);
+      metronomeEmit(cmd, target);
       break;
     case "PREVIOUS":
     case "PREV":
       console.log("previous");
-      previousCmd(io);
+      previousCmd();
       break;
     /*
     case 'RECORD':

@@ -1,0 +1,75 @@
+import * as faceapi from "face-api.js";
+import { canvasElement } from "../canvasEvent/canvasElement";
+import { socketState } from "../state";
+
+const MODEL_URL = "/models";
+const DRAW_CLEAR_DELAY = 3000;
+const RESTART_DELAY = 30000;
+
+let overlayCanvas: HTMLCanvasElement | null = null;
+let active = false;
+let modelsLoaded = false;
+
+export async function initFaceDetection(): Promise<void> {
+  if (!modelsLoaded) {
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68TinyNet.loadFromUri(MODEL_URL),
+      faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+    ]);
+    modelsLoaded = true;
+  }
+
+  if (!overlayCanvas) {
+    overlayCanvas = document.createElement("canvas");
+    overlayCanvas.id = "faceCanvas";
+    overlayCanvas.style.cssText =
+      "position:absolute;top:0;left:0;z-index:3;pointer-events:none;";
+    document.getElementById("wrapper")!.appendChild(overlayCanvas);
+  }
+
+  active = true;
+  detectLoop();
+}
+
+async function detectLoop(): Promise<void> {
+  if (!active || !overlayCanvas) return;
+
+  const video = canvasElement.video;
+
+  if (video.readyState >= 2 && video.videoWidth > 0) {
+    const displaySize = { width: window.innerWidth, height: window.innerHeight };
+
+    faceapi.matchDimensions(overlayCanvas, displaySize);
+
+    const detections = await faceapi
+      .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks(true)
+      .withFaceExpressions();
+
+    const resized = faceapi.resizeResults(detections, displaySize);
+
+    const ctx = overlayCanvas.getContext("2d")!;
+    ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    faceapi.draw.drawFaceLandmarks(overlayCanvas, resized);
+
+    if (detections.length > 0) {
+      active = false;
+      socketState.socket?.emit("faceDetectFromClient");
+
+      setTimeout(() => {
+        overlayCanvas?.getContext("2d")?.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+      }, DRAW_CLEAR_DELAY);
+
+      setTimeout(() => {
+        initFaceDetection().catch((e) =>
+          console.error("faceDetection restart error:", e)
+        );
+      }, RESTART_DELAY);
+
+      return;
+    }
+  }
+
+  setTimeout(() => detectLoop(), 100);
+}
