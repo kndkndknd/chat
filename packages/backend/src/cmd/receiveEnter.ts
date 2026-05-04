@@ -39,6 +39,7 @@ import { changeCmdParam } from "./changeCmdParam";
 
 import { wholeEmit } from "../stream/wholeEmit";
 import { replay } from "../scenario/replay";
+import { startWebRTCSession } from "../webRTC/weriftClient";
 
 export const receiveEnter = async (
   strings: string,
@@ -164,8 +165,7 @@ export const receiveEnter = async (
       stringEmit("GET LIVESTREAM: FAILED");
     }
   } else if (strings === "CALL") {
-    ioState?.io.to(id).emit("webRtcOfferReqFromServer");
-  } else if (strings === "BUFFERRECORD") {
+    startWebRTCSession();
     ioState?.io.emit("bufferRecReqFromServer");
   } else if (strings === "VOSK") {
     console.log("VOSK CALL");

@@ -27,6 +27,7 @@ import { stopEmit } from "../cmd/stopEmit";
 import { connectFromClient } from "../clientSetting/connectFromClient";
 
 import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
+import { feedWebMChunk } from "../webRTC/weriftClient";
 
 // whole
 import { receiveWholeReq } from "../stream/receiveWholeReq";
@@ -121,6 +122,7 @@ export const ioServer = (
 
     socket.on("bufferFromClient", (buffer: ArrayBuffer) => {
       console.log("bufferFromClient", buffer.byteLength);
+      feedWebMChunk(Buffer.from(buffer));
     });
     
     // // webRtc
