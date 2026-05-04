@@ -4,6 +4,7 @@ import { spawn, ChildProcess } from "child_process";
 import {
   RTCPeerConnection,
   RTCRtpCodecParameters,
+  MediaStream,
   MediaStreamTrack,
   RtpPacket,
 } from "werift";
@@ -225,8 +226,9 @@ function buildPeerConnection(): RTCPeerConnection {
     },
   });
 
-  p.addTransceiver(videoTrack, { direction: "sendrecv" });
-  p.addTransceiver(audioTrack, { direction: "sendrecv" });
+  const stream = new MediaStream([videoTrack, audioTrack]);
+  p.addTransceiver(videoTrack, { direction: "sendrecv", streams: [stream] });
+  p.addTransceiver(audioTrack, { direction: "sendrecv", streams: [stream] });
 
   p.ontrack = ({ track, transceiver }) => {
     console.log("[werift] track received:", track.kind);
