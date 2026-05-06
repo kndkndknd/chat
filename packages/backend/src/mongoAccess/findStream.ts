@@ -40,18 +40,23 @@ export const findStream = async (
 
 const pushStream = async (streamArray: Array<streamInterface>) => {
   const type = "FIND";
-  await streamsRedis.initKey(type, 8192);
-  await streamsRedis.clearAudio(type);
-  await streamsRedis.clearVideo(type);
+  await streamsRedis.initKey(type);
+  await streamsRedis.clear(type);
 
   for (const element of streamArray) {
     const audio = new Uint8Array(
       [...atob(element.audio)].map((c) => c.charCodeAt(0))
     ).buffer;
-    console.log(audio);
-    await streamsRedis.pushVideo(type, element.video);
+    await streamsRedis.push(type, {
+      source: type,
+      audio,
+      video: element.video,
+      bufferSize: 8192,
+      duration: 8192 / 44100,
+    });
   }
-  console.log(await streamsRedis.getAudio(type, 0));
+  const entry = await streamsRedis.get(type, 0);
+  console.log(entry?.audio);
   streamList.push(type);
   pushStateStream(type);
 };

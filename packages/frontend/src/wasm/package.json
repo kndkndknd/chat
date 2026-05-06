@@ -1,0 +1,15 @@
+{
+  "name": "simulate",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "simulate_bg.wasm",
+    "simulate.js",
+    "simulate.d.ts"
+  ],
+  "main": "simulate.js",
+  "types": "simulate.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

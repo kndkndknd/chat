@@ -154,14 +154,6 @@ export type previousStateType = {
   RECORD: boolean;
 };
 
-export type formStateType = {
-  hls: {
-    [key: string]: string;
-  };
-  cmd: {
-    [key: string]: string;
-  };
-};
 
 export type webStateType = {
   flag: boolean;

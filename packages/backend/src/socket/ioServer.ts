@@ -1,43 +1,24 @@
-import { Server, Socket } from "socket.io";
+import { Server } from "socket.io";
 import * as Http from "http";
 
-// import { statusList, pathList, statusClient } from "../statusList";
+import { buffStateType } from "../../../../types";
+import { clientState, currentState, bpmState } from "../state";
+
 import { chatReceive } from "../stream/chatReceive";
 
-import { buffStateType } from "../../../../types";
-
-// import {
-//   selectOtherClient,
-//   roomEmit,
-//   pickupTarget,
-//   pickCmdTarget,
-//   cmdSelect,
-// } from "../route";
-// import { cmdEmit } from "../cmd/cmdEmit";
 import { charProcess } from "../cmd/charProcess";
-// import { stopEmit } from "../cmd/stopEmit";
-// import { sinewaveEmit } from "../cmd/sinewaveEmit";
 import { streamEmit } from "../stream/streamEmit";
-import { clientState, cmdState, currentState, bpmState } from "../state";
+
 import { ioState } from "../state/states/ioState";
 import { stringEmit } from "./ioEmit";
-// import { DefaultEventsMap } from "socket.io/dist/typed-events";
-import { enterFromForm } from "../cmd/form/enterFromForm";
-import { stopEmit } from "../cmd/stopEmit";
 import { connectFromClient } from "../clientSetting/connectFromClient";
+import { countersRedis, streamsRedis } from "../redis/streamsRedis";
 
 import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
 import { feedWebMChunk } from "../webRTC/weriftClient";
 
 // whole
 import { receiveWholeReq } from "../stream/receiveWholeReq";
-
-// rotate
-import { m5Switch } from "../rotate/m5Access";
-
-// webRtc
-import { iceCandidateEmit, offerEmit, answerEmit } from "../webRTC";
-import { join } from "path";
 
 let strings = "";
 const previousFace = { x: 0, y: 0 };
@@ -91,18 +72,6 @@ export const ioServer = (
       }
     });
 
-    // WebRTC
-    // socket.on("rtcConnectionFromClient", (data) => {
-    //   console.log("rtcConnectionFromClient", data);
-    //   if (data.type !== undefined) console.log("type: ", data.type);
-    //   socket.broadcast.emit("rtcConnectionFromServer", data);
-    // });
-
-    // rotate
-    socket.on("startRotationFromSmartphone", () => {
-      m5Switch();
-    });
-
     // audioWorklet buffer
     socket.on(
       "workletBufferFromClient",
@@ -124,31 +93,28 @@ export const ioServer = (
       console.log("bufferFromClient", buffer.byteLength);
       feedWebMChunk(Buffer.from(buffer));
     });
-    
-    // // webRtc
-    // socket.on("joinFromClient", () => {});
-    // socket.on("iceCandidateFromClient", (candidate: RTCIceCandidate) => {
-    //   console.log("iceCandidateFromClient", candidate);
-    //   iceCandidateEmit(io, candidate, String(socket.id));
-    //   // socket.broadcast.emit("iceCandidateFromServer", candidate);
-    // });
-
-    // socket.on("offerFromClient", (offer: RTCSessionDescriptionInit) => {
-    //   console.log("offerFromClient", offer);
-    //   offerEmit(io, offer, String(socket.id));
-    // });
-
-    // socket.on(
-    //   "answerFromClient",
-    //   (data: { answer: RTCSessionDescription; targetId: string }) => {
-    //     console.log("answerFromClient", data.answer);
-    //     answerEmit(io, data.answer, data.targetId);
-    //   }
-    // );
 
     socket.on("wholeReqFromClient", (data: {audio: ArrayBuffer; video: string; source: string; bufferSize: number} | undefined) => {
       console.log("wholeReqFromClient", data);
       receiveWholeReq(data);
+    });
+
+    socket.on("faceDetectFromClient", async (data: { x: number; width: number; height: number }) => {
+      console.log("faceDetectFromClient", data);
+      countersRedis.increment("faceDetect").then((count) => {
+        console.log("faceDetect count:", count);
+      });
+
+      const buffLen = await streamsRedis.getLength("PLAYBACK");
+      if (buffLen === 0) {
+        stringEmit("no buffer", true, String(socket.id));
+        return;
+      }
+
+      const offsets = [1, 24];
+      const hours = offsets[Math.floor(Math.random() * offsets.length)];
+      const timestamp = Date.now() - hours * 60 * 60 * 1000;
+      streamEmit("PLAYBACK", String(socket.id), timestamp);
     });
 
     socket.on("disconnect", () => {

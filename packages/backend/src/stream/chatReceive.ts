@@ -36,24 +36,19 @@ export const chatReceive = async (
         }
         break;
       case "PLAYBACK":
-        await streamsRedis.pushAudio("PLAYBACK", buffer.audio);
-        await streamsRedis.pushVideo("PLAYBACK", buffer.video);
-        await streamsRedis.setBufferSize("PLAYBACK", buffer.bufferSize);
+        await streamsRedis.push("PLAYBACK", buffer);
         break;
       case "TIMELAPSE":
-        await streamsRedis.pushAudio("TIMELAPSE", buffer.audio);
-        await streamsRedis.pushVideo("TIMELAPSE", buffer.video);
-        await streamsRedis.setBufferSize("TIMELAPSE", buffer.bufferSize);
+        await streamsRedis.push("TIMELAPSE", buffer);
         console.log(
-          "TIMELAPSE.length:" + String(await streamsRedis.getAudioLength("TIMELAPSE"))
+          "TIMELAPSE.length:" + String(await streamsRedis.getLength("TIMELAPSE"))
         );
         break;
       default:
         if (!(await streamsRedis.hasKey(buffer.source))) {
-          await streamsRedis.initKey(buffer.source, streamState.basisBufferSize);
+          await streamsRedis.initKey(buffer.source);
         }
-        await streamsRedis.pushAudio(buffer.source, buffer.audio);
-        await streamsRedis.pushVideo(buffer.source, buffer.video);
+        await streamsRedis.push(buffer.source, buffer);
         pushStateStream(buffer.source);
     }
   } else {

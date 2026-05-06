@@ -15,14 +15,14 @@ export const postChunk = async (
   },
   ipaddress: string
 ): Promise<string> => {
-  const audioLen = await streamsRedis.getAudioLength(params.type);
-  const videoLen = await streamsRedis.getVideoLength(params.type);
-  if (audioLen <= params.index && videoLen <= params.index) {
+  const buffLen = await streamsRedis.getLength(params.type);
+  if (buffLen <= params.index) {
     stringEmit("NO STREAM DATA", false);
     return;
   }
-  const audioArray = await streamsRedis.getAudio(params.type, params.index);
-  const videoChunk = await streamsRedis.getVideo(params.type, params.index);
+  const entry = await streamsRedis.get(params.type, params.index);
+  const audioArray = entry?.audio;
+  const videoChunk = entry?.video;
   try {
     const audioChunk = btoa(String.fromCharCode(...new Uint8Array(audioArray)));
     const body = {

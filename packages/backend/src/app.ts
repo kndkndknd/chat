@@ -1,23 +1,19 @@
 import * as fs from "fs";
 import { default as Express } from "express";
-import express from "express";
 import * as path from "path";
 import { default as favicon } from "serve-favicon";
 import * as Https from "https";
-import { fileURLToPath } from "url";
 import { ioServer } from "./socket/ioServer";
-import { spawn } from "child_process";
-// import { states } from "./states";
-// import { switchCtrl } from "./arduinoAccess/switch";
+
 import { networkInterfaces } from "os";
 import SocketIO from "socket.io";
 
-import { getLiveStream } from "./stream/getLiveStream";
-import { stringEmit } from "./socket/ioEmit";
 
 import { cmdLogging } from "./logging/cmdLogging";
 import { initStreams } from "./data";
 import { loadAllStates } from "./state";
+import { ioState } from "./state/states/ioState";
+import { countersRedis } from "./redis/streamsRedis";
 // import { io as socketIoClient, Socket } from "socket.io-client";
 
 // const socketClient: Socket = socketIoClient("https://localhost:8080/socket.io");
@@ -92,18 +88,6 @@ app.get("/", function (req, res, next) {
   }
 });
 
-app.get("/snowleopard", function (req, res, next) {
-  try {
-    console.log("snowleopard");
-    res.sendFile(
-      path.join(__dirname, "..", "static", "html", "snowleopard.html")
-    );
-  } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Something went wrong" });
-  }
-});
-
 app.get("/vosk", function (req, res, next) {
   try {
     console.log("vosk");
@@ -122,71 +106,6 @@ app.get("/rotate", function (req, res, next) {
     res.json({ success: false, message: "Something went wrong" });
   }
 });
-
-app.get("/form", function (req, res, next) {
-  try {
-    console.log("snowleopard");
-    res.sendFile(path.join(__dirname, "..", "static", "html", "form.html"));
-  } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Something went wrong" });
-  }
-});
-
-app.get("/hls", function (req, res, next) {
-  try {
-    console.log("hls test");
-    res.sendFile(path.join(__dirname, "..", "static", "html", "hlstest.html"));
-  } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Something went wrong" });
-  }
-});
-
-// app.get("/recorder", function (req, res, next) {
-//   try {
-//     console.log("recorder");
-//     res.sendFile(path.join(__dirname, "..", "static", "html", "recorder.html"));
-//   } catch (error) {
-//     console.log(error);
-//     res.json({ success: false, message: "Something went wrong" });
-//   }
-// });
-
-// import { ingest, stopIngesting } from "./recorder";
-
-// app.post(
-//   "/api/ingest",
-//   express.raw({
-//     // type: ["video/webm", "application/octet-stream"],
-//     type: "video/webm",
-//     limit: "25mb",
-//   }),
-//   async (req, res, next) => {
-//     // await console.log(req.body);
-//     try {
-//       if (!Buffer.isBuffer(req.body)) {
-//         return res.status(415).send("unsupported media type");
-//       }
-//       const chunk: Buffer = req.body as Buffer;
-//       console.log("ingest chunk size:", chunk.length);
-
-//       const filename = (req.header("x-filename") ?? "upload.bin").toString();
-//       const mime = req.header("content-type") ?? "application/octet-stream";
-//       console.log("bytes:", chunk.length, "mime:", mime, "filename:", filename);
-
-//       await ingest(chunk);
-//       res.json({ ok: true });
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
-// );
-
-// app.post("/api/stop", async (_req, res) => {
-//   await stopIngesting();
-//   await res.json({ ok: true });
-// });
 
 app.get("/:name", function (req, res, next) {
   const name = req.params.name;
@@ -211,16 +130,6 @@ app.get("/:name", function (req, res, next) {
   }
 });
 
-app.post("/api/form", function (req, res, next) {
-  console.log("POST /api/form", req.body);
-  if (req.body.enter) {
-    console.log("enter");
-  } else {
-    console.log("chat:", req.body.chat);
-    stringEmit(io, req.body.chat, false);
-  }
-  res.json({ success: true, message: "Data received" });
-});
 
 app.post("/api/char", function (req, res, next) {
   console.log("POST /api/char", req.body);
@@ -228,20 +137,22 @@ app.post("/api/char", function (req, res, next) {
   res.json({ success: true, message: "char received" });
 });
 
-/*
-const socketOptions = {
-  cors: {
-    origin: function (origin, callback) {
-      const isTarget = origin != undefined && origin.includes("localhost") !== null;
-      return isTarget ? callback(null, origin) : callback('error invalid domain');
-    },
-    credentials: true
-  },
-  maxHttpBufferSize: 1e8,
-};
-*/
-
-// const io = new Server(httpsserver, socketOptions)
+app.post("/api/persondetect", function (req, res) {
+  const body: { type: string; direction: string } = req.body;
+  console.log(JSON.parse(JSON.stringify(body)));
+  ioState.io?.emit("personDetectFromServer");
+  if (body.direction === "left") {
+    countersRedis.increment("visitor").then((count) => {
+      console.log("visitor count:", count);
+    });
+  }
+  if (body.direction === "right") {
+    countersRedis.increment("leave").then((count) => {
+      console.log("leave count:", count);
+    });
+  }
+  res.json({ success: true });
+});
 
 loadAllStates()
   .then(() => initStreams())

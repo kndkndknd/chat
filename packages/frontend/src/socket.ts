@@ -8,7 +8,6 @@ import {
   streamFlagState,
   streamState,
   timelapseState,
-  torchState,
   webRtcState,
   audioWorkletState,
 } from "./state";
@@ -16,47 +15,24 @@ import {
 import {
   bpmStreamStateType,
   filterStateType,
-  newWindowReqType,
   wholeCmdOption
 } from "../../../types";
-import { emojiState, erasePrint, textPrint, showImage } from "./canvasEvent";
+import { emojiState, erasePrint, textPrint, showImage, flickering } from "./canvasEvent";
 import { stopCmd, cmdFromServer } from "./cmd";
 import { quantizeFromServer } from "./quantize/quantizeFromServer";
 import { chatReq, recordReqFromServer, streamPlay } from "./stream";
-import { click, gainChange } from "./webaudio";
+import { gainChange } from "./webaudio";
 import { wholeCmd } from "./cmd/wholeCmd";
 import { startChunkedRecording } from "./recording";
 
-// import {
-//   initRtpPeerConnection,
-//   receiveIceCandidate,
-//   createOffer,
-//   createAnswer,
-//   receiveOffer,
-//   receiveAnswer,
-// } from "./webrtc";
-
-// import { torchToggle, startBlink, stopBlink } from "./stream/torch";
 
 export const socket = (): void => {
   socketState.socket.on(
     "stringsFromServer",
     (data: { strings: string; timeout: boolean }) => {
-      // erasePrint(stx, strCnvs);
       erasePrint();
-      console.log("stringsFromServer", data);
       canvasState.stringsClient = data.strings;
       textPrint(canvasState.stringsClient, { timeout: data.timeout });
-      // if (data.timeout) {
-      //   setTimeout(() => {
-      //     erasePrint();
-      //   }, 500);
-      // }
-      // if (cinemaFlag) {
-      //   setTimeout(() => {
-      //     erasePrint();
-      //   }, 500);
-      // }
     },
   );
   socketState.socket.on("erasePrintFromServer", () => {
@@ -89,26 +65,10 @@ export const socket = (): void => {
       erasePrint();
       if (data.target === undefined || data.target === "ALL") {
         stopCmd(data.fadeOutVal);
-      } else if (data.target === "ExceptHls") {
-        stopCmd(data.fadeOutVal, "HLS");
       }
-      // erasePrint(stx, strCnvs)
       textPrint("STOP", { timeout: true, timeoutDuration: 800 });
-      // setTimeout(() => {
-      //   erasePrint();
-      // }, 800);
     },
   );
-
-  socketState.socket.on("textFromServer", (data: { text: string }) => {
-    erasePrint();
-    textPrint(data.text);
-    // if (cinemaFlag) {
-    //   setTimeout(() => {
-    //     erasePrint();
-    //   }, 500);
-    // }
-  });
 
   socketState.socket.on("chatReqFromServer", () => {
     chatReq(String(socketState.socket.id));
@@ -240,21 +200,6 @@ export const socket = (): void => {
     gainChange(data);
   });
 
-  socketState.socket.on("windowReqFromServer", (data: newWindowReqType) => {
-    window.open(
-      data.URL,
-      "_blank",
-      "width=" +
-        String(data.width) +
-        ",height=" +
-        String(data.height) +
-        ",top=" +
-        String(data.top) +
-        ",left=" +
-        String(data.left),
-    );
-    click(1.0);
-  });
   socketState.socket.on(
     "voiceFromServer",
     (data: { text: string; lang: string }) => {
@@ -284,19 +229,6 @@ export const socket = (): void => {
       // }
     },
   );
-
-  // socketState.socket.on(
-  //   "clockFromServer",
-  //   (data: { clock: boolean; barLatency: number }) => {
-  //     if (data.clock) {
-  //       clockBase = Date.now();
-  //       clockModeId = enableClockMode(data.barLatency);
-  //     } else {
-  //       clockBase = 0;
-  //       clockModeId = disableClockMode(clockModeId);
-  //     }
-  //   }
-  // );
 
   socketState.socket.on(
     "emojiFromServer",
@@ -372,32 +304,6 @@ export const socket = (): void => {
     }
   });
 
-  // socketState.socket.on(
-  //   "torchCmdFromServer",
-  //   (data: { flag: boolean; type: "BLINK" | "STEADY"; bpm: number }) => {
-  //     if (
-  //       torchState.isSupported &&
-  //       flagState.isMobile &&
-  //       streamState.videoTrack !== null
-  //     ) {
-  //       console.log("torchCmdFromServer", data);
-  //       if (data.type === "BLINK") {
-  //         if (data.flag) {
-  //           torchState.torchMode = "blink";
-  //           startBlink(data.bpm);
-  //         } else {
-  //           stopBlink();
-  //         }
-  //       } else {
-  //         torchState.torchMode = "steady";
-  //         torchToggle(data.flag);
-  //       }
-  //     } else {
-  //       console.log("Torch is not supported on this device");
-  //     }
-  //   },
-  // );
-
   socketState.socket.on("bufferRecReqFromServer", () => {
     if (streamState.stream) {
       startChunkedRecording(streamState.stream as MediaStream);
@@ -449,6 +355,10 @@ export const socket = (): void => {
   // socketState.socket.on("answerFromServer", async (answer) => {
   //   await receiveAnswer(answer);
   // });
+
+  socketState.socket.on("personDetectFromServer", () => {
+    flickering();
+  });
 
   // disconnect時、1秒後再接続
   socketState.socket.on("disconnect", () => {

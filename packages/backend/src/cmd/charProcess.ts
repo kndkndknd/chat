@@ -45,16 +45,12 @@ export function charProcess(
   } else if (character === "BASS") {
     console.log("cmdLogging in BASS");
     cmdLogging("BASS");
-    // console.log(
-    //   "io.to(" + id + ').emit("cmdFromSever",{"cmd":"BASS","property":"LOW"})'
-    // );
-    // io.to(id).emit("cmdFromServer", { cmd: "BASS", property: "LOW" });
     previousState.text = "BASS";
   } else if (character === "BASSS") {
     console.log("cmdLogging in BASS");
     cmdLogging("BASS");
     console.log(
-      "io.to(" + id + ').emit("cmdFromSever",{"cmd":"BASS","property":"HIGH"})'
+      "io.to(" + id + ').emit("cmdFromServer",{"cmd":"BASS","property":"HIGH"})'
     );
     ioState?.io.to(id).emit("cmdFromServer", { cmd: "BASS", property: "HIGH" });
     previousState.text = "BASSS";

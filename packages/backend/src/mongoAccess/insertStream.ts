@@ -19,14 +19,13 @@ export const insertStream = async (
 ) => {
   try {
     console.log(ipaddress);
-    const audioLen = await streamsRedis.getAudioLength(type);
+    const buffLen = await streamsRedis.getLength(type);
 
-    for (let index = 0; index < audioLen; index++) {
+    for (let index = 0; index < buffLen; index++) {
       await setTimeout(async () => {
-        const audio = await streamsRedis.getAudio(type, index);
-        const video = await streamsRedis.getVideo(type, index);
-        const audioStr = btoa(String.fromCharCode(...new Uint8Array(audio)));
-        await postStream(type, video, audioStr, place, date);
+        const entry = await streamsRedis.get(type, index);
+        const audioStr = btoa(String.fromCharCode(...new Uint8Array(entry.audio)));
+        await postStream(type, entry.video, audioStr, place, date);
       }, 1000);
     }
 

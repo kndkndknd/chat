@@ -29,7 +29,6 @@ export const sinewaveChange = (
           gain: cmdState.GAIN.SINEWAVE,
         };
         putCmd([id], cmd);
-        // io.to(id).emit('cmdFromServer', cmd)
       }
     } else if (cmdStrings === "HALF") {
       for (let id in currentState.sinewave) {
@@ -50,7 +49,6 @@ export const sinewaveChange = (
           portament: cmdState.PORTAMENT,
           gain: cmdState.GAIN.SINEWAVE,
         };
-        //io.to(id).emit('cmdFromServer', cmd)
         putCmd([id], cmd);
       }
     }
@@ -93,7 +91,6 @@ export const sinewaveChange = (
         portament: cmdState.PORTAMENT,
         gain: cmdState.GAIN.SINEWAVE,
       };
-      //io.to(id).emit('cmdFromServer', cmd)
       putCmd([id], cmd);
     }
   }

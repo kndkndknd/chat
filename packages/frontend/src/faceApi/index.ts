@@ -3,12 +3,12 @@ import { canvasElement } from "../canvasEvent/canvasElement";
 import { socketState } from "../state";
 
 const MODEL_URL = "/models";
-const DRAW_CLEAR_DELAY = 3000;
-const RESTART_DELAY = 30000;
+const COOLDOWN = 30000;
 
 let overlayCanvas: HTMLCanvasElement | null = null;
 let active = false;
 let modelsLoaded = false;
+let lastDetectedAt: number | null = null;
 
 export async function initFaceDetection(): Promise<void> {
   if (!modelsLoaded) {
@@ -51,23 +51,17 @@ async function detectLoop(): Promise<void> {
 
     const ctx = overlayCanvas.getContext("2d")!;
     ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-    faceapi.draw.drawFaceLandmarks(overlayCanvas, resized);
 
     if (detections.length > 0) {
-      active = false;
-      socketState.socket?.emit("faceDetectFromClient");
+      const now = Date.now();
+      const inCooldown = lastDetectedAt !== null && now - lastDetectedAt < COOLDOWN;
 
-      setTimeout(() => {
-        overlayCanvas?.getContext("2d")?.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-      }, DRAW_CLEAR_DELAY);
-
-      setTimeout(() => {
-        initFaceDetection().catch((e) =>
-          console.error("faceDetection restart error:", e)
-        );
-      }, RESTART_DELAY);
-
-      return;
+      faceapi.draw.drawFaceLandmarks(overlayCanvas, resized);
+      if (!inCooldown) {
+        const { x, width, height } = resized[0].detection.box;
+        socketState.socket?.emit("faceDetectFromClient", { x, width, height });
+        lastDetectedAt = now;
+      }
     }
   }
 

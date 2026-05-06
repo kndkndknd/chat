@@ -13,8 +13,7 @@ export const splitToPostgres = async (
     if (stringArr[1] === "HELP" || stringArr[1] === "?") {
       stringEmit(`INSERT (STREAM) (PLACE) (YYYMMDD)`, false);
     } else if (streamList.includes(stringArr[1])) {
-      const audioLen = await streamsRedis.getAudioLength(stringArr[1]);
-      const videoLen = await streamsRedis.getVideoLength(stringArr[1]);
+      const buffLen = await streamsRedis.getLength(stringArr[1]);
       if (
         stringArr.length === 4 &&
         arrTypeArr[3] === "number" &&
@@ -26,7 +25,7 @@ export const splitToPostgres = async (
             place: stringArr[2],
             date: stringArr[3],
             from: 0,
-            to: audioLen >= videoLen ? audioLen : videoLen,
+            to: buffLen,
           },
         );
         stringEmit(`INSERT RESULT: ${result}`, false);
@@ -35,7 +34,7 @@ export const splitToPostgres = async (
         arrTypeArr[3] === "number" &&
         stringArr[3].length === 8 &&
         arrTypeArr[4] === "number" &&
-        Number(stringArr[4]) <= audioLen
+        Number(stringArr[4]) <= buffLen
       ) {
         const result = await postStream(
           {

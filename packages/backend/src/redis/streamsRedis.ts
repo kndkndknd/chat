@@ -3,29 +3,42 @@ import { buffStateType } from "../../../../types";
 
 const KEYS_SET = "streams:keys";
 
-function audioKey(name: string) {
-  return `streams:${name}:audio`;
-}
-function videoKey(name: string) {
-  return `streams:${name}:video`;
+function buffKey(name: string) {
+  return `streams:${name}:buff`;
 }
 function indexKey(name: string) {
   return `streams:${name}:index`;
 }
-function bufferSizeKey(name: string) {
-  return `streams:${name}:bufferSize`;
+
+function serializeStream(buff: buffStateType): string {
+  const audioB64 = Buffer.from(buff.audio).toString("base64");
+  return JSON.stringify({
+    source: buff.source,
+    audio: audioB64,
+    video: buff.video,
+    bufferSize: buff.bufferSize,
+    duration: buff.duration,
+    from: buff.from,
+    floating: buff.floating,
+    filter: buff.filter,
+    timestamp: buff.timestamp,
+  });
 }
 
-function toBase64(audio: ArrayBuffer | Float32Array): string {
-  if (audio instanceof Float32Array) {
-    return Buffer.from(audio.buffer, audio.byteOffset, audio.byteLength).toString("base64");
-  }
-  return Buffer.from(audio).toString("base64");
-}
-
-function fromBase64(b64: string): ArrayBuffer {
-  const buf = Buffer.from(b64, "base64");
-  return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+function deserializeStream(raw: string): buffStateType {
+  const obj = JSON.parse(raw);
+  const buf = Buffer.from(obj.audio, "base64");
+  return {
+    source: obj.source,
+    audio: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer,
+    video: obj.video,
+    bufferSize: obj.bufferSize,
+    duration: obj.duration,
+    from: obj.from,
+    floating: obj.floating,
+    filter: obj.filter,
+    timestamp: obj.timestamp,
+  };
 }
 
 export const streamsRedis = {
@@ -37,80 +50,44 @@ export const streamsRedis = {
     return redis.smembers(KEYS_SET);
   },
 
-  async initKey(name: string, bufferSize: number): Promise<void> {
+  async initKey(name: string): Promise<void> {
     await redis.sadd(KEYS_SET, name);
-    if ((await redis.exists(bufferSizeKey(name))) === 0) {
-      await redis.set(bufferSizeKey(name), bufferSize);
-    }
     if ((await redis.exists(indexKey(name))) === 0) {
       await redis.set(indexKey(name), 0);
     }
   },
 
-  // Audio
-  async pushAudio(name: string, audio: ArrayBuffer | Float32Array): Promise<void> {
-    await redis.rpush(audioKey(name), toBase64(audio));
+  async push(name: string, buff: buffStateType): Promise<void> {
+    await redis.rpush(buffKey(name), serializeStream(buff));
   },
 
-  async pushAudioBatch(name: string, audios: (ArrayBuffer | Float32Array)[]): Promise<void> {
-    if (audios.length === 0) return;
-    await redis.rpush(audioKey(name), ...audios.map(toBase64));
+  async pushBatch(name: string, buffs: buffStateType[]): Promise<void> {
+    if (buffs.length === 0) return;
+    await redis.rpush(buffKey(name), ...buffs.map(serializeStream));
   },
 
-  async getAudio(name: string, index: number): Promise<ArrayBuffer | null> {
-    const raw = await redis.lindex(audioKey(name), index);
-    return raw !== null ? fromBase64(raw) : null;
+  async get(name: string, index: number): Promise<buffStateType | null> {
+    const raw = await redis.lindex(buffKey(name), index);
+    return raw !== null ? deserializeStream(raw) : null;
   },
 
-  async getAudioLength(name: string): Promise<number> {
-    return redis.llen(audioKey(name));
+  async getLength(name: string): Promise<number> {
+    return redis.llen(buffKey(name));
   },
 
-  async shiftAudio(name: string): Promise<ArrayBuffer | null> {
-    const raw = await redis.lpop(audioKey(name));
-    return raw !== null ? fromBase64(raw) : null;
+  async shift(name: string): Promise<buffStateType | null> {
+    const raw = await redis.lpop(buffKey(name));
+    return raw !== null ? deserializeStream(raw) : null;
   },
 
-  async clearAudio(name: string): Promise<void> {
-    await redis.del(audioKey(name));
+  async clear(name: string): Promise<void> {
+    await redis.del(buffKey(name));
   },
 
-  async getRandomAudio(name: string): Promise<ArrayBuffer | null> {
-    const len = await redis.llen(audioKey(name));
+  async getRandom(name: string): Promise<buffStateType | null> {
+    const len = await redis.llen(buffKey(name));
     if (len === 0) return null;
-    return this.getAudio(name, Math.floor(Math.random() * len));
-  },
-
-  // Video
-  async pushVideo(name: string, video: string): Promise<void> {
-    await redis.rpush(videoKey(name), video);
-  },
-
-  async pushVideoBatch(name: string, videos: string[]): Promise<void> {
-    if (videos.length === 0) return;
-    await redis.rpush(videoKey(name), ...videos);
-  },
-
-  async getVideo(name: string, index: number): Promise<string | null> {
-    return redis.lindex(videoKey(name), index);
-  },
-
-  async getVideoLength(name: string): Promise<number> {
-    return redis.llen(videoKey(name));
-  },
-
-  async shiftVideo(name: string): Promise<string | null> {
-    return redis.lpop(videoKey(name));
-  },
-
-  async clearVideo(name: string): Promise<void> {
-    await redis.del(videoKey(name));
-  },
-
-  async getRandomVideo(name: string): Promise<string | null> {
-    const len = await redis.llen(videoKey(name));
-    if (len === 0) return null;
-    return this.getVideo(name, Math.floor(Math.random() * len));
+    return this.get(name, Math.floor(Math.random() * len));
   },
 
   // Index
@@ -127,22 +104,35 @@ export const streamsRedis = {
     return redis.incr(indexKey(name));
   },
 
-  // BufferSize
-  async getBufferSize(name: string): Promise<number> {
-    const val = await redis.get(bufferSizeKey(name));
-    return val !== null ? parseInt(val, 10) : 8192;
-  },
-
-  async setBufferSize(name: string, val: number): Promise<void> {
-    await redis.set(bufferSizeKey(name), val);
-  },
-
-  // Initialization
-  async initDefaultKeys(defaultBufferSize: number): Promise<void> {
+  async initDefaultKeys(): Promise<void> {
     const defaultKeys = ["PLAYBACK", "TIMELAPSE", "INTERNET", "EMPTY"];
     for (const key of defaultKeys) {
-      await this.initKey(key, defaultBufferSize);
+      await this.initKey(key);
     }
+  },
+
+  async findClosestByTimestamp(
+    name: string,
+    timestamp: number,
+  ): Promise<{ entry: buffStateType; firstIndex: number } | null> {
+    const raws = await redis.lrange(buffKey(name), 0, -1);
+    if (raws.length === 0) return null;
+    const entries = raws.map(deserializeStream);
+    if (entries.every((e) => e.timestamp === undefined)) return null;
+
+    let closestDiff = Infinity;
+    let closestTs: number | undefined;
+    for (const entry of entries) {
+      if (entry.timestamp === undefined) continue;
+      const diff = Math.abs(entry.timestamp - timestamp);
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestTs = entry.timestamp;
+      }
+    }
+
+    const firstIndex = entries.findIndex((e) => e.timestamp === closestTs);
+    return { entry: entries[firstIndex], firstIndex };
   },
 };
 
@@ -150,6 +140,7 @@ export const streamsRedis = {
 export const chatsRedis = {
   async push(buffer: buffStateType): Promise<void> {
     const audioB64 = Buffer.from(buffer.audio).toString("base64");
+    const now = Date.now();
     const entry = JSON.stringify({
       source: buffer.source,
       video: buffer.video,
@@ -159,6 +150,7 @@ export const chatsRedis = {
       from: buffer.from,
       floating: buffer.floating,
       filter: buffer.filter,
+      timestamp: buffer.timestamp ?? now,
     });
     await redis.rpush("chats", entry);
   },
@@ -180,17 +172,29 @@ export const chatsRedis = {
   },
 };
 
+export const countersRedis = {
+  async increment(key: string): Promise<number> {
+    return redis.incr(`counters:${key}`);
+  },
+
+  async get(key: string): Promise<number> {
+    const val = await redis.get(`counters:${key}`);
+    return val !== null ? parseInt(val, 10) : 0;
+  },
+};
+
 function deserializeChat(raw: string): buffStateType {
   const obj = JSON.parse(raw);
   const buf = Buffer.from(obj.audio, "base64");
   return {
     source: obj.source,
     video: obj.video,
-    audio: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+    audio: buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer,
     bufferSize: obj.bufferSize,
     duration: obj.duration,
     from: obj.from,
     floating: obj.floating,
     filter: obj.filter,
+    timestamp: obj.timestamp,
   };
 }

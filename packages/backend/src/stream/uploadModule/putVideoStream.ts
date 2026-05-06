@@ -1,14 +1,12 @@
 import { spawn } from "child_process";
 import * as fs from "fs";
 
-import { streamsRedis } from "../../data";
-
 export const putVideoStream = async (
   fileName,
   dirPath,
   streamName,
   duration?
-) => {
+): Promise<string[]> => {
   const f = fileName.split(".")[0];
   const ffmpegOption = [
     "-i",
@@ -30,23 +28,21 @@ export const putVideoStream = async (
         reject(new Error(`コマンドがエラーコード ${code} で終了しました。`));
         return;
       }
-      const files = await fs.readdirSync(dirPath);
-      let jpgs = <Array<string>>[];
+      const files = fs.readdirSync(dirPath);
+      const jpgs: string[] = [];
       for (let i = 0; i < files.length; i++) {
         if (files[i].includes(f) && files[i].includes(".jpg")) {
           jpgs.push(files[i]);
         }
       }
+      const videos: string[] = [];
       for (let i = 0; i < jpgs.length; i++) {
-        const img = await fs.readFileSync(`${dirPath}/${jpgs[i]}`);
-        const base64str = await Buffer.from(img).toString("base64");
-        await streamsRedis.pushVideo(
-          streamName,
-          "data:image/jpeg;base64," + String(base64str)
-        );
+        const img = fs.readFileSync(`${dirPath}/${jpgs[i]}`);
+        const base64str = Buffer.from(img).toString("base64");
+        videos.push("data:image/jpeg;base64," + String(base64str));
       }
-      console.log(streamName, await streamsRedis.getVideoLength(streamName));
-      resolve("success");
+      console.log(streamName, videos.length);
+      resolve(videos);
     });
   });
 };

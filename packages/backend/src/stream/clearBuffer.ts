@@ -11,12 +11,10 @@ export const clearBuffer = async (source?: string) => {
         stream !== "SNARE" &&
         stream !== "HAT"
       ) {
-        await streamsRedis.clearAudio(stream);
-        await streamsRedis.clearVideo(stream);
+        await streamsRedis.clear(stream);
       }
     }
   } else if (await streamsRedis.hasKey(source)) {
-    await streamsRedis.clearAudio(source);
-    await streamsRedis.clearVideo(source);
+    await streamsRedis.clear(source);
   }
 };

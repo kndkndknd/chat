@@ -24,19 +24,6 @@ export const execCmd = async (
     } else {
       cmdEmit(cmdList[strings]);
     }
-  } else if (strings === "CLOCK") {
-    /*
-    state.clockMode = !state.clockMode;
-    console.log(state.clockMode);
-    io.to(id).emit("clockModeFromServer", { clockMode: state.clockMode });
-    */
-    ioState?.io.emit("clockFromServer", {
-      clock: true,
-      // 暫定
-      barLatency:
-        millisecondsPerBeat(bpmState[Object.keys(bpmState)[0]].METRONOME.bpm) *
-        4,
-    });
   } else if (strings === "FILTER") {
     for (const stream in streamState.filter) {
       streamState.filter[stream].flag = !streamState.filter[stream].flag;

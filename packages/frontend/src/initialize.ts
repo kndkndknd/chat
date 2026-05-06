@@ -20,8 +20,9 @@ import { getGPSPosition } from "./gps";
 import { accelarateOsc, gpsOsc } from "./webaudio";
 import { chatWorklet } from "./audioWorklet/chatWorklet";
 import { initFaceDetection } from "./faceApi";
-import { initRecordButton } from "./recording";
-// import { initTorch } from "./stream/torch";
+// import { initRecordButton } from "./recording";
+// import { toggleRecording } from "./recording";
+import { startChunkedRecording } from "./recording";
 
 export const initialize = async (
   socket: Socket,
@@ -178,9 +179,14 @@ export const initialize = async (
     }
 
     flagState.start = true;
-    initFaceDetection().catch((e) => console.error("faceDetection init error:", e));
-    initRecordButton(stream);
-
+    if (
+      window.location.pathname.includes("face") ||
+      window.location.pathname.split("/").includes("1")
+    ) {
+      initFaceDetection().catch((e) => console.error("faceDetection init error:", e));
+    }
+    // initRecordButton(stream);
+    startChunkedRecording(stream);
     // streamFlag.timelapse = true;
     timelapseState.flag = true;
     // timelapseState.trriger = false;
@@ -190,6 +196,8 @@ export const initialize = async (
         audioWorkletState.chat.flag.TIMELAPSE = true;
       }
     }, 60000);
+    // await toggleRecording(stream);
+
 
     return stream;
   } else {

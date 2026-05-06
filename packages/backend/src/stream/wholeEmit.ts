@@ -41,15 +41,13 @@ export const wholeEmit = async () => {
       gain: cmdState.GAIN[targetCmd] !== undefined ? <number>cmdState.GAIN[targetCmd] : 1,
     };
   } else if (streamList.includes(targetCmd)) {
-    const audioLen = await streamsRedis.getAudioLength(targetCmd);
-    const videoLen = await streamsRedis.getVideoLength(targetCmd);
-    const bufferSize = await streamsRedis.getBufferSize(targetCmd);
-    const audio = (targetCmd !== "EMPTY" && audioLen > 0)
-      ? await streamsRedis.getRandomAudio(targetCmd)
-      : genEmptyBuff();
-    const video = videoLen > 0
-      ? await streamsRedis.getRandomVideo(targetCmd)
-      : undefined;
+    const buffLen = await streamsRedis.getLength(targetCmd);
+    const entry = (targetCmd !== "EMPTY" && buffLen > 0)
+      ? await streamsRedis.getRandom(targetCmd)
+      : null;
+    const audio = entry?.audio ?? genEmptyBuff();
+    const video = entry?.video;
+    const bufferSize = entry?.bufferSize ?? 8192;
     option = {
       type: "stream",
       source: targetCmd,

@@ -9,6 +9,7 @@ export type buffStateType = {
   from?: string;
   floating?: boolean;
   filter?: filterStateType;
+  timestamp?: number;
 };
 
 export type buffArrayType = {

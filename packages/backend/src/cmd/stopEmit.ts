@@ -11,26 +11,9 @@ import { wholeParams } from "../data/list/wholeParams";
 
 export const stopEmit = (
   source: string,
-  target?: "ALL" | "STREAM" | "CMD" | "ExceptHls",
+  target?: "ALL" | "STREAM" | "CMD",
   client?: string
 ) => {
-  /*
-  io.emit('stopFromServer', {
-    target: target,
-    fadeOut: state.cmd.FADE.OUT
-  })
-  */
-  // STOPは個別の関数があるのでVOICEはそこに相乗り
-
-  // if (state.cmd.VOICE.length > 0) {
-  //   state.cmd.VOICE.forEach((element) => {
-  //     //      io.to(element).emit('voiceFromServer', "STOP")
-  //     io.to(element).emit("voiceFromServer", {
-  //       text: "STOP",
-  //       lang: state.cmd.voiceLang,
-  //     });
-  //   });
-  // }
   if (source !== undefined && source !== "") {
     voiceEmit("STOP", source);
   }
@@ -40,7 +23,6 @@ export const stopEmit = (
 
   // stop cmd / sinewave | self判定あり
   if (client === undefined) {
-    // current -> previous && current -> stop
     if (
       clientState.client[source] === undefined ||
       !clientState.client[source].self
@@ -57,9 +39,6 @@ export const stopEmit = (
       }
       previousState.sinewave = currentState.sinewave;
       currentState.sinewave = {};
-      if (target !== "ExceptHls") {
-        // state.hls = [];
-      }
     } else {
       ioState?.io.to(source).emit("stopFromServer", {
         target: target === undefined ? "ALL" : target,
@@ -78,7 +57,6 @@ export const stopEmit = (
         delete currentState.sinewave[source];
       }
     }
-    // state.hls = [];
   } else if (Object.keys(clientState.client).includes(client)) {
     ioState?.io.to(client).emit("stopFromServer", {
       target: target === undefined ? "ALL" : target,
@@ -96,10 +74,6 @@ export const stopEmit = (
       previousState.sinewave[client] = currentState.sinewave[client];
       delete currentState.sinewave[client];
     }
-    // if (target !== "ExceptHls") {
-    //   state.hls = state.hls.filter((element) => element !== client);
-    // }
-    // state.hls = state.hls.filter((element) => element !== client);
   }
 
   // stop stream
@@ -113,7 +87,4 @@ export const stopEmit = (
   Object.keys(streamState.pa).forEach((element)=> {
     streamState.pa[element] = false;
   })
-  // console.log("client", state.client);
-  // console.log("hls", state.hls);
-  // console.log("previous", state.previous);
 };

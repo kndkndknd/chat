@@ -6,7 +6,7 @@ export const splitRotate = async (stringArr: string[]) => {
     stringArr.length === 1 &&
     (stringArr[0] === "ON" || stringArr[0] === "OFF")
   ) {
-    const result = await m5Switch(stringArr[0].toLowerCase() as "on" | "off");
+    const result = await m5Switch(stringArr[0] === "ON" ? true : false);
     if (result) {
       stringEmit(`M5STACK SWITCH ${stringArr[1]}: SUCCESS`);
     } else {

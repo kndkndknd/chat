@@ -4,6 +4,7 @@ const pcm = require("pcm");
 
 import { streamState } from "../state";
 import { streamsRedis, streamApiUrl } from "../data";
+import { buffStateType } from "../../../../types";
 import { putVideoStream } from "./uploadModule/putVideoStream";
 import { pushStateStream } from "./pushStateStream";
 
@@ -11,7 +12,7 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
   try {
     const streamName = stream.includes(" ") ? stream.replace(" ", "") : stream;
     if (!(await streamsRedis.hasKey(stream))) {
-      await streamsRedis.initKey(streamName, streamState.basisBufferSize);
+      await streamsRedis.initKey(streamName);
       pushStateStream(stream);
     }
     streamState.random[stream] = true;
@@ -41,20 +42,19 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
       const tsFileName = streamData[i].fileName;
       const mediaDirPath = streamData[i].dirPath;
       const audioInfo = streamData[i].audio;
-      const putStreamResult = await putVideoStream(
-        tsFileName,
-        mediaDirPath,
-        streamName
-      );
-      if (putStreamResult !== "success") {
-        console.log("putStreamResult error ", putStreamResult);
+
+      let videos: string[];
+      try {
+        videos = await putVideoStream(tsFileName, mediaDirPath, streamName);
+      } catch (err) {
+        console.log("putStreamResult error ", err);
         continue;
       }
 
+      const audioBuffers: Float32Array[] = [];
       if (audioInfo) {
         let tmpBuff = new Float32Array(streamState.basisBufferSize);
         let buffIndex = 0;
-        const audioBuffers: Float32Array[] = [];
 
         await pcm.getPcmData(
           mediaDirPath + "/" + tsFileName,
@@ -80,11 +80,20 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
             );
           }
         );
-
-        for (const buf of audioBuffers) {
-          await streamsRedis.pushAudio(streamName, buf.buffer);
-        }
       }
+
+      const maxLen = Math.max(videos.length, audioBuffers.length);
+      const buffArr: buffStateType[] = [];
+      for (let j = 0; j < maxLen; j++) {
+        buffArr.push({
+          source: streamName,
+          audio: audioBuffers[j]?.buffer ?? new Float32Array(streamState.basisBufferSize).buffer,
+          video: videos[j] ?? "",
+          bufferSize: streamState.basisBufferSize,
+          duration: streamState.basisBufferSize / 44100,
+        });
+      }
+      await streamsRedis.pushBatch(streamName, buffArr);
     }
 
     return await true;

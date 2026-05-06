@@ -8,33 +8,33 @@ let mediaRecorder: MediaRecorder | null = null;
 let chunks: Blob[] = [];
 let recordButton: HTMLButtonElement | null = null;
 
-export function initRecordButton(stream: MediaStream): void {
-  recordButton = document.createElement("button");
-  recordButton.id = "recBtn";
-  recordButton.textContent = "⏺";
-  recordButton.style.cssText = [
-    "position:fixed",
-    "bottom:24px",
-    "right:24px",
-    "z-index:10",
-    "width:52px",
-    "height:52px",
-    "border-radius:50%",
-    "border:2px solid rgba(255,255,255,0.6)",
-    "background:rgba(30,30,30,0.7)",
-    "color:#fff",
-    "font-size:20px",
-    "cursor:pointer",
-    "display:flex",
-    "align-items:center",
-    "justify-content:center",
-  ].join(";");
+// export function initRecordButton(stream: MediaStream): void {
+//   recordButton = document.createElement("button");
+//   recordButton.id = "recBtn";
+//   recordButton.textContent = "⏺";
+//   recordButton.style.cssText = [
+//     "position:fixed",
+//     "bottom:24px",
+//     "right:24px",
+//     "z-index:10",
+//     "width:52px",
+//     "height:52px",
+//     "border-radius:50%",
+//     "border:2px solid rgba(255,255,255,0.6)",
+//     "background:rgba(30,30,30,0.7)",
+//     "color:#fff",
+//     "font-size:20px",
+//     "cursor:pointer",
+//     "display:flex",
+//     "align-items:center",
+//     "justify-content:center",
+//   ].join(";");
 
-  recordButton.addEventListener("click", () => toggleRecording(stream));
-  document.body.appendChild(recordButton);
-}
+//   recordButton.addEventListener("click", () => toggleRecording(stream));
+//   document.body.appendChild(recordButton);
+// }
 
-function toggleRecording(stream: MediaStream): void {
+export function toggleRecording(stream: MediaStream): void {
   if (mediaRecorder && mediaRecorder.state === "recording") {
     mediaRecorder.stop();
   } else {

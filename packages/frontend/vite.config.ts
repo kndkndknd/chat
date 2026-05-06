@@ -13,12 +13,7 @@ export default defineConfig({
         "whitenoise-processor": path.resolve(
           __dirname,
           "./src/audioWorklet/whitenoise-processor.js",
-        ),
-        form: "./html/form.html",
-        vosk: "./html/vosk.html",
-        rotate: "./html/rotate.html",
-        wsclient: "./html/wsClient.html",
-        // snowleopard: "./src/snowleopard/snowLeopardClient.js",
+        )
       },
       output: {
         dir: "../backend/static",

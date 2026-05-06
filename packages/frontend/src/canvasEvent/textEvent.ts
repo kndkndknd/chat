@@ -41,14 +41,7 @@ export function textPrint(
       print(emoji.random().emoji, stx, strCnvs);
     }
   }
-  /*
-  if (hlsElement.played.length > 0) {
-    setTimeout(() => {
-      eraseText(stx, strCnvs);
-    }, 100);
-  }
-  */
-}
+x}
 
 export function eraseText(
   stx: CanvasRenderingContext2D = canvasElement.ctx,

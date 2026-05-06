@@ -10,7 +10,6 @@ import { glitchState } from "./states/glitchState";
 import { previousState } from "./states/previousState";
 import { sampleRateState } from "./states/sampleRateState";
 import { webState } from "./states/webState";
-import { hlsState } from "./states/hlsState";
 import { webRtcServerState } from "./states/webRtcServerState";
 import { loadAllStates } from "../redis/stateRedis";
 
@@ -24,7 +23,6 @@ export {
   defaultFilterState,
   flagState,
   glitchState,
-  hlsState,
   previousState,
   sampleRateState,
   streamState,

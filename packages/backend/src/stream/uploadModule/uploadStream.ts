@@ -39,7 +39,7 @@ export const uploadStream = async (stringArr) => {
   }
 
   if (!(await streamsRedis.hasKey(f.split(".")[0]))) {
-    await streamsRedis.initKey(f.split(".")[0], streamState.basisBufferSize);
+    await streamsRedis.initKey(f.split(".")[0]);
   }
 
   switch (f.split(".")[1].toLowerCase()) {
@@ -68,7 +68,7 @@ export const uploadStream = async (stringArr) => {
         await console.log("audioUploadResult", audioUploadResult);
         await console.log(
           `${f.split(".")[0]} length: `,
-          await streamsRedis.getAudioLength(f.split(".")[0])
+          await streamsRedis.getLength(f.split(".")[0])
         );
         // pushStateStream(f.split(".")[0], states, true);
 

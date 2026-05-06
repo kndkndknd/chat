@@ -3,6 +3,7 @@ import { spawn } from "child_process";
 
 import { streamState } from "../../state";
 import { streamsRedis } from "../../data";
+import { buffStateType } from "../../../../../types";
 
 import { promiseGetPcmData } from "./getPcmData";
 import { promiseGetImageData } from "./getImageData";
@@ -33,10 +34,19 @@ export const uploadVideo = async (f: string, durationArr, mediaDirPath) => {
       );
       console.log("getImageResult", getImageResult.length);
 
-      await streamsRedis.clearAudio(fName);
-      await streamsRedis.clearVideo(fName);
-      await streamsRedis.pushAudioBatch(fName, getPcmResult);
-      await streamsRedis.pushVideoBatch(fName, getImageResult);
+      await streamsRedis.clear(fName);
+      const maxLen = Math.max(getPcmResult.length, getImageResult.length);
+      const buffArr: buffStateType[] = [];
+      for (let i = 0; i < maxLen; i++) {
+        buffArr.push({
+          source: fName,
+          audio: (getPcmResult[i] as ArrayBuffer) ?? new ArrayBuffer(0),
+          video: getImageResult[i] ?? "",
+          bufferSize: 8192,
+          duration: 8192 / 44100,
+        });
+      }
+      await streamsRedis.pushBatch(fName, buffArr);
     });
     return await true;
   } catch (err) {

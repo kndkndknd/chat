@@ -17,6 +17,7 @@ import { gridTimeoutVal } from "./gridTimeoutVal";
 export const streamEmit = async (
   source: string,
   from?: string,
+  timestamp?: number,
 ) => {
   currentState.stream[source] = true;
   console.log(`debug ${source} targetArr`, streamState.target[source]);
@@ -32,57 +33,72 @@ export const streamEmit = async (
   }
 
   let buff: buffStateType;
-  const bufferSize = await streamsRedis.getBufferSize(source);
-  const audioLen = await streamsRedis.getAudioLength(source);
-  const videoLen = await streamsRedis.getVideoLength(source);
+  const buffLen = await streamsRedis.getLength(source);
 
   if (source === "EMPTY") {
-    let audioBuff = new Float32Array(streamState.basisBufferSize);
+    const audioBuff = new Float32Array(streamState.basisBufferSize);
     for (let i = 0; i < streamState.basisBufferSize; i++) {
       audioBuff[i] = 1.0;
     }
+    const shifted = await streamsRedis.shift(source);
     buff = {
       source: source,
       bufferSize: streamState.basisBufferSize,
       audio: audioBuff.buffer,
-      video: await streamsRedis.shiftVideo(source),
+      video: shifted?.video ?? "",
       duration: streamState.basisBufferSize / 44100,
     };
   } else {
-    console.log("audio length:", audioLen);
-    console.log("video length:", videoLen);
-    if (audioLen > 0 || videoLen > 0) {
+    console.log("buff length:", buffLen);
+    if (buffLen > 0) {
       if (!streamState.random[source]) {
-        const index = await streamsRedis.getIndex(source);
-        buff = {
-          source: source,
-          bufferSize: bufferSize,
-          audio:
-            audioLen > index
-              ? await streamsRedis.getAudio(source, index)
-              : new Float32Array(bufferSize).buffer,
-          video:
-            videoLen > index
-              ? await streamsRedis.getVideo(source, index)
-              : "",
-          duration: bufferSize / 44100,
-        };
-        if (
-          ((videoLen === 0) && index < audioLen - 1) ||
-          (index < audioLen - 1 && index < videoLen - 1)
-        ) {
-          await streamsRedis.incrementIndex(source);
-        } else {
-          await streamsRedis.setIndex(source, 0);
+        if (timestamp !== undefined) {
+          const closest = await streamsRedis.findClosestByTimestamp(source, timestamp);
+          if (closest !== null) {
+            await streamsRedis.setIndex(source, closest.firstIndex);
+            const bufferSize = closest.entry.bufferSize ?? streamState.basisBufferSize;
+            buff = {
+              source: source,
+              bufferSize: bufferSize,
+              audio: closest.entry.audio ?? new Float32Array(bufferSize).buffer,
+              video: closest.entry.video ?? "",
+              duration: closest.entry.duration ?? bufferSize / 44100,
+            };
+            if (closest.firstIndex < buffLen - 1) {
+              await streamsRedis.incrementIndex(source);
+            } else {
+              await streamsRedis.setIndex(source, 0);
+            }
+            console.log("timestamp seek index:", await streamsRedis.getIndex(source));
+          }
         }
-        console.log("index:", await streamsRedis.getIndex(source));
+        if (buff === undefined) {
+          const index = await streamsRedis.getIndex(source);
+          const entry = index < buffLen ? await streamsRedis.get(source, index) : null;
+          const bufferSize = entry?.bufferSize ?? streamState.basisBufferSize;
+          buff = {
+            source: source,
+            bufferSize: bufferSize,
+            audio: entry?.audio ?? new Float32Array(bufferSize).buffer,
+            video: entry?.video ?? "",
+            duration: entry?.duration ?? bufferSize / 44100,
+          };
+          if (index < buffLen - 1) {
+            await streamsRedis.incrementIndex(source);
+          } else {
+            await streamsRedis.setIndex(source, 0);
+          }
+          console.log("index:", await streamsRedis.getIndex(source));
+        }
       } else {
+        const entry = await streamsRedis.getRandom(source);
+        const bufferSize = entry?.bufferSize ?? streamState.basisBufferSize;
         buff = {
           source: source,
           bufferSize: bufferSize,
-          audio: await streamsRedis.getRandomAudio(source),
-          video: await streamsRedis.getRandomVideo(source),
-          duration: bufferSize / 44100,
+          audio: entry?.audio ?? new Float32Array(bufferSize).buffer,
+          video: entry?.video ?? "",
+          duration: entry?.duration ?? bufferSize / 44100,
         };
       }
     } else {
@@ -166,57 +182,50 @@ export const paStreamEmit = async (
   }
 
   let buff: buffStateType;
-  const bufferSize = await streamsRedis.getBufferSize(source);
-  const audioLen = await streamsRedis.getAudioLength(source);
-  const videoLen = await streamsRedis.getVideoLength(source);
+  const buffLen = await streamsRedis.getLength(source);
 
   if (source === "EMPTY") {
-    let audioBuff = new Float32Array(streamState.basisBufferSize);
+    const audioBuff = new Float32Array(streamState.basisBufferSize);
     for (let i = 0; i < streamState.basisBufferSize; i++) {
       audioBuff[i] = 1.0;
     }
+    const shifted = await streamsRedis.shift(source);
     buff = {
       source: source,
       bufferSize: streamState.basisBufferSize,
-      audio: audioBuff,
-      video: await streamsRedis.shiftVideo(source),
+      audio: audioBuff.buffer,
+      video: shifted?.video ?? "",
       duration: streamState.basisBufferSize / 44100,
     };
   } else {
-    console.log("audio length:", audioLen);
-    console.log("video length:", videoLen);
-    if (audioLen > 0 || videoLen > 0) {
+    console.log("buff length:", buffLen);
+    if (buffLen > 0) {
       if (!streamState.random[source]) {
         const index = await streamsRedis.getIndex(source);
+        const entry = index < buffLen ? await streamsRedis.get(source, index) : null;
+        const bufferSize = entry?.bufferSize ?? streamState.basisBufferSize;
         buff = {
           source: source,
           bufferSize: bufferSize,
-          audio:
-            audioLen > index
-              ? await streamsRedis.getAudio(source, index)
-              : new Float32Array(bufferSize),
-          video:
-            videoLen > index
-              ? await streamsRedis.getVideo(source, index)
-              : "",
-          duration: bufferSize / 44100,
+          audio: entry?.audio ?? new Float32Array(bufferSize).buffer,
+          video: entry?.video ?? "",
+          duration: entry?.duration ?? bufferSize / 44100,
         };
-        if (
-          ((videoLen === 0) && index < audioLen - 1) ||
-          (index < audioLen - 1 && index < videoLen - 1)
-        ) {
+        if (index < buffLen - 1) {
           await streamsRedis.incrementIndex(source);
         } else {
           await streamsRedis.setIndex(source, 0);
         }
         console.log("index:", await streamsRedis.getIndex(source));
       } else {
+        const entry = await streamsRedis.getRandom(source);
+        const bufferSize = entry?.bufferSize ?? streamState.basisBufferSize;
         buff = {
           source: source,
           bufferSize: bufferSize,
-          audio: await streamsRedis.getRandomAudio(source),
-          video: await streamsRedis.getRandomVideo(source),
-          duration: bufferSize / 44100,
+          audio: entry?.audio ?? new Float32Array(bufferSize).buffer,
+          video: entry?.video ?? "",
+          duration: entry?.duration ?? bufferSize / 44100,
         };
       }
     } else {

@@ -112,32 +112,6 @@ export const receiveEnter = async (
   } else if (strings === "START" || strings === "SCENARIO") {
     const scenario = await loadScenario();
     await execScenario(scenario);
-    //   const result = await getLiveStream("TWITCH");
-    //   console.log("get livestream as ", strings, result);
-    //   if (result) {
-    //     stringEmit(io, "GET TWITCH: SUCCESS");
-    //   } else {
-    //     stringEmit(io, "GET TWITCH: FAILED");
-    //   }
-    // } else if (strings === "HLS") {
-    //   const cmd: {
-    //     cmd: string;
-    //     property: string;
-    //     value: number;
-    //     flag: boolean;
-    //     target?: string;
-    //     overlay?: boolean;
-    //     fade?: number;
-    //     portament?: number;
-    //     gain?: number;
-    //     solo?: boolean;
-    //   } = {
-    //     cmd: "HLS",
-    //     property: "OGAWA",
-    //     value: 0,
-    //     flag: true,
-    //   };
-    //   io.emit("cmdFromServer", cmd);
   } else if (id === "scenario") {
     console.log("scenario", strings);
     if (cmdState.VOICE.length > 0) {

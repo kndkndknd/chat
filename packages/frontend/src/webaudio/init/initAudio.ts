@@ -14,6 +14,16 @@ const chatGainVal = 1.5;
 const glitchGainVal = 1.5;
 
 export const initAudio = async () => {
+
+  if(window.location.pathname.includes("left")) {
+    stereoPannerState.masterPannerParam = -1;
+    console.log("left channel");
+  } else if (window.location.pathname.includes("right")) {
+    stereoPannerState.masterPannerParam = 1;
+    console.log("right channel");
+  }
+
+
   // console.log("debug1");
   contextState.audioContext = new AudioContext();
   gainState.masterGain = contextState.audioContext.createGain();

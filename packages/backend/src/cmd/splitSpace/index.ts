@@ -203,13 +203,11 @@ export const splitSpace = async (
           stream !== "SNARE" &&
           stream !== "HAT"
         ) {
-          await streamsRedis.clearAudio(stream);
-          await streamsRedis.clearVideo(stream);
+          await streamsRedis.clear(stream);
         }
       }
     } else if (streamList.includes(stringArr[1])) {
-      await streamsRedis.clearAudio(stringArr[1]);
-      await streamsRedis.clearVideo(stringArr[1]);
+      await streamsRedis.clear(stringArr[1]);
     } else if (stringArr[1] === "INDEX") {
       const allKeys = await streamsRedis.getAllKeys();
       for (const stream of allKeys) {
@@ -407,25 +405,6 @@ export const splitSpace = async (
     const result = await uploadStream(stringArr);
     console.log(result);
     stringEmit(result, true);
-  } else if (stringArr[0] === "VIDEO" || stringArr[0] === "HLS") {
-    const cmd: {
-      cmd: string;
-      property: string;
-      value: number;
-      flag: boolean;
-      target?: string;
-      overlay?: boolean;
-      fade?: number;
-      portament?: number;
-      gain?: number;
-      solo?: boolean;
-    } = {
-      cmd: "HLS",
-      property: stringArr[1],
-      value: 0,
-      flag: true,
-    };
-    ioState?.io.emit("cmdFromServer", cmd);
   } else if (stringArr[0] === "VOSK") {
     splitVoskCmd(stringArr.splice(1), arrTypeArr.splice(1));
   } else if (stringArr[0].includes(":")) {
