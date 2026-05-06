@@ -31,7 +31,6 @@ const commonPickupCmdTarget = (
             Math.floor(Math.random() * clientState.cmdClient.length)
           ],
         ];
-        break;
       case "BASS":
       case "WHITENOISE":
       case "FEEDBACK":
@@ -44,7 +43,6 @@ const commonPickupCmdTarget = (
         } else {
           return currentState.cmd[cmd];
         }
-        break;
       case "SIMULATE":
         console.log("SIMULATE:", clientArr);
         return clientArr;
@@ -86,6 +84,10 @@ const commonPickupCmdTarget = (
             return ["target is undefined"];
           }
         }
+      default:
+        return [Object.keys(clientState.client)[
+          Math.floor(Math.random() * clientState.cmdClient.length)
+        ]];
     }
   }
 };

@@ -1,4 +1,3 @@
-import SocketIO from "socket.io";
 import { buffStateType } from "../../../../types";
 import {
   currentState,
@@ -172,7 +171,6 @@ const ioEmitStreamFromServer = async (stream, targetId, source) => {
 
 export const paStreamEmit = async (
   source: string,
-  io: SocketIO.Server,
 ) => {
   currentState.stream[source] = true;
   console.log(`debug ${source} targetArr`, streamState.target[source]);
@@ -229,7 +227,7 @@ export const paStreamEmit = async (
         };
       }
     } else {
-      io.emit("stringsFromServer", { strings: "NO BUFFER", timeout: true });
+      ioState?.io.emit("stringsFromServer", { strings: "NO BUFFER", timeout: true });
     }
   }
   if (buff) {

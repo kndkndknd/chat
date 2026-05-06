@@ -1,10 +1,9 @@
-import SocketIO from "socket.io";
 import { receiveEnter } from "../cmd/receiveEnter";
 import { stopEmit } from "../cmd/stopEmit";
 import { clientState, currentState } from "../state";
+import { ioState } from "../state/states/ioState";
 
 export const timerCmd = (
-  io: SocketIO.Server,
   stringArr: string[],
   timeStampArr: string[]
 ) => {
@@ -27,7 +26,7 @@ export const timerCmd = (
   const cmdString =
     stringArr.length > 2 ? stringArr.slice(1).join(" ") : stringArr[1];
   const string = cmdString + " SCHEDULED " + String(timerVal) + "ms LATER";
-  io.emit("stringsFromServer", {
+  ioState?.io.emit("stringsFromServer", {
     strings: string,
     timeout: true,
   });
@@ -46,11 +45,11 @@ export const timerCmd = (
           stringArr[stringArr.length - 1]
         )
       ) {
-        receiveEnter(cmdString, targetId, io);
+        receiveEnter(cmdString, targetId);
       } else if (stringArr[1] === "STOP") {
         if (stringArr.length === 2) {
           const client = "all";
-          stopEmit(io, "", "ALL", client);
+          stopEmit("", "ALL", client);
           /*
         } else if(stringArr.length === 3) {
           if(stringArr[2] === 'SINEWAVECLIENT') {
@@ -63,7 +62,7 @@ export const timerCmd = (
           */
         }
       } else {
-        io.emit("stringsFromServer", {
+        ioState?.io.emit("stringsFromServer", {
           strings: cmdString,
           timeout: false,
         });

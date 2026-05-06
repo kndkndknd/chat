@@ -1,4 +1,3 @@
-import SocketIO from "socket.io";
 import dotenv from "dotenv";
 import path from "path";
 import { cmdList, streamList, parameterList, streamsRedis } from "../data";
@@ -21,7 +20,6 @@ interface streamInterface {
 export const findStream = async (
   key: string,
   value: string = "UNDEFINED",
-  io: SocketIO.Server
 ) => {
   const queryParams = new URLSearchParams({
     name: "20230527",

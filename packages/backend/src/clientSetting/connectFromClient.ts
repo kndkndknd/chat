@@ -10,13 +10,12 @@ import {
 import { streamList } from "../data";
 import { floatingPosition } from "./floatingPosition";
 
-export const connectFromClient = (data, socket) => {
+export const connectFromClient = (data, id: string, ipAddress: string) => {
   if(data.urlPathName === "/nosound"){
     console.log("nosound client connected");
     return;
   }
-  let sockId = String(socket.id);
-  const ipAddress = socket.handshake.address.split(":")[3];
+  let sockId = id;
   console.log("ipAddress: " + ipAddress);
   console.log("urlPathName", data.urlPathName);
   if (data.urlPathName.includes("pi")) {
@@ -27,11 +26,10 @@ export const connectFromClient = (data, socket) => {
   if (data.clientMode === "client") {
     if (!streamState.timelapse) streamState.timelapse = true;
     console.log(
-      'socket.on("connectFromClient", (data) => {data:' +
+      "connectFromClient data:" +
         data +
         ", id:" +
-        sockId +
-        "}"
+        sockId
     );
     if (!Object.keys(clientState.client).includes(sockId))
       if (data.urlPathName.includes("project")) {

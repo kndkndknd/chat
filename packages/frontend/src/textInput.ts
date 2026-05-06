@@ -1,4 +1,4 @@
-import { Socket } from "socket.io-client";
+import { SocketFacade } from "./socket/SocketFacade";
 import { textPrint, erasePrint, eraseText } from "./canvasEvent";
 import { bass } from "./webaudio";
 // import { frontState } from "./globalVariable";
@@ -7,7 +7,7 @@ let bassFlag = false;
 export const keyDown = (
   e: KeyboardEvent,
   stringsClient: string,
-  socket: Socket,
+  socket: SocketFacade,
   strCnvs = <HTMLCanvasElement>document.getElementById("cnvs"),
   stx = <CanvasRenderingContext2D>(
     (document.getElementById("cnvs") as HTMLCanvasElement).getContext("2d")

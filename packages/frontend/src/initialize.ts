@@ -1,4 +1,4 @@
-import { Socket } from "socket.io-client";
+import { SocketFacade } from "./socket/SocketFacade";
 import {
   flagState,
   sensorState,
@@ -25,7 +25,7 @@ import { initFaceDetection } from "./faceApi";
 import { startChunkedRecording } from "./recording";
 
 export const initialize = async (
-  socket: Socket,
+  socket: SocketFacade,
 ): Promise<MediaStream | null> => {
   // ): Promise<void> => {
   erasePrint();

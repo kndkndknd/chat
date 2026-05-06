@@ -41,7 +41,7 @@ export function textPrint(
       print(emoji.random().emoji, stx, strCnvs);
     }
   }
-x}
+}
 
 export function eraseText(
   stx: CanvasRenderingContext2D = canvasElement.ctx,

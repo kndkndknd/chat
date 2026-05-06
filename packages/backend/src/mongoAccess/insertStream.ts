@@ -1,4 +1,3 @@
-import SocketIO from "socket.io";
 import dotenv from "dotenv";
 import path from "path";
 
@@ -13,7 +12,6 @@ console.log("IP Address:", ipaddress);
 
 export const insertStream = async (
   type: string,
-  io: SocketIO.Server,
   place: string,
   date: string
 ) => {
@@ -29,10 +27,10 @@ export const insertStream = async (
       }, 1000);
     }
 
-    stringEmit(io, "INSERT DONE", true);
+    stringEmit("INSERT DONE", true);
   } catch (error) {
     console.log(error);
-    stringEmit(io, "INSERT ERROR", true);
+    stringEmit("INSERT ERROR", true);
   }
 };
 

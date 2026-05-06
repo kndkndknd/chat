@@ -4,7 +4,6 @@ import { getJsonFromFile } from "./getJsonFromFile";
 import { getScheduleFromJson } from "./getScheduleFromJson";
 import { execSchedule } from "./execSchedule";
 import { LogType } from "../../../types/log_schedule";
-import SocketIO from "socket.io";
 
 export const getScheduleFromSplitSpace = async (
   stringArr: string[],

@@ -1,7 +1,23 @@
-import { io } from "socket.io-client";
+import { SocketFacade } from "./socket/SocketFacade";
 
-socketState.socket = io();
-socketState.socketId = socketState.socket.id;
+const wsUrl = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`;
+socketState.socket = new SocketFacade(wsUrl);
+socketState.socket.on("connected", (data) => {
+  socketState.socketId = (data as { id: string }).id;
+  if (flagState.start) {
+    socketState.socket.emit("connectFromClient", {
+      clientMode:
+        window.location.pathname.includes("noStream") ||
+        window.location.pathname.includes("nostream")
+          ? "noStream"
+          : "client",
+      urlPathName: window.location.pathname,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      isMobile: flagState.isMobile,
+    });
+  }
+});
 
 import { initialize } from "./initialize";
 import { socket } from "./socket";

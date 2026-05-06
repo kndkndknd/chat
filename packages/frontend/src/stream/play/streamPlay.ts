@@ -2,14 +2,14 @@ import { playAudioStream } from "./playAudioStream";
 import { chatReq } from "../chatReq";
 import { showImage, textPrint, erasePrint } from "../../canvasEvent";
 import { flagState } from "../../state";
-import { Socket } from "socket.io-client";
+import { SocketFacade } from "../../socket/SocketFacade";
 import { filterStateType } from "../../../../../types";
 
 let debugCount = 0;
 
 export const streamPlay = async (
   type: "CHAT" | "STREAM",
-  socket: Socket,
+  socket: SocketFacade,
   stream: {
     audio: Float32Array;
     sampleRate: number;

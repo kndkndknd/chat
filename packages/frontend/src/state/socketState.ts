@@ -1,6 +1,6 @@
-import { Socket } from "socket.io-client";
+import { SocketFacade } from "../socket/SocketFacade";
 
 export const socketState = {
-  socket: null as Socket | null,
+  socket: null as SocketFacade | null,
   socketId: null as string | null,
 };

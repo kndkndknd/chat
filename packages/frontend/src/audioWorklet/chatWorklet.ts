@@ -1,9 +1,9 @@
 import { contextState, audioWorkletState } from "../state";
-import { Socket } from "socket.io-client";
+import { SocketFacade } from "../socket/SocketFacade";
 import { toBase64 } from "../canvasEvent/toBase64";
 import { bufferSizeState, wholeState } from "../state";
 
-export async function chatWorklet(stream: MediaStream, socket: Socket) {
+export async function chatWorklet(stream: MediaStream, socket: SocketFacade) {
   await contextState.audioContext.audioWorklet.addModule("chat-processor.js");
   const source = contextState.audioContext.createMediaStreamSource(stream);
   audioWorkletState.chat.audioWorklet = new AudioWorkletNode(

@@ -1,5 +1,3 @@
-import SocketIO from "socket.io";
-
 // import { putString } from './putString'
 import { portamentChange } from "./portamentChange";
 import { sampleRateChange } from "./sampleRateChange";

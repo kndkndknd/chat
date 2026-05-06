@@ -6,24 +6,24 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: "./html/index.html",
-        "chat-processor": path.resolve(
-          __dirname,
-          "./src/audioWorklet/chat-processor.js",
-        ),
-        "whitenoise-processor": path.resolve(
-          __dirname,
-          "./src/audioWorklet/whitenoise-processor.js",
-        )
+        // "chat-processor": path.resolve(
+        //   __dirname,
+        //   "./src/audioWorklet/chat-processor.js",
+        // ),
+        // "whitenoise-processor": path.resolve(
+        //   __dirname,
+        //   "./src/audioWorklet/whitenoise-processor.js",
+        // )
       },
       output: {
         dir: "../backend/static",
         entryFileNames: (chunk) => {
-          if (chunk.name === "chat-processor") {
-            return "chat-processor.js";
-          }
-          if (chunk.name === "whitenoise-processor") {
-            return "whitenoise-processor.js";
-          }
+          // if (chunk.name === "chat-processor") {
+          //   return "chat-processor.js";
+          // }
+          // if (chunk.name === "whitenoise-processor") {
+          //   return "whitenoise-processor.js";
+          // }
           return "[name].js";
         },
         // entryFileNames: "[name].js",

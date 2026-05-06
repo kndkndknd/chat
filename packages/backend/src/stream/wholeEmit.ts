@@ -1,4 +1,3 @@
-import SocketIO from "socket.io";
 import { wholeParams } from "../data/list/wholeParams";
 import { streamList, streamsRedis, chatsRedis } from "../data";
 import { wholeCmdOption } from "../../../../types";

@@ -42,18 +42,16 @@ import { scheduleSplitCmd } from "../../schedule/scheduleSplitCmd";
 import { getScheduleFromSplitSpace } from "../../schedule/getScheduleFromSplitSpace";
 import { deleteLog } from "../../logging/deleteLog";
 import { getTypeArr } from "./getTypeArr";
+
+import { initRedis } from "../../redis/initRedis";
+
 import { splitRandomRate } from "./splitRandomRate";
 import { splitModulation } from "./splitModulation";
 import { splitArduino } from "./splitArduino";
-import { quantizeObjType } from "../../../../../types";
 import { splitVoskCmd } from "./splitVoskCmd";
 import { splitRotate } from "./splitRotate";
 import { splitToPostgres } from "./splitToPostgres";
 
-import { millisecondsPerBar } from "../../../../util/bpmCalc";
-import { joinOrLeave, offerReq, answerReq } from "../../webRTC";
-import { getStream, decodeAudio } from "../../stream/toPostgres/getStream";
-import { pushStateStream } from "../../stream/pushStateStream";
 
 export const splitSpace = async (
   stringArr: Array<string>,
@@ -368,6 +366,11 @@ export const splitSpace = async (
     stringArr.length === 3
   ) {
     recordAsOtherEmit(stringArr[2]);
+  } else if (stringArr[0] === "REDIS") {
+    if (stringArr[1] === "CLEAR") {
+      await initRedis();
+      stringEmit("REDIS CLEARED");
+    }
   } else if (stringArr[0] === "ROTATE") {
     splitRotate(stringArr.splice(1));
   } else if (stringArr[0] === "SCENARIO" || stringArr[0] === "START") {

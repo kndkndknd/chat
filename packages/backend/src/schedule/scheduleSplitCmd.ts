@@ -1,6 +1,5 @@
 import { voiceEmit } from "../cmd/voiceEmit";
 import { splitTimerCmd } from "./splitTimerCmd";
-import SocketIO from "socket.io";
 
 export const scheduleSplitCmd = async (
   stringArr: string[],

@@ -3,10 +3,9 @@ import { default as Express } from "express";
 import * as path from "path";
 import { default as favicon } from "serve-favicon";
 import * as Https from "https";
-import { ioServer } from "./socket/ioServer";
+import { wsServer } from "./socket/wsServer";
 
 import { networkInterfaces } from "os";
-import SocketIO from "socket.io";
 
 
 import { cmdLogging } from "./logging/cmdLogging";
@@ -14,13 +13,6 @@ import { initStreams } from "./data";
 import { loadAllStates } from "./state";
 import { ioState } from "./state/states/ioState";
 import { countersRedis } from "./redis/streamsRedis";
-// import { io as socketIoClient, Socket } from "socket.io-client";
-
-// const socketClient: Socket = socketIoClient("https://localhost:8080/socket.io");
-
-// socketClient.on("connect", () => {
-//   console.log("Connected to server" + socketClient.id);
-// });
 
 // import { cors } from "cors";
 // const corsOptions = {
@@ -77,7 +69,7 @@ function getIpAddress() {
 const host = getIpAddress();
 console.log(`Server listening on ${host}:${port}`);
 
-const io: SocketIO.Server = ioServer(httpserver);
+wsServer(httpserver);
 
 app.get("/", function (req, res, next) {
   try {
