@@ -8,6 +8,7 @@ import {
   MediaStreamTrack,
   RtpPacket,
 } from "werift";
+import { ioState } from "../state/states/ioState";
 
 const ROOM_ID = "chat sync";
 const CHAT_SYNC_URL = process.env.CHAT_SYNC_URL ?? "ws://localhost:3000";
@@ -237,8 +238,12 @@ function buildPeerConnection(): RTCPeerConnection {
         transceiver.receiver.sendRtcpPLI(track.ssrc!);
       }
     });
-    track.onReceiveRtp.subscribe((_rtp: RtpPacket) => {
-      // TODO: forward received RTP to chat_itsuki clients
+    track.onReceiveRtp.subscribe((rtp: RtpPacket) => {
+      ioState?.io.emit("rtpFromServer", {
+        source: "RTP",
+        kind: track.kind,
+        rtp: rtp.serialize().buffer,
+      });
     });
   };
 
