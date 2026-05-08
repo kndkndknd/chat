@@ -1,6 +1,6 @@
 export const audioWorkletState = {
   chat: {
-    audioWorklet: null as AudioWorkletNode | null,
+    audioWorklet: null as AudioWorkletNode | ScriptProcessorNode | null,
     length: 8192,
     flag: {
       CHAT: false,
@@ -11,6 +11,6 @@ export const audioWorkletState = {
     },
   },
   whitenoise: {
-    audioWorklet: null as AudioWorkletNode | null,
+    audioWorklet: null as AudioWorkletNode | ScriptProcessorNode | null,
   },
 };

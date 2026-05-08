@@ -6,6 +6,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: "./html/index.html",
+        snowleopard: "./html/snowleopard.html",
         // "chat-processor": path.resolve(
         //   __dirname,
         //   "./src/audioWorklet/chat-processor.js",

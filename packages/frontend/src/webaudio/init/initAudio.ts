@@ -13,7 +13,9 @@ import { initWhitenoiseWorklet } from "../../audioWorklet/whitenoiseWorklet";
 const chatGainVal = 1.5;
 const glitchGainVal = 1.5;
 
-export const initAudio = async () => {
+export const initAudio = async (
+  initWhitenoise: () => Promise<void> = initWhitenoiseWorklet,
+) => {
 
   if(window.location.pathname.includes("left")) {
     stereoPannerState.masterPannerParam = -1;
@@ -53,7 +55,7 @@ export const initAudio = async () => {
   gainState.feedbackGain.gain.setValueAtTime(0, 0);
   //whitenoise
   // oscState.whitenoiseOsc = contextState.audioContext.createOscillator();
-  await initWhitenoiseWorklet();
+  await initWhitenoise();
   gainState.whitenoiseGain = await contextState.audioContext.createGain();
   await gainState.whitenoiseGain.gain.setValueAtTime(0, 0);
   await audioWorkletState.whitenoise.audioWorklet.connect(

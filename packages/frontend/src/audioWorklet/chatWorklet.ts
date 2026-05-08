@@ -75,8 +75,9 @@ export async function chatWorklet(stream: MediaStream, socket: SocketFacade) {
 // 動的に bufferLengthState を変更したい場合
 export function setBufferLengthState(next: number) {
   audioWorkletState.chat.length = Math.max(1, next | 0); // 1以上の整数に
-  if (audioWorkletState.chat.audioWorklet) {
-    audioWorkletState.chat.audioWorklet.port.postMessage({
+  const node = audioWorkletState.chat.audioWorklet;
+  if (node && "port" in node) {
+    node.port.postMessage({
       type: "updateBufferLengthState",
       payload: audioWorkletState.chat.length,
     });
