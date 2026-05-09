@@ -109,8 +109,14 @@ export type clientStateType = {
       };
       self: boolean;
       snowLeopard: boolean;
+      number: number;
+      facedetection: boolean;
+      hanged: boolean;
     };
   };
+  arduinoClient?: {
+    [key: string]: boolean;
+  }
   cmdClient: string[];
   streamClient: string[];
   sinewaveClient: string[];

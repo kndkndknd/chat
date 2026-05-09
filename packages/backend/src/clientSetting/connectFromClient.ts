@@ -15,6 +15,75 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
     console.log("nosound client connected");
     return;
   }
+
+  // 20260530-0610 クライアントのURLパスに応じた初期設定
+  if(data.urlPathName === "/1" || data.urlPathName === "/2" || data.urlPathName === "/3"){
+    // 1: Macbook Pro, facedetection client(20260530-0610)
+    Object.keys(clientState.client).forEach((id) => {
+      if(clientState.client[id].number === Number(data.urlPathName.slice(-1))){
+        clientState.client[id].number = Object.keys(clientState.client).length;
+      }
+    });
+
+    const facedetection = data.urlPathName === "/1" || data.urlPathName === "/2";
+    const hanged = data.urlPathName === "/3";
+
+    clientState.client[id] = {
+      ipAddress,
+      stream: true,
+      urlPathName: data.urlPathName,
+      projection: false,
+      mobile: data.isMobile,
+      position: {
+        top: 0,
+        left: 0,
+        width: data.width,
+        height: data.height,
+      },
+      self: false,
+      snowLeopard: false,
+      number: 1,
+      facedetection: facedetection,
+      hanged: hanged,
+    };
+    
+    if (!streamState.timelapse) streamState.timelapse = true;
+
+    clientState.cmdClient.push(id);
+    clientState.streamClient.push(id);
+
+    if (bpmState[id] === undefined) {
+      bpmState[id] = {
+        METRONOME: {
+          bpm: bpmStateDefault.bpm,
+          beat: bpmStateDefault.beat,
+          flag: bpmStateDefault.metronomeFlag,
+        },
+        MODULATION: {
+          bpm: bpmStateDefault.bpm,
+          beat: bpmStateDefault.beat,
+          flag: bpmStateDefault.modulationFlag,
+        },
+        TORCH: {
+          bpm: bpmStateDefault.bpm,
+          flag: bpmStateDefault.torchBlinkFlag,
+          type: bpmStateDefault.torchType,
+        },
+        stream: {},
+      };
+      ["CHAT", ...streamList].forEach((stream) => {
+        bpmState[id].stream[stream] = {
+          bpm: bpmStateDefault.bpm,
+          beat: bpmStateDefault.beat,
+          gridFlag: bpmStateDefault.gridFlag,
+          quantizeFlag: bpmStateDefault.quantizeFlag,
+          latency: bpmStateDefault.latency,
+        };
+      });
+    }
+    return true;    
+  }
+
   let sockId = id;
   console.log("ipAddress: " + ipAddress);
   console.log("urlPathName", data.urlPathName);
@@ -24,14 +93,17 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
   }
   const snowLeopard = data.urlPathName.includes("snowleopard") ? true : false;
   if (data.clientMode === "client") {
-    if (!streamState.timelapse) streamState.timelapse = true;
     console.log(
       "connectFromClient data:" +
         data +
         ", id:" +
         sockId
     );
-    if (!Object.keys(clientState.client).includes(sockId))
+
+    if (!streamState.timelapse) streamState.timelapse = true;
+
+    if (!Object.keys(clientState.client).includes(sockId)) {
+      const number = Object.keys(clientState.client).length;
       if (data.urlPathName.includes("project")) {
         clientState.client[sockId] = {
           ipAddress,
@@ -47,6 +119,9 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
           },
           self: false,
           snowLeopard,
+          number,
+          facedetection: data.urlPathName.includes("face") ? true : false,
+          hanged: data.urlPathName.includes("hanged") ? true : false,
         };
       } else {
         // const floatingPosition = {
@@ -66,8 +141,16 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
           mobile: data.isMobile,
           self: false,
           snowLeopard,
+          number,
+          facedetection: data.urlPathName.includes("face") ? true : false,
+          hanged: data.urlPathName.includes("hanged") ? true : false,
         };
       }
+      // numberの再設定
+      Object.keys(clientState.client).forEach((id) => {
+        clientState.client[id].number = Object.keys(clientState.client).indexOf(id);
+      });
+    }
     if (!data.urlPathName.includes("exc")) {
       if (!Object.keys(clientState.cmdClient).includes(sockId)) {
         clientState.cmdClient.push(sockId);
@@ -144,7 +227,14 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
       mobile: data.isMobile,
       self: false,
       snowLeopard,
+      number: Object.keys(clientState.client).length,
+      facedetection: false,
+      hanged: false,
     };
+    return true;
+  } else if (data.clientMode === "arduinoClient") {
+    console.log(sockId + " is arduinoClient");
+    clientState.arduinoClient[sockId] = true;
     return true;
   }
 };

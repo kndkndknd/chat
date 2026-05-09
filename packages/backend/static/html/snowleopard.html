@@ -3,18 +3,15 @@
   <head>
     <link rel="stylesheet" type="text/css" href="./client.css" media="all" />
     <title>knd</title>
+    <script type="module" crossorigin src="/snowleopard.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/preload-helper-JxYoXv_h.js">
   </head>
   <body id="body">
     <div id="wrapper">
-      <video id="hls" style="display: none"></video>
       <video id="video" style="display: none"></video>
-      <!-- <video id='video'></video> -->
-      <!-- <video id='video' controls autoplay style='display:none;'></video> -->
-      <!-- <video id='cinema' src='media/CINEMA.m4v' style='display:none;'></video> -->
-      <!-- <video id='video'></video> -->
       <canvas id="cnvs"> canvas not applied. </canvas>
       <canvas id="bckcnvs"> canvas not applied. </canvas>
+      <video id="remoteVideo"></video>
     </div>
-    <script src="/snowLeopardClient.js"></script>
   </body>
 </html>

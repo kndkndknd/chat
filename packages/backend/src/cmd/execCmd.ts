@@ -48,7 +48,8 @@ export const execCmd = async (
     Object.keys(clientState.client).forEach((id, index) => {
       console.log(id);
       ioState?.io.to(id).emit("stringsFromServer", {
-        strings: String(index),
+        // strings: String(index),
+        strings: clientState.client[id].number !== undefined ? String(clientState.client[id].number) : String(index),
         timeout: true,
       });
       //putString(io, String(index), state)
