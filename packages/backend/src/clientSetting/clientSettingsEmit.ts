@@ -4,7 +4,7 @@ import { personDetectState } from "../state/states/personDetectState";
 
 const PERSON_DETECT_TIMEOUT_MS = 15 * 60 * 1000;
 
-const buildPayload = (id: string) => {
+export const buildPayload = (id: string) => {
   const c = clientState.client[id];
   if (!c) return null;
   return {

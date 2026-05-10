@@ -1,6 +1,6 @@
 type Handler = (data: any) => void;
 
-const deserialize = (raw: string): { type: string; data: unknown } => {
+export const deserialize = (raw: string): { type: string; data: unknown } => {
   return JSON.parse(raw, (_key, value) => {
     if (value && typeof value === "object" && value.__type === "ArrayBuffer") {
       const binary = atob(value.data as string);
@@ -14,7 +14,7 @@ const deserialize = (raw: string): { type: string; data: unknown } => {
   });
 };
 
-const serialize = (event: string, data: unknown): string => {
+export const serialize = (event: string, data: unknown): string => {
   return JSON.stringify({ type: event, data }, (_key, value) => {
     if (value instanceof ArrayBuffer) {
       const bytes = new Uint8Array(value);

@@ -11,7 +11,7 @@ export const bass = (flag: boolean, gain: number) => {
   }
 };
 
-const setBassNote = () => {
+export const setBassNote = () => {
   let random = Math.random();
   // let note = ''
   let freq = 55;

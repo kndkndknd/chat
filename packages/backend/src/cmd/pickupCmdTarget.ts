@@ -10,7 +10,7 @@ interface Cmd {
   gain?: number;
 }
 
-const commonPickupCmdTarget = (
+export const commonPickupCmdTarget = (
   cmdString: string,
   clientArr: string[],
   option?: {

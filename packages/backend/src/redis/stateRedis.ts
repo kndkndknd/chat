@@ -2,7 +2,7 @@ import { redis } from "./client";
 
 type OnChange = () => void;
 
-function makeDeepProxy<T extends object>(obj: T, onChange: OnChange): T {
+export function makeDeepProxy<T extends object>(obj: T, onChange: OnChange): T {
   return new Proxy(obj, {
     get(target, prop, receiver) {
       const val = Reflect.get(target, prop, receiver);
@@ -31,7 +31,7 @@ function makeDeepProxy<T extends object>(obj: T, onChange: OnChange): T {
   });
 }
 
-function debounce(fn: () => void, ms: number): () => void {
+export function debounce(fn: () => void, ms: number): () => void {
   let t: ReturnType<typeof setTimeout> | null = null;
   return () => {
     if (t !== null) clearTimeout(t);

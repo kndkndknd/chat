@@ -153,8 +153,6 @@ export const receiveEnter = async (
       wholeEmit();
       // stringEmit(io, "WHOLE CMD", true);
     }
-  } else if (strings === "REPLAY") {
-    replay();
   } else {
     voiceEmit(strings, id);
   }

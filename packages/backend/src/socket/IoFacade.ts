@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import crypto from "crypto";
 
-const serializeMessage = (event: string, data: unknown): string => {
+export const serializeMessage = (event: string, data: unknown): string => {
   return JSON.stringify({ type: event, data }, (_key, value) => {
     if (value instanceof ArrayBuffer) {
       return { __type: "ArrayBuffer", data: Buffer.from(value).toString("base64") };

@@ -9,9 +9,12 @@ import {
   RtpPacket,
 } from "werift";
 import { ioState } from "../state/states/ioState";
+import dotenv from "dotenv";
+import * as path from "path";
+dotenv.config({ path: path.resolve(__dirname, "../../../../.env") });
 
 const ROOM_ID = "chat sync";
-const CHAT_SYNC_URL = process.env.CHAT_SYNC_URL ?? "ws://localhost:3000";
+const CHAT_SYNC_URL = process.env.CHAT_SYNC_URL ?? "ws://localhost:3000/ws";
 const RTP_VIDEO_PORT = 5004;
 const RTP_AUDIO_PORT = 5006;
 // Payload types must match what ffmpeg outputs for VP8/Opus RTP
@@ -42,6 +45,7 @@ export function startWebRTCSession(): void {
     console.log("[werift] session already active");
     return;
   }
+  console.log(`CHat Sync URL: ${CHAT_SYNC_URL}`);
   startFfmpegPipeline();
   connectToChatSync();
 }

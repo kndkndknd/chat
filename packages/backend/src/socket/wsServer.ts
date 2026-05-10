@@ -19,7 +19,7 @@ import { IoFacade } from "./IoFacade";
 
 let strings = "";
 
-const deserialize = (raw: string): { type: string; data: unknown } => {
+export const deserialize = (raw: string): { type: string; data: unknown } => {
   return JSON.parse(raw, (_key, value) => {
     if (value && typeof value === "object" && value.__type === "ArrayBuffer") {
       return Buffer.from(value.data, "base64").buffer;

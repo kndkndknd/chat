@@ -3,14 +3,14 @@ import { buffStateType } from "../../../../types";
 
 const KEYS_SET = "streams:keys";
 
-function buffKey(name: string) {
+export function buffKey(name: string) {
   return `streams:${name}:buff`;
 }
-function indexKey(name: string) {
+export function indexKey(name: string) {
   return `streams:${name}:index`;
 }
 
-function serializeStream(buff: buffStateType): string {
+export function serializeStream(buff: buffStateType): string {
   const audioB64 = Buffer.from(buff.audio).toString("base64");
   return JSON.stringify({
     source: buff.source,
@@ -25,7 +25,7 @@ function serializeStream(buff: buffStateType): string {
   });
 }
 
-function deserializeStream(raw: string): buffStateType {
+export function deserializeStream(raw: string): buffStateType {
   const obj = JSON.parse(raw);
   const buf = Buffer.from(obj.audio, "base64");
   return {
@@ -183,7 +183,7 @@ export const countersRedis = {
   },
 };
 
-function deserializeChat(raw: string): buffStateType {
+export function deserializeChat(raw: string): buffStateType {
   const obj = JSON.parse(raw);
   const buf = Buffer.from(obj.audio, "base64");
   return {
