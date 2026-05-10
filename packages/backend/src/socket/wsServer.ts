@@ -10,6 +10,7 @@ import { streamEmit } from "../stream/streamEmit";
 import { ioState } from "../state/states/ioState";
 import { stringEmit } from "./ioEmit";
 import { connectFromClient } from "../clientSetting/connectFromClient";
+import { emitClientSettings } from "../clientSetting/clientSettingsEmit";
 import { countersRedis, streamsRedis } from "../redis/streamsRedis";
 import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
 import { feedWebMChunk } from "../webRTC/weriftClient";
@@ -60,6 +61,7 @@ export const wsServer = (
           const result = connectFromClient(data, id, ipAddress);
           if (result) {
             ws.send(JSON.stringify({ type: "debugFromServer" }));
+            emitClientSettings(id);
           } else {
             console.log("connectFromClient failed");
           }

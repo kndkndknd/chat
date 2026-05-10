@@ -11,6 +11,7 @@ let modelsLoaded = false;
 let lastDetectedAt: number | null = null;
 
 export async function initFaceDetection(): Promise<void> {
+  if (active) return;
   if (!modelsLoaded) {
     await Promise.all([
       faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
@@ -30,6 +31,14 @@ export async function initFaceDetection(): Promise<void> {
 
   active = true;
   detectLoop();
+}
+
+export function stopFaceDetection(): void {
+  active = false;
+  if (overlayCanvas) {
+    const ctx = overlayCanvas.getContext("2d");
+    ctx?.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+  }
 }
 
 async function detectLoop(): Promise<void> {

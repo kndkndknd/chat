@@ -24,6 +24,7 @@ import { chatReq, recordReqFromServer, streamPlay } from "./stream";
 import { gainChange } from "./webaudio";
 import { wholeCmd } from "./cmd/wholeCmd";
 import { startChunkedRecording } from "./recording";
+import { initFaceDetection, stopFaceDetection } from "./faceApi";
 
 
 export const socket = (): void => {
@@ -359,6 +360,19 @@ export const socket = (): void => {
   socketState.socket.on("personDetectFromServer", () => {
     flickering();
   });
+
+  socketState.socket.on(
+    "clientSettingsFromServer",
+    (data: { facedetection: boolean; hanged: boolean }) => {
+      if (data?.facedetection) {
+        initFaceDetection().catch((e) =>
+          console.error("faceDetection init error:", e),
+        );
+      } else {
+        stopFaceDetection();
+      }
+    },
+  );
 
   // disconnect時、1秒後再接続
   socketState.socket.on("disconnect", () => {

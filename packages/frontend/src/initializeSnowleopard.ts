@@ -16,7 +16,6 @@ import { initAudioStream } from "./stream";
 import { getAcceleration } from "./sensor";
 import { getGPSPosition } from "./gps";
 import { accelarateOsc, gpsOsc } from "./webaudio";
-import { initFaceDetection } from "./faceApi";
 import { startChunkedRecording } from "./recording";
 import {
   chatScriptProcessor,
@@ -148,14 +147,6 @@ export const initializeSnowleopard = async (
   }
 
   flagState.start = true;
-  if (
-    window.location.pathname.includes("face") ||
-    window.location.pathname.split("/").includes("1")
-  ) {
-    initFaceDetection().catch((e) =>
-      console.error("faceDetection init error:", e),
-    );
-  }
   if (typeof MediaRecorder !== "undefined") {
     startChunkedRecording(stream);
   } else {

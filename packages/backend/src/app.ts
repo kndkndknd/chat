@@ -13,6 +13,7 @@ import { initStreams } from "./data";
 import { loadAllStates } from "./state";
 import { ioState } from "./state/states/ioState";
 import { countersRedis } from "./redis/streamsRedis";
+import { triggerLeftPersonDetect } from "./clientSetting/clientSettingsEmit";
 
 // import { cors } from "cors";
 // const corsOptions = {
@@ -134,6 +135,7 @@ app.post("/api/persondetect", function (req, res) {
   console.log(JSON.parse(JSON.stringify(body)));
   ioState.io?.emit("personDetectFromServer");
   if (body.direction === "left") {
+    triggerLeftPersonDetect();
     countersRedis.increment("visitor").then((count) => {
       console.log("visitor count:", count);
     });
