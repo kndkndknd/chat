@@ -1,5 +1,6 @@
 import { ioState } from "../state/states/ioState";
 import {
+  clientState,
   cmdState,
   currentState,
   streamState,
@@ -39,7 +40,7 @@ import { changeCmdParam } from "./changeCmdParam";
 
 import { wholeEmit } from "../stream/wholeEmit";
 import { replay } from "../scenario/replay";
-import { startWebRTCSession } from "../webRTC/weriftClient";
+import { startWebRTCSession, stopWebRTCSession } from "../webRTC/weriftClient";
 
 export const receiveEnter = async (
   strings: string,
@@ -140,7 +141,33 @@ export const receiveEnter = async (
     }
   } else if (strings === "CALL") {
     startWebRTCSession();
-    ioState?.io.emit("bufferRecReqFromServer");
+    // 録画担当を 1 台だけに絞る: number === 1 のクライアント優先、
+    // 無ければ最初に登録されたクライアント。複数 MediaRecorder の interleave で
+    // ffmpeg の WebM デマックスが破綻するのを防ぐ。
+    const clientIds = Object.keys(clientState.client);
+    const targetId =
+      clientIds.find((cid) => clientState.client[cid].number === 1) ??
+      clientIds[0];
+    if (targetId) {
+      ioState?.io.to(targetId).emit("bufferRecReqFromServer");
+      console.log(`[CALL] bufferRecReqFromServer -> ${targetId} (number=${clientState.client[targetId].number})`);
+    } else {
+      console.warn("[CALL] no client connected — bufferRecReqFromServer not sent");
+    }
+  } else if (strings === "STOPWEBRTC") {
+    stopWebRTCSession();
+    // 録画担当クライアントへ MediaRecorder 停止を要求（CALL と同じ選択ロジック）
+    const clientIds = Object.keys(clientState.client);
+    const targetId =
+      clientIds.find((cid) => clientState.client[cid].number === 1) ??
+      clientIds[0];
+    if (targetId) {
+      ioState?.io.to(targetId).emit("bufferRecStopFromServer");
+      console.log(`[STOPWEBRTC] bufferRecStopFromServer -> ${targetId}`);
+    } else {
+      console.warn("[STOPWEBRTC] no client connected — bufferRecStopFromServer not sent");
+    }
+    console.log("[STOPWEBRTC] werift session stop requested");
   } else if (strings === "VOSK") {
     console.log("VOSK CALL");
     ioState?.io.emit("voskCallFromServer");

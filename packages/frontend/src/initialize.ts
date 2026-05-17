@@ -21,7 +21,6 @@ import { accelarateOsc, gpsOsc } from "./webaudio";
 import { chatWorklet } from "./audioWorklet/chatWorklet";
 // import { initRecordButton } from "./recording";
 // import { toggleRecording } from "./recording";
-import { startChunkedRecording } from "./recording";
 
 export const initialize = async (
   socket: SocketFacade,
@@ -179,7 +178,10 @@ export const initialize = async (
 
     flagState.start = true;
     // initRecordButton(stream);
-    startChunkedRecording(stream);
+    // 注: ここで startChunkedRecording を呼ぶと MediaRecorder が CALL 前から
+    //     動き出し、CALL 時点で MediaRecorder は mid-stream (EBML 無し) になる。
+    //     ffmpeg が EBML を見つけられず probe 失敗するため、MediaRecorder の起動は
+    //     bufferRecReqFromServer ハンドラ (CALL 経由) に任せる。
     // streamFlag.timelapse = true;
     timelapseState.flag = true;
     // timelapseState.trriger = false;

@@ -35,6 +35,13 @@ export class SocketFacade {
   private handlers = new Map<string, Handler[]>();
   private url: string;
 
+  // 再接続制御
+  private shouldReconnect = true;
+  private reconnectAttempt = 0;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private static readonly RECONNECT_BASE_MS = 1000;
+  private static readonly RECONNECT_MAX_MS = 30_000;
+
   constructor(url: string) {
     this.url = url;
     this._connect();
@@ -45,6 +52,7 @@ export class SocketFacade {
 
     this.ws.addEventListener("open", () => {
       console.log("WebSocket connected");
+      this.reconnectAttempt = 0;
     });
 
     this.ws.addEventListener("message", (event: MessageEvent) => {
@@ -67,11 +75,30 @@ export class SocketFacade {
 
     this.ws.addEventListener("close", () => {
       (this.handlers.get("disconnect") ?? []).forEach((fn) => fn(undefined));
+      this._scheduleReconnect();
     });
 
     this.ws.addEventListener("error", (event) => {
       console.error("WebSocket error", event);
+      // close も発火するので再接続は close 側に任せる
     });
+  }
+
+  private _scheduleReconnect(): void {
+    if (!this.shouldReconnect) return;
+    if (this.reconnectTimer !== null) return;
+
+    const delay = Math.min(
+      SocketFacade.RECONNECT_BASE_MS * 2 ** this.reconnectAttempt,
+      SocketFacade.RECONNECT_MAX_MS,
+    );
+    this.reconnectAttempt++;
+    console.log(`WebSocket reconnecting in ${delay}ms (attempt ${this.reconnectAttempt})`);
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      if (!this.shouldReconnect) return;
+      this._connect();
+    }, delay);
   }
 
   on(event: string, handler: Handler): void {
@@ -87,9 +114,27 @@ export class SocketFacade {
     }
   }
 
+  // 互換のため残置。明示的な再接続トリガとして利用可能だが、
+  // 通常は close 後に SocketFacade が自動再接続するため呼ぶ必要はない。
   connect(): void {
+    this.shouldReconnect = true;
     if (!this.ws || this.ws.readyState === WebSocket.CLOSED || this.ws.readyState === WebSocket.CLOSING) {
+      // バックオフ中なら待たずに即試行
+      if (this.reconnectTimer !== null) {
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
+      }
       this._connect();
     }
+  }
+
+  // 明示的な切断（自動再接続を抑止する）
+  close(): void {
+    this.shouldReconnect = false;
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this.ws?.close();
   }
 }

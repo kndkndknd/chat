@@ -90,8 +90,9 @@ document.addEventListener("keydown", (e) => {
 
 socket();
 
-// video2 for buffer
-webRtcState.videoPlayer = <HTMLVideoElement>document.getElementById("video2");
+// remoteVideo / remoteAudio: WebRTC で受信したメディアを MSE で再生する <video>/<audio>
+webRtcState.videoPlayer = <HTMLVideoElement>document.getElementById("remoteVideo");
+webRtcState.audioPlayer = <HTMLAudioElement>document.getElementById("remoteAudio");
 
 textPrint("click screen");
 

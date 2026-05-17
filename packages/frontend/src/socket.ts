@@ -23,8 +23,16 @@ import { quantizeFromServer } from "./quantize/quantizeFromServer";
 import { chatReq, recordReqFromServer, streamPlay } from "./stream";
 import { gainChange } from "./webaudio";
 import { wholeCmd } from "./cmd/wholeCmd";
-import { startChunkedRecording } from "./recording";
+import { startChunkedRecording, stopChunkedRecording } from "./recording";
 import { initFaceDetection, stopFaceDetection } from "./faceApi";
+import {
+  attachMsePlayback,
+  appendMediaChunk,
+  teardownMsePlayback,
+  attachMseAudioPlayback,
+  appendAudioChunk,
+  teardownMseAudioPlayback,
+} from "./webRTC/msePlayback";
 
 
 export const socket = (): void => {
@@ -311,6 +319,35 @@ export const socket = (): void => {
     }
   });
 
+  socketState.socket.on("bufferRecStopFromServer", () => {
+    stopChunkedRecording();
+    // 受信側 MSE もリセット（次回 CALL の init segment を取り直すため）
+    teardownMsePlayback();
+    teardownMseAudioPlayback();
+  });
+
+  // backend の recv pipeline から流れてくる WebM チャンクを MSE で再生
+  socketState.socket.on("mediaChunkFromServer", (data: ArrayBuffer) => {
+    if (webRtcState.videoPlayer) {
+      attachMsePlayback(webRtcState.videoPlayer);
+    }
+    appendMediaChunk(data);
+  });
+
+  socketState.socket.on("audioChunkFromServer", (data: ArrayBuffer) => {
+    if (webRtcState.audioPlayer) {
+      attachMseAudioPlayback(webRtcState.audioPlayer);
+    }
+    appendAudioChunk(data);
+  });
+
+  // ピア再接続などで recv パイプラインが再起動するとき、新しい init segment を
+  // 受け取れるよう MSE を一度作り直す
+  socketState.socket.on("mediaResetFromServer", () => {
+    teardownMsePlayback();
+    teardownMseAudioPlayback();
+  });
+
   socketState.socket.on("bufferFromServer", (data) => {
     const uint8Array = new Uint8Array(data);
     const blob = new Blob([uint8Array]);
@@ -374,11 +411,8 @@ export const socket = (): void => {
     },
   );
 
-  // disconnect時、1秒後再接続
+  // 切断のみ通知。再接続は SocketFacade が指数バックオフで自動実施する。
   socketState.socket.on("disconnect", () => {
     console.log("disconnect");
-    setTimeout(() => {
-      socketState.socket.connect();
-    }, 1000);
   });
 };

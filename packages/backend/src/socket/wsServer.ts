@@ -22,7 +22,12 @@ let strings = "";
 export const deserialize = (raw: string): { type: string; data: unknown } => {
   return JSON.parse(raw, (_key, value) => {
     if (value && typeof value === "object" && value.__type === "ArrayBuffer") {
-      return Buffer.from(value.data, "base64").buffer;
+      const buf = Buffer.from(value.data, "base64");
+      // Buffer.from(string, "base64") は短いデータで Node の内部プール
+      // (Buffer.poolSize=8192) からスライスを返すことがある。.buffer をそのまま
+      // 返すとプール全体 (8192 バイト) が露出し、先頭に他バッファの残骸が
+      // 混入する。実データの範囲だけ切り出して新しい ArrayBuffer を返す。
+      return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
     }
     return value;
   });

@@ -184,7 +184,20 @@ socket.io-client の `Socket` クラスと互換のインターフェースを�
 | `handlers: Map<string, Handler[]>` | イベント名 → ハンドラ関数の登録テーブル |
 | `on(event, handler)` | サーバーからのイベントハンドラを登録 |
 | `emit(event, data?)` | サーバーへメッセージを送信 |
-| `connect()` | 切断後の再接続（CLOSED/CLOSING 状態のときのみ実行） |
+| `connect()` | 即時再接続（バックオフ中の待機をキャンセルして再試行）。通常は自動再接続に任せる |
+| `close()` | 明示的な切断。自動再接続を抑止する |
+
+**自動再接続:**
+
+`close` イベントを検知すると `_scheduleReconnect()` が指数バックオフで再接続する。
+
+| 項目 | 値 |
+|---|---|
+| 初回ディレイ | 1000ms |
+| 上限 | 30,000ms (`1s → 2s → 4s → 8s → 16s → 30s → 30s …`) |
+| 重複タイマー防止 | `reconnectTimer !== null` でガード |
+| 接続成功時 | `reconnectAttempt = 0` にリセット |
+| `close()` 呼び出し時 | `shouldReconnect = false` にして再接続を抑止 |
 
 **`_connect()` の動作:**
 
@@ -355,8 +368,8 @@ WebSocket 切断
   │    ├─ streamClient / cmdClient から除去
   │    └─ bpmState[id] 削除
   │
-  └─ フロント: "disconnect" ハンドラ
-       └─ setTimeout 1秒後 → socketState.socket.connect()
+  └─ フロント: SocketFacade._scheduleReconnect()
+       └─ 指数バックオフ後 → _connect()
             └─ new WebSocket(url)  ← 再接続
                  │
                  ▼

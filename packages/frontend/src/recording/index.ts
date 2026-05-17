@@ -72,6 +72,12 @@ function startRecording(stream: MediaStream): void {
   setButtonState(true);
 }
 
+export function stopChunkedRecording(): void {
+  if (mediaRecorder && mediaRecorder.state === "recording") {
+    mediaRecorder.stop();
+  }
+}
+
 export function startChunkedRecording(stream: MediaStream): void {
   if (mediaRecorder && mediaRecorder.state === "recording") return;
   if (!MediaRecorder.isTypeSupported(MIME_TYPE)) {

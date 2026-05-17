@@ -93,8 +93,9 @@ document.addEventListener("keydown", (e) => {
 
 socket();
 
-// video2 for buffer
+// video2 for buffer / remoteAudio for received audio
 webRtcState.videoPlayer = <HTMLVideoElement>document.getElementById("video2");
+webRtcState.audioPlayer = <HTMLAudioElement>document.getElementById("remoteAudio");
 
 textPrint("click screen");
 

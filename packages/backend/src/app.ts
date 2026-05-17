@@ -51,10 +51,10 @@ app.use(allowCrossDomain);
 //const httpsserver = Https.createServer(options,app).listen(port);
 const options = {
   key: fs.readFileSync(
-    path.join(__dirname, "../../../..", "keys/chat/private.key")
+    path.join(__dirname, "../../../../..", "keys/chat/private.key")
   ),
   cert: fs.readFileSync(
-    path.join(__dirname, "../../../..", "keys/chat/selfsigned.crt")
+    path.join(__dirname, "../../../../..", "keys/chat/selfsigned.crt")
   ),
   passphrase: "chat",
 };
