@@ -135,7 +135,18 @@ export function stopWebRTCSession(): void {
   console.log("[werift] session stopped");
 }
 
-export function feedWebMChunk(chunk: Buffer): void {
+// 現在 MediaRecorder を回している送信元クライアント ID。
+// rotator がローテーションのたびに更新する。null の間はチャンクを破棄して
+// ffmpeg 再起動中の旧 sender の flush 残りで新 pipeline を汚さないようにする。
+let activeSourceClientId: string | null = null;
+
+export function setActiveSourceClientId(id: string | null): void {
+  activeSourceClientId = id;
+}
+
+export function feedWebMChunk(chunk: Buffer, fromId?: string): void {
+  if (activeSourceClientId === null) return;
+  if (fromId !== undefined && fromId !== activeSourceClientId) return;
   if (ffmpegProc?.stdin?.writable) {
     ffmpegProc.stdin.write(chunk);
   }
@@ -143,9 +154,37 @@ export function feedWebMChunk(chunk: Buffer): void {
 
 // ---- ffmpeg pipeline ----
 
+function ensureTracks(): void {
+  if (!videoTrack) videoTrack = new MediaStreamTrack({ kind: "video" });
+  if (!audioTrack) audioTrack = new MediaStreamTrack({ kind: "audio" });
+}
+
 function startFfmpegPipeline(): void {
-  videoTrack = new MediaStreamTrack({ kind: "video" });
-  audioTrack = new MediaStreamTrack({ kind: "audio" });
+  ensureTracks();
+  startFfmpegSubprocess();
+}
+
+export async function restartFfmpegSubprocess(): Promise<void> {
+  await stopFfmpegSubprocess();
+  startFfmpegSubprocess();
+}
+
+function stopFfmpegSubprocess(): Promise<void> {
+  return new Promise((resolve) => {
+    const proc = ffmpegProc;
+    if (!proc) {
+      resolve();
+      return;
+    }
+    // close ハンドラが ffmpegProc / videoUdp / audioUdp を null クリアする
+    proc.once("close", () => resolve());
+    try { proc.stdin?.end(); } catch { /* ignore */ }
+    proc.kill("SIGTERM");
+  });
+}
+
+function startFfmpegSubprocess(): void {
+  if (ffmpegProc) return;
 
   let videoRtpRx = 0;
   let videoRtpErr = 0;

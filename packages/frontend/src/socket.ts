@@ -326,6 +326,12 @@ export const socket = (): void => {
     teardownMseAudioPlayback();
   });
 
+  // カメラローテーション切替用: MediaRecorder だけ止めて MSE はそのまま。
+  // 受信側 (werift recv recorder) は継続しているので、再生は途切れずに続く。
+  socketState.socket.on("recorderSwitchStopFromServer", () => {
+    stopChunkedRecording();
+  });
+
   // backend の recv pipeline から流れてくる WebM チャンクを MSE で再生
   socketState.socket.on("mediaChunkFromServer", (data: ArrayBuffer) => {
     if (webRtcState.videoPlayer) {

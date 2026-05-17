@@ -106,7 +106,7 @@ export const wsServer = (
           break;
 
         case "bufferFromClient":
-          feedWebMChunk(Buffer.from(data as ArrayBuffer));
+          feedWebMChunk(Buffer.from(data as ArrayBuffer), id);
           break;
 
         case "wholeReqFromClient":
