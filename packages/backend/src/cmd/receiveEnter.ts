@@ -68,7 +68,15 @@ export const receiveEnter = async (
   }
   */
 
-  if (
+  if (strings === "CHATASYNC") {
+    const clientIds = Object.keys(clientState.client).sort(
+      (a, b) => clientState.client[a].number - clientState.client[b].number
+    );
+    const messages = ["chat", "(async)"];
+    clientIds.forEach((cid, idx) => {
+      stringEmit(messages[idx] ?? "", false, cid);
+    });
+  } else if (
     strings === "CHAT" ||
     strings === "RECORD" ||
     strings === "REC" ||
