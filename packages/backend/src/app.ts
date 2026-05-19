@@ -14,6 +14,10 @@ import { loadAllStates } from "./state";
 import { ioState } from "./state/states/ioState";
 import { countersRedis } from "./redis/streamsRedis";
 import { triggerLeftPersonDetect } from "./clientSetting/clientSettingsEmit";
+import {
+  nightScheduleState,
+  startNightSchedule,
+} from "./scenario/nightSchedule";
 
 // import { cors } from "cors";
 // const corsOptions = {
@@ -133,6 +137,10 @@ app.post("/api/char", function (req, res, next) {
 app.post("/api/persondetect", function (req, res) {
   const body: { type: string; direction: string } = req.body;
   console.log(JSON.parse(JSON.stringify(body)));
+  if (nightScheduleState.quiet) {
+    res.json({ success: true, skipped: true });
+    return;
+  }
   ioState.io?.emit("personDetectFromServer");
   if (body.direction === "left") {
     triggerLeftPersonDetect();
@@ -152,3 +160,4 @@ loadAllStates()
   .then(() => initStreams())
   .catch((err) => console.error("Redis init error:", err));
 cmdLogging("START");
+startNightSchedule();

@@ -28,6 +28,7 @@ import { previousCmd } from "./previousCmd";
 import { getLiveStream } from "../stream/getLiveStream";
 import { loadScenario } from "../scenario/loadScenario";
 import { execScenario } from "../scenario/execScenario";
+import { scenarioItsuki } from "../scenario/scenarioItsuki";
 import { putCmd } from "./putCmd";
 import { cmdLogging } from "../logging/cmdLogging";
 import { quantizeCmd } from "../stream/quantize";
@@ -122,6 +123,8 @@ export const receiveEnter = async (
   } else if (strings === "START" || strings === "SCENARIO") {
     const scenario = await loadScenario();
     await execScenario(scenario);
+  } else if (strings === "SCENARIOITSUKI") {
+    await scenarioItsuki();
   } else if (id === "scenario") {
     console.log("scenario", strings);
     if (cmdState.VOICE.length > 0) {
