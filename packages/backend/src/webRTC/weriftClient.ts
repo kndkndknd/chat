@@ -144,6 +144,12 @@ export function setActiveSourceClientId(id: string | null): void {
   activeSourceClientId = id;
 }
 
+// WebRTC セッションが起動中か (ffmpeg パイプラインが立っているか) を返す。
+// initialize 経由の冪等起動 (ensureWebRtcSession) で使う。
+export function isWebRtcSessionActive(): boolean {
+  return ffmpegProc !== null;
+}
+
 export function feedWebMChunk(chunk: Buffer, fromId?: string): void {
   if (activeSourceClientId === null) return;
   if (fromId !== undefined && fromId !== activeSourceClientId) return;

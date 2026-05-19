@@ -14,7 +14,12 @@
 
 import { ioState } from "../state/states/ioState";
 import { clientState } from "../state";
-import { restartFfmpegSubprocess, setActiveSourceClientId } from "./weriftClient";
+import {
+  isWebRtcSessionActive,
+  restartFfmpegSubprocess,
+  setActiveSourceClientId,
+  startWebRTCSession,
+} from "./weriftClient";
 
 const ROTATION_INTERVAL_MS = 20_000;
 // ffmpeg 再起動後、新クライアントの MediaRecorder が EBML を流し始めるまでの
@@ -103,6 +108,17 @@ export function startCameraRotation(): void {
     void tick();
   }, ROTATION_INTERVAL_MS);
   console.log(`[rotator] started, interval=${ROTATION_INTERVAL_MS}ms`);
+}
+
+// CALL コマンドと同等の起動を冪等に行うヘルパ。
+// initialize 時にブラウザから呼ばれることを想定。すでに WebRTC セッションが
+// 動いていれば何もしないので、複数クライアントからの同時呼び出しも安全。
+export function ensureWebRtcSession(): void {
+  if (isWebRtcSessionActive()) {
+    return;
+  }
+  startWebRTCSession();
+  startCameraRotation();
 }
 
 export function stopCameraRotation(): void {

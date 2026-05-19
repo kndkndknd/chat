@@ -14,6 +14,7 @@ import { emitClientSettings } from "../clientSetting/clientSettingsEmit";
 import { countersRedis, streamsRedis } from "../redis/streamsRedis";
 import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
 import { feedWebMChunk } from "../webRTC/weriftClient";
+import { ensureWebRtcSession } from "../webRTC/cameraRotator";
 import { receiveWholeReq } from "../stream/receiveWholeReq";
 import { IoFacade } from "./IoFacade";
 
@@ -107,6 +108,12 @@ export const wsServer = (
 
         case "bufferFromClient":
           feedWebMChunk(Buffer.from(data as ArrayBuffer), id);
+          break;
+
+        case "ensureWebRtcFromClient":
+          // initialize 完了時にブラウザから送られる。peer (chat_sync ピア) が
+          // まだ立ち上がっていなければ CALL と同じ手順でセッションを起動する。
+          ensureWebRtcSession();
           break;
 
         case "wholeReqFromClient":

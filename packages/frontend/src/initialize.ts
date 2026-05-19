@@ -116,6 +116,10 @@ export const initialize = async (
       isMobile: sensorState.isMobile,
     });
 
+    // chat_sync ピアがまだ起動していなければ CALL と同等の起動を促す。
+    // backend 側で冪等にチェックされるため複数クライアントから同時に呼ばれても安全。
+    socket.emit("ensureWebRtcFromClient");
+
     if (sensorState.isMobile) {
       sensorState.sensorTimeIntervalId = window.setInterval(() => {
         getAcceleration()
