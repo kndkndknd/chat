@@ -1,4 +1,4 @@
-import { LogType } from "../../../types/log_schedule";
+import { LogType } from "../../../../types";
 import { exchangeRelativeSchedule } from "./exchangeRelativeSchedule";
 import { getTime } from "../../../util/getTime";
 

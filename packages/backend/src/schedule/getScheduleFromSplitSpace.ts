@@ -3,7 +3,7 @@ import { getJsonFromFile } from "./getJsonFromFile";
 // import { exchangeRelativeSchedule } from "./exchangeRelativeSchedule";
 import { getScheduleFromJson } from "./getScheduleFromJson";
 import { execSchedule } from "./execSchedule";
-import { LogType } from "../../../types/log_schedule";
+import { LogType } from "../../../../types";
 
 export const getScheduleFromSplitSpace = async (
   stringArr: string[],

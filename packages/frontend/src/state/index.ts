@@ -8,8 +8,6 @@ import { quantizeState } from "./quantizeState";
 import { socketState } from "./socketState";
 import { streamState } from "./streamState";
 import { timelapseState } from "./timelapseState";
-import { streamState } from "./streamState";
-import { canvasState } from "./canvasState";
 // import { webAudioState } from "./webAudioState";
 
 // webaudio

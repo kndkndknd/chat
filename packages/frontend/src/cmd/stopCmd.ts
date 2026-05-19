@@ -32,8 +32,8 @@ export const stopCmd = (fade: number, except?: string) => {
     streamFlagState[key] = false;
   }
 
-  for (const key in audioWorkletState.flag) {
-    audioWorkletState.flag[key] = false;
+  for (const key in audioWorkletState.chat.flag) {
+    audioWorkletState.chat.flag[key] = false;
   }
   console.log("stopCmd", streamFlagState);
 };
