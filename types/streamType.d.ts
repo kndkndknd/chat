@@ -10,6 +10,7 @@ export type buffStateType = {
   floating?: boolean;
   filter?: filterStateType;
   timestamp?: number;
+  recordIndex?: number;
 };
 
 export type buffArrayType = {

@@ -39,6 +39,9 @@ export async function chatScriptProcessor(
           audio: ab,
           source: streamSource,
           bufferSize: bufferSizeState.bufferSize,
+          ...(streamSource === "PLAYBACK"
+            ? { index: audioWorkletState.chat.recordIndex.PLAYBACK }
+            : {}),
         });
         if (streamSource === "CHAT" || streamSource === "TIMELAPSE") {
           audioWorkletState.chat.flag[streamSource] = false;

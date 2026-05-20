@@ -22,6 +22,7 @@ export function serializeStream(buff: buffStateType): string {
     floating: buff.floating,
     filter: buff.filter,
     timestamp: buff.timestamp,
+    recordIndex: buff.recordIndex,
   });
 }
 
@@ -38,6 +39,7 @@ export function deserializeStream(raw: string): buffStateType {
     floating: obj.floating,
     filter: obj.filter,
     timestamp: obj.timestamp,
+    recordIndex: obj.recordIndex,
   };
 }
 
@@ -58,12 +60,19 @@ export const streamsRedis = {
   },
 
   async push(name: string, buff: buffStateType): Promise<void> {
-    await redis.rpush(buffKey(name), serializeStream(buff));
+    const withTs = buff.timestamp !== undefined ? buff : { ...buff, timestamp: Date.now() };
+    await redis.rpush(buffKey(name), serializeStream(withTs));
   },
 
   async pushBatch(name: string, buffs: buffStateType[]): Promise<void> {
     if (buffs.length === 0) return;
-    await redis.rpush(buffKey(name), ...buffs.map(serializeStream));
+    const now = Date.now();
+    await redis.rpush(
+      buffKey(name),
+      ...buffs.map((b) =>
+        serializeStream(b.timestamp !== undefined ? b : { ...b, timestamp: now }),
+      ),
+    );
   },
 
   async get(name: string, index: number): Promise<buffStateType | null> {

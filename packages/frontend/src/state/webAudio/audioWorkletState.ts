@@ -9,6 +9,11 @@ export const audioWorkletState = {
     } as {
       [key: string]: boolean;
     },
+    recordIndex: {
+      PLAYBACK: 0,
+    } as {
+      [key: string]: number;
+    },
   },
   whitenoise: {
     audioWorklet: null as AudioWorkletNode | ScriptProcessorNode | null,

@@ -10,6 +10,7 @@ export const workletBufferFromClient = async (
     audio: ArrayBuffer;
     source: string;
     bufferSize: number;
+    index?: number;
   },
 ) => {
   if (data.source === "CHAT") {
@@ -40,9 +41,10 @@ export const workletBufferFromClient = async (
       video: data.video,
       bufferSize,
       duration: bufferSize / 44100,
+      ...(data.index !== undefined ? { recordIndex: data.index } : {}),
     });
     const idx = await streamsRedis.incrementIndex("PLAYBACK");
-    console.log("RECORD length: " + idx);
+    console.log("RECORD length: " + idx, "recordIndex:", data.index);
   } else {
     if (!(await streamsRedis.hasKey(data.source))) {
       await streamsRedis.initKey(data.source);

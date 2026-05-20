@@ -48,6 +48,9 @@ export async function chatWorklet(stream: MediaStream, socket: SocketFacade) {
               audio: ab,
               source: streamSource,
               bufferSize: bufferSizeState.bufferSize,
+              ...(streamSource === "PLAYBACK"
+                ? { index: audioWorkletState.chat.recordIndex.PLAYBACK }
+                : {}),
             });
             console.log("audio buffer sent for source:", streamSource);
             if (streamSource === "CHAT" || streamSource === "TIMELAPSE") {

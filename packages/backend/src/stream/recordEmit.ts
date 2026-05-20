@@ -2,20 +2,31 @@ import { ioState } from "../state/states/ioState";
 import { currentState, cmdState } from "../state";
 import { pushStateStream } from "./pushStateStream";
 
+let recordIndex = 0;
+
+export const getRecordIndex = (): number => recordIndex;
+
 export const recordEmit = (target?: string) => {
   console.log("target", target);
   // if (!currentState.RECORD) {
   currentState.RECORD = true;
+  const index = recordIndex;
   if (target && target !== undefined) {
     console.log(`target: ${target}`);
     ioState?.io.to(target).emit("recordReqFromServer", {
       source: "PLAYBACK",
       timeout: 10000,
+      index,
     });
   } else {
     console.log("all");
-    ioState?.io.emit("recordReqFromServer", { source: "PLAYBACK", timeout: 10000 });
+    ioState?.io.emit("recordReqFromServer", {
+      source: "PLAYBACK",
+      timeout: 10000,
+      index,
+    });
   }
+  recordIndex++;
   if (cmdState.VOICE.length > 0) {
     cmdState.VOICE.forEach((element) => {
       //          io.to(element).emit('voiceFromServer', 'RECORD')
