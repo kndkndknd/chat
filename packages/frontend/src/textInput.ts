@@ -1,6 +1,7 @@
 import { SocketFacade } from "./socket/SocketFacade";
 import { textPrint, erasePrint, eraseText } from "./canvasEvent";
 import { bass } from "./webaudio";
+import { toggleGainUI } from "./ui/gainUI";
 // import { frontState } from "./globalVariable";
 let bassFlag = false;
 
@@ -34,6 +35,10 @@ export const keyDown = (
         erasePrint(stx, strCnvs);
       }
     }
+  } else if (character === "Enter" && stringsClient === "GAIN") {
+    toggleGainUI();
+    erasePrint(stx, strCnvs);
+    stringsClient = "";
   } else if (
     character === "Eisu" ||
     character == "Meta" ||

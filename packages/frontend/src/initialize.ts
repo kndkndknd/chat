@@ -19,6 +19,7 @@ import { getAcceleration } from "./sensor";
 import { getGPSPosition } from "./gps";
 import { accelarateOsc, gpsOsc } from "./webaudio";
 import { chatWorklet } from "./audioWorklet/chatWorklet";
+import { initGainUI } from "./ui/gainUI";
 // import { initRecordButton } from "./recording";
 // import { toggleRecording } from "./recording";
 
@@ -103,6 +104,7 @@ export const initialize = async (
     // await initVideoStream(streamState.stream);
     // await console.log(stream);
     await chatWorklet(stream, socket);
+    await initGainUI();
     await textPrint("initialized", { timeout: true });
     await socket.emit("connectFromClient", {
       clientMode:

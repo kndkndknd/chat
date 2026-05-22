@@ -1,18 +1,20 @@
 // stream.client = {flag, bpm, beat}
 
+export type gainStateType = {
+  MASTER: number;
+  SINEWAVE: number;
+  FEEDBACK: number;
+  WHITENOISE: number;
+  CLICK: number;
+  BASS: number;
+  CHAT: number;
+  GLITCH: number;
+  SIMULATE: number;
+  METRONOME: number;
+};
+
 export type cmdStateType = {
-  GAIN: {
-    MASTER: number;
-    SINEWAVE: number;
-    FEEDBACK: number;
-    WHITENOISE: number;
-    CLICK: number;
-    BASS: number;
-    CHAT: number;
-    GLITCH: number;
-    SIMULATE: number;
-    METRONOME: number;
-  };
+  GAIN: gainStateType;
   FADE: {
     IN: number;
     OUT: number;

@@ -2,7 +2,7 @@ import WebSocket from "ws";
 import * as Https from "https";
 import * as Http from "http";
 
-import { buffStateType } from "../../../../types";
+import { buffStateType, gainStateType } from "../../../../types";
 import { clientState, currentState, bpmState } from "../state";
 import { chatReceive } from "../stream/chatReceive";
 import { charProcess } from "../cmd/charProcess";
@@ -16,6 +16,7 @@ import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFro
 import { feedWebMChunk } from "../webRTC/weriftClient";
 import { ensureWebRtcSession } from "../webRTC/cameraRotator";
 import { receiveWholeReq } from "../stream/receiveWholeReq";
+import { gainFromClient } from "../cmd/gainFromClient";
 import { IoFacade } from "./IoFacade";
 
 let strings = "";
@@ -100,6 +101,11 @@ export const wsServer = (
           await workletBufferFromClient(
             data as { video: string; audio: ArrayBuffer; source: string; bufferSize: number; index?: number }
           );
+          break;
+
+        case "gainFromClient":
+          console.log("gainFromClient", data);
+          gainFromClient(data as gainStateType, facade);
           break;
 
         case "bufferRecFromClient":
