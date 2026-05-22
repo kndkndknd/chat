@@ -52,7 +52,7 @@ export const metronomeEmit = (io, cmd, target?) => {
       const targetIdArr = target
         ? pickupCmdTarget("METRONOME", { target: target })
         : pickupCmdTarget("METRONOME");
-      target = targetIdArr[0];
+      target = (targetIdArr !== undefined && targetIdArr.length > 0) ? targetIdArr[0] : Object.keys(clientState.client)[Math.floor(Math.random() * Object.keys(clientState.client).length)];
       // target = Object.keys(clientState.client)[
       //   Math.floor(Math.random() * Object.keys(clientState.client).length)
       // ];

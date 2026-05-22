@@ -18,6 +18,7 @@ export default defineConfig({
         vosk: "./html/vosk.html",
         rotate: "./html/rotate.html",
         wsclient: "./html/wsClient.html",
+        torch: "./html/torch.html",
         // snowleopard: "./src/snowleopard/snowLeopardClient.js",
       },
       output: {

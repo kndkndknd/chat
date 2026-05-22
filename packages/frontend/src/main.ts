@@ -6,7 +6,6 @@ socketState.socketId = socketState.socket.id;
 import { initialize } from "./initialize";
 import { socket } from "./socket";
 
-import { bpmStreamStateType, filterStateType } from "../../../types";
 
 import {
   flagState,

@@ -20,6 +20,7 @@ import { getGPSPosition } from "./gps";
 import { accelarateOsc, gpsOsc } from "./webaudio";
 import { chatWorklet } from "./audioWorklet/chatWorklet";
 // import { initTorch } from "./stream/torch";
+import { initGainUI } from "./ui/gainUI";
 
 export const initialize = async (
   socket: Socket,
@@ -102,6 +103,7 @@ export const initialize = async (
     // await initVideoStream(streamState.stream);
     // await console.log(stream);
     await chatWorklet(stream, socket);
+    await initGainUI();
     await textPrint("initialized", { timeout: true });
     await socket.emit("connectFromClient", {
       clientMode:

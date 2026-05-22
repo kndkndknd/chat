@@ -86,6 +86,12 @@ const commonPickupCmdTarget = (
             return ["target is undefined"];
           }
         }
+      default:
+        return [
+          clientArr[
+            Math.floor(Math.random() * clientState.cmdClient.length)
+          ],
+        ];
     }
   }
 };

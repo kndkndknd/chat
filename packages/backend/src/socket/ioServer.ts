@@ -4,7 +4,7 @@ import * as Http from "http";
 // import { statusList, pathList, statusClient } from "../statusList";
 import { chatReceive } from "../stream/chatReceive";
 
-import { buffStateType } from "../../../../types";
+import { buffStateType, gainStateType } from "../../../../types";
 
 // import {
 //   selectOtherClient,
@@ -32,6 +32,9 @@ import { receiveWholeReq } from "../stream/receiveWholeReq";
 
 // rotate
 import { m5Switch } from "../rotate/m5Access";
+
+// gainFromClient
+import { gainFromClient } from "../cmd/gainFromClient";
 
 // webRtc
 import { iceCandidateEmit, offerEmit, answerEmit } from "../webRTC";
@@ -133,6 +136,12 @@ export const ioServer = (
       workletBufferFromClient(data, io);
     });
     
+    // gain
+    socket.on("gainFromClient", (data: gainStateType) => {
+      console.log("gainFromClient", data);
+      gainFromClient(data, io);
+    });
+
     // webRtc
     socket.on("joinFromClient", () => {});
     socket.on("iceCandidateFromClient", (candidate: RTCIceCandidate) => {

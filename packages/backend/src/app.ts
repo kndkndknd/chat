@@ -102,6 +102,19 @@ app.get("/snowleopard", function (req, res, next) {
   }
 });
 
+app.get("/torch", function (req, res, next) {
+  try {
+    console.log("torch");
+    res.sendFile(
+      path.join(__dirname, "..", "static", "html", "torch.html")
+    );
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Something went wrong" });
+  }
+});
+
+
 app.get("/vosk", function (req, res, next) {
   try {
     console.log("vosk");

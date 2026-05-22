@@ -27,7 +27,7 @@ export const streamPlay = async (
   // console.log("chatFromServer");
   // console.log("socket.id(socket.on): " + String(socket.id));
   // console.log(stream.audio);
-
+  console.log("sampleRate:", stream.sampleRate);
   playAudioStream(
     stream.audio,
     stream.sampleRate,

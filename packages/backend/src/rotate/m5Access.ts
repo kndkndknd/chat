@@ -4,7 +4,7 @@ import axios from "axios";
 import { stat } from "fs";
 
 // const requestHost = "http://" + arduinoState.host + arduinoState.port;
-const requestHost = `http://${m5State.host}:${m5State.port}`;
+let requestHost = `http://${m5State.host}:${m5State.port}`;
 
 export const m5Test = async () => {
   const requestUrl = `${requestHost}/test`;
@@ -38,14 +38,22 @@ export const m5Switch = async (param?: "on" | "off") => {
   console.log("m5 switchCtrl");
   const relay = param ? param : m5State.relay === "on" ? "off" : "on";
   // let relay: "on" | "off" = m5State.relay === "on" ? "off" : "on";
-  const requestUrl = `${requestHost}/${relay}`;
+  // const requestUrl = `${requestHost}/${relay}`;
+  const requestUrl = `${requestHost}/relay`;
+  const body = { type: "relay", value: param === "on" ? true : false };
   console.log(requestUrl);
   try {
-    const response = await fetch(requestUrl);
+    const response = await fetch(requestUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
     const data = await response.text();
     if (
-      (param === "on" && data === "Pin 26 is HIGH") ||
-      (param === "off" && data === "Pin 26 is LOW")
+      (param === "on" && data === `{"relay":true}`) ||
+      (param === "off" && data === `{"relay":false}`)
     ) {
       console.log("m5Switch", data);
       m5State.relay = param;
@@ -62,7 +70,9 @@ export const m5Switch = async (param?: "on" | "off") => {
 
 export const m5SetIpAddress = async (ip: string) => {
   m5State.host = ip;
+  requestHost = `http://${m5State.host}:${m5State.port}`;
   console.log("m5SetIpAddress", m5State.host);
-  const result = await m5Test();
-  return result;
+  // const result = await m5Test();
+  // return result;
+  return "done";
 };

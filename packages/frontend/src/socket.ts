@@ -35,7 +35,7 @@ import { wholeCmd } from "./cmd/wholeCmd";
 //   receiveAnswer,
 // } from "./webrtc";
 
-// import { torchToggle, startBlink, stopBlink } from "./stream/torch";
+import { torchToggle, startBlink, stopBlink } from "./torch/torch";
 
 export const socket = (): void => {
   socketState.socket.on(
@@ -371,31 +371,31 @@ export const socket = (): void => {
     }
   });
 
-  // socketState.socket.on(
-  //   "torchCmdFromServer",
-  //   (data: { flag: boolean; type: "BLINK" | "STEADY"; bpm: number }) => {
-  //     if (
-  //       torchState.isSupported &&
-  //       flagState.isMobile &&
-  //       streamState.videoTrack !== null
-  //     ) {
-  //       console.log("torchCmdFromServer", data);
-  //       if (data.type === "BLINK") {
-  //         if (data.flag) {
-  //           torchState.torchMode = "blink";
-  //           startBlink(data.bpm);
-  //         } else {
-  //           stopBlink();
-  //         }
-  //       } else {
-  //         torchState.torchMode = "steady";
-  //         torchToggle(data.flag);
-  //       }
-  //     } else {
-  //       console.log("Torch is not supported on this device");
-  //     }
-  //   },
-  // );
+  socketState.socket.on(
+    "torchCmdFromServer",
+    (data: { flag: boolean; type: "BLINK" | "STEADY"; bpm: number }) => {
+      if (
+        torchState.isSupported &&
+        flagState.isMobile &&
+        streamState.videoTrack !== null
+      ) {
+        console.log("torchCmdFromServer", data);
+        if (data.type === "BLINK") {
+          if (data.flag) {
+            torchState.torchMode = "blink";
+            startBlink(data.bpm);
+          } else {
+            stopBlink();
+          }
+        } else {
+          torchState.torchMode = "steady";
+          torchToggle(data.flag);
+        }
+      } else {
+        console.log("Torch is not supported on this device");
+      }
+    },
+  );
 
   socketState.socket.on("bufferFromServer", (data) => {
     const uint8Array = new Uint8Array(data);
