@@ -1,15 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.voiceEmit = void 0;
-const voiceEmit = (io, strings, id, state) => {
+const ioState_1 = require("../state/states/ioState");
+const state_1 = require("../state");
+const voiceEmit = (strings, id) => {
     console.log("id", id);
-    console.log("VOICE", state.cmd.VOICE);
-    if (state.cmd.VOICE.length > 0) {
-        state.cmd.VOICE.forEach((element) => {
+    console.log("VOICE", state_1.cmdState.VOICE);
+    if (state_1.cmdState.VOICE.length > 0) {
+        state_1.cmdState.VOICE.forEach((element) => {
             if (element === id || id === "all" || id === "ALL" || id === "scenario") {
-                io.to(element).emit("voiceFromServer", {
+                ioState_1.ioState?.io.to(element).emit("voiceFromServer", {
                     text: strings,
-                    lang: state.cmd.voiceLang,
+                    lang: state_1.cmdState.voiceLang,
                 });
             }
             else {

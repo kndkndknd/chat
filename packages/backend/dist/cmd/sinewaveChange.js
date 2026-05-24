@@ -2,37 +2,67 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.sinewaveChange = void 0;
 const putCmd_1 = require("./putCmd");
-const sinewaveChange = (cmdStrings, io, state, value) => {
-    if (cmdStrings === "TWICE") {
-        for (let id in state.current.sinewave) {
-            state.previous.sinewave[id] = state.current.sinewave[id];
-            state.current.sinewave[id] = state.current.sinewave[id] * 2;
-            const cmd = {
-                cmd: "SINEWAVE",
-                value: state.current.sinewave[id],
-                flag: true,
-                fade: 0,
-                portament: state.cmd.PORTAMENT,
-                gain: state.cmd.GAIN.SINEWAVE,
-            };
-            (0, putCmd_1.putCmd)(io, [id], cmd, state);
-            // io.to(id).emit('cmdFromServer', cmd)
+const state_1 = require("../state");
+const sinewaveChange = (cmdStrings, options) => {
+    if (options === undefined || options.id === undefined) {
+        if (cmdStrings === "TWICE") {
+            for (let id in state_1.currentState.sinewave) {
+                state_1.previousState.sinewave[id] = state_1.currentState.sinewave[id];
+                state_1.currentState.sinewave[id] = state_1.currentState.sinewave[id] * 2;
+                const cmd = {
+                    cmd: "SINEWAVE",
+                    value: state_1.currentState.sinewave[id],
+                    flag: true,
+                    fade: 0,
+                    portament: state_1.cmdState.PORTAMENT,
+                    gain: state_1.cmdState.GAIN.SINEWAVE,
+                };
+                (0, putCmd_1.putCmd)([id], cmd);
+            }
+        }
+        else if (cmdStrings === "HALF") {
+            for (let id in state_1.currentState.sinewave) {
+                state_1.previousState.sinewave[id] = state_1.currentState.sinewave[id];
+                state_1.currentState.sinewave[id] = state_1.currentState.sinewave[id] / 2;
+                const cmd = {
+                    cmd: "SINEWAVE",
+                    value: state_1.currentState.sinewave[id],
+                    flag: true,
+                    fade: 0,
+                    portament: state_1.cmdState.PORTAMENT,
+                    gain: state_1.cmdState.GAIN.SINEWAVE,
+                };
+                (0, putCmd_1.putCmd)([id], cmd);
+            }
         }
     }
-    else if (cmdStrings === "HALF") {
-        for (let id in state.current.sinewave) {
-            state.previous.sinewave[id] = state.current.sinewave[id];
-            state.current.sinewave[id] = state.current.sinewave[id] / 2;
+    else {
+        const id = options.id;
+        if (cmdStrings === "TWICE") {
+            state_1.previousState.sinewave[id] = state_1.currentState.sinewave[id];
+            state_1.currentState.sinewave[id] = state_1.currentState.sinewave[id] * 2;
             const cmd = {
                 cmd: "SINEWAVE",
-                value: state.current.sinewave[id],
+                value: state_1.currentState.sinewave[id],
                 flag: true,
                 fade: 0,
-                portament: state.cmd.PORTAMENT,
-                gain: state.cmd.GAIN.SINEWAVE,
+                portament: state_1.cmdState.PORTAMENT,
+                gain: state_1.cmdState.GAIN.SINEWAVE,
             };
-            //io.to(id).emit('cmdFromServer', cmd)
-            (0, putCmd_1.putCmd)(io, [id], cmd, state);
+            (0, putCmd_1.putCmd)([id], cmd);
+        }
+        else if (cmdStrings === "HALF") {
+            state_1.previousState.sinewave[id] = state_1.currentState.sinewave[id];
+            state_1.currentState.sinewave[id] = state_1.currentState.sinewave[id] / 2;
+            const cmd = {
+                cmd: "SINEWAVE",
+                value: state_1.currentState.sinewave[id],
+                flag: true,
+                fade: 0,
+                portament: state_1.cmdState.PORTAMENT,
+                gain: state_1.cmdState.GAIN.SINEWAVE,
+            };
+            (0, putCmd_1.putCmd)([id], cmd);
         }
     }
 };

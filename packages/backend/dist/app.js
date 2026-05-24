@@ -31,11 +31,15 @@ const express_1 = __importDefault(require("express"));
 const path = __importStar(require("path"));
 const serve_favicon_1 = __importDefault(require("serve-favicon"));
 const Https = __importStar(require("https"));
-const ioServer_1 = require("./socket/ioServer");
-// import { states } from "./states";
-// import { switchCtrl } from "./arduinoAccess/switch";
+const wsServer_1 = require("./socket/wsServer");
 const os_1 = require("os");
-const ioEmit_1 = require("./socket/ioEmit");
+const cmdLogging_1 = require("./logging/cmdLogging");
+const data_1 = require("./data");
+const state_1 = require("./state");
+const ioState_1 = require("./state/states/ioState");
+const streamsRedis_1 = require("./redis/streamsRedis");
+const clientSettingsEmit_1 = require("./clientSetting/clientSettingsEmit");
+const nightSchedule_1 = require("./scenario/nightSchedule");
 // import { cors } from "cors";
 // const corsOptions = {
 //   origin: "http://127.0.0.1:5173",
@@ -65,8 +69,9 @@ const allowCrossDomain = function (req, res, next) {
 app.use(allowCrossDomain);
 //const httpsserver = Https.createServer(options,app).listen(port);
 const options = {
-    key: fs.readFileSync(path.join(__dirname, "../../../..", "keys/chat/privkey.pem")),
-    cert: fs.readFileSync(path.join(__dirname, "../../../..", "keys/chat/cert.pem")),
+    key: fs.readFileSync(path.join(__dirname, "../../../../..", "keys/chat/private.key")),
+    cert: fs.readFileSync(path.join(__dirname, "../../../../..", "keys/chat/selfsigned.crt")),
+    passphrase: "chat",
 };
 const httpserver = Https.createServer(options, app).listen(port);
 function getIpAddress() {
@@ -76,7 +81,7 @@ function getIpAddress() {
 }
 const host = getIpAddress();
 console.log(`Server listening on ${host}:${port}`);
-const io = (0, ioServer_1.ioServer)(httpserver);
+(0, wsServer_1.wsServer)(httpserver);
 app.get("/", function (req, res, next) {
     try {
         res.sendFile(path.join(__dirname, "..", "static", "html", "index.html"));
@@ -86,30 +91,19 @@ app.get("/", function (req, res, next) {
         res.json({ success: false, message: "Something went wrong" });
     }
 });
-app.get("/snowleopard", function (req, res, next) {
+app.get("/vosk", function (req, res, next) {
     try {
-        console.log("snowleopard");
-        res.sendFile(path.join(__dirname, "..", "static", "html", "snowleopard.html"));
+        console.log("vosk");
+        res.sendFile(path.join(__dirname, "..", "static", "html", "vosk.html"));
     }
     catch (error) {
         console.log(error);
         res.json({ success: false, message: "Something went wrong" });
     }
 });
-app.get("/form", function (req, res, next) {
+app.get("/rotate", function (req, res, next) {
     try {
-        console.log("snowleopard");
-        res.sendFile(path.join(__dirname, "..", "static", "html", "form.html"));
-    }
-    catch (error) {
-        console.log(error);
-        res.json({ success: false, message: "Something went wrong" });
-    }
-});
-app.get("/hls", function (req, res, next) {
-    try {
-        console.log("hls test");
-        res.sendFile(path.join(__dirname, "..", "static", "html", "hlstest.html"));
+        res.sendFile(path.join(__dirname, "..", "static", "html", "rotate.html"));
     }
     catch (error) {
         console.log(error);
@@ -139,28 +133,35 @@ app.get("/:name", function (req, res, next) {
         res.json({ success: false, message: "Something went wrong" });
     }
 });
-app.post("/api/form", function (req, res, next) {
-    console.log("POST /api/form", req.body);
-    if (req.body.enter) {
-        console.log("enter");
-    }
-    else {
-        console.log("chat:", req.body.chat);
-        (0, ioEmit_1.stringEmit)(io, req.body.chat, false);
-    }
-    res.json({ success: true, message: "Data received" });
+app.post("/api/char", function (req, res, next) {
+    console.log("POST /api/char", req.body);
+    console.log("ip:", req.ip);
+    res.json({ success: true, message: "char received" });
 });
-/*
-const socketOptions = {
-  cors: {
-    origin: function (origin, callback) {
-      const isTarget = origin != undefined && origin.includes("localhost") !== null;
-      return isTarget ? callback(null, origin) : callback('error invalid domain');
-    },
-    credentials: true
-  },
-  maxHttpBufferSize: 1e8,
-};
-*/
-// const io = new Server(httpsserver, socketOptions)
+app.post("/api/persondetect", function (req, res) {
+    const body = req.body;
+    console.log(JSON.parse(JSON.stringify(body)));
+    if (nightSchedule_1.nightScheduleState.quiet) {
+        res.json({ success: true, skipped: true });
+        return;
+    }
+    ioState_1.ioState.io?.emit("personDetectFromServer");
+    if (body.direction === "left") {
+        (0, clientSettingsEmit_1.triggerLeftPersonDetect)();
+        streamsRedis_1.countersRedis.increment("visitor").then((count) => {
+            console.log("visitor count:", count);
+        });
+    }
+    if (body.direction === "right") {
+        streamsRedis_1.countersRedis.increment("leave").then((count) => {
+            console.log("leave count:", count);
+        });
+    }
+    res.json({ success: true });
+});
+(0, state_1.loadAllStates)()
+    .then(() => (0, data_1.initStreams)())
+    .catch((err) => console.error("Redis init error:", err));
+(0, cmdLogging_1.cmdLogging)("START");
+(0, nightSchedule_1.startNightSchedule)();
 //# sourceMappingURL=app.js.map

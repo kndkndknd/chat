@@ -1,78 +1,77 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.stopEmit = void 0;
+const ioState_1 = require("../state/states/ioState");
 const voiceEmit_1 = require("./voiceEmit");
-const stopEmit = (io, state, source, target, client) => {
-    /*
-    io.emit('stopFromServer', {
-      target: target,
-      fadeOut: state.cmd.FADE.OUT
-    })
-    */
-    // STOPは個別の関数があるのでVOICEはそこに相乗り
-    // if (state.cmd.VOICE.length > 0) {
-    //   state.cmd.VOICE.forEach((element) => {
-    //     //      io.to(element).emit('voiceFromServer', "STOP")
-    //     io.to(element).emit("voiceFromServer", {
-    //       text: "STOP",
-    //       lang: state.cmd.voiceLang,
-    //     });
-    //   });
-    // }
-    if (source !== undefined) {
-        (0, voiceEmit_1.voiceEmit)(io, "STOP", source, state);
+const state_1 = require("../state");
+const wholeParams_1 = require("../data/list/wholeParams");
+const stopEmit = (source, target, client) => {
+    if (source !== undefined && source !== "") {
+        (0, voiceEmit_1.voiceEmit)("STOP", source);
     }
-    // stop cmd / sinewave
+    wholeParams_1.wholeParams.targetArr = [];
+    state_1.currentState.WHOLE = false;
+    // stop cmd / sinewave | self判定あり
     if (client === undefined) {
-        // current -> previous && current -> stop
-        Object.keys(state.client).forEach((element) => {
-            io.to(element).emit("stopFromServer", {
-                target: target === undefined ? "ALL" : target,
-                fadeOutVal: state.cmd.FADE.OUT,
+        if (state_1.clientState.client[source] === undefined ||
+            !state_1.clientState.client[source].self) {
+            Object.keys(state_1.clientState.client).forEach((element) => {
+                ioState_1.ioState?.io.to(element).emit("stopFromServer", {
+                    target: target === undefined ? "ALL" : target,
+                    fadeOutVal: state_1.cmdState.FADE.OUT,
+                });
             });
-        });
-        for (let cmd in state.current.cmd) {
-            state.previous.cmd[cmd] = state.current.cmd[cmd];
-            state.current.cmd[cmd] = [];
+            for (let cmd in state_1.currentState.cmd) {
+                state_1.previousState.cmd[cmd] = state_1.currentState.cmd[cmd];
+                state_1.currentState.cmd[cmd] = [];
+            }
+            state_1.previousState.sinewave = state_1.currentState.sinewave;
+            state_1.currentState.sinewave = {};
         }
-        state.previous.sinewave = state.current.sinewave;
-        state.current.sinewave = {};
-        if (target !== "ExceptHls") {
-            state.hls = [];
-        }
-        // state.hls = [];
-    }
-    else if (Object.keys(state.client).includes(client)) {
-        io.to(client).emit("stopFromServer", {
-            target: target === undefined ? "ALL" : target,
-            fadeOutVal: state.cmd.FADE.OUT,
-        });
-        for (let cmd in state.current.cmd) {
-            if (state.current.cmd[cmd].includes(client)) {
-                state.previous.cmd[cmd] = state.current.cmd[cmd];
-                state.current.cmd[cmd] = state.current.cmd[cmd].filter((element) => element !== client);
+        else {
+            ioState_1.ioState?.io.to(source).emit("stopFromServer", {
+                target: target === undefined ? "ALL" : target,
+                fadeOutVal: state_1.cmdState.FADE.OUT,
+            });
+            for (let cmd in state_1.currentState.cmd) {
+                if (state_1.currentState.cmd[cmd].includes(source)) {
+                    state_1.previousState.cmd[cmd] = state_1.currentState.cmd[cmd];
+                    state_1.currentState.cmd[cmd] = state_1.currentState.cmd[cmd].filter((element) => element !== source);
+                }
+            }
+            if (state_1.currentState.sinewave[source] !== undefined) {
+                state_1.previousState.sinewave[source] = state_1.currentState.sinewave[source];
+                delete state_1.currentState.sinewave[source];
             }
         }
-        if (state.current.sinewave[client] !== undefined) {
-            state.previous.sinewave[client] = state.current.sinewave[client];
-            delete state.current.sinewave[client];
+    }
+    else if (Object.keys(state_1.clientState.client).includes(client)) {
+        ioState_1.ioState?.io.to(client).emit("stopFromServer", {
+            target: target === undefined ? "ALL" : target,
+            fadeOutVal: state_1.cmdState.FADE.OUT,
+        });
+        for (let cmd in state_1.currentState.cmd) {
+            if (state_1.currentState.cmd[cmd].includes(client)) {
+                state_1.previousState.cmd[cmd] = state_1.currentState.cmd[cmd];
+                state_1.currentState.cmd[cmd] = state_1.currentState.cmd[cmd].filter((element) => element !== client);
+            }
         }
-        if (target !== "ExceptHls") {
-            state.hls = state.hls.filter((element) => element !== client);
+        if (state_1.currentState.sinewave[client] !== undefined) {
+            state_1.previousState.sinewave[client] = state_1.currentState.sinewave[client];
+            delete state_1.currentState.sinewave[client];
         }
-        // state.hls = state.hls.filter((element) => element !== client);
     }
     // stop stream
-    for (let stream in state.current.stream) {
-        state.previous.stream[stream] = state.current.stream[stream];
-        state.current.stream[stream] = false;
+    for (let stream in state_1.currentState.stream) {
+        state_1.previousState.stream[stream] = state_1.currentState.stream[stream];
+        state_1.currentState.stream[stream] = false;
     }
-    Object.keys(state.stream.target).forEach((element) => {
-        state.stream.target[element] = [];
+    Object.keys(state_1.streamState.target).forEach((element) => {
+        state_1.streamState.target[element] = [];
     });
-    console.log("client", state.client);
-    console.log("hls", state.hls);
-    console.log("previous", state.previous);
+    Object.keys(state_1.streamState.pa).forEach((element) => {
+        state_1.streamState.pa[element] = false;
+    });
 };
 exports.stopEmit = stopEmit;
 //# sourceMappingURL=stopEmit.js.map
