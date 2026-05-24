@@ -4,9 +4,14 @@ import * as path from "path";
 import { default as favicon } from "serve-favicon";
 import * as Https from "https";
 import { wsServer } from "./socket/wsServer";
-
 import { networkInterfaces } from "os";
+import dotenv from "dotenv";
 
+const dotenvPath = path.join(__dirname, "../../..", ".env");
+if (fs.existsSync(dotenvPath)) {
+  console.log("Loading .env file from:", dotenvPath);
+  dotenv.config({ path: dotenvPath });
+}
 
 import { cmdLogging } from "./logging/cmdLogging";
 import { initStreams } from "./data";
@@ -25,7 +30,8 @@ import {
 //   optionsSuccessStatus: 200,
 // };
 
-const port = 8888;
+const scenarioMode = process.env.SCENARIO === "true";
+const port = process.env.LOCAL_SERVER_PORT || 8888;
 const app = Express();
 app.use(Express.json());
 // const __filename = fileURLToPath(import.meta.url);
@@ -160,4 +166,9 @@ loadAllStates()
   .then(() => initStreams())
   .catch((err) => console.error("Redis init error:", err));
 cmdLogging("START");
-startNightSchedule();
+if(scenarioMode){
+  console.log("Scenario mode enabled");
+  startNightSchedule();
+} else {
+  console.log("Scenario mode disabled");
+}
