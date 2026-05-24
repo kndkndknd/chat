@@ -1,6 +1,14 @@
 packages:
   - packages/*
 
+allowBuilds:
+  '@serialport/bindings': true
+  bufferutil: true
+  esbuild: true
+  libxmljs: true
+  serialport: true
+  sharp: true
+
 onlyBuiltDependencies:
   - '@serialport/bindings'
   - bufferutil
