@@ -10,15 +10,15 @@ services:
       - ./redis/redis_data:/data
       - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
     command: redis-server /usr/local/etc/redis/redis.conf
-  mongo:
-    image: mongo:7.0
-    container_name: mongo
-    restart: always
-    ports:
-      - "27017:27017"
-    volumes:
-      - ./mongo/mongo_data:/data/db
-    command: ["mongod", "--bind_ip_all"]
+  #  mongo:
+  #    image: mongo:7.0
+  #    container_name: mongo
+  #    restart: always
+  #    ports:
+  #      - "27017:27017"
+  #    volumes:
+  #      - ./mongo/mongo_data:/data/db
+  #    command: ["mongod", "--bind_ip_all"]
   nginx:
     image: nginx:latest
     ports:
