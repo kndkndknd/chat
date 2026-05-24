@@ -7,14 +7,14 @@ export default defineConfig({
       input: {
         main: "./html/index.html",
         snowleopard: "./html/snowleopard.html",
-        // "chat-processor": path.resolve(
-        //   __dirname,
-        //   "./src/audioWorklet/chat-processor.js",
-        // ),
-        // "whitenoise-processor": path.resolve(
-        //   __dirname,
-        //   "./src/audioWorklet/whitenoise-processor.js",
-        // )
+        "chat-processor": path.resolve(
+          __dirname,
+          "./src/audioWorklet/chat-processor.ts",
+        ),
+        "whitenoise-processor": path.resolve(
+          __dirname,
+          "./src/audioWorklet/whitenoise-processor.ts",
+        )
       },
       output: {
         dir: "../backend/static",
