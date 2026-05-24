@@ -2,7 +2,7 @@
 import * as fs from "fs";
 
 // import { cmdLog } from "../data";
-// import { getDateTimeString } from "../../../util/getDateTimeString";
+// import { getDateTimeString } from "../util/getDateTimeString";
 import { LogType } from "../../../../types";
 
 // read log json file

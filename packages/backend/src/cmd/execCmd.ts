@@ -4,7 +4,7 @@ import { voiceEmit } from "./voiceEmit";
 import { sinewaveEmit } from "./sinewaveEmit";
 import { previousCmd } from "./previousCmd";
 import { switchCtrl } from "../arduinoAccess/arduinoAccess";
-import { millisecondsPerBeat } from "../../../util/bpmCalc";
+import { millisecondsPerBeat } from "../util/bpmCalc";
 
 import { cmdList } from "../data";
 import { clientState, arduinoState, bpmState, streamState } from "../state";

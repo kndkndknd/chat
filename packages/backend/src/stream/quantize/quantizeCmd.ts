@@ -1,4 +1,4 @@
-// import { millisecondsPerBar } from "../../../../util/bpmCalc";
+// import { millisecondsPerBar } from "../../util/bpmCalc";
 // import { quantizeObjType } from "../../../../../types";
 import { clientState, bpmState } from "../../state";
 import { bpmClientStateType, bpmStreamStateType } from "../../../../../types";
@@ -38,7 +38,6 @@ export const quantizeCmd = (id?: string) => {
   setBpmState(quntizeStreamObj);
   emitQuantize(quntizeStreamObj);
 };
-//   // io: SocketIO.Server,
 //   target: {
 //     streamTarget: string;
 //     clientTarget: string;

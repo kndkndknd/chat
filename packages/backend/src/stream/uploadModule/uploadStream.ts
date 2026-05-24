@@ -12,7 +12,6 @@ import * as path from "path";
 
 import { streamsRedis, uploadParams } from "../../data";
 import { streamState } from "../../state";
-// import SocketIO from "socket.io";
 
 import { getFilePath } from "./getFilePath";
 import { getDuration } from "./getDuration";

@@ -1,6 +1,6 @@
 import { putCmd } from "./putCmd";
 import { notTargetEmit } from "./notTargetEmit";
-import { millisecondsPerBeat } from "../../../util/bpmCalc";
+import { millisecondsPerBeat } from "../util/bpmCalc";
 import { currentState, cmdState, bpmState, clientState } from "../state";
 import { streamList } from "../data";
 import { pickupCmdTarget } from "./pickupCmdTarget";

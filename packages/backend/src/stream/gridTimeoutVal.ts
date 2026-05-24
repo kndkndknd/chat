@@ -1,5 +1,5 @@
 import { bpmState } from "../state/states/bpmState";
-import { millisecondsPerBeat } from "../../../util/bpmCalc";
+import { millisecondsPerBeat } from "../util/bpmCalc";
 
 export const gridTimeoutVal = (stream: string, targetId: string): number => {
   return bpmState[targetId].stream[stream] !== undefined &&

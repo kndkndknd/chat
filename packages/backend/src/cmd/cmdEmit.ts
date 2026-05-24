@@ -6,7 +6,7 @@ import { putCmd } from "./putCmd";
 import { notTargetEmit } from "./notTargetEmit";
 import { previousCmd } from "./previousCmd";
 import { pickupCmdTarget } from "./pickupCmdTarget";
-// import { getLengthFromBPM } from "../../../util/getLengthFromBPM";
+// import { getLengthFromBPM } from "../util/getLengthFromBPM";
 import { metronomeEmit } from "./metronomeEmit";
 
 export const cmdEmit = (

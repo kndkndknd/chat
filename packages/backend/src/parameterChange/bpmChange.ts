@@ -8,7 +8,7 @@ import {
 import { ioState } from "../state/states/ioState";
 import { putCmd } from "../cmd/putCmd";
 import { stringEmit } from "../socket/ioEmit";
-import { millisecondsPerBar } from "../../../util/bpmCalc";
+import { millisecondsPerBar } from "../util/bpmCalc";
 import { streamList } from "../data";
 
 export const bpmChange = (

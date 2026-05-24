@@ -33,7 +33,7 @@ import { putCmd } from "./putCmd";
 import { cmdLogging } from "../logging/cmdLogging";
 import { quantizeCmd } from "../stream/quantize";
 import { mergeStreamTarget } from "../stream/mergeStreamTarget";
-import { millisecondsPerBar } from "../../../util/bpmCalc";
+import { millisecondsPerBar } from "../util/bpmCalc";
 
 import { execStream } from "../cmd/execStream";
 import { execCmd } from "./execCmd";
