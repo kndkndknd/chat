@@ -28,11 +28,7 @@ export const metronomeBpmSet = (sourceId: string) => {
         }
       }
 
-      const targetIndex = Object.keys(clientState.client).map(
-        (element, index) => {
-          if (element === sourceId) return index;
-        }
-      );
+      const targetIndex = clientState.client[sourceId].index;
 
       stringEmit(
         `${String(targetIndex)} BPM: ${String(60000 / latency)}`,

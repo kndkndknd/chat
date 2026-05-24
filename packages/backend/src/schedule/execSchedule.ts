@@ -4,9 +4,14 @@ import { stopEmit } from "../cmd/stopEmit";
 import { clientState, currentState } from "../state";
 
 export const execSchedule = (cmdString) => {
-  const targetId = Object.keys(clientState.client)[
-    Math.floor(Math.random() * Object.keys(clientState.client).length)
-  ];
+  // 歯抜けがあっても安全なように、現存する index の配列からランダム選択する
+  const indices = Object.keys(clientState.client).map(
+    (id) => clientState.client[id].index
+  );
+  const pickedIndex = indices[Math.floor(Math.random() * indices.length)];
+  const targetId = Object.keys(clientState.client).find(
+    (id) => clientState.client[id].index === pickedIndex
+  );
   const stringArr = cmdString.split(" ");
   if (
     Object.keys(currentState.cmd).includes(stringArr[stringArr.length - 1]) ||

@@ -17,14 +17,20 @@ export const solo = (stringArr: string[], arrTypeArr: string[]) => {
     previousState.RECORD = currentState.RECORD;
 
     const cmd = cmdList[stringArr[0]];
+    // 歯抜けがあっても安全なように、現存する index の配列からランダム選択する
+    const indices = Object.keys(clientState.client).map(
+      (id) => clientState.client[id].index
+    );
+    const pickedIndex = indices[Math.floor(Math.random() * indices.length)];
+    const fallbackTarget = Object.keys(clientState.client).find(
+      (id) => clientState.client[id].index === pickedIndex
+    );
     const soloTarget =
       currentState.cmd[cmd].length > 0
         ? currentState.cmd[cmd][
             Math.floor(Math.random() * currentState.cmd[cmd].length)
           ]
-        : Object.keys(clientState.client)[
-            Math.floor(Math.random() * Object.keys(clientState.client).length)
-          ];
+        : fallbackTarget;
     for (let stream in currentState.stream) {
       currentState.stream[stream] = false;
     }

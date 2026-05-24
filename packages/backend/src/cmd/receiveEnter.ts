@@ -72,7 +72,7 @@ export const receiveEnter = async (
 
   if (strings === "CHATASYNC") {
     const clientIds = Object.keys(clientState.client).sort(
-      (a, b) => clientState.client[a].number - clientState.client[b].number
+      (a, b) => clientState.client[a].index - clientState.client[b].index
     );
     const messages = ["chat", "(async)"];
     clientIds.forEach((cid, idx) => {

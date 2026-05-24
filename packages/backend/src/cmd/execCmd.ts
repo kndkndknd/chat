@@ -45,11 +45,10 @@ export const execCmd = async (
       quantizeCmd();
     }
   } else if (strings === "NO" || strings === "NUMBER") {
-    Object.keys(clientState.client).forEach((id, index) => {
+    Object.keys(clientState.client).forEach((id) => {
       console.log(id);
       ioState?.io.to(id).emit("stringsFromServer", {
-        // strings: String(index),
-        strings: clientState.client[id].number !== undefined ? String(clientState.client[id].number) : String(index),
+        strings: String(clientState.client[id].index),
         timeout: true,
       });
       //putString(io, String(index), state)

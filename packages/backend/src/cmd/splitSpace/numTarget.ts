@@ -21,7 +21,7 @@ export const numTarget = (
   // 20230923 sinewave modeの動作を記載
   // const target = Object.keys(clientState.client)[Number(stringArr[0])];
   const target = Object.keys(clientState.client).find(
-    (key) => clientState.client[key].number === Number(stringArr[0])
+    (key) => clientState.client[key].index === Number(stringArr[0])
   );
   console.log(clientState.client);
   console.log(target);

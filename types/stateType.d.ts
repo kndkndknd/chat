@@ -111,7 +111,7 @@ export type clientStateType = {
       };
       self: boolean;
       snowLeopard: boolean;
-      number: number;
+      index: number;
       facedetection: boolean;
       hanged: boolean;
     };
