@@ -14,6 +14,7 @@ const rawToDoc = (raw: string) => {
     floating: obj.floating,
     filter: obj.filter,
     timestamp: obj.timestamp,
+    recordIndex: obj.recordIndex,
   };
 };
 
