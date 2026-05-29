@@ -8,10 +8,10 @@ import { chatReceive } from "../stream/chatReceive";
 import { charProcess } from "../cmd/charProcess";
 import { streamEmit } from "../stream/streamEmit";
 import { ioState } from "../state/states/ioState";
-import { stringEmit } from "./ioEmit";
 import { connectFromClient } from "../clientSetting/connectFromClient";
 import { emitClientSettings } from "../clientSetting/clientSettingsEmit";
-import { countersRedis, streamsRedis } from "../redis/streamsRedis";
+import { countersRedis } from "../redis/streamsRedis";
+import { faceDetectScenario } from "../scenario/faceDetectScenario";
 import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
 import { feedWebMChunk } from "../webRTC/weriftClient";
 import { ensureWebRtcSession } from "../webRTC/cameraRotator";
@@ -89,10 +89,13 @@ export const wsServer = (
         }
 
         case "streamReqFromClient": {
-          const source = data as string;
-          console.log(source);
+          const source =
+            typeof data === "string" ? data : (data as { source: string }).source;
+          const index =
+            typeof data === "string" ? undefined : (data as { index?: number }).index;
+          console.log(source, "index:", index);
           if (currentState.stream[source]) {
-            streamEmit(source, id);
+            streamEmit(source, id, undefined, index);
           }
           break;
         }
@@ -134,15 +137,7 @@ export const wsServer = (
           countersRedis.increment("faceDetect").then((count) => {
             console.log("faceDetect count:", count);
           });
-          const buffLen = await streamsRedis.getLength("PLAYBACK");
-          if (buffLen === 0) {
-            stringEmit("no buffer", true, id);
-            break;
-          }
-          const offsets = [1, 24];
-          const hours = offsets[Math.floor(Math.random() * offsets.length)];
-          const timestamp = Date.now() - hours * 60 * 60 * 1000;
-          streamEmit("PLAYBACK", id, timestamp);
+          await faceDetectScenario();
           break;
         }
 

@@ -5,7 +5,7 @@ import { m5State } from "./m5State";
 
 // const requestHost = "http://" + arduinoState.host + arduinoState.port;
 // let requestHost = `http://${m5State.host}:${m5State.port}`;
-let RELAY_HOST = `http://${m5State.host}`;
+let RELAY_HOST = `http://${m5State.rotation.host}`;
 
 type RelayResponse = {
   relay: boolean;
@@ -20,7 +20,7 @@ type RelayErrorResponse = {
  * @param value true でON、false でOFF
  * @returns 設定後のリレー状態
  */
-export async function m5Switch(value: boolean): Promise<boolean> {
+export async function m5Switch(type: "rotation" | "vibration", value: boolean): Promise<boolean> {
   const res = await fetch(`${RELAY_HOST}/relay`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -35,14 +35,15 @@ export async function m5Switch(value: boolean): Promise<boolean> {
   }
 
   const data = (await res.json()) as RelayResponse;
+  m5State[type].relay = value ? "on" : "off";
   return data.relay;
 }
 
 /**
  * 現在のリレー状態を取得する
  */
-export async function m5Test(): Promise<boolean> {
-  const res = await fetch(`${RELAY_HOST}/relay`, { method: "GET" });
+export async function m5Test(type: "rotation" | "viberation"): Promise<boolean> {
+  const res = await fetch(`http://${m5State[type].host}/relay`, { method: "GET" });
 
   if (!res.ok) {
     throw new Error(`Relay status request failed: ${res.status} ${res.statusText}`);
@@ -116,10 +117,10 @@ export async function m5Test(): Promise<boolean> {
 //   }
 // };
 
-export const m5SetIpAddress = async (ip: string) => {
-  m5State.host = ip;
-  RELAY_HOST = `http://${m5State.host}`;
-  console.log("m5SetIpAddress", m5State.host);
+export const m5SetIpAddress = async (ip: string, type: "rotation" | "vibration") => {
+  m5State[type].host = ip;
+  RELAY_HOST = `http://${m5State[type].host}`;
+  console.log("m5SetIpAddress", m5State[type].host);
   // const result = await m5Test();
   // return result;
   return "done";

@@ -372,7 +372,7 @@ export const splitSpace = async (
       stringEmit("REDIS CLEARED");
     }
   } else if (stringArr[0] === "ROTATE") {
-    splitRotate(stringArr.splice(1));
+    splitRotate("rotation", stringArr.splice(1));
   } else if (stringArr[0] === "SCENARIO" || stringArr[0] === "START") {
     const scenario = await loadScenario(stringArr[1]);
     await execScenario(scenario);
@@ -384,7 +384,8 @@ export const splitSpace = async (
     splitStop(stringArr);
     // } else if (stringArr[0] === "FADE") {
   } else if (stringArr[0] === "SWITCH" || stringArr[0] === "ARDUINO") {
-    splitArduino(stringArr);
+    splitRotate("vibration", stringArr.splice(1));
+    // splitArduino(stringArr);
   } else if (stringArr[0] === "TIMELAPSE") {
     console.log("timelapse split", stringArr[1]);
     if (stringArr[1] === "FALSE" || stringArr[1] === "OFF") {

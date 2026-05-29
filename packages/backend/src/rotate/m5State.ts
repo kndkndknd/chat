@@ -1,8 +1,18 @@
-import { arduinoStateType } from "../../../../types";
+import { m5StateType } from "../../../../types";
 
-export const m5State: arduinoStateType = {
-  host: "192.168.42.222",
-  port: 80,
-  connected: false,
-  relay: "off",
+// 回転するほう
+export const m5State: m5StateType = {
+  rotation: {
+    host: "192.168.42.142",
+    port: 80,
+    connected: false,
+    relay: "off",
+  },
+  viberation: {
+    host: "192.168.42.144",
+    port: 80,
+    connected: false,
+    relay: "off",
+  }
 };
+

@@ -5,18 +5,19 @@ import { streamEmit } from "../stream/streamEmit";
 import { streamList } from "../data";
 
 export const execStream = async (
-  strings: string,
-  id: string
+  source: string,
+  id: string,
+  index?: number
 ): Promise<void> => {
-  if (strings === "CHAT") {
+  if (source === "CHAT") {
     chatPreparation();
-    voiceEmit(strings, id);
-  } else if (strings === "RECORD" || strings === "REC") {
+    voiceEmit(source, id);
+  } else if (source === "RECORD" || source === "REC") {
     recordEmit();
     voiceEmit("RECORD", id);
-  } else if (streamList.includes(strings)) {
+  } else if (streamList.includes(source)) {
     console.log("in stream");
-    streamEmit(strings);
-    voiceEmit(strings, id);
+    streamEmit(source, undefined, undefined, index);
+    voiceEmit(source, id);
   }
 };

@@ -16,6 +16,7 @@ import {
   webStateType,
   flagStateType,
   arduinoStateType,
+  m5StateType,
 } from "./stateType";
 import { LogType } from "./logType";
 import { quantizeObjType, frontQuantizeStateType } from "./quantizeType";
@@ -58,6 +59,7 @@ export {
   webStateType,
   flagStateType,
   arduinoStateType,
+  m5StateType,
   newWindowReqType,
   quantizeParamClass,
   wholeCmdOption,

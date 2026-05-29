@@ -3,12 +3,54 @@ import { canvasElement } from "../canvasEvent/canvasElement";
 import { socketState } from "../state";
 
 const MODEL_URL = "/models";
-const COOLDOWN = 30000;
+const CLOSE_RATIO = 0.4;
+const BLINK_INTERVAL_MS = 1000;
 
 let overlayCanvas: HTMLCanvasElement | null = null;
+let comeCloserEl: HTMLDivElement | null = null;
 let active = false;
 let modelsLoaded = false;
-let lastDetectedAt: number | null = null;
+let showComeCloser = false;
+let comeCloserVisible = false;
+let wasLargeFace = false;
+let blinkTimer: number | null = null;
+
+const ensureComeCloserEl = (): HTMLDivElement => {
+  if (comeCloserEl) return comeCloserEl;
+  const el = document.createElement("div");
+  el.id = "comeCloser";
+  el.textContent = "come closer";
+  el.style.cssText =
+    "position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);" +
+    "z-index:4;pointer-events:none;color:#fff;font-size:8vw;font-weight:bold;" +
+    "text-shadow:0 0 8px #000;display:none;";
+  document.getElementById("wrapper")!.appendChild(el);
+  comeCloserEl = el;
+  return el;
+};
+
+const setComeCloserVisible = (visible: boolean) => {
+  comeCloserVisible = visible;
+  if (comeCloserEl) comeCloserEl.style.display = visible ? "block" : "none";
+};
+
+const startBlink = () => {
+  if (blinkTimer !== null) return;
+  blinkTimer = window.setInterval(() => {
+    if (!showComeCloser) {
+      if (comeCloserVisible) setComeCloserVisible(false);
+      return;
+    }
+    setComeCloserVisible(!comeCloserVisible);
+  }, BLINK_INTERVAL_MS);
+};
+
+const stopBlink = () => {
+  if (blinkTimer !== null) {
+    clearInterval(blinkTimer);
+    blinkTimer = null;
+  }
+};
 
 export async function initFaceDetection(): Promise<void> {
   if (active) return;
@@ -28,13 +70,19 @@ export async function initFaceDetection(): Promise<void> {
       "position:absolute;top:0;left:0;z-index:3;pointer-events:none;";
     document.getElementById("wrapper")!.appendChild(overlayCanvas);
   }
+  ensureComeCloserEl();
 
   active = true;
+  startBlink();
   detectLoop();
 }
 
 export function stopFaceDetection(): void {
   active = false;
+  stopBlink();
+  showComeCloser = false;
+  wasLargeFace = false;
+  setComeCloserVisible(false);
   if (overlayCanvas) {
     const ctx = overlayCanvas.getContext("2d");
     ctx?.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
@@ -62,15 +110,24 @@ async function detectLoop(): Promise<void> {
     ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
     if (detections.length > 0) {
-      const now = Date.now();
-      const inCooldown = lastDetectedAt !== null && now - lastDetectedAt < COOLDOWN;
-
       faceapi.draw.drawFaceLandmarks(overlayCanvas, resized);
-      if (!inCooldown) {
-        const { x, width, height } = resized[0].detection.box;
-        socketState.socket?.emit("faceDetectFromClient", { x, width, height });
-        lastDetectedAt = now;
+      const { x, width, height } = resized[0].detection.box;
+      const ratio = height / window.innerHeight;
+      if (ratio >= CLOSE_RATIO) {
+        showComeCloser = false;
+        setComeCloserVisible(false);
+        if (!wasLargeFace) {
+          socketState.socket?.emit("faceDetectFromClient", { x, width, height });
+        }
+        wasLargeFace = true;
+      } else {
+        wasLargeFace = false;
+        showComeCloser = true;
       }
+    } else {
+      wasLargeFace = false;
+      showComeCloser = false;
+      setComeCloserVisible(false);
     }
   }
 

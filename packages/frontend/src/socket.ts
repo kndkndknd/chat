@@ -170,6 +170,7 @@ export const socket = (): void => {
       position?: { top: number; left: number; width: number; height: number };
       target?: string;
       filter?: filterStateType;
+      index?: number;
     }) => {
       streamFlagState[data.source] = true;
       if (quantizeState.flag && quantizeState.stream.includes(data.source)) {

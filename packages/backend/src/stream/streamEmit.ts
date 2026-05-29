@@ -17,6 +17,7 @@ export const streamEmit = async (
   source: string,
   from?: string,
   timestamp?: number,
+  index?: number,
 ) => {
   currentState.stream[source] = true;
   console.log(`debug ${source} targetArr`, streamState.target[source]);
@@ -51,7 +52,9 @@ export const streamEmit = async (
     console.log("buff length:", buffLen);
     if (buffLen > 0) {
       if (!streamState.random[source]) {
-        if (timestamp !== undefined) {
+        if (index !== undefined) {
+          await streamsRedis.setIndex(source, index);
+        } else if (timestamp !== undefined) {
           const closest = await streamsRedis.findClosestByTimestamp(source, timestamp);
           if (closest !== null) {
             await streamsRedis.setIndex(source, closest.firstIndex);
@@ -72,8 +75,8 @@ export const streamEmit = async (
           }
         }
         if (buff === undefined) {
-          const index = await streamsRedis.getIndex(source);
-          const entry = index < buffLen ? await streamsRedis.get(source, index) : null;
+          const currentIndex = await streamsRedis.getIndex(source);
+          const entry = currentIndex < buffLen ? await streamsRedis.get(source, currentIndex) : null;
           const bufferSize = entry?.bufferSize ?? streamState.basisBufferSize;
           buff = {
             source: source,
@@ -82,7 +85,7 @@ export const streamEmit = async (
             video: entry?.video ?? "",
             duration: entry?.duration ?? bufferSize / 44100,
           };
-          if (index < buffLen - 1) {
+          if (currentIndex < buffLen - 1) {
             await streamsRedis.incrementIndex(source);
           } else {
             await streamsRedis.setIndex(source, 0);
@@ -111,6 +114,7 @@ export const streamEmit = async (
       glitch: glitchState.glitch[source] ? glitchState.glitch[source] : false,
       filter: streamState.filter[source],
       ...buff,
+      ...(index !== undefined ? { index } : {}),
     };
     if (glitchState.glitch[source] && stream.video && stream.video.length > 0) {
       stream.video = await glitchStream(stream.video);

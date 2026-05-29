@@ -1,7 +1,7 @@
 import { bpmState } from "../state";
 import { stringEmit } from "../socket/ioEmit";
 
-export const gridChange = (arg) => {
+export const gridChange = (arg?: { source?: string; value?: number; property?: string }) => {
   if (arg && arg.property) {
     if (arg.property !== "TRUE" && arg.property !== "FALSE") {
       let averageFlag = 0;

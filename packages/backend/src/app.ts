@@ -18,7 +18,6 @@ import { initStreams } from "./data";
 import { loadAllStates } from "./state";
 import { ioState } from "./state/states/ioState";
 import { countersRedis } from "./redis/streamsRedis";
-import { triggerLeftPersonDetect } from "./clientSetting/clientSettingsEmit";
 import {
   nightScheduleState,
   startNightSchedule,
@@ -149,7 +148,6 @@ app.post("/api/persondetect", function (req, res) {
   }
   ioState.io?.emit("personDetectFromServer");
   if (body.direction === "left") {
-    triggerLeftPersonDetect();
     countersRedis.increment("visitor").then((count) => {
       console.log("visitor count:", count);
     });

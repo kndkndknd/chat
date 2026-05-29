@@ -190,3 +190,8 @@ export type arduinoStateType = {
   connected: boolean;
   relay: "on" | "off";
 };
+
+export type m5StateType = {
+  rotation: arduinoStateType;
+  viberation: arduinoStateType;
+};
