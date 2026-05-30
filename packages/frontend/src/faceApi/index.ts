@@ -3,54 +3,62 @@ import { canvasElement } from "../canvasEvent/canvasElement";
 import { socketState } from "../state";
 
 const MODEL_URL = "/models";
-const CLOSE_RATIO = 0.4;
-const BLINK_INTERVAL_MS = 1000;
+// 顔の向きの許容範囲。鼻先が顔の中心からこの割合以内なら「正面に近い」とみなす（正面±40%）。
+const FRONTAL_RATIO = 0.4;
 
 let overlayCanvas: HTMLCanvasElement | null = null;
-let comeCloserEl: HTMLDivElement | null = null;
 let active = false;
 let modelsLoaded = false;
-let showComeCloser = false;
-let comeCloserVisible = false;
-let wasLargeFace = false;
-let blinkTimer: number | null = null;
+let wasFrontal = false;
 
-const ensureComeCloserEl = (): HTMLDivElement => {
-  if (comeCloserEl) return comeCloserEl;
-  const el = document.createElement("div");
-  el.id = "comeCloser";
-  el.textContent = "come closer";
-  el.style.cssText =
-    "position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);" +
-    "z-index:4;pointer-events:none;color:#fff;font-size:8vw;font-weight:bold;" +
-    "text-shadow:0 0 8px #000;display:none;";
-  document.getElementById("wrapper")!.appendChild(el);
-  comeCloserEl = el;
-  return el;
-};
+// 正面から外れているときにウィンドウ全体を白黒点滅させるためのオーバーレイ。
+let flashOverlay: HTMLDivElement | null = null;
+let flashTimer: ReturnType<typeof setInterval> | null = null;
+let flashWhite = false;
+// faceDetectScenario 起動後、この時刻までは点滅を無効化する（90秒間）。
+let flashDisabledUntil = 0;
 
-const setComeCloserVisible = (visible: boolean) => {
-  comeCloserVisible = visible;
-  if (comeCloserEl) comeCloserEl.style.display = visible ? "block" : "none";
-};
+const FLASH_DISABLE_MS = 90 * 1000;
 
-const startBlink = () => {
-  if (blinkTimer !== null) return;
-  blinkTimer = window.setInterval(() => {
-    if (!showComeCloser) {
-      if (comeCloserVisible) setComeCloserVisible(false);
-      return;
-    }
-    setComeCloserVisible(!comeCloserVisible);
-  }, BLINK_INTERVAL_MS);
-};
+// faceDetectScenario 実行中〜終了後の一定時間は、この時刻まで顔認識自体を停止する。
+// サーバーの faceDetectBlockFromServer 通知で設定される。
+let faceDetectBlockedUntil = 0;
 
-const stopBlink = () => {
-  if (blinkTimer !== null) {
-    clearInterval(blinkTimer);
-    blinkTimer = null;
+// faceDetectScenario 実行に伴い、durationMs ミリ秒だけ顔認識をブロックする。
+export function blockFaceDetection(durationMs: number): void {
+  faceDetectBlockedUntil = Date.now() + durationMs;
+}
+
+function startFlashing(): void {
+  if (Date.now() < flashDisabledUntil) return;
+  if (flashTimer !== null) return;
+  if (!flashOverlay) {
+    flashOverlay = document.createElement("div");
+    flashOverlay.id = "faceFlash";
+    flashOverlay.style.cssText =
+      "position:fixed;inset:0;z-index:9999;pointer-events:none;";
+    document.body.appendChild(flashOverlay);
   }
-};
+  flashOverlay.style.display = "block";
+  // 1fps（1秒ごとに白⇔黒を切り替え）で点滅させる。
+  const tick = (): void => {
+    flashWhite = !flashWhite;
+    flashOverlay!.style.backgroundColor = flashWhite ? "#fff" : "#000";
+  };
+  tick();
+  flashTimer = setInterval(tick, 500);
+}
+
+function stopFlashing(): void {
+  if (flashTimer !== null) {
+    clearInterval(flashTimer);
+    flashTimer = null;
+  }
+  flashWhite = false;
+  if (flashOverlay) {
+    flashOverlay.style.display = "none";
+  }
+}
 
 export async function initFaceDetection(): Promise<void> {
   if (active) return;
@@ -70,19 +78,15 @@ export async function initFaceDetection(): Promise<void> {
       "position:absolute;top:0;left:0;z-index:3;pointer-events:none;";
     document.getElementById("wrapper")!.appendChild(overlayCanvas);
   }
-  ensureComeCloserEl();
 
   active = true;
-  startBlink();
   detectLoop();
 }
 
 export function stopFaceDetection(): void {
   active = false;
-  stopBlink();
-  showComeCloser = false;
-  wasLargeFace = false;
-  setComeCloserVisible(false);
+  wasFrontal = false;
+  stopFlashing();
   if (overlayCanvas) {
     const ctx = overlayCanvas.getContext("2d");
     ctx?.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
@@ -91,6 +95,17 @@ export function stopFaceDetection(): void {
 
 async function detectLoop(): Promise<void> {
   if (!active || !overlayCanvas) return;
+
+  // faceDetectScenario 実行中〜終了後の一定時間は顔認識をブロックする。
+  // 認識処理（detectAllFaces）も emit も行わず、次のループまで待つ。
+  if (Date.now() < faceDetectBlockedUntil) {
+    const ctx = overlayCanvas.getContext("2d");
+    ctx?.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    stopFlashing();
+    wasFrontal = false;
+    setTimeout(() => detectLoop(), 100);
+    return;
+  }
 
   const video = canvasElement.video;
 
@@ -112,23 +127,38 @@ async function detectLoop(): Promise<void> {
     if (detections.length > 0) {
       faceapi.draw.drawFaceLandmarks(overlayCanvas, resized);
       const { x, width, height } = resized[0].detection.box;
-      const ratio = height / window.innerHeight;
-      if (ratio >= CLOSE_RATIO) {
-        showComeCloser = false;
-        setComeCloserVisible(false);
-        if (!wasLargeFace) {
+
+      // 68点ランドマークから顔の向きを推定する。
+      // 左右の顎輪郭の中点（顔の中心）に対する鼻先の水平オフセットを、
+      // 顔の半幅で正規化した値で正面度を測る（中央=0、真横=±1）。
+      const positions = resized[0].landmarks.positions;
+      const leftJaw = positions[0];
+      const rightJaw = positions[16];
+      const noseTip = positions[30];
+      const faceCenterX = (leftJaw.x + rightJaw.x) / 2;
+      const halfFaceWidth = (rightJaw.x - leftJaw.x) / 2;
+      const frontalOffset =
+        halfFaceWidth > 0 ? (noseTip.x - faceCenterX) / halfFaceWidth : 1;
+
+      if (Math.abs(frontalOffset) <= FRONTAL_RATIO) {
+        if (!wasFrontal) {
           socketState.socket?.emit("faceDetectFromClient", { x, width, height });
+          // faceDetectScenario が始まるので、90秒間は点滅を無効化する。
+          flashDisabledUntil = Date.now() + FLASH_DISABLE_MS;
         }
-        wasLargeFace = true;
+        wasFrontal = true;
+        stopFlashing();
       } else {
-        wasLargeFace = false;
-        showComeCloser = true;
+        wasFrontal = false;
+        // 正面から外れている（オフセットが±0.4超）ので白黒点滅させる。
+        startFlashing();
       }
     } else {
-      wasLargeFace = false;
-      showComeCloser = false;
-      setComeCloserVisible(false);
+      wasFrontal = false;
+      stopFlashing();
     }
+  } else {
+    stopFlashing();
   }
 
   setTimeout(() => detectLoop(), 100);

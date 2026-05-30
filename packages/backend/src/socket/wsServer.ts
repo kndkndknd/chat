@@ -137,7 +137,7 @@ export const wsServer = (
           countersRedis.increment("faceDetect").then((count) => {
             console.log("faceDetect count:", count);
           });
-          await faceDetectScenario();
+          await faceDetectScenario(id);
           break;
         }
 

@@ -1,0 +1,27 @@
+{
+  "steps": [
+    {
+      "delayMs": 0,
+      "actions": [{ "type": "playFirstBuffer" }]
+    },
+    {
+      "delayMs": 30000,
+      "actions": [{ "type": "playRestBuffers" }]
+    },
+    {
+      "delayMs": 45000,
+      "actions": [{ "type": "execStream", "source": "CHAT" }]
+    },
+    {
+      "delayMs": 60000,
+      "actions": [{ "type": "stopEmit" }, { "type": "rotateItsuki" }]
+    },
+    {
+      "delayMs": 90000,
+      "actions": [
+        { "type": "bpmChange", "valueMin": 30, "valueMax": 60 },
+        { "type": "execStream", "source": "CHAT" }
+      ]
+    }
+  ]
+}

@@ -24,7 +24,7 @@ import { chatReq, recordReqFromServer, streamPlay } from "./stream";
 import { gainChange } from "./webaudio";
 import { wholeCmd } from "./cmd/wholeCmd";
 import { startChunkedRecording, stopChunkedRecording } from "./recording";
-import { initFaceDetection, stopFaceDetection } from "./faceApi";
+import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
 import {
   attachMsePlayback,
   appendMediaChunk,
@@ -404,6 +404,14 @@ export const socket = (): void => {
   socketState.socket.on("personDetectFromServer", () => {
     flickering();
   });
+
+  // faceDetectScenario 実行中〜終了後の一定時間、顔認識をブロックする。
+  socketState.socket.on(
+    "faceDetectBlockFromServer",
+    (data: { durationMs: number }) => {
+      blockFaceDetection(data.durationMs);
+    },
+  );
 
   socketState.socket.on(
     "clientSettingsFromServer",
