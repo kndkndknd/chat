@@ -17,11 +17,16 @@ import { cmdLogging } from "./logging/cmdLogging";
 import { initStreams } from "./data";
 import { loadAllStates } from "./state";
 import { ioState } from "./state/states/ioState";
-import { countersRedis } from "./redis/streamsRedis";
+import { countersRedis, streamsRedis } from "./redis/streamsRedis";
 import {
   nightScheduleState,
   startNightSchedule,
 } from "./scenario/nightSchedule";
+import { getMongoDb } from "./mongo/client";
+import {
+  scenarioItsuki,
+  isScenarioItsukiActive,
+} from "./scenario/scenarioItsuki";
 
 // import { cors } from "cors";
 // const corsOptions = {
@@ -78,6 +83,11 @@ function getIpAddress() {
 
 const host = getIpAddress();
 console.log(`Server listening on ${host}:${port}`);
+
+// 起動時に一度だけ Mongo へ接続し、疎通を確認する。
+getMongoDb().catch((err) => {
+  console.error("Mongo initial connection failed:", err);
+});
 
 wsServer(httpserver);
 
@@ -158,6 +168,53 @@ app.post("/api/persondetect", function (req, res) {
     });
   }
   res.json({ success: true });
+});
+
+// シナリオ（scenarioItsuki）を HTTP から起動する。
+app.post("/api/scenario", async function (req, res) {
+  try {
+    await scenarioItsuki();
+    res.json({ success: true });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
+// itsukiTimer の状態を返す。NULL なら stopping、NULL でなければ active。
+app.get("/api/scenario", function (req, res) {
+  res.json({ status: isScenarioItsukiActive() ? "active" : "stopping" });
+});
+
+// CLEAR BUFFER 相当の処理を HTTP から実行する。
+// body.stream を省略すると全ストリームのバッファをクリア（CHAT/EMPTY/KICK/SNARE/HAT は除外）、
+// 指定すると該当ストリームのバッファのみクリアする。
+app.post("/api/clear-buffer", async function (req, res) {
+  const stream: string | undefined = req.body?.stream;
+  const excluded = ["CHAT", "EMPTY", "KICK", "SNARE", "HAT"];
+  try {
+    if (stream === undefined) {
+      const allKeys = await streamsRedis.getAllKeys();
+      const cleared: string[] = [];
+      for (const name of allKeys) {
+        if (!excluded.includes(name)) {
+          await streamsRedis.clear(name);
+          cleared.push(name);
+        }
+      }
+      res.json({ success: true, cleared });
+    } else if (await streamsRedis.hasKey(stream)) {
+      await streamsRedis.clear(stream);
+      res.json({ success: true, cleared: [stream] });
+    } else {
+      res
+        .status(404)
+        .json({ success: false, message: `Stream not found: ${stream}` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
 });
 
 loadAllStates()

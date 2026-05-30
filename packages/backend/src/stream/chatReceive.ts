@@ -95,6 +95,7 @@ export const chatEmit = async (from?) => {
         const timeOutVal = gridTimeoutVal("CHAT", targetId);
         setTimeout(() => {
           if (
+            bpmState[targetId] &&
             bpmState[targetId].stream.CHAT.gridFlag &&
             !bpmState[targetId].stream.CHAT.quantizeFlag
           ) {

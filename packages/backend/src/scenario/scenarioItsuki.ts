@@ -16,7 +16,8 @@ const runOnce = async () => {
     itsukiState.faceDetect.yesterdayLoaded = false;
     console.error("[scenarioItsuki] loadYesterdayPlayback error", e);
   }
-  const scenario = await loadScenario();
+  const scenario = await loadScenario("scenario");
+  console.log("[scenarioItsuki] loaded scenario", scenario);
   await execScenario(scenario);
 };
 
@@ -31,6 +32,9 @@ export const scenarioItsuki = async () => {
     runOnce().catch((e) => console.log("[scenarioItsuki] error", e));
   }, INTERVAL_MS);
 };
+
+// itsukiTimer が動作中（NULL でない）かどうかを返す。
+export const isScenarioItsukiActive = () => itsukiTimer !== null;
 
 export const stopScenarioItsuki = () => {
   if (itsukiTimer !== null) {
