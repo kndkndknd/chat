@@ -9,11 +9,11 @@ export const changeCmdParam = async (
   id: string,
 ): Promise<void> => {
   if (strings === "TWICE" || strings === "HALF") {
-    if (!clientState.client[id].self) {
+    // if (!clientState.client[id].self) {
       sinewaveChange(strings);
-    } else {
-      sinewaveChange(strings, { id });
-    }
+    // } else {
+    //   sinewaveChange(strings, { id });
+    // }
   } else if (Object.keys(parameterList).includes(strings)) {
     parameterChange(parameterList[strings], { source: id });
   } else if (strings === "FUSEJI" || strings === "EMOJI") {

@@ -21,7 +21,7 @@ import { emojiState, erasePrint, textPrint, showImage, flickering } from "./canv
 import { stopCmd, cmdFromServer } from "./cmd";
 import { quantizeFromServer } from "./quantize/quantizeFromServer";
 import { chatReq, recordReqFromServer, streamPlay } from "./stream";
-import { gainChange } from "./webaudio";
+import { setGainUI } from "./ui/gainUI";
 import { wholeCmd } from "./cmd/wholeCmd";
 import { startChunkedRecording, stopChunkedRecording } from "./recording";
 import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
@@ -206,8 +206,11 @@ export const socket = (): void => {
     },
   );
 
+  // gainFromClient(スライダー操作)/ gainReqFromClient(UI を開く)への応答。
+  // 実際の音量(GainNode)には適用せず、入力欄の表示のみ更新する。
+  // スライダー操作時の発音は gainUI 側のローカル audition が担う。
   socketState.socket.on("gainFromServer", (data) => {
-    gainChange(data);
+    setGainUI(data);
   });
 
   socketState.socket.on(

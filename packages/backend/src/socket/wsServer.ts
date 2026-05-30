@@ -16,7 +16,7 @@ import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFro
 import { feedWebMChunk } from "../webRTC/weriftClient";
 import { ensureWebRtcSession } from "../webRTC/cameraRotator";
 import { receiveWholeReq } from "../stream/receiveWholeReq";
-import { gainFromClient } from "../cmd/gainFromClient";
+import { gainFromClient, gainReqFromClient } from "../cmd/gainFromClient";
 import { m5Switch } from "../rotate/m5Access";
 import { IoFacade } from "./IoFacade";
 
@@ -110,6 +110,11 @@ export const wsServer = (
         case "gainFromClient":
           console.log("gainFromClient", data);
           gainFromClient(data as gainStateType, facade);
+          break;
+
+        case "gainReqFromClient":
+          console.log("gainReqFromClient", id);
+          gainReqFromClient(facade);
           break;
 
         case "bufferRecFromClient":
