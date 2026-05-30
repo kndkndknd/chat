@@ -53,7 +53,41 @@ export const streamEmit = async (
     if (buffLen > 0) {
       if (!streamState.random[source]) {
         if (index !== undefined) {
-          await streamsRedis.setIndex(source, index);
+          // index は recordIndex（録音セッションID）。同一recordIndexの
+          // バッファをタイムスタンプ昇順（古い順）で1つずつ送信する。
+          // positions は getPositionsByRecordIndex により timestamp 昇順。
+          const positions = await streamsRedis.getPositionsByRecordIndex(
+            source,
+            index,
+          );
+          if (positions.length > 0) {
+            // recordIndex 専用カーソルで送出位置を管理する。
+            // from === undefined は実行開始なので先頭（最古）から。
+            // 継続時は前回の続き。末尾まで送ったら先頭に戻る。
+            const ordinal =
+              from === undefined
+                ? 0
+                : (await streamsRedis.getRecordCursor(source, index)) %
+                  positions.length;
+            const pos = positions[ordinal];
+            await streamsRedis.setRecordCursor(
+              source,
+              index,
+              (ordinal + 1) % positions.length,
+            );
+            const entry = await streamsRedis.get(source, pos);
+            const bufferSize = entry?.bufferSize ?? streamState.basisBufferSize;
+            buff = {
+              source: source,
+              bufferSize: bufferSize,
+              audio: entry?.audio ?? new Float32Array(bufferSize).buffer,
+              video: entry?.video ?? "",
+              duration: entry?.duration ?? bufferSize / 44100,
+            };
+            console.log(
+              `recordIndex ${index} seek -> listPos ${pos} (${ordinal + 1}/${positions.length})`,
+            );
+          }
         } else if (timestamp !== undefined) {
           const closest = await streamsRedis.findClosestByTimestamp(source, timestamp);
           if (closest !== null) {

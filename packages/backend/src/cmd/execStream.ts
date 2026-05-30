@@ -7,7 +7,8 @@ import { streamList } from "../data";
 export const execStream = async (
   source: string,
   id: string,
-  index?: number
+  index?: number,
+  from?: string
 ): Promise<void> => {
   if (source === "CHAT") {
     chatPreparation();
@@ -17,7 +18,8 @@ export const execStream = async (
     voiceEmit("RECORD", id);
   } else if (streamList.includes(source)) {
     console.log("in stream");
-    streamEmit(source, undefined, undefined, index);
+    // from が指定されていればその端末を起点に再生する
+    streamEmit(source, from ?? undefined, undefined, index);
     voiceEmit(source, id);
   }
 };

@@ -9,6 +9,9 @@ export function buffKey(name: string) {
 export function indexKey(name: string) {
   return `streams:${name}:index`;
 }
+export function recordCursorKey(name: string, recordIndex: number) {
+  return `streams:${name}:recordCursor:${recordIndex}`;
+}
 
 export function serializeStream(buff: buffStateType): string {
   const audioB64 = Buffer.from(buff.audio).toString("base64");
@@ -142,6 +145,53 @@ export const streamsRedis = {
 
     const firstIndex = entries.findIndex((e) => e.timestamp === closestTs);
     return { entry: entries[firstIndex], firstIndex };
+  },
+
+  // recordIndex 単位の送出カーソル（次に送出する positions の序数）
+  async getRecordCursor(name: string, recordIndex: number): Promise<number> {
+    const val = await redis.get(recordCursorKey(name, recordIndex));
+    return val !== null ? parseInt(val, 10) : 0;
+  },
+
+  async setRecordCursor(
+    name: string,
+    recordIndex: number,
+    val: number,
+  ): Promise<void> {
+    await redis.set(recordCursorKey(name, recordIndex), val);
+  },
+
+  // recordIndex を持つエントリの {recordIndex, timestamp} 一覧を返す
+  async getRecordIndexEntries(
+    name: string,
+  ): Promise<{ recordIndex: number; timestamp: number }[]> {
+    const raws = await redis.lrange(buffKey(name), 0, -1);
+    const items: { recordIndex: number; timestamp: number }[] = [];
+    for (const raw of raws) {
+      const obj = JSON.parse(raw);
+      if (obj.recordIndex !== undefined && obj.recordIndex !== null) {
+        items.push({ recordIndex: obj.recordIndex, timestamp: obj.timestamp ?? 0 });
+      }
+    }
+    return items;
+  },
+
+  // recordIndex に一致するバッファのリスト位置をタイムスタンプ昇順で返す
+  async getPositionsByRecordIndex(
+    name: string,
+    recordIndex: number,
+  ): Promise<number[]> {
+    const raws = await redis.lrange(buffKey(name), 0, -1);
+    if (raws.length === 0) return [];
+    const items: { idx: number; timestamp: number }[] = [];
+    raws.forEach((raw, idx) => {
+      const obj = JSON.parse(raw);
+      if (obj.recordIndex === recordIndex) {
+        items.push({ idx, timestamp: obj.timestamp ?? 0 });
+      }
+    });
+    items.sort((a, b) => a.timestamp - b.timestamp);
+    return items.map((x) => x.idx);
   },
 };
 

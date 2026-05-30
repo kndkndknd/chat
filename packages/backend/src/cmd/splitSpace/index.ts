@@ -51,6 +51,7 @@ import { splitArduino } from "./splitArduino";
 import { splitVoskCmd } from "./splitVoskCmd";
 import { splitRotate } from "./splitRotate";
 import { splitToPostgres } from "./splitToPostgres";
+import { splitPlaybackWithIndex } from "./splitPlaybackWithIndex";
 
 
 export const splitSpace = async (
@@ -358,6 +359,9 @@ export const splitSpace = async (
     }
   } else if (stringArr[0] === "PA") {
     splitPaTarget(stringArr, arrTypeArr);
+  } else if (stringArr[0] === "PLAYBACK" && arrTypeArr[1] === "number") {
+    splitPlaybackWithIndex(Number(stringArr[1]));
+
   } else if (stringArr[0] === "QUANTIZE") {
     splitQuantize(stringArr.splice(1));
   } else if (
