@@ -17,6 +17,7 @@ import { feedWebMChunk } from "../webRTC/weriftClient";
 import { ensureWebRtcSession } from "../webRTC/cameraRotator";
 import { receiveWholeReq } from "../stream/receiveWholeReq";
 import { gainFromClient } from "../cmd/gainFromClient";
+import { m5Switch } from "../rotate/m5Access";
 import { IoFacade } from "./IoFacade";
 
 let strings = "";
@@ -130,6 +131,13 @@ export const wsServer = (
             data as { audio: ArrayBuffer; video: string; source: string; bufferSize: number } | undefined
           );
           break;
+
+        case "rotateReqFromClient": {
+          const value = data === true;
+          console.log("rotateReqFromClient", id, value);
+          await m5Switch("rotation", value);
+          break;
+        }
 
         case "faceDetectFromClient": {
           const faceData = data as { x: number; width: number; height: number };

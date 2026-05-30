@@ -193,5 +193,5 @@ export type arduinoStateType = {
 
 export type m5StateType = {
   rotation: arduinoStateType;
-  viberation: arduinoStateType;
+  vibration: arduinoStateType;
 };

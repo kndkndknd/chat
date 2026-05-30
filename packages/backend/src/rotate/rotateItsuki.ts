@@ -23,7 +23,7 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 export async function rotateItsuki(
   offDelayMs: number = 40_000,
   testIntervalMs: number = 1_000,
-  sets: number = 4,
+  sets: number = 1,
   pollTimeoutMs: number = 60_000,
 ): Promise<void> {
   for (let i = 0; i < sets; i++) {
@@ -33,27 +33,27 @@ export async function rotateItsuki(
     await sleep(offDelayMs);
     await m5Switch("rotation", false);
 
-    console.log(`[rotateItsuki] set ${i + 1}/${sets} polling for ON`);
-    const pollStart = Date.now();
-    let detected = false;
-    while (Date.now() - pollStart < pollTimeoutMs) {
-      const isOn = await m5Test("rotation");
-      if (isOn) {
-        detected = true;
-        break;
-      }
-      await sleep(testIntervalMs);
-    }
-    if (!detected) {
-      console.log(
-        `[rotateItsuki] set ${i + 1}/${sets} poll timeout (${pollTimeoutMs}ms), forcing ON`,
-      );
-      await m5Switch("rotation", true);
-    }
+    // console.log(`[rotateItsuki] set ${i + 1}/${sets} polling for ON`);
+    // const pollStart = Date.now();
+    // let detected = false;
+    // while (Date.now() - pollStart < pollTimeoutMs) {
+    //   const isOn = await m5Test("rotation");
+    //   if (isOn) {
+    //     detected = true;
+    //     break;
+    //   }
+    //   await sleep(testIntervalMs);
+    // }
+    // if (!detected) {
+    //   console.log(
+    //     `[rotateItsuki] set ${i + 1}/${sets} poll timeout (${pollTimeoutMs}ms), forcing ON`,
+    //   );
+    //   await m5Switch("rotation", true);
+    // }
 
-    console.log(`[rotateItsuki] set ${i + 1}/${sets} off after ${offDelayMs}ms`);
-    await sleep(offDelayMs);
-    await m5Switch("rotation", false);
+    // console.log(`[rotateItsuki] set ${i + 1}/${sets} off after ${offDelayMs}ms`);
+    // await sleep(offDelayMs);
+    // await m5Switch("rotation", false);
   }
 
   console.log(`[rotateItsuki] done (${sets} sets)`);

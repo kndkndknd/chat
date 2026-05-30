@@ -8,8 +8,8 @@ export const m5State: m5StateType = {
     connected: false,
     relay: "off",
   },
-  viberation: {
-    host: "192.168.42.144",
+  vibration: {
+    host: "192.168.42.242",
     port: 80,
     connected: false,
     relay: "off",

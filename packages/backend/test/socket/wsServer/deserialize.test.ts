@@ -4,6 +4,7 @@ vi.mock("../../../src/state", () => ({
   clientState: { client: {}, streamClient: [], cmdClient: [] },
   currentState: { stream: {} },
   bpmState: {},
+  arduinoState: { host: "localhost", port: 5050, connected: false, relay: "off" },
 }));
 vi.mock("../../../src/state/states/ioState", () => ({
   ioState: { io: null },

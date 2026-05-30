@@ -98,6 +98,7 @@ export const receiveEnter = async (
     strings === "NO" ||
     strings === "NUMBER" ||
     strings === "SWITCH" ||
+    strings === "ROTATE" ||
     strings === "CLOCK" ||
     strings === "SOLFEGIO" ||
     strings === "FILTER" ||
