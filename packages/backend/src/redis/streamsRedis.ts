@@ -177,6 +177,17 @@ export const streamsRedis = {
   },
 
   // recordIndex に一致するバッファのリスト位置をタイムスタンプ昇順で返す
+  // 保存済みバッファの最大 recordIndex を返す。1件も無ければ null。
+  async getMaxRecordIndex(name: string): Promise<number | null> {
+    const entries = await this.getRecordIndexEntries(name);
+    if (entries.length === 0) return null;
+    let max = entries[0].recordIndex;
+    for (const e of entries) {
+      if (e.recordIndex > max) max = e.recordIndex;
+    }
+    return max;
+  },
+
   async getPositionsByRecordIndex(
     name: string,
     recordIndex: number,
