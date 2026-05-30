@@ -216,7 +216,6 @@ export const socket = (): void => {
   socketState.socket.on(
     "voiceFromServer",
     (data: { text: string; lang: string }) => {
-      console.log("debug");
       const uttr = new SpeechSynthesisUtterance();
       uttr.lang = data.lang;
       uttr.text = data.text;

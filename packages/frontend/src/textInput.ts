@@ -2,8 +2,17 @@ import { SocketFacade } from "./socket/SocketFacade";
 import { textPrint, erasePrint, eraseText } from "./canvasEvent";
 import { bass } from "./webaudio";
 import { toggleGainUI } from "./ui/gainUI";
+import { voice } from "./voice";
 // import { frontState } from "./globalVariable";
 let bassFlag = false;
+// /counter で rotateReqFromClient 送信後、1分間は再送信を抑制するためのフラグ
+let counterCooldown = false;
+let counterTimer: ReturnType<typeof setTimeout> | null = null;
+const COUNTER_COOLDOWN_MS = 60 * 1000;
+// rotateReqFromClient(true) の送信回数。5回に達したら長いクールダウンに入る
+let counterSendCount = 0;
+const COUNTER_MAX_SENDS = 5;
+const COUNTER_LONG_COOLDOWN_MS = 3 * 60 * 1000;
 
 export const keyDown = (
   e: KeyboardEvent,
@@ -23,6 +32,55 @@ export const keyDown = (
     character = keyCode[e.keyCode];
   }
 
+  if (window.location.pathname === "/counter") {
+    // クールダウン中は textInput があっても rotateReqFromClient を送信しない
+    if (!counterCooldown) {
+      // クールダウン開始時の送信 → サーバで m5Switch(rotation, true)
+      socket.emit("rotateReqFromClient", true);
+      counterSendCount++;
+      counterCooldown = true;
+      counterTimer = setTimeout(() => {
+        counterTimer = null;
+        // クールダウン終了時の送信 → サーバで m5Switch(rotation, false)
+        socket.emit("rotateReqFromClient", false);
+        // 1分経ったら character を ArrowDown として textInput を実行する
+        processChar("ArrowDown", stringsClient, socket, strCnvs, stx);
+
+        if (counterSendCount >= COUNTER_MAX_SENDS) {
+          // 5回送信に達したら、false 実行後さらに3分間のクールダウンを継続する
+          counterTimer = setTimeout(() => {
+            counterCooldown = false;
+            counterTimer = null;
+            counterSendCount = 0;
+          }, COUNTER_LONG_COOLDOWN_MS);
+        } else {
+          counterCooldown = false;
+        }
+      }, COUNTER_COOLDOWN_MS);
+    }
+      stringsClient = stringsClient + character;
+      eraseText(stx, strCnvs);
+      textPrint(stringsClient);
+
+      // 20文字を超えたら英語で読み上げる
+      if (stringsClient.length > 20) {
+        voice({ text: stringsClient, lang: "en-US" });
+        stringsClient = "";
+      }
+
+    return stringsClient;
+  }
+
+  return processChar(character, stringsClient, socket, strCnvs, stx);
+};
+
+const processChar = (
+  character: string,
+  stringsClient: string,
+  socket: SocketFacade,
+  strCnvs: HTMLCanvasElement,
+  stx: CanvasRenderingContext2D,
+): string => {
   if (character === "\\") {
     bassFlag = !bassFlag;
     stringsClient = "BASS";
