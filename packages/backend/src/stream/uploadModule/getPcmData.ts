@@ -55,7 +55,6 @@ export const promiseGetPcmData = (
       ffmpegOption.push("-t");
       ffmpegOption.push(options.t);
     }
-    console.log(ffmpegOption);
 
     const proc = spawn("ffmpeg", ffmpegOption);
     const buffArr: ArrayBuffer[] = [];
@@ -65,7 +64,6 @@ export const promiseGetPcmData = (
       // const data = Buffer.from(execaReturnData.stdout);
       // console.log(data);
       var buffLen = buff.length;
-      console.log("buffLen", buff.length);
       /*
       for (let buffIndex = 0; buffIndex + 1 < buffLen; buffIndex++) {
         value = buff.readInt16LE(buffIndex, true) / (327670);
@@ -86,7 +84,6 @@ export const promiseGetPcmData = (
         // tmpBuff.push(value);
         // console.log(chunkIndex, value);
         chunkIndex++;
-        console.log("chunkIndex(oddByte)", chunkIndex);
         if (chunkIndex === bufferSize) {
           buffArr.push(tmpBuff.buffer);
           tmpBuff = new Float32Array(bufferSize);
@@ -178,7 +175,6 @@ export const promiseGetBitCrashed = (
       ffmpegOption.push("-t");
       ffmpegOption.push(options.t);
     }
-    console.log(ffmpegOption);
 
     const proc = spawn("ffmpeg", ffmpegOption);
     const buffArr: ArrayBuffer[] = [];
@@ -188,7 +184,6 @@ export const promiseGetBitCrashed = (
       // const data = Buffer.from(execaReturnData.stdout);
       // console.log(data);
       var buffLen = buff.length;
-      console.log(buff.length);
       for (let buffIndex = 0; buffIndex + 1 < buffLen; buffIndex++) {
         value = buff.readInt16LE(buffIndex, true) / 32767.0;
         tmpBuff[chunkIndex] = value;
@@ -198,7 +193,6 @@ export const promiseGetBitCrashed = (
           buffArr.push(tmpBuff.buffer);
           tmpBuff = new Float32Array(bufferSize);
           chunkIndex = 0;
-          console.log("buffArr", buffArr.length);
         }
       }
       // return await buffArr;
@@ -259,7 +253,6 @@ export const awaitGetBitCracshedData = async (
     ffmpegOption.push("-t");
     ffmpegOption.push(options.t);
   }
-  console.log(ffmpegOption);
 
   // const { stdout } = await execa(ffmpegPath, [
   // await execa(ffmpegPath, ffmpegOption).then((execaReturnData) => {

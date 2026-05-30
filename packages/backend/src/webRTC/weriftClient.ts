@@ -200,16 +200,8 @@ function startFfmpegSubprocess(): void {
       const rtp = RtpPacket.deSerialize(msg);
       videoTrack?.writeRtp(rtp);
       videoRtpRx++;
-      if (videoRtpRx === 1 || videoRtpRx % 200 === 0) {
-        console.log(
-          `[ffmpeg→werift] video RTP rx=${videoRtpRx} err=${videoRtpErr} pt=${rtp.header.payloadType} seq=${rtp.header.sequenceNumber}`,
-        );
-      }
     } catch (e) {
       videoRtpErr++;
-      if (videoRtpErr <= 3) {
-        console.warn("[ffmpeg→werift] video RTP parse error:", e);
-      }
     }
   });
   videoUdp.bind(RTP_VIDEO_PORT, "127.0.0.1");
@@ -222,17 +214,8 @@ function startFfmpegSubprocess(): void {
       const rtp = RtpPacket.deSerialize(msg);
       audioTrack?.writeRtp(rtp);
       audioRtpRx++;
-      // Opus 20ms = 50 pkt/秒。初回〜10 packet と以降 50 ごとに出力
-      if (audioRtpRx <= 10 || audioRtpRx % 50 === 0) {
-        console.log(
-          `[ffmpeg→werift] audio RTP rx=${audioRtpRx} err=${audioRtpErr} pt=${rtp.header.payloadType} seq=${rtp.header.sequenceNumber} ts=${rtp.header.timestamp}`,
-        );
-      }
     } catch (e) {
       audioRtpErr++;
-      if (audioRtpErr <= 3) {
-        console.warn("[ffmpeg→werift] audio RTP parse error:", e);
-      }
     }
   });
   audioUdp.bind(RTP_AUDIO_PORT, "127.0.0.1");
@@ -264,18 +247,15 @@ function startFfmpegSubprocess(): void {
     `rtp://127.0.0.1:${RTP_AUDIO_PORT}`,
   ]);
 
-  ffmpegProc.stderr?.on("data", (d: Buffer) => {
-    console.log("[ffmpeg]", d.toString().trim());
-  });
+  // ffmpeg の stderr は標準出力に出さない (バナー/進捗/統計でログが埋まるため)。
+  // data を読み捨てて背圧でブロックしないようにだけしておく。
+  ffmpegProc.stderr?.resume();
 
-  ffmpegProc.on("close", (code) => {
-    console.log("[ffmpeg] exited:", code);
+  ffmpegProc.on("close", () => {
     ffmpegProc = null;
     videoUdp?.close(); videoUdp = null;
     audioUdp?.close(); audioUdp = null;
   });
-
-  console.log("[werift] ffmpeg pipeline started");
 }
 
 // ---- 受信パイプライン (werift 内蔵 MediaRecorder で RTP→WebM) ----
