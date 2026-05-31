@@ -1,6 +1,6 @@
 import { SocketFacade } from "./socket/SocketFacade";
 import { textPrint, erasePrint, eraseText } from "./canvasEvent";
-import { bass } from "./webaudio";
+import { bass, sinewave } from "./webaudio";
 import { toggleGainUI } from "./ui/gainUI";
 import { voice } from "./voice";
 // import { frontState } from "./globalVariable";
@@ -8,11 +8,15 @@ let bassFlag = false;
 // /counter で rotateReqFromClient 送信後、1分間は再送信を抑制するためのフラグ
 let counterCooldown = false;
 let counterTimer: ReturnType<typeof setTimeout> | null = null;
-const COUNTER_COOLDOWN_MS = 60 * 1000;
+const COUNTER_COOLDOWN_MS = 30 * 1000;
 // rotateReqFromClient(true) の送信回数。5回に達したら長いクールダウンに入る
 let counterSendCount = 0;
 const COUNTER_MAX_SENDS = 5;
 const COUNTER_LONG_COOLDOWN_MS = 3 * 60 * 1000;
+// sinewave のゲイン既定値（バックエンド定義 cmdState.GAIN.SINEWAVE と一致）
+const SINEWAVE_DEFAULT_GAIN = 0.2;
+// sinewave を鳴らし続ける時間（20秒）
+const SINEWAVE_DURATION_MS = 20 * 1000;
 
 export const keyDown = (
   e: KeyboardEvent,
@@ -62,9 +66,23 @@ export const keyDown = (
       eraseText(stx, strCnvs);
       textPrint(stringsClient);
 
-      // 20文字を超えたら英語で読み上げる
+      // 20文字を超えたら英語で読み上げる（/counter では音量を半分にする）
       if (stringsClient.length > 20) {
-        voice({ text: stringsClient, lang: "en-US" });
+        voice({ text: stringsClient, lang: "en-US", volume: 0.5 });
+
+        // 100〜20000 の数字として解釈できる文字列が含まれていれば sinewave を鳴らす
+        const matched = stringsClient.match(/\d+/);
+        if (matched) {
+          const frequency = parseInt(matched[0], 10);
+          if (frequency >= 100 && frequency <= 20000) {
+            sinewave(true, frequency, 0, 0, SINEWAVE_DEFAULT_GAIN);
+            // 20秒後に flag=false（その他の引数は前回と同じ）で停止する
+            setTimeout(() => {
+              sinewave(false, frequency, 0, 0, SINEWAVE_DEFAULT_GAIN);
+            }, SINEWAVE_DURATION_MS);
+          }
+        }
+
         stringsClient = "";
       }
 
