@@ -27,6 +27,12 @@ import {
   scenarioItsuki,
   isScenarioItsukiActive,
 } from "./scenario/scenarioItsuki";
+import {
+  enableNightMode,
+  disableNightMode,
+  isNightModeActive,
+} from "./nightMode/nightMode";
+import { startNightModeSchedule } from "./nightMode/nightModeSchedule";
 
 // import { cors } from "cors";
 // const corsOptions = {
@@ -55,7 +61,7 @@ const allowCrossDomain = function (req, res, next) {
   );
   // intercept OPTIONS method
   if ("OPTIONS" === req.method) {
-    res.send(200);
+    res.sendStatus(200);
   } else {
     next();
   }
@@ -73,16 +79,29 @@ const options = {
   passphrase: "chat",
 };
 
-const httpserver = Https.createServer(options, app).listen(port);
-
 function getIpAddress() {
   const nets = networkInterfaces();
   const net = nets["en0"]?.find((v) => v.family == "IPv4");
   return !!net ? net.address : null;
 }
 
-const host = getIpAddress();
-console.log(`Server listening on ${host}:${port}`);
+const httpserver = Https.createServer(options, app);
+
+// bind に成功したときだけ listening を表示する。
+httpserver.listen(port, () => {
+  const host = getIpAddress();
+  console.log(`Server listening on ${host}:${port}`);
+});
+
+// ポート使用中(EADDRINUSE)などの bind 失敗を握りつぶさず、明示して終了する。
+httpserver.on("error", (err: NodeJS.ErrnoException) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`Port ${port} is already in use. Server not started.`);
+  } else {
+    console.error("HTTP server error:", err);
+  }
+  process.exit(1);
+});
 
 // 起動時に一度だけ Mongo へ接続し、疎通を確認する。
 getMongoDb().catch((err) => {
@@ -186,6 +205,24 @@ app.get("/api/scenario", function (req, res) {
   res.json({ status: isScenarioItsukiActive() ? "active" : "stopping" });
 });
 
+// ナイトモードの ON/OFF を切り替える。
+// value:true で全端末の顔認識停止 + scenarioItsuki 停止 + 全端末 BLACK モード。
+// value:false でナイトモードを解除する（顔認識を元の設定に復元し、BLACK を解除）。
+app.post("/api/nightmode", function (req, res) {
+  try {
+    const value: boolean = req.body?.value === true;
+    if (value) {
+      enableNightMode();
+    } else {
+      disableNightMode();
+    }
+    res.json({ success: true, nightmode: isNightModeActive() });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
 // CLEAR BUFFER 相当の処理を HTTP から実行する。
 // body.stream を省略すると全ストリームのバッファをクリア（CHAT/EMPTY/KICK/SNARE/HAT は除外）、
 // 指定すると該当ストリームのバッファのみクリアする。
@@ -227,3 +264,5 @@ if(scenarioMode){
 } else {
   console.log("Scenario mode disabled");
 }
+// 19:30 にナイトモード ON、10:30 に OFF を自動実行するタイマー。
+startNightModeSchedule();

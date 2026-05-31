@@ -10,6 +10,7 @@ import { streamEmit } from "../stream/streamEmit";
 import { ioState } from "../state/states/ioState";
 import { connectFromClient } from "../clientSetting/connectFromClient";
 import { emitClientSettings } from "../clientSetting/clientSettingsEmit";
+import { applyNightModeToClient } from "../nightMode/nightMode";
 import { countersRedis } from "../redis/streamsRedis";
 import { faceDetectScenario } from "../scenario/faceDetectScenario";
 import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
@@ -69,6 +70,9 @@ export const wsServer = (
           const result = connectFromClient(data, id, ipAddress);
           if (result) {
             ws.send(JSON.stringify({ type: "debugFromServer" }));
+            // ナイトモード作動中なら、この端末も顔認識OFF＋BLACKに合わせる。
+            // emitClientSettings の前に facedetection を false にしておく。
+            applyNightModeToClient(id);
             emitClientSettings(id);
           } else {
             console.log("connectFromClient failed");
