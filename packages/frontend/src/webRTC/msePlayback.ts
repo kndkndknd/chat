@@ -147,14 +147,31 @@ function teardown(ctx: PlaybackCtx): void {
   ctx.appendCount = 0;
 }
 
+// WebRTC 通話中 (受信映像を MSE 再生している間) だけ <video> を canvas より前面に
+// 出す。canvas (#cnvs) は z-index:2 なので、それより大きい値を直接指定する。
+// 通話が終わると元の重なり順 (CSS の z-index:1) に戻す。
+const VIDEO_FRONT_Z_INDEX = "10";
+
+function bringVideoToFront(el: HTMLVideoElement): void {
+  el.style.zIndex = VIDEO_FRONT_Z_INDEX;
+}
+
+function restoreVideoStacking(el: HTMLVideoElement | null): void {
+  // インラインの z-index を外し、CSS 側の本来の重なり順に戻す。
+  if (el) el.style.removeProperty("z-index");
+}
+
 // ── video API ──
 export function attachMsePlayback(el: HTMLVideoElement): void {
   attach(videoCtx, el);
+  // attach は再生中なら早期 return するが、z-index の付与は冪等なので毎回呼んでよい。
+  bringVideoToFront(el);
 }
 export function appendMediaChunk(chunk: ArrayBuffer): void {
   appendChunk(videoCtx, chunk);
 }
 export function teardownMsePlayback(): void {
+  restoreVideoStacking(videoCtx.el as HTMLVideoElement | null);
   teardown(videoCtx);
 }
 

@@ -17,6 +17,7 @@ export const streamEmit = async (
   source: string,
   from?: string,
   timestamp?: number,
+  index?: number,
 ) => {
   currentState.stream[source] = true;
   console.log(`debug ${source} targetArr`, streamState.target[source]);
@@ -51,7 +52,43 @@ export const streamEmit = async (
     console.log("buff length:", buffLen);
     if (buffLen > 0) {
       if (!streamState.random[source]) {
-        if (timestamp !== undefined) {
+        if (index !== undefined) {
+          // index は recordIndex（録音セッションID）。同一recordIndexの
+          // バッファをタイムスタンプ昇順（古い順）で1つずつ送信する。
+          // positions は getPositionsByRecordIndex により timestamp 昇順。
+          const positions = await streamsRedis.getPositionsByRecordIndex(
+            source,
+            index,
+          );
+          if (positions.length > 0) {
+            // recordIndex 専用カーソルで送出位置を管理する。
+            // from === undefined は実行開始なので先頭（最古）から。
+            // 継続時は前回の続き。末尾まで送ったら先頭に戻る。
+            const ordinal =
+              from === undefined
+                ? 0
+                : (await streamsRedis.getRecordCursor(source, index)) %
+                  positions.length;
+            const pos = positions[ordinal];
+            await streamsRedis.setRecordCursor(
+              source,
+              index,
+              (ordinal + 1) % positions.length,
+            );
+            const entry = await streamsRedis.get(source, pos);
+            const bufferSize = entry?.bufferSize ?? streamState.basisBufferSize;
+            buff = {
+              source: source,
+              bufferSize: bufferSize,
+              audio: entry?.audio ?? new Float32Array(bufferSize).buffer,
+              video: entry?.video ?? "",
+              duration: entry?.duration ?? bufferSize / 44100,
+            };
+            console.log(
+              `recordIndex ${index} seek -> listPos ${pos} (${ordinal + 1}/${positions.length})`,
+            );
+          }
+        } else if (timestamp !== undefined) {
           const closest = await streamsRedis.findClosestByTimestamp(source, timestamp);
           if (closest !== null) {
             await streamsRedis.setIndex(source, closest.firstIndex);
@@ -72,8 +109,8 @@ export const streamEmit = async (
           }
         }
         if (buff === undefined) {
-          const index = await streamsRedis.getIndex(source);
-          const entry = index < buffLen ? await streamsRedis.get(source, index) : null;
+          const currentIndex = await streamsRedis.getIndex(source);
+          const entry = currentIndex < buffLen ? await streamsRedis.get(source, currentIndex) : null;
           const bufferSize = entry?.bufferSize ?? streamState.basisBufferSize;
           buff = {
             source: source,
@@ -82,7 +119,7 @@ export const streamEmit = async (
             video: entry?.video ?? "",
             duration: entry?.duration ?? bufferSize / 44100,
           };
-          if (index < buffLen - 1) {
+          if (currentIndex < buffLen - 1) {
             await streamsRedis.incrementIndex(source);
           } else {
             await streamsRedis.setIndex(source, 0);
@@ -111,6 +148,7 @@ export const streamEmit = async (
       glitch: glitchState.glitch[source] ? glitchState.glitch[source] : false,
       filter: streamState.filter[source],
       ...buff,
+      ...(index !== undefined ? { index } : {}),
     };
     if (glitchState.glitch[source] && stream.video && stream.video.length > 0) {
       stream.video = await glitchStream(stream.video);

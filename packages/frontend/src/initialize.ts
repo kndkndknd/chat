@@ -17,17 +17,28 @@ import {
 import { initAudioStream } from "./stream";
 import { getAcceleration } from "./sensor";
 import { getGPSPosition } from "./gps";
-import { accelarateOsc, gpsOsc } from "./webaudio";
+import { accelarateOsc, gpsOsc, feedback } from "./webaudio";
 import { chatWorklet } from "./audioWorklet/chatWorklet";
 import { initGainUI } from "./ui/gainUI";
 // import { initRecordButton } from "./recording";
 // import { toggleRecording } from "./recording";
+
+// counterbalance: 加速度(重力なし)X/Y/ZのRMSをfeedbackGainに反映する際のスケール係数。
+// RMSは概ね0〜十数の範囲になり得るため、gain(0〜2程度)に収まるよう縮小する。調整可能。
+const COUNTERBALANCE_GAIN_SCALE = 0.1;
+// feedbackGain更新時のフェード時定数(秒)。500ms間隔での値の変化を滑らかにする。
+const COUNTERBALANCE_FADE = 0.3;
 
 export const initialize = async (
   socket: SocketFacade,
 ): Promise<MediaStream | null> => {
   // ): Promise<void> => {
   erasePrint();
+
+  // URLが /counterbalance を含む場合は加速度センサーを有効にし、
+  // 加速度RMSをfeedbackGainへ反映するモードにする。
+  flagState.counterbalanceFlag =
+    window.location.pathname.includes("counterbalance");
   await initVideo();
   await initAudio();
 
@@ -82,12 +93,16 @@ export const initialize = async (
     // streamState.stream = !flagState.isMobile
     // const stream = !flagState.isMobile ?
     const stream = await navigator.mediaDevices.getUserMedia({
+      // 通話をスムーズにするため、取得段階で解像度と fps を絞る。
+      // 送信元 (Raspberry Pi 等) のエンコード負荷と帯域を下げるのが狙い。
+      // 360p/20fps を上限とし、非対応ならブラウザが近い値にフォールバックする。
       video: {
+        width: { ideal: 640, max: 640 },
+        height: { ideal: 360, max: 360 },
+        frameRate: { ideal: 20, max: 20 },
         //facingMode: 'environment'
         // deviceId: camera.deviceId,
         // facingMode: ['user', 'environment'],
-        // height: {ideal: 1080},
-        // width: {ideal: 1920}
       },
       audio: audioOption,
     });
@@ -122,18 +137,41 @@ export const initialize = async (
     // backend 側で冪等にチェックされるため複数クライアントから同時に呼ばれても安全。
     socket.emit("ensureWebRtcFromClient");
 
-    if (sensorState.isMobile) {
+    if (sensorState.isMobile || flagState.counterbalanceFlag) {
       sensorState.sensorTimeIntervalId = window.setInterval(() => {
-        getAcceleration()
-          .then((acceleration) => {
-            sensorState.accelerationData.x = acceleration.x;
-            sensorState.accelerationData.y = acceleration.y;
-            sensorState.accelerationData.z = acceleration.z;
-            sensorState.accelerationData.timestamp = acceleration.timestamp;
-          })
-          .catch((error) => {
-            console.error("加速度センサーの取得に失敗:", error);
-          });
+        // counterbalance: 重力を除いた加速度のX/Y/ZからRMSを算出し、
+        // 係数でスケールしてfeedbackGainへ反映する。
+        if (flagState.counterbalanceFlag) {
+          getAcceleration(false)
+            .then((acceleration) => {
+              sensorState.accelerationData.x = acceleration.x;
+              sensorState.accelerationData.y = acceleration.y;
+              sensorState.accelerationData.z = acceleration.z;
+              sensorState.accelerationData.timestamp = acceleration.timestamp;
+              const rms = Math.sqrt(
+                (Math.pow(acceleration.x, 2) +
+                  Math.pow(acceleration.y, 2) +
+                  Math.pow(acceleration.z, 2)) /
+                  3,
+              );
+              feedback(true, COUNTERBALANCE_FADE, rms * COUNTERBALANCE_GAIN_SCALE);
+            })
+            .catch((error) => {
+              console.error("counterbalance加速度の取得に失敗:", error);
+            });
+        }
+        if (sensorState.isMobile) {
+          getAcceleration()
+            .then((acceleration) => {
+              sensorState.accelerationData.x = acceleration.x;
+              sensorState.accelerationData.y = acceleration.y;
+              sensorState.accelerationData.z = acceleration.z;
+              sensorState.accelerationData.timestamp = acceleration.timestamp;
+            })
+            .catch((error) => {
+              console.error("加速度センサーの取得に失敗:", error);
+            });
+        }
         if (flagState.gpsFlag) {
           getGPSPosition()
             .then((position) => {

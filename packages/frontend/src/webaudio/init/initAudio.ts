@@ -10,7 +10,7 @@ import {
 } from "../../state";
 import { initWhitenoiseWorklet } from "../../audioWorklet/whitenoiseWorklet";
 
-const chatGainVal = 1.5;
+const chatGainVal = 2.0;
 const glitchGainVal = 1.5;
 
 export const initAudio = async (

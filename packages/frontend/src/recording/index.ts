@@ -1,8 +1,11 @@
 import { socketState } from "../state";
 
 const MIME_TYPE = "video/webm;codecs=vp8,opus";
-const VIDEO_BITRATE = 400_000;
-const AUDIO_BITRATE = 96_000;
+// 通話を軽く滑らかにするため、送信ビットレートを抑える。
+// 解像度/fps は initialize.ts の getUserMedia 制約 (640x360/20fps) で絞っており、
+// その解像度なら映像 800kbps で十分綺麗かつ余裕がある。音声は会話用途で 32kbps。
+const VIDEO_BITRATE = 800_000;
+const AUDIO_BITRATE = 32_000;
 
 let mediaRecorder: MediaRecorder | null = null;
 let chunks: Blob[] = [];

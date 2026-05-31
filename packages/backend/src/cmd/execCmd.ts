@@ -5,6 +5,8 @@ import { sinewaveEmit } from "./sinewaveEmit";
 import { previousCmd } from "./previousCmd";
 import { switchCtrl } from "../arduinoAccess/arduinoAccess";
 import { millisecondsPerBeat } from "../util/bpmCalc";
+import { m5Switch } from "../rotate/m5Access";
+import { m5State } from "../rotate/m5State";
 
 import { cmdList } from "../data";
 import { clientState, arduinoState, bpmState, streamState } from "../state";
@@ -62,6 +64,10 @@ export const execCmd = async (
       });
       //putString(io, String(index), state)
     });
+  } else if (strings === "ROTATE") {
+    const switchState = m5State.rotation.relay === "on" ? false : true;
+    m5Switch("rotation", switchState);
+    m5State.rotation.relay = switchState ? "on" : "off";
   } else if (strings === "SELF") {
     clientState.client[id].self = !clientState.client[id].self;
     console.log("SELF: ", clientState.client[id].self);
@@ -96,15 +102,17 @@ export const execCmd = async (
       sinewaveEmit(frequency);
     }
   } else if (strings === "SWITCH") {
-    const switchState = arduinoState.relay === "on" ? "OFF" : "ON";
-    console.log(switchState);
-    ioState?.io.emit("stringsFromServer", {
-      strings: "SWITCH " + switchState,
-      timeout: true,
-    });
-    switchCtrl().then((result) => {
-      console.log(result);
-    });
+    const switchState = m5State.vibration.relay === "on" ? false : true;
+    m5Switch("vibration", switchState);
+    m5State.vibration.relay = switchState ? "on" : "off";
+    // console.log(switchState);
+    // ioState?.io.emit("stringsFromServer", {
+    //   strings: "SWITCH " + switchState,
+    //   timeout: true,
+    // });
+    // switchCtrl().then((result) => {
+    //   console.log(result);
+    // });
   } else if (strings === "TORCH" || strings === "BLINK") {
     // torch command
     const flag =

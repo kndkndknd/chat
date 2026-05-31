@@ -21,10 +21,12 @@ import { emojiState, erasePrint, textPrint, showImage, flickering } from "./canv
 import { stopCmd, cmdFromServer } from "./cmd";
 import { quantizeFromServer } from "./quantize/quantizeFromServer";
 import { chatReq, recordReqFromServer, streamPlay } from "./stream";
-import { gainChange } from "./webaudio";
+import { setGainUI } from "./ui/gainUI";
 import { wholeCmd } from "./cmd/wholeCmd";
 import { startChunkedRecording, stopChunkedRecording } from "./recording";
-import { initFaceDetection, stopFaceDetection } from "./faceApi";
+import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
+import { enableBlackMode, disableBlackMode, isBlackModeActive } from "./blackMode";
+import { muteMasterForNight, restoreMasterForNight } from "./nightAudio";
 import {
   attachMsePlayback,
   appendMediaChunk,
@@ -47,6 +49,26 @@ export const socket = (): void => {
   socketState.socket.on("erasePrintFromServer", () => {
     // erasePrint(stx, strCnvs)
     erasePrint();
+  });
+
+  // BLACK コマンド: 画面全体を真っ黒にする。解除は文字入力(main.ts keydown)で行う。
+  socketState.socket.on("blackFromServer", () => {
+    enableBlackMode();
+  });
+
+  // ナイトモード解除時: BLACK モードをサーバーから明示的に解除する。
+  socketState.socket.on("blackOffFromServer", () => {
+    disableBlackMode();
+  });
+
+  // ナイトモード移行時: masterGain と glitchGain を 0 にして消音する。
+  socketState.socket.on("masterMuteFromServer", () => {
+    muteMasterForNight();
+  });
+
+  // ナイトモード解除時: masterGain と glitchGain を移行前の値へ戻す。
+  socketState.socket.on("masterUnmuteFromServer", () => {
+    restoreMasterForNight();
   });
 
   socketState.socket.on(
@@ -89,6 +111,7 @@ export const socket = (): void => {
   socketState.socket.on(
     "recordReqFromServer",
     (data: { source: string; timeout: number }) => {
+      console.log("recordReqFromServer debug", data);
       recordReqFromServer(data);
       textPrint("RECORD", { timeout: true, timeoutDuration: data.timeout });
       // setTimeout(() => {
@@ -170,6 +193,7 @@ export const socket = (): void => {
       position?: { top: number; left: number; width: number; height: number };
       target?: string;
       filter?: filterStateType;
+      index?: number;
     }) => {
       streamFlagState[data.source] = true;
       if (quantizeState.flag && quantizeState.stream.includes(data.source)) {
@@ -205,14 +229,20 @@ export const socket = (): void => {
     },
   );
 
+  // gainFromClient(スライダー操作)/ gainReqFromClient(UI を開く)への応答。
+  // 実際の音量(GainNode)には適用せず、入力欄の表示のみ更新する。
+  // スライダー操作時の発音は gainUI 側のローカル audition が担う。
   socketState.socket.on("gainFromServer", (data) => {
-    gainChange(data);
+    setGainUI(data);
   });
 
   socketState.socket.on(
     "voiceFromServer",
     (data: { text: string; lang: string }) => {
-      console.log("debug");
+      // /counter 端末は BLACK モード中、サーバ駆動の音声も発声しない。
+      if (isBlackModeActive() && window.location.pathname === "/counter") {
+        return;
+      }
       const uttr = new SpeechSynthesisUtterance();
       uttr.lang = data.lang;
       uttr.text = data.text;
@@ -314,9 +344,20 @@ export const socket = (): void => {
   });
 
   socketState.socket.on("bufferRecReqFromServer", () => {
-    if (streamState.stream) {
-      startChunkedRecording(streamState.stream as MediaStream);
-    }
+    // streamState.stream は initialize() 完了後にセットされる。
+    // ensureWebRtcFromClient → bufferRecReqFromServer が initialize 完了前
+    // (stream 準備前) に返ってくる競合があるため、stream が用意できるまで
+    // 少し待って再試行する (最大 10 秒)。
+    const tryStart = (attempt: number): void => {
+      if (streamState.stream) {
+        startChunkedRecording(streamState.stream as MediaStream);
+      } else if (attempt < 40) {
+        window.setTimeout(() => tryStart(attempt + 1), 250);
+      } else {
+        console.warn("bufferRecReqFromServer: stream not ready, gave up");
+      }
+    };
+    tryStart(0);
   });
 
   socketState.socket.on("bufferRecStopFromServer", () => {
@@ -403,6 +444,14 @@ export const socket = (): void => {
   socketState.socket.on("personDetectFromServer", () => {
     flickering();
   });
+
+  // faceDetectScenario 実行中〜終了後の一定時間、顔認識をブロックする。
+  socketState.socket.on(
+    "faceDetectBlockFromServer",
+    (data: { durationMs: number }) => {
+      blockFaceDetection(data.durationMs);
+    },
+  );
 
   socketState.socket.on(
     "clientSettingsFromServer",

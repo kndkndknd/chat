@@ -1,5 +1,7 @@
-// chat_sync 用のカメラ/マイク送信元を、接続中の全クライアントから
-// 20 秒ごとに切り替えるローテータ。
+// chat_sync 用のカメラ/マイク送信元を、urlPathName に "pi" を含む
+// クライアント (Raspberry Pi / "/pi") に固定するセレクタ。
+// 以前は 20 秒ごとに全クライアントを巡回していたが、現在はローテーション
+// せず "/pi" に一度だけ切り替える。
 //
 // 受信側 (werift recv recorder → mediaChunkFromServer / audioChunkFromServer)
 // は触らない。あくまで送信側 (ローカル webRTC ピアが chat_sync に流す
@@ -15,31 +17,79 @@
 import { ioState } from "../state/states/ioState";
 import { clientState } from "../state";
 import {
+  getActiveChunkCount,
   isWebRtcSessionActive,
   restartFfmpegSubprocess,
   setActiveSourceClientId,
+  setOnPeerConnected,
   startWebRTCSession,
 } from "./weriftClient";
 
-const ROTATION_INTERVAL_MS = 20_000;
+// "/pi" クライアントが起動時にまだ接続していない場合に再探索する間隔。
+const PI_POLL_INTERVAL_MS = 2_000;
 // ffmpeg 再起動後、新クライアントの MediaRecorder が EBML を流し始めるまでの
 // 短い猶予。ここで activeSourceClientId を切り替えて受信を再開する。
 const ACTIVATE_DELAY_MS = 200;
+// bufferRecReqFromServer を再送する間隔と最大回数。
+// 切替直後にクライアントの streamState.stream がまだ未準備だと初回の録画開始
+// 指示を取りこぼすため、チャンクが流れ始めるまで定期的に送り直す。
+const REC_REQ_RETRY_INTERVAL_MS = 1_500;
+const REC_REQ_RETRY_MAX = 20;
 
-let rotationTimer: NodeJS.Timeout | null = null;
+let piPollTimer: NodeJS.Timeout | null = null;
+let recReqRetryTimer: NodeJS.Timeout | null = null;
 let currentTargetId: string | null = null;
 let rotating = false;
 
-function listTargets(): string[] {
-  return Object.keys(clientState.client);
+// urlPathName に "pi" を含むクライアント ID を返す。未接続なら null。
+function findPiTarget(): string | null {
+  for (const id of Object.keys(clientState.client)) {
+    if (clientState.client[id]?.urlPathName?.includes("pi")) {
+      return id;
+    }
+  }
+  return null;
 }
 
-function pickNext(current: string | null, list: string[]): string | null {
-  if (list.length === 0) return null;
-  if (current === null) return list[0];
-  const idx = list.indexOf(current);
-  if (idx < 0) return list[0];
-  return list[(idx + 1) % list.length];
+// 対象クライアントが実際にチャンクを流し始めるまで bufferRecReqFromServer を
+// 再送する。ensureWebRtcFromClient → bufferRecReqFromServer が initialize 完了前
+// (streamState.stream 準備前) に届くと初回指示を取りこぼすため、その競合を
+// リカバリする。チャンク受信を確認したら停止する。
+function startRecReqRetry(targetId: string): void {
+  stopRecReqRetry();
+  let attempts = 0;
+  recReqRetryTimer = setInterval(() => {
+    // 対象が切り替わった / 停止した場合は中断
+    if (currentTargetId !== targetId) {
+      stopRecReqRetry();
+      return;
+    }
+    // チャンクが流れ始めていれば成功。再送を止める。
+    if (getActiveChunkCount() > 0) {
+      console.log(`[rotator] ${targetId} now streaming; stop rec-req retry`);
+      stopRecReqRetry();
+      return;
+    }
+    attempts++;
+    if (attempts > REC_REQ_RETRY_MAX) {
+      console.warn(
+        `[rotator] ${targetId} never started after ${attempts} retries; giving up`,
+      );
+      stopRecReqRetry();
+      return;
+    }
+    ioState?.io.to(targetId).emit("bufferRecReqFromServer");
+    console.log(
+      `[rotator] bufferRecReqFromServer resend #${attempts} -> ${targetId}`,
+    );
+  }, REC_REQ_RETRY_INTERVAL_MS);
+}
+
+function stopRecReqRetry(): void {
+  if (recReqRetryTimer) {
+    clearInterval(recReqRetryTimer);
+    recReqRetryTimer = null;
+  }
 }
 
 async function switchTo(nextId: string | null): Promise<void> {
@@ -78,36 +128,50 @@ async function switchTo(nextId: string | null): Promise<void> {
   }
 }
 
-async function tick(): Promise<void> {
-  const list = listTargets();
-  // 対象が現在の sender 1 台しかいない場合はスキップ。
-  // (再起動でわざわざ ~300ms 断続させても意味がないため。)
-  if (list.length === 1 && list[0] === currentTargetId) {
-    return;
-  }
-  const next = pickNext(currentTargetId, list);
-  await switchTo(next);
+// 新しいピアが接続したときに送信元 (/pi) の MediaRecorder を再起動し、
+// 新規 EBML + keyframe を流し直す。後から参加したピアが mid-stream な VP8 を
+// 受け取って黒画面になるのを防ぐ (werift は copy 中継で keyframe を生成できない)。
+function refreshCurrentSource(): void {
+  if (!currentTargetId) return;
+  const target = currentTargetId;
+  console.log(`[rotator] refresh source for new peer -> ${target}`);
+  void switchTo(target).then(() => startRecReqRetry(target));
 }
 
 export function startCameraRotation(): void {
-  if (rotationTimer) {
+  if (currentTargetId || piPollTimer) {
     console.log("[rotator] already running");
     return;
   }
-  // 初回起動 (ffmpeg は startWebRTCSession で既に起動済み)
-  const first = pickNext(null, listTargets());
-  if (!first) {
-    console.warn("[rotator] no clients connected at start");
-  } else {
-    ioState?.io.to(first).emit("bufferRecReqFromServer");
-    console.log(`[rotator] bufferRecReqFromServer -> ${first} (initial)`);
-    currentTargetId = first;
-    setActiveSourceClientId(first);
+  // 【無効化】接続時に refreshCurrentSource で ffmpeg + 送信元 MediaRecorder を
+  // 再起動して keyframe を作り直すフックは、送信元ブラウザのキーフレーム供給
+  // タイミングに依存して壊れる (Windows /pi で再起動後 video が数秒出ない回帰)。
+  // ffmpeg を libvpx 再エンコード + -g 30 (定期 keyframe) に変更したことで、遅参
+  // ピアも ~1.5秒で必ず keyframe を得られるため、このフックは不要になった。
+  // refreshCurrentSource() は将来の参照用に残置するが登録しない。
+  setOnPeerConnected(null);
+  // 送信元を "/pi" クライアントに固定する。一度切り替えたら巡回しない。
+  const pi = findPiTarget();
+  if (pi) {
+    // 切替完了後、対象が実際に録画を始めるまで rec-req を再送する。
+    void switchTo(pi).then(() => startRecReqRetry(pi));
+    console.log(`[rotator] fixed source -> ${pi} (/pi)`);
+    return;
   }
-  rotationTimer = setInterval(() => {
-    void tick();
-  }, ROTATION_INTERVAL_MS);
-  console.log(`[rotator] started, interval=${ROTATION_INTERVAL_MS}ms`);
+  // "/pi" がまだ未接続。接続されるまで短い間隔で探索し、見つかり次第
+  // 一度だけ切り替えて探索を止める。
+  console.warn("[rotator] no /pi client yet; polling until connected");
+  piPollTimer = setInterval(() => {
+    const found = findPiTarget();
+    if (!found) return;
+    if (piPollTimer) {
+      clearInterval(piPollTimer);
+      piPollTimer = null;
+    }
+    void switchTo(found).then(() => startRecReqRetry(found));
+    console.log(`[rotator] fixed source -> ${found} (/pi, polled)`);
+  }, PI_POLL_INTERVAL_MS);
+  console.log(`[rotator] started, polling interval=${PI_POLL_INTERVAL_MS}ms`);
 }
 
 // CALL コマンドと同等の起動を冪等に行うヘルパ。
@@ -122,9 +186,11 @@ export function ensureWebRtcSession(): void {
 }
 
 export function stopCameraRotation(): void {
-  if (rotationTimer) {
-    clearInterval(rotationTimer);
-    rotationTimer = null;
+  setOnPeerConnected(null);
+  stopRecReqRetry();
+  if (piPollTimer) {
+    clearInterval(piPollTimer);
+    piPollTimer = null;
   }
   if (currentTargetId) {
     // STOPWEBRTC と整合させるため bufferRecStopFromServer を使用。

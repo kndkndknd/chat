@@ -14,4 +14,5 @@ export const flagState = {
   gpsOscFlag: false,
   accelarateOscFlag: false,
   isMobile: false,
+  counterbalanceFlag: false,
 };

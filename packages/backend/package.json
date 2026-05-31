@@ -6,7 +6,8 @@
     "dev": "tsx src/app.ts",
     "watch": "tsx watch src/app.ts",
     "backend": "node --loader ts-node/esm src/app.ts",
-    "build": "tsc",
+    "build": "tsc && npm run copy:assets",
+    "copy:assets": "node scripts/copyJsonAssets.mjs",
     "start": "node dist/app.js",
     "test": "vitest"
   },

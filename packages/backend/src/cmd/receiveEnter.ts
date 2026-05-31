@@ -43,6 +43,7 @@ import { wholeEmit } from "../stream/wholeEmit";
 import { replay } from "../scenario/replay";
 import { startWebRTCSession, stopWebRTCSession } from "../webRTC/weriftClient";
 import { startCameraRotation, stopCameraRotation } from "../webRTC/cameraRotator";
+import { enableNightMode, disableNightMode } from "../nightMode/nightMode";
 
 export const receiveEnter = async (
   strings: string,
@@ -54,10 +55,10 @@ export const receiveEnter = async (
     return;
   }
   console.log("flagState.scenario", flagState.scenario);
-  if (!flagState.scenario || strings === "REPLAY") {
+  // if (!flagState.scenario || strings === "REPLAY") {
     console.log("logging in receiveEnter");
     cmdLogging(strings);
-  }
+  // }
 
   //VOICE
   // if (strings.includes("VOICE ")) {
@@ -98,6 +99,7 @@ export const receiveEnter = async (
     strings === "NO" ||
     strings === "NUMBER" ||
     strings === "SWITCH" ||
+    strings === "ROTATE" ||
     strings === "CLOCK" ||
     strings === "SOLFEGIO" ||
     strings === "FILTER" ||
@@ -161,6 +163,18 @@ export const receiveEnter = async (
     stopCameraRotation();
     stopWebRTCSession();
     console.log("[STOPWEBRTC] werift session stop requested");
+  } else if (strings === "BLACK") {
+    // 全端末の画面を真っ黒にする。解除はクライアント側で文字入力時に行う。
+    console.log("BLACK");
+    ioState?.io.emit("blackFromServer");
+  } else if (strings === "NIGHTMODE") {
+    // /api/nightmode {value:true} 相当。全端末の顔認識停止 + scenarioItsuki 停止 + 全端末 BLACK。
+    console.log("NIGHTMODE");
+    enableNightMode();
+  } else if (strings === "MORNINGMODE") {
+    // /api/nightmode {value:false} 相当。ナイトモードを解除（顔認識を元の設定に復元し、BLACK を解除）。
+    console.log("MORNINGMODE");
+    disableNightMode();
   } else if (strings === "VOSK") {
     console.log("VOSK CALL");
     ioState?.io.emit("voskCallFromServer");

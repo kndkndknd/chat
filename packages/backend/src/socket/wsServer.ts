@@ -8,15 +8,17 @@ import { chatReceive } from "../stream/chatReceive";
 import { charProcess } from "../cmd/charProcess";
 import { streamEmit } from "../stream/streamEmit";
 import { ioState } from "../state/states/ioState";
-import { stringEmit } from "./ioEmit";
 import { connectFromClient } from "../clientSetting/connectFromClient";
 import { emitClientSettings } from "../clientSetting/clientSettingsEmit";
-import { countersRedis, streamsRedis } from "../redis/streamsRedis";
+import { applyNightModeToClient } from "../nightMode/nightMode";
+import { countersRedis } from "../redis/streamsRedis";
+import { faceDetectScenario } from "../scenario/faceDetectScenario";
 import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
 import { feedWebMChunk } from "../webRTC/weriftClient";
 import { ensureWebRtcSession } from "../webRTC/cameraRotator";
 import { receiveWholeReq } from "../stream/receiveWholeReq";
-import { gainFromClient } from "../cmd/gainFromClient";
+import { gainFromClient, gainReqFromClient } from "../cmd/gainFromClient";
+import { m5Switch } from "../rotate/m5Access";
 import { IoFacade } from "./IoFacade";
 
 let strings = "";
@@ -68,6 +70,9 @@ export const wsServer = (
           const result = connectFromClient(data, id, ipAddress);
           if (result) {
             ws.send(JSON.stringify({ type: "debugFromServer" }));
+            // ナイトモード作動中なら、この端末も顔認識OFF＋BLACKに合わせる。
+            // emitClientSettings の前に facedetection を false にしておく。
+            applyNightModeToClient(id);
             emitClientSettings(id);
           } else {
             console.log("connectFromClient failed");
@@ -89,10 +94,13 @@ export const wsServer = (
         }
 
         case "streamReqFromClient": {
-          const source = data as string;
-          console.log(source);
+          const source =
+            typeof data === "string" ? data : (data as { source: string }).source;
+          const index =
+            typeof data === "string" ? undefined : (data as { index?: number }).index;
+          console.log(source, "index:", index);
           if (currentState.stream[source]) {
-            streamEmit(source, id);
+            streamEmit(source, id, undefined, index);
           }
           break;
         }
@@ -106,6 +114,11 @@ export const wsServer = (
         case "gainFromClient":
           console.log("gainFromClient", data);
           gainFromClient(data as gainStateType, facade);
+          break;
+
+        case "gainReqFromClient":
+          console.log("gainReqFromClient", id);
+          gainReqFromClient(facade);
           break;
 
         case "bufferRecFromClient":
@@ -128,21 +141,20 @@ export const wsServer = (
           );
           break;
 
+        case "rotateReqFromClient": {
+          const value = data === true;
+          console.log("rotateReqFromClient", id, value);
+          await m5Switch("rotation", value);
+          break;
+        }
+
         case "faceDetectFromClient": {
           const faceData = data as { x: number; width: number; height: number };
           console.log("faceDetectFromClient", faceData);
           countersRedis.increment("faceDetect").then((count) => {
             console.log("faceDetect count:", count);
           });
-          const buffLen = await streamsRedis.getLength("PLAYBACK");
-          if (buffLen === 0) {
-            stringEmit("no buffer", true, id);
-            break;
-          }
-          const offsets = [1, 24];
-          const hours = offsets[Math.floor(Math.random() * offsets.length)];
-          const timestamp = Date.now() - hours * 60 * 60 * 1000;
-          streamEmit("PLAYBACK", id, timestamp);
+          await faceDetectScenario(id);
           break;
         }
 

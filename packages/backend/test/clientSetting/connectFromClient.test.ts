@@ -79,6 +79,17 @@ describe("connectFromClient", () => {
     expect((bpmState as any).idA.stream.PLAYBACK).toBeDefined();
   });
 
+  test("/2 は facedetection=true, hanged=false の client を登録する", () => {
+    const r = connectFromClient(
+      { urlPathName: "/2", isMobile: false, width: 100, height: 200 },
+      "idB",
+      "10.0.0.2",
+    );
+    expect(r).toBe(true);
+    expect((clientState.client as any).idB.facedetection).toBe(true);
+    expect((clientState.client as any).idB.hanged).toBe(false);
+  });
+
   test("/3 は hanged=true で facedetection=false", () => {
     connectFromClient(
       { urlPathName: "/3", isMobile: false, width: 0, height: 0 },

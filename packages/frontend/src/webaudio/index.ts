@@ -1,7 +1,6 @@
 import { bass } from "./sound/bass";
 import { click } from "./sound/click";
 import { feedback } from "./sound/feedback";
-import { gainChange } from "./params/gainChange";
 import { metronome } from "./sound/metronome";
 import { simulate } from "./sound/simulate";
 import { sinewave } from "./sound/sinewave";
@@ -14,7 +13,6 @@ export {
   bass,
   click,
   feedback,
-  gainChange,
   metronome,
   simulate,
   sinewave,

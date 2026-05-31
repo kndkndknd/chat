@@ -41,7 +41,6 @@ export const putVideoStream = async (
         const base64str = Buffer.from(img).toString("base64");
         videos.push("data:image/jpeg;base64," + String(base64str));
       }
-      console.log(streamName, videos.length);
       resolve(videos);
     });
   });

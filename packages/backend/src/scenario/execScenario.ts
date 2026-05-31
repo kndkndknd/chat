@@ -49,9 +49,12 @@ export const execScenario = async (
       const timeTable = new Date();
       timeTable.setHours(Number(execTimeArr[0]));
       timeTable.setMinutes(Number(execTimeArr[1]));
-      if (timeTable) {
-        timeTable.setSeconds(Number(execTimeArr[2]));
-      }
+      // "SS.mmm" 形式から秒とミリ秒を分離する。
+      // mmm は cmdLogging が書き出す getMilliseconds() と同じ整数値（"5" = 5ms, "500" = 500ms）。
+      const [secStr, msStr] = (execTimeArr[2] ?? "0").split(".");
+      timeTable.setSeconds(Number(secStr));
+      // new Date() 由来の現在ミリ秒が残らないよう、ミリ秒は明示的に設定する。
+      timeTable.setMilliseconds(msStr ? Number(msStr) : 0);
 
       console.log("timeTable", timeTable);
       console.log(timeTable.getTime());

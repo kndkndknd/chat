@@ -7,6 +7,7 @@ import { clientState } from "./states/clientState";
 import { currentState } from "./states/currentState";
 import { flagState } from "./states/flagState";
 import { glitchState } from "./states/glitchState";
+import { itsukiState } from "./states/itsukiState";
 import { previousState } from "./states/previousState";
 import { sampleRateState } from "./states/sampleRateState";
 import { webState } from "./states/webState";
@@ -23,6 +24,7 @@ export {
   defaultFilterState,
   flagState,
   glitchState,
+  itsukiState,
   previousState,
   sampleRateState,
   streamState,

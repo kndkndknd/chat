@@ -4,6 +4,7 @@ vi.mock("../../../src/state", () => ({
   clientState: { client: {}, streamClient: [], cmdClient: [] },
   currentState: { stream: {} },
   bpmState: {},
+  arduinoState: { host: "localhost", port: 5050, connected: false, relay: "off" },
 }));
 vi.mock("../../../src/state/states/ioState", () => ({
   ioState: { io: null },
@@ -21,6 +22,12 @@ vi.mock("../../../src/clientSetting/clientSettingsEmit", () => ({
 vi.mock("../../../src/redis/streamsRedis", () => ({
   countersRedis: { increment: vi.fn(async () => 0) },
   streamsRedis: { getLength: vi.fn(async () => 0) },
+}));
+vi.mock("../../../src/scenario/loadScenario", () => ({
+  loadScenario: vi.fn(async () => ({ format: "relative", timetable: {} })),
+}));
+vi.mock("../../../src/scenario/execScenario", () => ({
+  execScenario: vi.fn(),
 }));
 vi.mock("../../../src/stream/audioWorklet/workletBufferFromClient", () => ({
   workletBufferFromClient: vi.fn(),
