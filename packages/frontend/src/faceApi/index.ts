@@ -20,6 +20,64 @@ let flashDisabledUntil = 0;
 
 const FLASH_DISABLE_MS = 90 * 1000;
 
+// 顔認識が成立した瞬間に、カメラ映像を1フレームだけ静止画としてキャプチャし、
+// 全画面に1秒間だけ表示するためのオーバーレイ。
+let snapshotOverlay: HTMLCanvasElement | null = null;
+let snapshotTimer: ReturnType<typeof setTimeout> | null = null;
+
+// キャプチャした1フレームを表示し続ける時間。
+const SNAPSHOT_DURATION_MS = 1000;
+
+// 顔認識成立の瞬間のカメラ映像を1フレームだけ取り込み、1秒間だけ全画面表示する。
+// drawImage を一度だけ行うため、表示されるのは更新されない静止画（=1フレーム）。
+function showCapturedFrame(): void {
+  const video = canvasElement.video;
+  if (video.readyState < 2 || video.videoWidth === 0) return;
+
+  if (!snapshotOverlay) {
+    snapshotOverlay = document.createElement("canvas");
+    snapshotOverlay.id = "faceSnapshot";
+    snapshotOverlay.style.cssText =
+      "position:fixed;inset:0;z-index:9998;pointer-events:none;background:#000;";
+    document.body.appendChild(snapshotOverlay);
+  }
+
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+  const cw = window.innerWidth;
+  const ch = window.innerHeight;
+  snapshotOverlay.width = cw;
+  snapshotOverlay.height = ch;
+
+  const ctx = snapshotOverlay.getContext("2d")!;
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, cw, ch);
+
+  // アスペクト比を保って画面に収める（contain）。
+  const scale = Math.min(cw / vw, ch / vh);
+  const dw = vw * scale;
+  const dh = vh * scale;
+  ctx.drawImage(video, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+
+  snapshotOverlay.style.display = "block";
+
+  if (snapshotTimer !== null) clearTimeout(snapshotTimer);
+  snapshotTimer = setTimeout(() => {
+    if (snapshotOverlay) snapshotOverlay.style.display = "none";
+    snapshotTimer = null;
+  }, SNAPSHOT_DURATION_MS);
+}
+
+function hideCapturedFrame(): void {
+  if (snapshotTimer !== null) {
+    clearTimeout(snapshotTimer);
+    snapshotTimer = null;
+  }
+  if (snapshotOverlay) {
+    snapshotOverlay.style.display = "none";
+  }
+}
+
 // faceDetectScenario 実行中〜終了後の一定時間は、この時刻まで顔認識自体を停止する。
 // サーバーの faceDetectBlockFromServer 通知で設定される。
 let faceDetectBlockedUntil = 0;
@@ -87,6 +145,7 @@ export function stopFaceDetection(): void {
   active = false;
   wasFrontal = false;
   stopFlashing();
+  hideCapturedFrame();
   if (overlayCanvas) {
     const ctx = overlayCanvas.getContext("2d");
     ctx?.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
@@ -143,6 +202,8 @@ async function detectLoop(): Promise<void> {
       if (Math.abs(frontalOffset) <= FRONTAL_RATIO) {
         if (!wasFrontal) {
           socketState.socket?.emit("faceDetectFromClient", { x, width, height });
+          // 顔認識成立の瞬間に、カメラ映像を1フレームだけ1秒間表示する。
+          showCapturedFrame();
           // faceDetectScenario が始まるので、90秒間は点滅を無効化する。
           flashDisabledUntil = Date.now() + FLASH_DISABLE_MS;
         }
