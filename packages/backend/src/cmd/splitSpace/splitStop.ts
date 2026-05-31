@@ -9,6 +9,7 @@ import {
   cmdState,
 } from "../../state";
 import { wholeParams } from "../../data/list/wholeParams";
+import { stopStream } from "./stopStream";
 
 export const splitStop = (stringArr: string[]) => {
   console.log("splitStop", stringArr);
@@ -18,15 +19,10 @@ export const splitStop = (stringArr: string[]) => {
     Object.keys(currentState.stream).includes(stringArr[1])
   ) {
     console.log("stream stop", stringArr[1]);
-    previousState.stream[stringArr[1]] = currentState.stream[stringArr[1]];
-    currentState.stream[stringArr[1]] = false;
+    stopStream(stringArr[1]);
     stringEmit(stringArr[0] + " " + stringArr[1]);
   } else if (stringArr.length === 2 && stringArr[1] === "STREAM") {
-    console.log("all stream stop");
-    previousState.stream = currentState.stream;
-    Object.keys(currentState.stream).forEach(
-      (key) => (currentState.stream[key] = false)
-    );
+    stopStream();
     stringEmit(stringArr[0] + " " + stringArr[1]);
   } else if (
     stringArr.length === 2 &&
