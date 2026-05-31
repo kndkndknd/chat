@@ -1,14 +1,29 @@
 # WebRTC
 
+> 最終更新: 2026-05-31。本書が WebRTC 実装の正本(single source of truth)。
+> 直近の修正(MTU 対策 `-pkt_size 1200`、VP8 再エンコード、`/pi` 固定化、
+> seq/ts 書き直し)を反映済み。
+
 ## 概要
 
 バックエンドはWebRTCに関して3つの独立した役割を持つ。
 
 1. **シグナリングリレー** (`webRTC/index.ts`) — ブラウザクライアント間のWebRTC接続確立を仲介する
 2. **weriftクライアント** (`webRTC/weriftClient.ts`) — バックエンド自身がWebRTCピアとしてchat_syncサーバーに接続し、映像・音声を送受信する
-3. **カメラローテータ** (`webRTC/cameraRotator.ts`) — 送信元のブラウザクライアントを 20 秒ごとに切り替える
+3. **カメラセレクタ** (`webRTC/cameraRotator.ts`) — 送信元のブラウザクライアントを `/pi`(`urlPathName` に "pi" を含む端末)に固定する
 
-受信側 (sync ピア → バックエンド) は werift 内蔵の `MediaRecorder` で RTP を直接 WebM Cluster に変換し、WebSocket チャンクとしてブラウザへ配信、ブラウザ側で MSE (MediaSource Extensions) を使って `<video>` / `<audio>` でライブ再生する。送信側は接続中の全ブラウザクライアントからカメラ・マイクを順繰りに取り出す形になっており、ffmpeg → werift → sync ピアに流れるストリームは常に 1 系統。
+送信方向(chat_itsuki → chat_sync)が主役。`/pi` ブラウザの MediaRecorder が出力する
+WebM チャンクを backend の ffmpeg で VP8 再エンコード + Opus copy して RTP 化し、werift
+経由で chat_sync ピアへ送る。chat_itsuki が **offerer**、chat_sync が **answerer**。
+
+受信側 (sync ピア → バックエンド) は werift 内蔵の `MediaRecorder` で RTP を直接 WebM Cluster に変換し、WebSocket チャンクとしてブラウザへ配信、ブラウザ側で MSE (MediaSource Extensions) を使って `<video>` / `<audio>` でライブ再生する。ffmpeg → werift → sync ピアに流れるストリームは常に 1 系統。
+
+> **歴史的経緯**: 以前は送信元を全ブラウザクライアントから 20 秒ごとに巡回切替し、
+> ffmpeg は `-c:v copy`(再エンコードなし)だった。しかし
+> (a) TURN 経由で ffmpeg 既定の ~1460B RTP が MTU 超過で破棄され映像が出ない、
+> (b) `-c:v copy` は入力 VP8 キーフレームを待つためソース依存で黒画面になる、
+> という 2 つの不具合のため、**`/pi` 固定 + libvpx 再エンコード + `-pkt_size 1200`** に
+> 変更した(詳細は末尾「解決済み不具合」)。
 
 ---
 
@@ -18,7 +33,7 @@
 packages/backend/src/webRTC/
 ├── index.ts          # シグナリングリレー関数群
 ├── weriftClient.ts   # バックエンドのWebRTCクライアント実装
-└── cameraRotator.ts  # 送信元クライアントの 20 秒切り替え
+└── cameraRotator.ts  # 送信元クライアントを /pi に固定するセレクタ
 
 packages/frontend/src/webRTC/
 └── msePlayback.ts    # MSE による <video>/<audio> ライブ再生
@@ -32,6 +47,25 @@ packages/frontend/src/socket/
 
 ---
 
+## 全体パイプライン図(送信方向)
+
+```
+[/pi ブラウザ]                          [chat_itsuki backend (Node)]                [chat_sync ブラウザ]
+getUserMedia(640x360/20fps)                                                          受信・デコード・描画
+  → MediaRecorder (VP8/Opus WebM)
+  → "bufferFromClient" (ArrayBuffer)──►  feedWebMChunk()
+                                          (activeSourceClientId 一致時だけ通す)
+                                       → ffmpeg stdin (pipe:0)
+                                          VP8 再エンコード + Opus copy
+                                       → RTP  udp 127.0.0.1:5004 (video PT96)
+                                              udp 127.0.0.1:5006 (audio PT111)
+                                       → werift が UDP 受信 → seq/ts 書き直し
+                                       → RTCRtpSender.writeRtp
+                                       → DTLS/SRTP → TURN ───────────────────────►  表示
+```
+
+---
+
 ## 1. シグナリングリレー (`webRTC/index.ts`)
 
 ブラウザクライアント間のWebRTC接続確立に必要なシグナリングメッセージをサーバー経由でリレーする。接続先管理には `webRtcServerState` を使用する。
@@ -40,11 +74,36 @@ packages/frontend/src/socket/
 
 ---
 
-## 2. weriftクライアント (`webRTC/weriftClient.ts`)
+## 2. 送信元(`/pi` ブラウザ / `recording/index.ts`)
+
+`getUserMedia` のストリーム(`streamState.stream`、解像度/fps は `initialize.ts` の
+getUserMedia 制約で **640x360 / 20fps**)を **1 つの共有 `MediaRecorder`** で録画する。
+
+| 項目 | 値 |
+|---|---|
+| MIME | `video/webm;codecs=vp8,opus` |
+| `videoBitsPerSecond` | `800_000`(800kbps) |
+| `audioBitsPerSecond` | `32_000`(32kbps、会話用途) |
+| timeslice | `1000ms`(`mediaRecorder.start(1000)`) |
+
+- `ondataavailable` ごとに `ArrayBuffer` 化し `socket.emit("bufferFromClient", buf)` で backend へ送る。
+- 開始: socket イベント `bufferRecReqFromServer`。`streamState.stream` 準備前に届く
+  競合に備え、最大約 10 秒(250ms × 40 回)リトライしてから `startChunkedRecording()`
+  を呼ぶ。二重起動防止として `state === "recording"` なら即 return。
+- 停止: `bufferRecStopFromServer`(`stopChunkedRecording()` + 受信 MSE リセット)/
+  `recorderSwitchStopFromServer`(MediaRecorder だけ停止、MSE は維持)。
+
+> ⚠️ この `MediaRecorder` と `streamState.stream` は **インスタレーション用途と
+> chat_sync 送信用途で共有**されている。`stopChunkedRecording()` を呼ぶ経路が複数
+> あるため、文脈を確認せず止めると chat_sync 送信も止まる(末尾「既知の脆さ」参照)。
+
+---
+
+## 3. weriftクライアント (`webRTC/weriftClient.ts`)
 
 バックエンドがNode.js用WebRTCライブラリ `werift` を使ってピアとして動作する。
 
-- **送信方向**: ブラウザの MediaRecorder が出力する WebM チャンクを ffmpeg で demux し、VP8 / Opus RTP として werift の `MediaStreamTrack` に流し込んで sync ピアへ送る。
+- **送信方向**: `/pi` の MediaRecorder が出力する WebM チャンクを ffmpeg で **VP8 再エンコード + Opus copy** し、RTP として werift の `MediaStreamTrack` に流し込んで sync ピアへ送る。
 - **受信方向**: sync ピアからの RTP を werift 内蔵の `MediaRecorder` で WebM (Cluster + SimpleBlock) にし、WebSocket でブラウザへ配信する。
 
 ### 定数
@@ -70,6 +129,9 @@ packages/frontend/src/socket/
 3. `turn:${TURN_HOST}:${TURN_PORT}` (UDP) — username/credential 付き
 4. `turn:${TURN_HOST}:${TURN_PORT}?transport=tcp` — username/credential 付き
 
+> 実環境では P2P 直結ではなく **TURN リレー**を通る。TURN の実効 MTU は ~1200B のため、
+> ffmpeg の RTP は `-pkt_size 1200` で 1200B 以下に分割している(後述)。
+
 ### 公開API
 
 #### `startWebRTCSession()`
@@ -85,8 +147,12 @@ packages/frontend/src/socket/
 "CALL" コマンド
   → receiveEnter.ts
     → startWebRTCSession()      // ffmpeg/UDP + chat_sync 接続
-    → startCameraRotation()     // 20 秒ごとの送信元切り替え開始
+    → startCameraRotation()     // 送信元を /pi に固定
 ```
+
+> 受信パイプラインは CALL 時ではなく **peer-joined / peer-ready のたびに起動**する
+> (idle 放置すると ffmpeg の内部状態が不安定になり最初の RTP を消化できず frame=0 で
+> 固まるため)。
 
 #### `stopWebRTCSession()`
 
@@ -96,11 +162,12 @@ packages/frontend/src/socket/
 
 ブラウザから受け取った WebM チャンクを ffmpeg の stdin へ書き込む。
 
-- `activeSourceClientId === null` のときは破棄 (ローテーション切替過渡期のチャンク除外)
+- `activeSourceClientId === null` のときは破棄 (切替過渡期のチャンク除外)
 - `fromId` が指定され、現アクティブ ID と一致しない場合も破棄
+- 通過時に `ffmpegProc.stdin.write(chunk)`、`activeChunkCount++`
 
 呼び出し元:
-- `socket/wsServer.ts` — `bufferFromClient` メッセージ (ネイティブ WebSocket)。`id` を第二引数で渡す
+- `socket/wsServer.ts` — `bufferFromClient` メッセージ。送信元 `id` を第二引数で渡す
 
 > **buffer pool 修正**: `wsServer.ts` で `Buffer.from(b64, "base64")` の `.buffer` をそのまま渡すと Node.js の Buffer pool (8KB) を共有してしまい、後続データに上書きされる。`buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)` で実バイト範囲だけ切り出してから渡す必要がある。回帰テストあり。
 
@@ -124,33 +191,68 @@ ffmpeg サブプロセスと UDP ソケットだけを作り直す。`videoTrack
 #### 送信方向（ブラウザ → sync ピア）
 
 ```
-ブラウザ MediaRecorder (vp8,opus WebM)
+/pi ブラウザ MediaRecorder (vp8,opus WebM)
   │  bufferFromClient (ArrayBuffer chunk)
   ▼
-ioServer.ts / wsServer.ts
-  │  feedWebMChunk(chunk)
+wsServer.ts
+  │  feedWebMChunk(chunk, id)   // activeSourceClientId 以外は破棄
   ▼
 ffmpegプロセス (stdin)
-  │  WebM (VP8+Opus) を demux → RTP に packetize
-  │  -flush_packets 1 -max_delay 0 で各 output を即座に送出
+  │  WebM (VP8+Opus) を demux
+  │  video: libvpx で再エンコード(定期キーフレーム注入)
+  │  audio: Opus copy
+  │  -flush_packets 1 -max_delay 0 で各 output を即送出
   ├─► UDP :5004  VP8 RTP (PT=96)
-  │     videoUdp.on("message") → RtpPacket.deSerialize() → videoTrack.writeRtp()
+  │     videoUdp.on("message") → RtpPacket.deSerialize()
+  │       → rewriteOutgoingRtp(rtp,"video") → videoTrack.writeRtp()
   └─► UDP :5006  Opus RTP (PT=111)
-        audioUdp.on("message") → RtpPacket.deSerialize() → audioTrack.writeRtp()
+        audioUdp.on("message") → RtpPacket.deSerialize()
+          → rewriteOutgoingRtp(rtp,"audio") → audioTrack.writeRtp()
               │
               ▼
-        RTCPeerConnection (werift) → DTLS-SRTP → sync ピア
+        RTCPeerConnection (werift) → DTLS-SRTP → TURN → sync ピア
 ```
 
-ffmpeg のオプション:
+##### ffmpeg コマンド(現行)
+
+```
+ffmpeg
+  -fflags +nobuffer -analyzeduration 0 -probesize 32
+  -i pipe:0
+  # video: VP8 再エンコード(定期キーフレーム、ソースのタイミングに非依存)
+  -map 0:v:0 -c:v libvpx -b:v 800k
+  -deadline realtime -cpu-used 8
+  -r 20 -vsync cfr            # フレームレート確定(probesize 32 だと未検出になるため明示)
+  -g 30 -keyint_min 30        # 30フレーム(=約1.5秒)ごとに必ずキーフレーム
+  -error-resilient 1
+  -payload_type 96 -flush_packets 1 -max_delay 0
+  -pkt_size 1200             # ★ RTP を 1200B 以下に分割(TURN の MTU 対策)
+  -f rtp rtp://127.0.0.1:5004
+  # audio: Opus はそのまま中継
+  -map 0:a:0 -c:a copy
+  -payload_type 111 -flush_packets 1 -max_delay 0
+  -f rtp rtp://127.0.0.1:5006
+```
 
 | オプション | 目的 |
 |---|---|
 | `-fflags +nobuffer -analyzeduration 0 -probesize 32` | 入力 WebM の analyze を最小化し起動を早める |
-| `-c:v copy / -c:a copy` | 再エンコード無し (ブラウザの Opus / VP8 をそのまま転送) |
+| `-c:v libvpx -b:v 800k -deadline realtime -cpu-used 8` | VP8 をリアルタイム再エンコード(ソース非依存でキーフレーム生成) |
+| `-r 20 -vsync cfr` | フレームレートを 20fps に固定(probesize 32 では未検出になるため明示) |
+| `-g 30 -keyint_min 30` | 約1.5秒ごとに必ずキーフレームを出す(遅参ピア・パケットロス復帰) |
+| `-pkt_size 1200` | **RTP を 1200B 以下に分割(TURN の MTU 超過対策)** |
+| `-c:a copy` | 音声はブラウザの Opus をそのまま転送 |
 | `-payload_type 96 / 111` | werift 側で宣言した PT と一致させる |
-| `-flush_packets 1` | 各 output で packet を貯めずに即送出 |
-| `-max_delay 0` | muxer の jitter buffer を 0 |
+| `-flush_packets 1 -max_delay 0` | output で packet を貯めずに即送出、muxer jitter を 0 |
+
+- ffmpeg stderr は `error|invalid|fail|unable|could not|no such` を含む行だけ
+  `[ffmpeg]` 付きでログ出力。異常 `close` 時に UDP ソケットを閉じる。
+
+##### `rewriteOutgoingRtp(rtp, kind)`
+
+ffmpeg 再起動のたびに RTP の seq / timestamp が新規発番されて不連続になるのを隠すため、
+**送出 seq を連番・timestamp を単調増加**に書き直してから `writeRtp` する。これにより
+ffmpeg respawn を跨いでもリモートピアの jitter buffer が破綻しない。
 
 #### 受信方向（sync ピア → ブラウザ）
 
@@ -165,7 +267,6 @@ RTCPeerConnection.ontrack
   ▼
 werift MediaRecorder (numOfTracks=1, 各 kind 別インスタンス)
   │  RTP depacketize → WebM Cluster + SimpleBlock を逐次出力
-  │  kind=initial / cluster / block の WebmOutput
   ▼
 ioState.io.emit("mediaChunkFromServer", ArrayBuffer)   // video
 ioState.io.emit("audioChunkFromServer", ArrayBuffer)   // audio
@@ -231,7 +332,7 @@ startWebRTCSession()
 | `myPeerId` | `startWebRTCSession()` で生成、再接続でも維持 |
 | 接続成功時 | `reconnectAttempt = 0` にリセット |
 
-`videoTrack` / `audioTrack` は再接続を跨いで継続使用する。ffmpeg + UDP ソケットはローテーション時に作り直されるが、これは送信元クライアントが切り替わって新規 EBML ヘッダから再 probe する必要があるため。シグナリング再接続そのものでは ffmpeg は再起動されない。
+`videoTrack` / `audioTrack` は再接続を跨いで継続使用する。ffmpeg + UDP ソケットは送信元切替時に作り直されるが、シグナリング再接続そのものでは ffmpeg は再起動されない。
 
 #### `peer-left` の状態リセット
 
@@ -251,8 +352,9 @@ startWebRTCSession()
 
 | 項目 | 値 |
 |---|---|
-| ICEサーバー | `ICE_SERVERS`（Google STUN + 自前 STUN + 自前 TURN udp/tcp の 4 件、TURN は username/credential 付き） |
+| ICEサーバー | `ICE_SERVERS`（Google STUN + 自前 STUN + 自前 TURN udp/tcp の 4 件） |
 | 映像コーデック | VP8 / clockRate 90000 / PT 96 |
+| 映像 rtcpFeedback | `nack` / `nack pli` / `ccm fir` / `goog-remb` |
 | 音声コーデック | Opus / clockRate 48000 / channels 2 / PT 111 |
 | トランシーバー方向 | `sendrecv`（送受信両方） |
 
@@ -260,31 +362,39 @@ startWebRTCSession()
 
 | ログ | 意味 |
 |---|---|
+| `[werift tx] video #N outSeq=.. outTs=.. marker=.. len=.. desc=..` | werift が送出した VP8 RTP(seq/ts 書き直し後、先頭40 + 200毎) |
 | `[ffmpeg→werift] video/audio RTP rx=N pt=P seq=S ts=T` | ffmpeg → werift の RTP 受信カウンタ (送信パイプライン) |
 | `[werift recorder] kind=initial/cluster/block #N XB head=...` | recv 側 werift recorder が出した WebM チャンク (video) |
 | `[werift audio recorder] kind=...` | 同上、audio |
 | `[werift sender stats:video/audio] packets=N bytes=B ssrc=...` | 接続後 2 秒ごとに sender の outbound-rtp 統計 |
-| `[REMOTE offer/answer] audio:` / `[LOCAL offer/answer] audio:` | SDP の audio m-line 抜粋 (direction / rtpmap / fmtp / ssrc) |
+| `[ffmpeg] ...` | ffmpeg stderr のエラー行のみ |
+| `[REMOTE offer/answer] ...` / `[LOCAL offer/answer] ...` | SDP 抜粋(direction / rtpmap / fmtp / rtcp-fb / extmap / transport) |
 
 ---
 
-## 3. カメラローテータ (`webRTC/cameraRotator.ts`)
+## 4. カメラセレクタ (`webRTC/cameraRotator.ts`)
 
-CALL 中、送信元のブラウザクライアントを 20 秒ごとに切り替える。受信パイプライン (werift recv recorder → `mediaChunkFromServer` / `audioChunkFromServer`) は触らないため、再生側は常に sync ピア 1 台分の映像/音声を継続表示する。
+CALL 中、送信元のブラウザクライアントを **`/pi`(`urlPathName` に "pi" を含む端末)に固定**
+する。以前は 20 秒ごとに全クライアントを巡回していたが、現在は巡回せず `/pi` に一度だけ
+切り替える。受信パイプライン (werift recv recorder → `mediaChunkFromServer` /
+`audioChunkFromServer`) は触らないため、再生側は常に sync ピア 1 台分の映像/音声を継続表示する。
 
 ### 定数
 
 | 定数 | 値 | 説明 |
 |---|---|---|
-| `ROTATION_INTERVAL_MS` | `20_000` | 切替間隔 |
-| `ACTIVATE_DELAY_MS` | `200` | `bufferRecReqFromServer` 送信後、`activeSourceClientId` を更新するまでの待機。新クライアントの MediaRecorder が起動して EBML を流し始めるための猶予 |
+| `PI_POLL_INTERVAL_MS` | `2_000` | `/pi` 未接続時に再探索する間隔 |
+| `ACTIVATE_DELAY_MS` | `200` | `bufferRecReqFromServer` 送信後、`activeSourceClientId` を更新するまでの待機。新クライアントの MediaRecorder が EBML を流し始めるための猶予 |
+| `REC_REQ_RETRY_INTERVAL_MS` | `1_500` | 切替後にチャンクが流れ始めるまで `bufferRecReqFromServer` を再送する間隔 |
+| `REC_REQ_RETRY_MAX` | `20` | 上記再送の最大回数 |
 
 ### 公開 API
 
 | 関数 | 目的 |
 |---|---|
-| `startCameraRotation()` | 初回送信元を選んで `bufferRecReqFromServer` を送り、20 秒間隔の `tick()` を `setInterval` で開始 |
-| `stopCameraRotation()` | タイマー停止、現アクティブクライアントに `bufferRecStopFromServer` を送り、`activeSourceClientId` を null クリア |
+| `startCameraRotation()` | `setOnPeerConnected(null)` でフックを無効化し、`/pi` を探して `switchTo(pi)` → `startRecReqRetry(pi)`。未接続なら 2 秒間隔でポーリングし、見つかり次第一度だけ切替 |
+| `stopCameraRotation()` | フック解除、rec-req 再送停止、現アクティブに `bufferRecStopFromServer`、`activeSourceClientId` を null |
+| `ensureWebRtcSession()` | `isWebRtcSessionActive()` でなければ `startWebRTCSession()` + `startCameraRotation()` を冪等起動 |
 
 ### 切替手順 (`switchTo`)
 
@@ -301,28 +411,33 @@ CALL 中、送信元のブラウザクライアントを 20 秒ごとに切り�
      → 新 sender のチャンクが ffmpeg に流れ始める
 ```
 
-### 巡回順
-
-`Object.keys(clientState.client)` の登録順 (オブジェクトへの挿入順) で循環する。`pickNext(current, list)`:
-- `list` が空 → null
-- `current` が `list` にない (= 切断済み) → `list[0]` に戻る
-- それ以外 → `list[(idx + 1) % list.length]`
-
-### スキップ条件
-
-`tick()` の冒頭で「リストが現 sender 1 名のみ」のときは `switchTo` を呼ばず即 return する。1 台しかいないのに 20 秒ごとに ffmpeg を再起動して断続させる意味がないため。リストが 1 名でも現 sender と異なる場合 (元の sender 切断 → 別の 1 名が残ったケース) は通常通り切り替わる。
+切替後、対象が実際にチャンクを流し始めるまで(`getActiveChunkCount() > 0` になるまで)
+`bufferRecReqFromServer` を `REC_REQ_RETRY_INTERVAL_MS` 間隔 × 最大 `REC_REQ_RETRY_MAX` 回
+再送する(`startRecReqRetry`)。initialize 完了前に初回指示を取りこぼす競合のリカバリ。
 
 ### 並行ガード
 
-`switchTo` 中に次の tick が走ると ffmpeg を多重再起動してしまうため、`rotating` フラグで二重実行を抑止する。
+`switchTo` 中に再入すると ffmpeg を多重再起動してしまうため、`rotating` フラグで二重実行を抑止する。
+
+### 接続時リフレッシュフックの無効化
+
+以前は新ピア接続時に `refreshCurrentSource()`(= ffmpeg + 送信元 MediaRecorder を再起動して
+キーフレームを作り直す)を `setOnPeerConnected` に登録していた。しかし送信元ブラウザの
+キーフレーム供給タイミングに依存して壊れた(Windows /pi で再起動後 video が数秒出ない回帰)。
+**libvpx 再エンコード + `-g 30`(定期キーフレーム)に変更したことで遅参ピアも約1.5秒で必ず
+キーフレームを得られるため、このフックは無効化**(`setOnPeerConnected(null)`)している。
+`refreshCurrentSource()` 関数は将来の参照用に残置するが登録しない。
 
 ### 受信側との独立性
 
-カメラローテータは「ローカル → sync ピア」方向だけを制御する。`recvRecorder` / `recvAudioRecorder` は werift PeerConnection の `ontrack` で起動済みで、sync ピアからの RTP を継続して WebM に変換し続ける。そのためフロント側の `<video remoteVideo>` / `<audio remoteAudio>` の再生は切替の影響を受けない。
+カメラセレクタは「ローカル → sync ピア」方向だけを制御する。`recvRecorder` /
+`recvAudioRecorder` は werift PeerConnection の `ontrack` で起動済みで、sync ピアからの
+RTP を継続して WebM に変換し続ける。そのためフロント側の `<video remoteVideo>` /
+`<audio remoteAudio>` の再生は切替の影響を受けない。
 
 ---
 
-## 4. フロント MSE 再生 (`webRTC/msePlayback.ts`)
+## 5. フロント MSE 再生 (`webRTC/msePlayback.ts`)
 
 video と audio で別々の `MediaSource` / `SourceBuffer` を持つ。`PlaybackCtx` 構造体でロジックを共通化。
 
@@ -362,7 +477,7 @@ werift recorder は cluster timecode 0 から始まるが、appendBuffer のた�
 
 ---
 
-## 5. HTML 要素 / 表示レイアウト
+## 6. HTML 要素 / 表示レイアウト
 
 ```html
 <div id="wrapper">
@@ -393,7 +508,7 @@ body #remoteVideo {
 
 ---
 
-## 6. sync 側の ontrack 修正 (関連)
+## 7. sync 側の ontrack 修正 (関連)
 
 werift v0.23 は audio transceiver の SDP に `a=msid` を出力しないため、ブラウザ側 ontrack の `streams[]` が track ごとに別物 (または空) になり、`remote-video.srcObject = streams[0]` ではどちらか片方の track しか乗らない問題がある。
 
@@ -419,9 +534,9 @@ this.pc.ontrack = ({ track }) => {
 | `mediaChunkFromServer` | `ArrayBuffer` | werift recv recorder が出した **video** WebM チャンク (init / cluster / block) |
 | `audioChunkFromServer` | `ArrayBuffer` | 同上、**audio** WebM チャンク |
 | `mediaResetFromServer` | なし | recv pipeline 再起動。フロントは MSE を作り直す (init segment を取り直すため) |
-| `bufferRecReqFromServer` | なし | クライアントへ MediaRecorder 開始を要求。`cameraRotator` が CALL 時の初回と 20 秒ごとの切替時に「次の sender」1 件に送信する |
-| `bufferRecStopFromServer` | なし | クライアントへ MediaRecorder 停止 + MSE 再生リセットを要求。`STOPWEBRTC` で `cameraRotator.stopCameraRotation()` から現 sender に送信 |
-| `recorderSwitchStopFromServer` | なし | ローテーション切替用。MediaRecorder だけ止め、受信側 MSE は壊さない。`cameraRotator` が `tick` 内で旧 sender に送信 |
+| `bufferRecReqFromServer` | なし | クライアントへ MediaRecorder 開始を要求。`cameraRotator` が `/pi` 確定時と rec-req リトライで送信する |
+| `bufferRecStopFromServer` | なし | クライアントへ MediaRecorder 停止 + MSE 再生リセットを要求。`STOPWEBRTC` で `stopCameraRotation()` から現 sender に送信 |
+| `recorderSwitchStopFromServer` | なし | 切替用。MediaRecorder だけ止め、受信側 MSE は壊さない。`switchTo` 内で旧 sender に送信 |
 | `candidateReqFromServer` | `string[]` | (シグナリングリレー側) JOIN時に現在のメンバーID一覧 |
 | `joinInfoFromServer` | `string` | 同上、新規参加者のID |
 | `leaveInfoFromServer` | `string` | 同上、退室者のID |
@@ -435,15 +550,62 @@ this.pc.ontrack = ({ track }) => {
 
 | イベント名 | ペイロード | 説明 |
 |---|---|---|
-| `bufferFromClient` | `ArrayBuffer` | ブラウザ MediaRecorder が出力した WebM チャンク。バックエンド ffmpeg に流し込んで RTP 化し sync ピアへ送る。`wsServer.ts` で送信元 `id` 付きで `feedWebMChunk` に渡され、現アクティブ sender 以外は破棄される |
+| `bufferFromClient` | `ArrayBuffer` | ブラウザ MediaRecorder が出力した WebM チャンク。backend ffmpeg に流し込んで RTP 化し sync ピアへ送る。`wsServer.ts` で送信元 `id` 付きで `feedWebMChunk` に渡され、現アクティブ sender 以外は破棄される |
 
 ---
 
-## 既知の制約 / 残課題
+## 解決済み不具合(背景)
 
-- **切替時の途絶**: ローテーション (`switchTo`) では ffmpeg を kill → respawn し、新 MediaRecorder が EBML を流すまで待つため、リモートピア側で ~300〜500 ms 程度の映像/音声欠落が発生する。VP8 のキーフレームが出るまで遅延すれば数フレームのブロックノイズになる場合あり。
-- **送信ストリーム不連続**: ffmpeg 再起動のたびに RTP の SSRC / seq / timestamp が新規発番される。werift 側で再送出される際の挙動はバージョン依存だが、リモートピアの jitter buffer は通常 PLI で復帰できる。問題があれば「ffmpeg 再起動時に毎回 PLI 相当を送る」改修を検討。
-- **後発接続クライアント**: WebSocket で配信される WebM チャンクは EBML init segment を最初に流すため、CALL の途中から接続したクライアントは init を取りこぼし MSE で再生できない。後発接続対応するには backend 側で init segment をキャッシュして join 時に再送する仕組みが必要。
-- **クライアントのストリーム未初期化**: ローテーション対象は `Object.keys(clientState.client)` 全件で、`streamState.stream` の有無を見ていない。click/Enter 前のタブが選ばれると 20 秒 (= 次の tick まで) チャンクが届かず無音/無映像になる。必要なら「`stream` フラグや初回チャンク到達」を gating 条件にする改修が考えられる。
-- **werift SDP の msid 欠落**: 上記 sync 側 ontrack 修正で回避済み。werift 側で SDP munging を入れる方法もあるが、現状は受信側修正で対処。
-- **recv recorder の 1 トラック制限**: video と audio を 1 つの WebM stream にまとめると MSE が拒否するため、現状は 2 stream に分けている。同期 (lip-sync) はブラウザ側 `<video>` `<audio>` の単純併走に依存しており、厳密な PTS 同期はしていない。
+1. **送信映像が全く出ない(framesReceived=0)= RTP の MTU 超過**
+   ffmpeg 既定の ~1460B RTP が TURN リレー(実効 MTU ~1200)で破棄され、キーフレームを
+   構成するパケットが届かず復号できなかった。`-pkt_size 1200` で解決。
+   (`?pkt_size=` の URL クエリ形式は本番 ffmpeg がサイレント死したため、出力オプション
+   形式 `-pkt_size 1200` を使用。stderr エラーログも追加してサイレント死を検知可能にした。)
+   Mac/Windows 両方で双方向表示を確認済み。
+2. **キーフレーム供給がソース依存だった**
+   当初 `-c:v copy` は入力 VP8 のキーフレームを待つため、送信元ブラウザのキーフレーム
+   タイミング次第で黒画面・回帰が起きた(特に Windows /pi)。`libvpx` 再エンコード +
+   `-g 30 -keyint_min 30` でソース非依存の定期キーフレーム生成にして解決。
+
+---
+
+## 既知の脆さ / 未解決事象
+
+**chat_sync 単独動作(サーバ再起動直後)では安定して映像が出るが、他の動作を並行させると
+黒画面のまま** になる事象が報告されている(2026-05-31 調査中)。構造上の要因候補:
+
+- **共有 `MediaRecorder` / 共有ストリーム**
+  `/pi` はインスタレーション用と chat_sync 送信用で `MediaRecorder` と
+  `streamState.stream` を共有(`recording/index.ts`)。`stopChunkedRecording()` を呼ぶ
+  経路が複数あり、文脈を確認せず止めると chat_sync 送信も止まる。
+- **グローバル可変状態の競合**
+  `activeSourceClientId` / `ffmpegProc` はモジュールグローバル。`switchTo()` の非同期区間
+  (`null` 設定 → 200ms 待ち → 再設定)に届いた `/pi` チャンクは破棄される。並行操作が
+  この区間と重なるとチャンク欠落が起きうる。
+- **イベントループ / CPU の競合**
+  `libvpx` realtime 再エンコードは CPU 負荷が高い。同一 Node プロセスで faceDetectScenario
+  (`await` で大量の stream emit / DB アクセス)等が走ると、`bufferFromClient` 処理や
+  ffmpeg stdin 書き込みが遅延し RTP 出力が滞りうる。
+- **BLACK / ナイトモードは映像を黒くしない(誤解しやすい点)**
+  `blackFromServer` → フロントの `enableBlackMode()` は最前面に黒い DOM オーバーレイ
+  (`blackMode.ts`、z-index 999999)を被せるだけ。`getUserMedia` / `captureStream` の中身は
+  変わらず MediaRecorder も止まらないため、キャプチャ映像自体は黒くならない。
+  `masterMuteFromServer` は音声のみ。→ これらは chat_sync 黒画面の直接原因ではない。
+- **faceDetectScenario の対象選択**
+  `pickClientId()`(`scenario/faceDetectScenario.ts`)は全接続端末からランダム選択し
+  `/pi` を除外しない。`/pi` で顔検知すると `recordEmit(detectedClientId)` で `/pi` 宛に
+  `recordReqFromServer` が飛ぶ(これ自体は audio worklet フラグ操作で MediaRecorder は
+  止めないが、送信元端末に追加処理が乗る)。
+
+### その他の積み残し
+
+- **切替時の途絶**: `switchTo` では ffmpeg を kill → respawn し、新 MediaRecorder が EBML を
+  流すまで待つため ~300〜500ms の映像/音声欠落が発生しうる(現在は `/pi` 固定なので
+  通常運用では切替自体が起きにくい)。
+- **後発接続クライアント**: WebSocket で配信される WebM チャンクは EBML init segment を
+  最初に流すため、CALL の途中から接続したクライアントは init を取りこぼし MSE で再生
+  できない。backend で init segment をキャッシュして join 時に再送する仕組みが必要。
+- **werift SDP の msid 欠落**: sync 側 ontrack 修正で回避済み。
+- **recv recorder の 1 トラック制限**: video と audio を 1 つの WebM stream にまとめると
+  MSE が拒否するため 2 stream に分けている。lip-sync はブラウザ側 `<video>` `<audio>` の
+  単純併走依存で、厳密な PTS 同期はしていない。
