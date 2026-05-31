@@ -93,12 +93,16 @@ export const initialize = async (
     // streamState.stream = !flagState.isMobile
     // const stream = !flagState.isMobile ?
     const stream = await navigator.mediaDevices.getUserMedia({
+      // 通話をスムーズにするため、取得段階で解像度と fps を絞る。
+      // 送信元 (Raspberry Pi 等) のエンコード負荷と帯域を下げるのが狙い。
+      // 360p/20fps を上限とし、非対応ならブラウザが近い値にフォールバックする。
       video: {
+        width: { ideal: 640, max: 640 },
+        height: { ideal: 360, max: 360 },
+        frameRate: { ideal: 20, max: 20 },
         //facingMode: 'environment'
         // deviceId: camera.deviceId,
         // facingMode: ['user', 'environment'],
-        // height: {ideal: 1080},
-        // width: {ideal: 1920}
       },
       audio: audioOption,
     });

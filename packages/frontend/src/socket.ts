@@ -25,6 +25,7 @@ import { setGainUI } from "./ui/gainUI";
 import { wholeCmd } from "./cmd/wholeCmd";
 import { startChunkedRecording, stopChunkedRecording } from "./recording";
 import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
+import { enableBlackMode, disableBlackMode } from "./blackMode";
 import {
   attachMsePlayback,
   appendMediaChunk,
@@ -47,6 +48,16 @@ export const socket = (): void => {
   socketState.socket.on("erasePrintFromServer", () => {
     // erasePrint(stx, strCnvs)
     erasePrint();
+  });
+
+  // BLACK コマンド: 画面全体を真っ黒にする。解除は文字入力(main.ts keydown)で行う。
+  socketState.socket.on("blackFromServer", () => {
+    enableBlackMode();
+  });
+
+  // ナイトモード解除時: BLACK モードをサーバーから明示的に解除する。
+  socketState.socket.on("blackOffFromServer", () => {
+    disableBlackMode();
   });
 
   socketState.socket.on(
@@ -89,6 +100,7 @@ export const socket = (): void => {
   socketState.socket.on(
     "recordReqFromServer",
     (data: { source: string; timeout: number }) => {
+      console.log("recordReqFromServer debug", data);
       recordReqFromServer(data);
       textPrint("RECORD", { timeout: true, timeoutDuration: data.timeout });
       // setTimeout(() => {
@@ -317,9 +329,20 @@ export const socket = (): void => {
   });
 
   socketState.socket.on("bufferRecReqFromServer", () => {
-    if (streamState.stream) {
-      startChunkedRecording(streamState.stream as MediaStream);
-    }
+    // streamState.stream は initialize() 完了後にセットされる。
+    // ensureWebRtcFromClient → bufferRecReqFromServer が initialize 完了前
+    // (stream 準備前) に返ってくる競合があるため、stream が用意できるまで
+    // 少し待って再試行する (最大 10 秒)。
+    const tryStart = (attempt: number): void => {
+      if (streamState.stream) {
+        startChunkedRecording(streamState.stream as MediaStream);
+      } else if (attempt < 40) {
+        window.setTimeout(() => tryStart(attempt + 1), 250);
+      } else {
+        console.warn("bufferRecReqFromServer: stream not ready, gave up");
+      }
+    };
+    tryStart(0);
   });
 
   socketState.socket.on("bufferRecStopFromServer", () => {
