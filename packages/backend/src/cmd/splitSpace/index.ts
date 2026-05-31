@@ -32,6 +32,7 @@ import { voiceEmit } from "../voiceEmit";
 import { loadScenario } from "../../scenario/loadScenario";
 import { execScenario } from "../../scenario/execScenario";
 import { bufferSizeChange } from "../../stream/bufferSizeChange";
+import { glitchChange } from "../../parameterChange/glitchChange";
 import { modulationByBPM } from "./modulationByBPM";
 
 import { putLogFile } from "../../logging/putLogFile";
@@ -73,7 +74,9 @@ export const splitSpace = async (
     }
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
     // RANDOMのみRATEとSTREAMがあるので個別処理
-    if (stringArr[0] === "RANDOM") {
+    if (stringArr[0] === "GLITCH") {
+      glitchChange({value: stringArr[1] === "ON" || stringArr[1] === "TRUE" ? 1 : 0});
+    } else if (stringArr[0] === "RANDOM") {
       splitRandomRate(stringArr);
     } else if (stringArr[0] === "VOICE") {
       //  } else if (stringArr[0] === 'VOICE' && stringArr.length === 2 && arrTypeArr[1] === 'string') {

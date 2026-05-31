@@ -25,7 +25,7 @@ import { setGainUI } from "./ui/gainUI";
 import { wholeCmd } from "./cmd/wholeCmd";
 import { startChunkedRecording, stopChunkedRecording } from "./recording";
 import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
-import { enableBlackMode, disableBlackMode } from "./blackMode";
+import { enableBlackMode, disableBlackMode, isBlackModeActive } from "./blackMode";
 import { muteMasterForNight, restoreMasterForNight } from "./nightAudio";
 import {
   attachMsePlayback,
@@ -61,12 +61,12 @@ export const socket = (): void => {
     disableBlackMode();
   });
 
-  // ナイトモード移行時: masterGain を 0 にして消音する。
+  // ナイトモード移行時: masterGain と glitchGain を 0 にして消音する。
   socketState.socket.on("masterMuteFromServer", () => {
     muteMasterForNight();
   });
 
-  // ナイトモード解除時: masterGain を移行前の値へ戻す。
+  // ナイトモード解除時: masterGain と glitchGain を移行前の値へ戻す。
   socketState.socket.on("masterUnmuteFromServer", () => {
     restoreMasterForNight();
   });
@@ -239,6 +239,10 @@ export const socket = (): void => {
   socketState.socket.on(
     "voiceFromServer",
     (data: { text: string; lang: string }) => {
+      // /counter 端末は BLACK モード中、サーバ駆動の音声も発声しない。
+      if (isBlackModeActive() && window.location.pathname === "/counter") {
+        return;
+      }
       const uttr = new SpeechSynthesisUtterance();
       uttr.lang = data.lang;
       uttr.text = data.text;

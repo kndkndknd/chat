@@ -14,6 +14,12 @@ export const glitchChange = (arg) => {
       true
       // state
     );
+  } else if (arg && arg.value !== undefined) {
+    Object.keys(glitchState.glitch).forEach((key) => {
+      glitchState.glitch[key] = arg.value === 1 ? true : false;
+    });
+    // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(glitchState.glitch.CHAT), timeout: true})
+    stringEmit("GLITCH: " + String(glitchState.glitch.CHAT), true);
   } else {
     let flag = false;
     if (Object.values(glitchState.glitch).includes(false)) {
