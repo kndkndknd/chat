@@ -1,5 +1,6 @@
-import { io, Socket } from "socket.io-client";
-const socket: Socket = io();
+import { SocketFacade } from "../socket/SocketFacade";
+const wsUrl = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`;
+const socket = new SocketFacade(wsUrl);
 
 // import { cnvs, ctx } from "../globalVariable";
 // import { canvasSizing, textPrint, erasePrint } from "../imageEvent";

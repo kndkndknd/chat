@@ -29,7 +29,6 @@ export const promiseGetImageData = (f: string, filePath: string, options) => {
       try {
         const files = await fs.readdirSync(filePath + "/tmp");
         const base64Arr: string[] = [];
-        console.log(files);
         let jpgs = <Array<string>>[];
         files.forEach((file) => {
           if (file.includes(fileName) && file.includes(".jpg")) {

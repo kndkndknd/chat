@@ -1,4 +1,4 @@
-import { millisecondsPerBar } from "../../../../util/bpmCalc";
+// import { millisecondsPerBar } from "../../util/bpmCalc";
 // import { quantizeObjType } from "../../../../../types";
 import { clientState, bpmState } from "../../state";
 import { bpmClientStateType, bpmStreamStateType } from "../../../../../types";
@@ -21,7 +21,7 @@ import { quantize } from "./quantize";
  * parameterにbeat, bpm, flagを指定することで、クオンタイズの設定を変更できます。
  * もしparameterが指定されない場合、平均値を基にしたクオンタイズ設定が行われます。
  */
-export const quantizeCmd = (io, id?: string) => {
+export const quantizeCmd = (id?: string) => {
   const bpmStreamState = {};
   if (id === undefined) {
     for (const client in bpmState) {
@@ -36,9 +36,8 @@ export const quantizeCmd = (io, id?: string) => {
   }
   const quntizeStreamObj = quantize({ splited: false });
   setBpmState(quntizeStreamObj);
-  emitQuantize(quntizeStreamObj, io);
+  emitQuantize(quntizeStreamObj);
 };
-//   // io: SocketIO.Server,
 //   target: {
 //     streamTarget: string;
 //     clientTarget: string;

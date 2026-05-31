@@ -1,4 +1,4 @@
-import { LogType } from "../../../types/log_schedule";
+import { LogType } from "../../../../types";
 
 export const exchangeRelativeSchedule = (
   log: LogType[]

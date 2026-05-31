@@ -24,7 +24,7 @@ export const modulationByBPM = (
   });
 };
 
-function calculateModulationFrequency(
+export function calculateModulationFrequency(
   frequency1: number,
   modulationPeriodMs: number,
   plusminus: boolean

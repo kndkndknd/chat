@@ -2,24 +2,41 @@ import {
   contextState,
   oscState,
   gainState,
-  scriptProcessorState,
   convolverState,
   filterState,
   otherNodeState,
-  // audioWorkletState,
+  stereoPannerState,
+  audioWorkletState,
 } from "../../state";
+import { initWhitenoiseWorklet } from "../../audioWorklet/whitenoiseWorklet";
 
-let buf0: Float32Array;
-let buf1: Float32Array;
-const chatGainVal = 1.5;
+const chatGainVal = 2.0;
 const glitchGainVal = 1.5;
 
-export const initAudio = () => {
+export const initAudio = async (
+  initWhitenoise: () => Promise<void> = initWhitenoiseWorklet,
+) => {
+
+  if(window.location.pathname.includes("left")) {
+    stereoPannerState.masterPannerParam = -1;
+    console.log("left channel");
+  } else if (window.location.pathname.includes("right")) {
+    stereoPannerState.masterPannerParam = 1;
+    console.log("right channel");
+  }
+
+
   // console.log("debug1");
   contextState.audioContext = new AudioContext();
   gainState.masterGain = contextState.audioContext.createGain();
   gainState.masterGain.gain.setValueAtTime(1, 0);
-  gainState.masterGain.connect(contextState.audioContext.destination);
+  stereoPannerState.masterPanner = contextState.audioContext.createStereoPanner();
+  stereoPannerState.masterPanner.pan.setValueAtTime(
+    stereoPannerState.masterPannerParam,
+    0,
+  );
+  gainState.masterGain.connect(stereoPannerState.masterPanner);
+  stereoPannerState.masterPanner.connect(contextState.audioContext.destination);
   // console.log(gainState.masterGain.gain.maxValue);
 
   //record/play
@@ -37,22 +54,17 @@ export const initAudio = () => {
   gainState.feedbackGain = contextState.audioContext.createGain();
   gainState.feedbackGain.gain.setValueAtTime(0, 0);
   //whitenoise
-  oscState.whitenoiseOsc = contextState.audioContext.createOscillator();
-  scriptProcessorState.whitenoiseNode =
-    contextState.audioContext.createScriptProcessor(1024);
-  gainState.whitenoiseGain = contextState.audioContext.createGain();
-  gainState.whitenoiseGain.gain.setValueAtTime(0, 0);
-  scriptProcessorState.whitenoiseNode.onaudioprocess = (ev) => {
-    buf0 = ev.outputBuffer.getChannelData(0);
-    buf1 = ev.outputBuffer.getChannelData(1);
-    for (let i = 0; i < 1024; ++i) {
-      buf0[i] = buf1[i] = Math.random() - 0.5;
-    }
-  };
-  oscState.whitenoiseOsc.connect(scriptProcessorState.whitenoiseNode);
-  scriptProcessorState.whitenoiseNode.connect(gainState.whitenoiseGain);
-  gainState.whitenoiseGain.connect(gainState.masterGain);
-  oscState.whitenoiseOsc.start(0);
+  // oscState.whitenoiseOsc = contextState.audioContext.createOscillator();
+  await initWhitenoise();
+  gainState.whitenoiseGain = await contextState.audioContext.createGain();
+  await gainState.whitenoiseGain.gain.setValueAtTime(0, 0);
+  await audioWorkletState.whitenoise.audioWorklet.connect(
+    gainState.whitenoiseGain,
+  );
+  // oscState.whitenoiseOsc.connect(scriptProcessorState.whitenoiseNode);
+  // scriptProcessorState.whitenoiseNode.connect(gainState.whitenoiseGain);
+  await gainState.whitenoiseGain.connect(gainState.masterGain);
+  // oscState.whitenoiseOsc.start(0);
 
   //bass
   oscState.bassOsc = contextState.audioContext.createOscillator();
@@ -73,8 +85,8 @@ export const initAudio = () => {
   oscState.clickOsc.start(0);
 
   // chat / feedback
-  scriptProcessorState.javascriptnode =
-    contextState.audioContext.createScriptProcessor(8192, 1, 1);
+  // scriptProcessorState.javascriptnode =
+  //   contextState.audioContext.createScriptProcessor(8192, 1, 1);
   convolverState.convolver = contextState.audioContext.createConvolver();
   gainState.glitchGain = contextState.audioContext.createGain();
   gainState.glitchGain.gain.setValueAtTime(glitchGainVal, 0);

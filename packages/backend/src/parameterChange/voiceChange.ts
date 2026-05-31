@@ -1,10 +1,8 @@
-import SocketIO from "socket.io";
 import { cmdState, clientState } from "../state";
 import { stringEmit } from "../socket/ioEmit";
 import { notTargetEmit } from "../cmd/notTargetEmit";
 
 export const voiceChange = (
-  io: SocketIO.Server,
   arg?: { source?: string; value?: number; property?: string }
 ) => {
   if (arg && arg.source) {
@@ -29,22 +27,22 @@ export const voiceChange = (
         flag = true;
       }
       // io.emit('stringsFromServer',{strings: 'VOICE: ' + String(flag), timeout: true})
-      stringEmit(io, "VOICE: " + String(flag), true, arg.source);
-      notTargetEmit(arg.source, Object.keys(clientState.client), io);
+      stringEmit("VOICE: " + String(flag), true, arg.source);
+      notTargetEmit(arg.source, Object.keys(clientState.client));
     } else {
       if (arg.value === 0) {
         let filtered: string[] = cmdState.VOICE.filter(
           (element) => element !== arg.source
         );
         cmdState.VOICE = filtered;
-        stringEmit(io, "VOICE: false", true, arg.source);
-        notTargetEmit(arg.source, Object.keys(clientState.client), io);
+        stringEmit("VOICE: false", true, arg.source);
+        notTargetEmit(arg.source, Object.keys(clientState.client));
       } else {
         if (!cmdState.VOICE.includes(arg.source)) {
           cmdState.VOICE.push(arg.source);
         }
-        stringEmit(io, "VOICE: true", true, arg.source);
-        notTargetEmit(arg.source, Object.keys(clientState.client), io);
+        stringEmit("VOICE: true", true, arg.source);
+        notTargetEmit(arg.source, Object.keys(clientState.client));
       }
     }
   }

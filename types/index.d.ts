@@ -5,6 +5,7 @@ import {
   streamStateType,
   filterStateType,
   clientStateType,
+  gainStateType,
   glitchStateType,
   sampleRateStateType,
   // quantizeStateType,
@@ -15,6 +16,7 @@ import {
   webStateType,
   flagStateType,
   arduinoStateType,
+  m5StateType,
 } from "./stateType";
 import { LogType } from "./logType";
 import { quantizeObjType, frontQuantizeStateType } from "./quantizeType";
@@ -24,6 +26,13 @@ import {
   bpmStreamStateType,
   quantizeParamClass,
 } from "./bpmType";
+import { 
+  wholeCmdOption,
+  wholeSinewaveOption,
+  wholeStreamOption,
+  wholeCmdExceptSinewaveOption
+} from "./wholeOption";
+
 
 export {
   CmdType,
@@ -36,6 +45,7 @@ export {
   clientStateType,
   streamStateType,
   filterStateType,
+  gainStateType,
   glitchStateType,
   sampleRateStateType,
   // quantizeStateType,
@@ -49,6 +59,11 @@ export {
   webStateType,
   flagStateType,
   arduinoStateType,
+  m5StateType,
   newWindowReqType,
   quantizeParamClass,
+  wholeCmdOption,
+  wholeSinewaveOption,
+  wholeStreamOption,
+  wholeCmdExceptSinewaveOption
 };

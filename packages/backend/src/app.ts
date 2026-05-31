@@ -1,28 +1,38 @@
 import * as fs from "fs";
 import { default as Express } from "express";
-import express from "express";
 import * as path from "path";
 import { default as favicon } from "serve-favicon";
 import * as Https from "https";
-import { fileURLToPath } from "url";
-import { ioServer } from "./socket/ioServer";
-import { spawn } from "child_process";
-// import { states } from "./states";
-// import { switchCtrl } from "./arduinoAccess/switch";
+import { wsServer } from "./socket/wsServer";
 import { networkInterfaces } from "os";
-import SocketIO from "socket.io";
+import dotenv from "dotenv";
 
-import { getLiveStream } from "./stream/getLiveStream";
-import { stringEmit } from "./socket/ioEmit";
-import { webSocket } from "./webSocket/webSocketConnection";
+const dotenvPath = path.join(__dirname, "../../..", ".env");
+if (fs.existsSync(dotenvPath)) {
+  console.log("Loading .env file from:", dotenvPath);
+  dotenv.config({ path: dotenvPath });
+}
 
-// import { io as socketIoClient, Socket } from "socket.io-client";
-
-// const socketClient: Socket = socketIoClient("https://localhost:8080/socket.io");
-
-// socketClient.on("connect", () => {
-//   console.log("Connected to server" + socketClient.id);
-// });
+import { cmdLogging } from "./logging/cmdLogging";
+import { initStreams } from "./data";
+import { loadAllStates } from "./state";
+import { ioState } from "./state/states/ioState";
+import { countersRedis, streamsRedis } from "./redis/streamsRedis";
+import {
+  nightScheduleState,
+  startNightSchedule,
+} from "./scenario/nightSchedule";
+import { getMongoDb } from "./mongo/client";
+import {
+  scenarioItsuki,
+  isScenarioItsukiActive,
+} from "./scenario/scenarioItsuki";
+import {
+  enableNightMode,
+  disableNightMode,
+  isNightModeActive,
+} from "./nightMode/nightMode";
+import { startNightModeSchedule } from "./nightMode/nightModeSchedule";
 
 // import { cors } from "cors";
 // const corsOptions = {
@@ -30,7 +40,8 @@ import { webSocket } from "./webSocket/webSocketConnection";
 //   optionsSuccessStatus: 200,
 // };
 
-const port = 8888;
+const scenarioMode = process.env.SCENARIO === "true";
+const port = process.env.LOCAL_SERVER_PORT || 8888;
 const app = Express();
 app.use(Express.json());
 // const __filename = fileURLToPath(import.meta.url);
@@ -50,7 +61,7 @@ const allowCrossDomain = function (req, res, next) {
   );
   // intercept OPTIONS method
   if ("OPTIONS" === req.method) {
-    res.send(200);
+    res.sendStatus(200);
   } else {
     next();
   }
@@ -60,15 +71,13 @@ app.use(allowCrossDomain);
 //const httpsserver = Https.createServer(options,app).listen(port);
 const options = {
   key: fs.readFileSync(
-    path.join(__dirname, "../../../..", "keys/chat/private.key")
+    path.join(__dirname, "../../../../..", "keys/chat/private.key")
   ),
   cert: fs.readFileSync(
-    path.join(__dirname, "../../../..", "keys/chat/selfsigned.crt")
+    path.join(__dirname, "../../../../..", "keys/chat/selfsigned.crt")
   ),
   passphrase: "chat",
 };
-
-const httpserver = Https.createServer(options, app).listen(port);
 
 function getIpAddress() {
   const nets = networkInterfaces();
@@ -76,28 +85,34 @@ function getIpAddress() {
   return !!net ? net.address : null;
 }
 
-const host = getIpAddress();
-console.log(`Server listening on ${host}:${port}`);
+const httpserver = Https.createServer(options, app);
 
-const io: SocketIO.Server = ioServer(httpserver);
+// bind に成功したときだけ listening を表示する。
+httpserver.listen(port, () => {
+  const host = getIpAddress();
+  console.log(`Server listening on ${host}:${port}`);
+});
 
-// webSocket(io);
+// ポート使用中(EADDRINUSE)などの bind 失敗を握りつぶさず、明示して終了する。
+httpserver.on("error", (err: NodeJS.ErrnoException) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`Port ${port} is already in use. Server not started.`);
+  } else {
+    console.error("HTTP server error:", err);
+  }
+  process.exit(1);
+});
+
+// 起動時に一度だけ Mongo へ接続し、疎通を確認する。
+getMongoDb().catch((err) => {
+  console.error("Mongo initial connection failed:", err);
+});
+
+wsServer(httpserver);
 
 app.get("/", function (req, res, next) {
   try {
     res.sendFile(path.join(__dirname, "..", "static", "html", "index.html"));
-  } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Something went wrong" });
-  }
-});
-
-app.get("/snowleopard", function (req, res, next) {
-  try {
-    console.log("snowleopard");
-    res.sendFile(
-      path.join(__dirname, "..", "static", "html", "snowleopard.html")
-    );
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Something went wrong" });
@@ -123,71 +138,6 @@ app.get("/rotate", function (req, res, next) {
   }
 });
 
-app.get("/form", function (req, res, next) {
-  try {
-    console.log("snowleopard");
-    res.sendFile(path.join(__dirname, "..", "static", "html", "form.html"));
-  } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Something went wrong" });
-  }
-});
-
-app.get("/hls", function (req, res, next) {
-  try {
-    console.log("hls test");
-    res.sendFile(path.join(__dirname, "..", "static", "html", "hlstest.html"));
-  } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Something went wrong" });
-  }
-});
-
-// app.get("/recorder", function (req, res, next) {
-//   try {
-//     console.log("recorder");
-//     res.sendFile(path.join(__dirname, "..", "static", "html", "recorder.html"));
-//   } catch (error) {
-//     console.log(error);
-//     res.json({ success: false, message: "Something went wrong" });
-//   }
-// });
-
-// import { ingest, stopIngesting } from "./recorder";
-
-// app.post(
-//   "/api/ingest",
-//   express.raw({
-//     // type: ["video/webm", "application/octet-stream"],
-//     type: "video/webm",
-//     limit: "25mb",
-//   }),
-//   async (req, res, next) => {
-//     // await console.log(req.body);
-//     try {
-//       if (!Buffer.isBuffer(req.body)) {
-//         return res.status(415).send("unsupported media type");
-//       }
-//       const chunk: Buffer = req.body as Buffer;
-//       console.log("ingest chunk size:", chunk.length);
-
-//       const filename = (req.header("x-filename") ?? "upload.bin").toString();
-//       const mime = req.header("content-type") ?? "application/octet-stream";
-//       console.log("bytes:", chunk.length, "mime:", mime, "filename:", filename);
-
-//       await ingest(chunk);
-//       res.json({ ok: true });
-//     } catch (error) {
-//       next(error);
-//     }
-//   }
-// );
-
-// app.post("/api/stop", async (_req, res) => {
-//   await stopIngesting();
-//   await res.json({ ok: true });
-// });
-
 app.get("/:name", function (req, res, next) {
   const name = req.params.name;
   try {
@@ -211,16 +161,6 @@ app.get("/:name", function (req, res, next) {
   }
 });
 
-app.post("/api/form", function (req, res, next) {
-  console.log("POST /api/form", req.body);
-  if (req.body.enter) {
-    console.log("enter");
-  } else {
-    console.log("chat:", req.body.chat);
-    stringEmit(io, req.body.chat, false);
-  }
-  res.json({ success: true, message: "Data received" });
-});
 
 app.post("/api/char", function (req, res, next) {
   console.log("POST /api/char", req.body);
@@ -228,17 +168,101 @@ app.post("/api/char", function (req, res, next) {
   res.json({ success: true, message: "char received" });
 });
 
-/*
-const socketOptions = {
-  cors: {
-    origin: function (origin, callback) {
-      const isTarget = origin != undefined && origin.includes("localhost") !== null;
-      return isTarget ? callback(null, origin) : callback('error invalid domain');
-    },
-    credentials: true
-  },
-  maxHttpBufferSize: 1e8,
-};
-*/
+app.post("/api/persondetect", function (req, res) {
+  const body: { type: string; direction: string } = req.body;
+  console.log(JSON.parse(JSON.stringify(body)));
+  if (nightScheduleState.quiet) {
+    res.json({ success: true, skipped: true });
+    return;
+  }
+  ioState.io?.emit("personDetectFromServer");
+  if (body.direction === "left") {
+    countersRedis.increment("visitor").then((count) => {
+      console.log("visitor count:", count);
+    });
+  }
+  if (body.direction === "right") {
+    countersRedis.increment("leave").then((count) => {
+      console.log("leave count:", count);
+    });
+  }
+  res.json({ success: true });
+});
 
-// const io = new Server(httpsserver, socketOptions)
+// シナリオ（scenarioItsuki）を HTTP から起動する。
+app.post("/api/scenario", async function (req, res) {
+  try {
+    await scenarioItsuki();
+    res.json({ success: true });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
+// itsukiTimer の状態を返す。NULL なら stopping、NULL でなければ active。
+app.get("/api/scenario", function (req, res) {
+  res.json({ status: isScenarioItsukiActive() ? "active" : "stopping" });
+});
+
+// ナイトモードの ON/OFF を切り替える。
+// value:true で全端末の顔認識停止 + scenarioItsuki 停止 + 全端末 BLACK モード。
+// value:false でナイトモードを解除する（顔認識を元の設定に復元し、BLACK を解除）。
+app.post("/api/nightmode", function (req, res) {
+  try {
+    const value: boolean = req.body?.value === true;
+    if (value) {
+      enableNightMode();
+    } else {
+      disableNightMode();
+    }
+    res.json({ success: true, nightmode: isNightModeActive() });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
+// CLEAR BUFFER 相当の処理を HTTP から実行する。
+// body.stream を省略すると全ストリームのバッファをクリア（CHAT/EMPTY/KICK/SNARE/HAT は除外）、
+// 指定すると該当ストリームのバッファのみクリアする。
+app.post("/api/clear-buffer", async function (req, res) {
+  const stream: string | undefined = req.body?.stream;
+  const excluded = ["CHAT", "EMPTY", "KICK", "SNARE", "HAT"];
+  try {
+    if (stream === undefined) {
+      const allKeys = await streamsRedis.getAllKeys();
+      const cleared: string[] = [];
+      for (const name of allKeys) {
+        if (!excluded.includes(name)) {
+          await streamsRedis.clear(name);
+          cleared.push(name);
+        }
+      }
+      res.json({ success: true, cleared });
+    } else if (await streamsRedis.hasKey(stream)) {
+      await streamsRedis.clear(stream);
+      res.json({ success: true, cleared: [stream] });
+    } else {
+      res
+        .status(404)
+        .json({ success: false, message: `Stream not found: ${stream}` });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
+loadAllStates()
+  .then(() => initStreams())
+  .catch((err) => console.error("Redis init error:", err));
+cmdLogging("START");
+if(scenarioMode){
+  console.log("Scenario mode enabled");
+  startNightSchedule();
+} else {
+  console.log("Scenario mode disabled");
+}
+// 19:30 にナイトモード ON、10:30 に OFF を自動実行するタイマー。
+startNightModeSchedule();

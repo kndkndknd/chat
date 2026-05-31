@@ -2,8 +2,8 @@
 import * as fs from "fs";
 
 // import { cmdLog } from "../data";
-// import { getDateTimeString } from "../../../util/getDateTimeString";
-import { LogType } from "../../../types/log_schedule";
+// import { getDateTimeString } from "../util/getDateTimeString";
+import { LogType } from "../../../../types";
 
 // read log json file
 export const getJsonFromFile = async (

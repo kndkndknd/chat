@@ -1,11 +1,8 @@
-import SocketIO from "socket.io";
-
 import { putCmd } from "./putCmd";
 import { currentState, previousState, cmdState } from "../state";
 
 export const sinewaveChange = (
   cmdStrings: string,
-  io: SocketIO.Server,
   options?: {
     value?: number;
     id?: string;
@@ -31,8 +28,7 @@ export const sinewaveChange = (
           portament: cmdState.PORTAMENT,
           gain: cmdState.GAIN.SINEWAVE,
         };
-        putCmd(io, [id], cmd);
-        // io.to(id).emit('cmdFromServer', cmd)
+        putCmd([id], cmd);
       }
     } else if (cmdStrings === "HALF") {
       for (let id in currentState.sinewave) {
@@ -53,8 +49,7 @@ export const sinewaveChange = (
           portament: cmdState.PORTAMENT,
           gain: cmdState.GAIN.SINEWAVE,
         };
-        //io.to(id).emit('cmdFromServer', cmd)
-        putCmd(io, [id], cmd);
+        putCmd([id], cmd);
       }
     }
   } else {
@@ -77,7 +72,7 @@ export const sinewaveChange = (
         portament: cmdState.PORTAMENT,
         gain: cmdState.GAIN.SINEWAVE,
       };
-      putCmd(io, [id], cmd);
+      putCmd([id], cmd);
     } else if (cmdStrings === "HALF") {
       previousState.sinewave[id] = currentState.sinewave[id];
       currentState.sinewave[id] = currentState.sinewave[id] / 2;
@@ -96,8 +91,7 @@ export const sinewaveChange = (
         portament: cmdState.PORTAMENT,
         gain: cmdState.GAIN.SINEWAVE,
       };
-      //io.to(id).emit('cmdFromServer', cmd)
-      putCmd(io, [id], cmd);
+      putCmd([id], cmd);
     }
   }
 };

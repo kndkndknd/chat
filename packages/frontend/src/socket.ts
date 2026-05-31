@@ -8,7 +8,6 @@ import {
   streamFlagState,
   streamState,
   timelapseState,
-  torchState,
   webRtcState,
   audioWorkletState,
 } from "./state";
@@ -16,49 +15,60 @@ import {
 import {
   bpmStreamStateType,
   filterStateType,
-  newWindowReqType,
+  wholeCmdOption
 } from "../../../types";
-import { emojiState, erasePrint, textPrint, showImage } from "./canvasEvent";
+import { emojiState, erasePrint, textPrint, showImage, flickering } from "./canvasEvent";
 import { stopCmd, cmdFromServer } from "./cmd";
 import { quantizeFromServer } from "./quantize/quantizeFromServer";
 import { chatReq, recordReqFromServer, streamPlay } from "./stream";
-import { click, gainChange } from "./webaudio";
+import { setGainUI } from "./ui/gainUI";
+import { wholeCmd } from "./cmd/wholeCmd";
+import { startChunkedRecording, stopChunkedRecording } from "./recording";
+import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
+import { enableBlackMode, disableBlackMode, isBlackModeActive } from "./blackMode";
+import { muteMasterForNight, restoreMasterForNight } from "./nightAudio";
+import {
+  attachMsePlayback,
+  appendMediaChunk,
+  teardownMsePlayback,
+  attachMseAudioPlayback,
+  appendAudioChunk,
+  teardownMseAudioPlayback,
+} from "./webRTC/msePlayback";
 
-// import {
-//   initRtpPeerConnection,
-//   receiveIceCandidate,
-//   createOffer,
-//   createAnswer,
-//   receiveOffer,
-//   receiveAnswer,
-// } from "./webrtc";
-
-// import { torchToggle, startBlink, stopBlink } from "./stream/torch";
 
 export const socket = (): void => {
   socketState.socket.on(
     "stringsFromServer",
     (data: { strings: string; timeout: boolean }) => {
-      // erasePrint(stx, strCnvs);
       erasePrint();
-      console.log("stringsFromServer", data);
       canvasState.stringsClient = data.strings;
       textPrint(canvasState.stringsClient, { timeout: data.timeout });
-      // if (data.timeout) {
-      //   setTimeout(() => {
-      //     erasePrint();
-      //   }, 500);
-      // }
-      // if (cinemaFlag) {
-      //   setTimeout(() => {
-      //     erasePrint();
-      //   }, 500);
-      // }
     },
   );
   socketState.socket.on("erasePrintFromServer", () => {
     // erasePrint(stx, strCnvs)
     erasePrint();
+  });
+
+  // BLACK コマンド: 画面全体を真っ黒にする。解除は文字入力(main.ts keydown)で行う。
+  socketState.socket.on("blackFromServer", () => {
+    enableBlackMode();
+  });
+
+  // ナイトモード解除時: BLACK モードをサーバーから明示的に解除する。
+  socketState.socket.on("blackOffFromServer", () => {
+    disableBlackMode();
+  });
+
+  // ナイトモード移行時: masterGain と glitchGain を 0 にして消音する。
+  socketState.socket.on("masterMuteFromServer", () => {
+    muteMasterForNight();
+  });
+
+  // ナイトモード解除時: masterGain と glitchGain を移行前の値へ戻す。
+  socketState.socket.on("masterUnmuteFromServer", () => {
+    restoreMasterForNight();
   });
 
   socketState.socket.on(
@@ -86,26 +96,10 @@ export const socket = (): void => {
       erasePrint();
       if (data.target === undefined || data.target === "ALL") {
         stopCmd(data.fadeOutVal);
-      } else if (data.target === "ExceptHls") {
-        stopCmd(data.fadeOutVal, "HLS");
       }
-      // erasePrint(stx, strCnvs)
       textPrint("STOP", { timeout: true, timeoutDuration: 800 });
-      // setTimeout(() => {
-      //   erasePrint();
-      // }, 800);
     },
   );
-
-  socketState.socket.on("textFromServer", (data: { text: string }) => {
-    erasePrint();
-    textPrint(data.text);
-    // if (cinemaFlag) {
-    //   setTimeout(() => {
-    //     erasePrint();
-    //   }, 500);
-    // }
-  });
 
   socketState.socket.on("chatReqFromServer", () => {
     chatReq(String(socketState.socket.id));
@@ -117,6 +111,7 @@ export const socket = (): void => {
   socketState.socket.on(
     "recordReqFromServer",
     (data: { source: string; timeout: number }) => {
+      console.log("recordReqFromServer debug", data);
       recordReqFromServer(data);
       textPrint("RECORD", { timeout: true, timeoutDuration: data.timeout });
       // setTimeout(() => {
@@ -128,7 +123,7 @@ export const socket = (): void => {
   // CHATのみ向けにする
   socketState.socket.on(
     "chatFromServer",
-    (data: { video: string; audio: ArrayBuffer; source: string }) => {
+    (data: { video: string; audio: ArrayBuffer; source: string, bufferSize: number, sampleRate: number, glitch: boolean,duration?: number }) => {
       // (data: {
       //   audio: Float32Array;
       //   video?: string;
@@ -141,21 +136,21 @@ export const socket = (): void => {
       //   position?: { top: number; left: number; width: number; height: number };
       //   target?: string;
       // }) => {
-      console.log("chatFromServer");
-      console.log(data);
+      // console.log("chatFromServer");
+      // console.log(data);
       // data.bufferをfloat32Arrayに変換
       const float32Array = new Float32Array(data.audio);
       const streamData = {
         audio: float32Array,
-        sampleRate: 44100,
-        glitch: false,
-        bufferSize: 8192,
+        sampleRate: data.sampleRate,
+        glitch: data.glitch,
+        bufferSize: data.bufferSize,
         video: data.video,
         source: data.source,
       };
       const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
       streamPlay(streamType, socketState.socket, streamData);
-      audioWorkletState.flag[data.source] = true;
+      // audioWorkletState.chat.flag[data.source] = true;
 
       // if (quantizeState.flag && quantizeState.stream.includes("CHAT")) {
       //   const chunk = {
@@ -198,6 +193,7 @@ export const socket = (): void => {
       position?: { top: number; left: number; width: number; height: number };
       target?: string;
       filter?: filterStateType;
+      index?: number;
     }) => {
       streamFlagState[data.source] = true;
       if (quantizeState.flag && quantizeState.stream.includes(data.source)) {
@@ -229,33 +225,24 @@ export const socket = (): void => {
       };
       const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
       streamPlay(streamType, socketState.socket, streamData);
-      audioWorkletState.flag[data.source] = true;
+      audioWorkletState.chat.flag[data.source] = true;
     },
   );
 
+  // gainFromClient(スライダー操作)/ gainReqFromClient(UI を開く)への応答。
+  // 実際の音量(GainNode)には適用せず、入力欄の表示のみ更新する。
+  // スライダー操作時の発音は gainUI 側のローカル audition が担う。
   socketState.socket.on("gainFromServer", (data) => {
-    gainChange(data);
+    setGainUI(data);
   });
 
-  socketState.socket.on("windowReqFromServer", (data: newWindowReqType) => {
-    window.open(
-      data.URL,
-      "_blank",
-      "width=" +
-        String(data.width) +
-        ",height=" +
-        String(data.height) +
-        ",top=" +
-        String(data.top) +
-        ",left=" +
-        String(data.left),
-    );
-    click(1.0);
-  });
   socketState.socket.on(
     "voiceFromServer",
     (data: { text: string; lang: string }) => {
-      console.log("debug");
+      // /counter 端末は BLACK モード中、サーバ駆動の音声も発声しない。
+      if (isBlackModeActive() && window.location.pathname === "/counter") {
+        return;
+      }
       const uttr = new SpeechSynthesisUtterance();
       uttr.lang = data.lang;
       uttr.text = data.text;
@@ -281,19 +268,6 @@ export const socket = (): void => {
       // }
     },
   );
-
-  // socketState.socket.on(
-  //   "clockFromServer",
-  //   (data: { clock: boolean; barLatency: number }) => {
-  //     if (data.clock) {
-  //       clockBase = Date.now();
-  //       clockModeId = enableClockMode(data.barLatency);
-  //     } else {
-  //       clockBase = 0;
-  //       clockModeId = disableClockMode(clockModeId);
-  //     }
-  //   }
-  // );
 
   socketState.socket.on(
     "emojiFromServer",
@@ -331,7 +305,7 @@ export const socket = (): void => {
       timelapseState.flag = true;
     } else if (data.cmd === "GET") {
       // timelapseState.trriger = true;
-      audioWorkletState.flag.TIMELAPSE = true;
+      audioWorkletState.chat.flag.TIMELAPSE = true;
       if (!timelapseState.flag) {
         timelapseState.flag = true;
         setTimeout(() => {
@@ -369,32 +343,57 @@ export const socket = (): void => {
     }
   });
 
-  // socketState.socket.on(
-  //   "torchCmdFromServer",
-  //   (data: { flag: boolean; type: "BLINK" | "STEADY"; bpm: number }) => {
-  //     if (
-  //       torchState.isSupported &&
-  //       flagState.isMobile &&
-  //       streamState.videoTrack !== null
-  //     ) {
-  //       console.log("torchCmdFromServer", data);
-  //       if (data.type === "BLINK") {
-  //         if (data.flag) {
-  //           torchState.torchMode = "blink";
-  //           startBlink(data.bpm);
-  //         } else {
-  //           stopBlink();
-  //         }
-  //       } else {
-  //         torchState.torchMode = "steady";
-  //         torchToggle(data.flag);
-  //       }
-  //     } else {
-  //       console.log("Torch is not supported on this device");
-  //     }
-  //   },
-  // );
+  socketState.socket.on("bufferRecReqFromServer", () => {
+    // streamState.stream は initialize() 完了後にセットされる。
+    // ensureWebRtcFromClient → bufferRecReqFromServer が initialize 完了前
+    // (stream 準備前) に返ってくる競合があるため、stream が用意できるまで
+    // 少し待って再試行する (最大 10 秒)。
+    const tryStart = (attempt: number): void => {
+      if (streamState.stream) {
+        startChunkedRecording(streamState.stream as MediaStream);
+      } else if (attempt < 40) {
+        window.setTimeout(() => tryStart(attempt + 1), 250);
+      } else {
+        console.warn("bufferRecReqFromServer: stream not ready, gave up");
+      }
+    };
+    tryStart(0);
+  });
 
+  socketState.socket.on("bufferRecStopFromServer", () => {
+    stopChunkedRecording();
+    // 受信側 MSE もリセット（次回 CALL の init segment を取り直すため）
+    teardownMsePlayback();
+    teardownMseAudioPlayback();
+  });
+
+  // カメラローテーション切替用: MediaRecorder だけ止めて MSE はそのまま。
+  // 受信側 (werift recv recorder) は継続しているので、再生は途切れずに続く。
+  socketState.socket.on("recorderSwitchStopFromServer", () => {
+    stopChunkedRecording();
+  });
+
+  // backend の recv pipeline から流れてくる WebM チャンクを MSE で再生
+  socketState.socket.on("mediaChunkFromServer", (data: ArrayBuffer) => {
+    if (webRtcState.videoPlayer) {
+      attachMsePlayback(webRtcState.videoPlayer);
+    }
+    appendMediaChunk(data);
+  });
+
+  socketState.socket.on("audioChunkFromServer", (data: ArrayBuffer) => {
+    if (webRtcState.audioPlayer) {
+      attachMseAudioPlayback(webRtcState.audioPlayer);
+    }
+    appendAudioChunk(data);
+  });
+
+  // ピア再接続などで recv パイプラインが再起動するとき、新しい init segment を
+  // 受け取れるよう MSE を一度作り直す
+  socketState.socket.on("mediaResetFromServer", () => {
+    teardownMsePlayback();
+    teardownMseAudioPlayback();
+  });
 
   socketState.socket.on("bufferFromServer", (data) => {
     const uint8Array = new Uint8Array(data);
@@ -404,6 +403,11 @@ export const socket = (): void => {
     webRtcState.videoPlayer.src = webRtcState.videoPlayer !== null ? url : null;
     textPrint("buffer");
   });
+
+  // whole
+  socketState.socket.on("wholeCmdFromServer", (option: wholeCmdOption) => {
+    wholeCmd(option);
+  })
 
   // webRtc関連
   // socketState.socket.on("candidateReqFromServer", (peers: string[]) => {
@@ -437,11 +441,33 @@ export const socket = (): void => {
   //   await receiveAnswer(answer);
   // });
 
-  // disconnect時、1秒後再接続
+  socketState.socket.on("personDetectFromServer", () => {
+    flickering();
+  });
+
+  // faceDetectScenario 実行中〜終了後の一定時間、顔認識をブロックする。
+  socketState.socket.on(
+    "faceDetectBlockFromServer",
+    (data: { durationMs: number }) => {
+      blockFaceDetection(data.durationMs);
+    },
+  );
+
+  socketState.socket.on(
+    "clientSettingsFromServer",
+    (data: { facedetection: boolean; hanged: boolean }) => {
+      if (data?.facedetection) {
+        initFaceDetection().catch((e) =>
+          console.error("faceDetection init error:", e),
+        );
+      } else {
+        stopFaceDetection();
+      }
+    },
+  );
+
+  // 切断のみ通知。再接続は SocketFacade が指数バックオフで自動実施する。
   socketState.socket.on("disconnect", () => {
     console.log("disconnect");
-    setTimeout(() => {
-      socketState.socket.connect();
-    }, 1000);
   });
 };

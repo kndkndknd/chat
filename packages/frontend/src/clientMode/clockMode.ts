@@ -1,4 +1,3 @@
-// import { Socket } from "socket.io-client";
 import { textPrint } from "../canvasEvent";
 // import { cnvs, ctx } from "./globalVariable";
 

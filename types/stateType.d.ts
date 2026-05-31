@@ -1,18 +1,20 @@
 // stream.client = {flag, bpm, beat}
 
+export type gainStateType = {
+  MASTER: number;
+  SINEWAVE: number;
+  FEEDBACK: number;
+  WHITENOISE: number;
+  CLICK: number;
+  BASS: number;
+  CHAT: number;
+  GLITCH: number;
+  SIMULATE: number;
+  METRONOME: number;
+};
+
 export type cmdStateType = {
-  GAIN: {
-    MASTER: number;
-    SINEWAVE: number;
-    FEEDBACK: number;
-    WHITENOISE: number;
-    CLICK: number;
-    BASS: number;
-    CHAT: number;
-    GLITCH: number;
-    SIMULATE: number;
-    METRONOME: number;
-  };
+  GAIN: gainStateType;
   FADE: {
     IN: number;
     OUT: number;
@@ -109,8 +111,14 @@ export type clientStateType = {
       };
       self: boolean;
       snowLeopard: boolean;
+      index: number;
+      facedetection: boolean;
+      hanged: boolean;
     };
   };
+  arduinoClient?: {
+    [key: string]: boolean;
+  }
   cmdClient: string[];
   streamClient: string[];
   sinewaveClient: string[];
@@ -133,6 +141,7 @@ export type currentStateType = {
     [key: string]: boolean;
   };
   RECORD: boolean;
+  WHOLE: boolean;
 };
 
 export type previousStateType = {
@@ -153,14 +162,6 @@ export type previousStateType = {
   RECORD: boolean;
 };
 
-export type formStateType = {
-  hls: {
-    [key: string]: string;
-  };
-  cmd: {
-    [key: string]: string;
-  };
-};
 
 export type webStateType = {
   flag: boolean;
@@ -180,6 +181,7 @@ export type flagStateType = {
   emoji: boolean;
   timer: boolean;
   vosk: boolean;
+  scenario: boolean;
 };
 
 export type arduinoStateType = {
@@ -187,4 +189,9 @@ export type arduinoStateType = {
   port: number;
   connected: boolean;
   relay: "on" | "off";
+};
+
+export type m5StateType = {
+  rotation: arduinoStateType;
+  vibration: arduinoStateType;
 };

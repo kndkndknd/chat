@@ -3,12 +3,10 @@ import { getJsonFromFile } from "./getJsonFromFile";
 // import { exchangeRelativeSchedule } from "./exchangeRelativeSchedule";
 import { getScheduleFromJson } from "./getScheduleFromJson";
 import { execSchedule } from "./execSchedule";
-import { LogType } from "../../../types/log_schedule";
-import SocketIO from "socket.io";
+import { LogType } from "../../../../types";
 
 export const getScheduleFromSplitSpace = async (
   stringArr: string[],
-  io: SocketIO.Server
 ): Promise<boolean> => {
   const filePath = getScheduleFile();
   console.log("filePath", filePath);
@@ -21,7 +19,7 @@ export const getScheduleFromSplitSpace = async (
       for (const schedule of schedules) {
         console.log("schedule", schedule);
         setTimeout(() => {
-          execSchedule(io, schedule.cmd);
+          execSchedule(schedule.cmd);
         }, schedule.schedule);
       }
     } else {

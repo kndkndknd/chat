@@ -1,0 +1,12 @@
+{
+  "steps": [
+    {
+      "delayMs": 0,
+      "actions": [{ "type": "playFirstBuffer" }, { "type": "rotateItsuki" },{ "type": "execStream", "source": "CHAT" }]
+    },
+    {
+      "delayMs": 30000,
+      "actions": [{ "type": "playRestBuffers" }]
+    }
+  ]
+}

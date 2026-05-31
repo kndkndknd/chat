@@ -1,5 +1,5 @@
 import { streamChunk, socketState, quantizeState } from "../../state";
-import { Socket } from "socket.io-client";
+import { SocketFacade } from "../../socket/SocketFacade";
 import { streamPlay } from "../play/streamPlay";
 import { showImage } from "../../canvasEvent";
 
@@ -16,7 +16,7 @@ export const chatFromServer = (
     position?: { top: number; left: number; width: number; height: number };
     target?: string;
   },
-  socket: Socket
+  socket: SocketFacade
 ) => {
   // console.log("chatFromServer");
   if (quantizeState.flag && quantizeState.stream.includes("CHAT")) {
@@ -27,8 +27,9 @@ export const chatFromServer = (
       sampleRate: data.sampleRate,
       glitch: data.glitch,
       bufferSize: data.bufferSize,
-      duration: data.duration,
+      duration: 1000 * data.bufferSize / data.sampleRate,
     };
+    console.log("chunk:", chunk);
     // data.source = "CHAT";
     streamChunk.CHAT = chunk;
   } else {

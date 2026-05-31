@@ -1,6 +1,7 @@
-import { currentStateType } from '../../../../../types';
+import { currentStateType } from "../../../../../types";
+import { createPersistedState } from "../../redis/stateRedis";
 
-export const currentState: currentStateType = {
+export const currentState = createPersistedState<currentStateType>("currentState", {
   cmd: {
     FEEDBACK: [],
     WHITENOISE: [],
@@ -15,4 +16,5 @@ export const currentState: currentStateType = {
     TIMELAPSE: false,
   },
   RECORD: false,
-};
+  WHOLE: false,
+});

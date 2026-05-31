@@ -1,14 +1,11 @@
-import SocketIO from "socket.io";
-
+import { ioState } from "../state/states/ioState";
 import {
-  cmdState,
   clientState,
-  arduinoState,
+  cmdState,
+  currentState,
   streamState,
-  flagState,
   previousState,
-  bpmStateDefault,
-  bpmState,
+  flagState,
 } from "../state";
 
 import { cmdList, parameterList, streamList } from "../data";
@@ -31,23 +28,37 @@ import { previousCmd } from "./previousCmd";
 import { getLiveStream } from "../stream/getLiveStream";
 import { loadScenario } from "../scenario/loadScenario";
 import { execScenario } from "../scenario/execScenario";
+import { scenarioItsuki } from "../scenario/scenarioItsuki";
 import { putCmd } from "./putCmd";
 import { cmdLogging } from "../logging/cmdLogging";
 import { quantizeCmd } from "../stream/quantize";
 import { mergeStreamTarget } from "../stream/mergeStreamTarget";
-import { millisecondsPerBar } from "../../../util/bpmCalc";
+import { millisecondsPerBar } from "../util/bpmCalc";
 
 import { execStream } from "../cmd/execStream";
 import { execCmd } from "./execCmd";
 import { changeCmdParam } from "./changeCmdParam";
 
+import { wholeEmit } from "../stream/wholeEmit";
+import { replay } from "../scenario/replay";
+import { startWebRTCSession, stopWebRTCSession } from "../webRTC/weriftClient";
+import { startCameraRotation, stopCameraRotation } from "../webRTC/cameraRotator";
+import { enableNightMode, disableNightMode } from "../nightMode/nightMode";
+
 export const receiveEnter = async (
   strings: string,
   id: string,
-  io: SocketIO.Server,
   // state: cmdStateType
 ) => {
-  cmdLogging(strings);
+  console.log("receiveEnter", strings, id);
+  if (strings === undefined || strings === null) {
+    return;
+  }
+  console.log("flagState.scenario", flagState.scenario);
+  // if (!flagState.scenario || strings === "REPLAY") {
+    console.log("logging in receiveEnter");
+    cmdLogging(strings);
+  // }
 
   //VOICE
   // if (strings.includes("VOICE ")) {
@@ -60,17 +71,25 @@ export const receiveEnter = async (
   }
   */
 
-  if (
+  if (strings === "CHATASYNC") {
+    const clientIds = Object.keys(clientState.client).sort(
+      (a, b) => clientState.client[a].index - clientState.client[b].index
+    );
+    const messages = ["chat", "(async)"];
+    clientIds.forEach((cid, idx) => {
+      stringEmit(messages[idx] ?? "", false, cid);
+    });
+  } else if (
     strings === "CHAT" ||
     strings === "RECORD" ||
     strings === "REC" ||
     streamList.includes(strings)
   ) {
-    execStream(strings, io, id);
+    execStream(strings, id);
   } else if (strings.includes(" ") /*&& strings.split(" ").length < 4*/) {
-    splitSpace(strings.split(" "), io, id);
+    splitSpace(strings.split(" "), id);
   } else if (strings.includes("+")) {
-    splitPlus(strings.split("+"), io);
+    splitPlus(strings.split("+"));
   } else if (
     Object.keys(cmdList).includes(strings) ||
     Number.isFinite(Number(strings)) ||
@@ -80,6 +99,7 @@ export const receiveEnter = async (
     strings === "NO" ||
     strings === "NUMBER" ||
     strings === "SWITCH" ||
+    strings === "ROTATE" ||
     strings === "CLOCK" ||
     strings === "SOLFEGIO" ||
     strings === "FILTER" ||
@@ -88,11 +108,11 @@ export const receiveEnter = async (
     strings === "TORCH" ||
     strings === "BLINK"
   ) {
-    execCmd(strings, io, id);
+    execCmd(strings, id);
   } else if (strings === "STOP") {
     console.log("stop");
-    voiceEmit(io, strings, id);
-    stopEmit(io, id, "ALL");
+    voiceEmit(strings, id);
+    stopEmit("ALL");
     // io.emit("quantizeFromServer", quantizeObj[client].stream);
   } else if (
     Object.keys(parameterList).includes(strings) ||
@@ -101,48 +121,24 @@ export const receiveEnter = async (
     strings === "FUSEJI" ||
     strings === "EMOJI"
   ) {
-    changeCmdParam(strings, id, io);
+    changeCmdParam(strings, id);
   } else if (strings === "START" || strings === "SCENARIO") {
     const scenario = await loadScenario();
-    await execScenario(scenario, io);
-    //   const result = await getLiveStream("TWITCH");
-    //   console.log("get livestream as ", strings, result);
-    //   if (result) {
-    //     stringEmit(io, "GET TWITCH: SUCCESS");
-    //   } else {
-    //     stringEmit(io, "GET TWITCH: FAILED");
-    //   }
-    // } else if (strings === "HLS") {
-    //   const cmd: {
-    //     cmd: string;
-    //     property: string;
-    //     value: number;
-    //     flag: boolean;
-    //     target?: string;
-    //     overlay?: boolean;
-    //     fade?: number;
-    //     portament?: number;
-    //     gain?: number;
-    //     solo?: boolean;
-    //   } = {
-    //     cmd: "HLS",
-    //     property: "OGAWA",
-    //     value: 0,
-    //     flag: true,
-    //   };
-    //   io.emit("cmdFromServer", cmd);
+    await execScenario(scenario);
+  } else if (strings === "SCENARIOITSUKI") {
+    await scenarioItsuki();
   } else if (id === "scenario") {
     console.log("scenario", strings);
     if (cmdState.VOICE.length > 0) {
       console.log("voiceEmit scenario");
-      voiceEmit(io, strings, "scenario");
+      voiceEmit(strings, "scenario");
     }
-    stringEmit(io, strings, false);
+    stringEmit(strings, false);
   } else if (strings === "FLOATING") {
     streamState.floating = !streamState.floating;
-    stringEmit(io, "FLOATING: " + streamState.floating, true);
+    stringEmit("FLOATING: " + streamState.floating, true);
   } else if (strings === "LATENCY") {
-    putCmd(io, mergeStreamTarget(streamState), { cmd: "LATENCY" });
+    putCmd(mergeStreamTarget(streamState), { cmd: "LATENCY" });
   } else if (
     strings === "TWITCASTING" ||
     strings === "TWICAS" ||
@@ -153,18 +149,48 @@ export const receiveEnter = async (
     const result = await getLiveStream("LIVESTREAM", qWord);
     console.log("get livestream", result);
     if (result) {
-      stringEmit(io, "GET LIVESTREAM: SUCCESS");
+      stringEmit("GET LIVESTREAM: SUCCESS");
     } else {
-      stringEmit(io, "GET LIVESTREAM: FAILED");
+      stringEmit("GET LIVESTREAM: FAILED");
     }
   } else if (strings === "CALL") {
-    io.to(id).emit("webRtcOfferReqFromServer");
+    startWebRTCSession();
+    // 接続中の全クライアントを 20 秒ごとにローテーションして送信元にする。
+    // (受信側パイプラインは werift recv recorder のままで 1 系統。)
+    startCameraRotation();
+  } else if (strings === "STOPWEBRTC") {
+    // ローテーションを止めてから webRTC セッション全体を停止する。
+    stopCameraRotation();
+    stopWebRTCSession();
+    console.log("[STOPWEBRTC] werift session stop requested");
+  } else if (strings === "BLACK") {
+    // 全端末の画面を真っ黒にする。解除はクライアント側で文字入力時に行う。
+    console.log("BLACK");
+    ioState?.io.emit("blackFromServer");
+  } else if (strings === "NIGHTMODE") {
+    // /api/nightmode {value:true} 相当。全端末の顔認識停止 + scenarioItsuki 停止 + 全端末 BLACK。
+    console.log("NIGHTMODE");
+    enableNightMode();
+  } else if (strings === "MORNINGMODE") {
+    // /api/nightmode {value:false} 相当。ナイトモードを解除（顔認識を元の設定に復元し、BLACK を解除）。
+    console.log("MORNINGMODE");
+    disableNightMode();
   } else if (strings === "VOSK") {
     console.log("VOSK CALL");
-    io.emit("voskCallFromServer");
+    ioState?.io.emit("voskCallFromServer");
+  } else if (strings === "WHOLE") {
+    if(currentState.WHOLE){
+      currentState.WHOLE = false;
+      stringEmit("WHOLE CMD STOP", true);
+    } else {
+      currentState.WHOLE = true;
+      wholeEmit();
+      // stringEmit(io, "WHOLE CMD", true);
+    }
   } else {
-    voiceEmit(io, strings, id);
+    voiceEmit(strings, id);
   }
+
 
   if (strings !== "STOP") {
     previousState.text = strings;

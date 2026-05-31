@@ -1,10 +1,9 @@
-import SocketIO from "socket.io";
 import { receiveEnter } from "../cmd/receiveEnter";
 import { stopEmit } from "../cmd/stopEmit";
 import { clientState, currentState } from "../state";
+import { ioState } from "../state/states/ioState";
 
 export const timerCmd = (
-  io: SocketIO.Server,
   stringArr: string[],
   timeStampArr: string[]
 ) => {
@@ -27,7 +26,7 @@ export const timerCmd = (
   const cmdString =
     stringArr.length > 2 ? stringArr.slice(1).join(" ") : stringArr[1];
   const string = cmdString + " SCHEDULED " + String(timerVal) + "ms LATER";
-  io.emit("stringsFromServer", {
+  ioState?.io.emit("stringsFromServer", {
     strings: string,
     timeout: true,
   });
@@ -35,9 +34,14 @@ export const timerCmd = (
 
   if (timerVal > 0) {
     setTimeout(() => {
-      const targetId = Object.keys(clientState.client)[
-        Math.floor(Math.random() * Object.keys(clientState.client).length)
-      ];
+      // 歯抜けがあっても安全なように、現存する index の配列からランダム選択する
+      const indices = Object.keys(clientState.client).map(
+        (id) => clientState.client[id].index
+      );
+      const pickedIndex = indices[Math.floor(Math.random() * indices.length)];
+      const targetId = Object.keys(clientState.client).find(
+        (id) => clientState.client[id].index === pickedIndex
+      );
       if (
         Object.keys(currentState.cmd).includes(
           stringArr[stringArr.length - 1]
@@ -46,11 +50,11 @@ export const timerCmd = (
           stringArr[stringArr.length - 1]
         )
       ) {
-        receiveEnter(cmdString, targetId, io);
+        receiveEnter(cmdString, targetId);
       } else if (stringArr[1] === "STOP") {
         if (stringArr.length === 2) {
           const client = "all";
-          stopEmit(io, "", "ALL", client);
+          stopEmit("", "ALL", client);
           /*
         } else if(stringArr.length === 3) {
           if(stringArr[2] === 'SINEWAVECLIENT') {
@@ -63,7 +67,7 @@ export const timerCmd = (
           */
         }
       } else {
-        io.emit("stringsFromServer", {
+        ioState?.io.emit("stringsFromServer", {
           strings: cmdString,
           timeout: false,
         });

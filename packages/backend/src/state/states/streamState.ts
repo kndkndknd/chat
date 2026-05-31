@@ -1,6 +1,7 @@
 import { streamStateType, filterStateType } from "../../../../../types";
+import { createPersistedState } from "../../redis/stateRedis";
 
-export const streamState: streamStateType = {
+export const streamState = createPersistedState<streamStateType>("streamState", {
   basisBufferSize: 8192,
   random: {
     CHAT: false,
@@ -18,27 +19,9 @@ export const streamState: streamStateType = {
     TIMELAPSE: [],
   },
   filter: {
-    CHAT: {
-      flag: false,
-      type: "lowpass",
-      frequency: 1000,
-      Q: 2.5,
-      gain: 1,
-    },
-    PLAYBACK: {
-      flag: false,
-      type: "lowpass",
-      frequency: 1000,
-      Q: 2.5,
-      gain: 1,
-    },
-    TIMELAPSE: {
-      flag: false,
-      type: "lowpass",
-      frequency: 1000,
-      Q: 2.5,
-      gain: 1,
-    },
+    CHAT: { flag: false, type: "lowpass", frequency: 1000, Q: 2.5, gain: 1 },
+    PLAYBACK: { flag: false, type: "lowpass", frequency: 1000, Q: 2.5, gain: 1 },
+    TIMELAPSE: { flag: false, type: "lowpass", frequency: 1000, Q: 2.5, gain: 1 },
   },
   loop: false,
   timelapse: false,
@@ -47,9 +30,9 @@ export const streamState: streamStateType = {
     CHAT: false,
     PLAYBACK: false,
     TIMELAPSE: false,
-    EMPTY: false
-  }
-};
+    EMPTY: false,
+  },
+});
 
 export const defaultFilterState: filterStateType = {
   flag: false,

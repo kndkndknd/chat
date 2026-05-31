@@ -1,10 +1,18 @@
 packages:
-  - "packages/*"
-# frontend:
-# - "packages/frontend"
+  - packages/*
 
-# backend:
-# - "packages/backend"
+allowBuilds:
+  '@serialport/bindings': true
+  bufferutil: true
+  esbuild: true
+  libxmljs: true
+  serialport: true
+  sharp: true
 
-# arduino:
-# - "packages/arduino"
+onlyBuiltDependencies:
+  - '@serialport/bindings'
+  - bufferutil
+  - esbuild
+  - libxmljs
+  - serialport
+  - sharp

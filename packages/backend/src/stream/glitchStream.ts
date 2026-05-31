@@ -9,7 +9,13 @@ export const glitchStream = async (originalBase64: string) => {
 
   // return originalBase64Arr[0] + "base64," + originalBase64Arr[1];
   // リサイズ
+  if (originalBase64 === undefined || originalBase64 === null || originalBase64[1].length === 0) {
+    return originalBase64;
+  }
   const buffer = Buffer.from(originalBase64Arr[1], "base64");
+  if(buffer === undefined || buffer === null || buffer.length === 0) {
+    return originalBase64;
+  }
   const metadata = await sharp(buffer).metadata();
   let width = metadata.width;
   let height = metadata.height;

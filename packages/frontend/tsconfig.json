@@ -18,5 +18,5 @@
     //"noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src"]
+  "include": ["src", "public/whitenoise-processor.js", "public/chat-processor.js"]
 }

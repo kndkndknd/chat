@@ -8,8 +8,6 @@ import { quantizeState } from "./quantizeState";
 import { socketState } from "./socketState";
 import { streamState } from "./streamState";
 import { timelapseState } from "./timelapseState";
-import { streamState } from "./streamState";
-import { canvasState } from "./canvasState";
 // import { webAudioState } from "./webAudioState";
 
 // webaudio
@@ -17,9 +15,9 @@ import { contextState } from "./webAudio/contextState";
 import { oscState } from "./webAudio/oscState";
 import { gainState } from "./webAudio/gainState";
 import { convolverState } from "./webAudio/convolverState";
-import { scriptProcessorState } from "./webAudio/scriptProcessorState";
 import { otherNodeState } from "./webAudio/otherNodeState";
 import { filterState } from "./webAudio/filterState";
+import { stereoPannerState } from "./webAudio/stereoPannerState";
 
 // webRTC
 import { webRtcState } from "./webRtcState";
@@ -30,6 +28,8 @@ import { voiceState } from "./voiceState";
 
 // audioWorklet
 import { audioWorkletState } from "./webAudio/audioWorkletState";
+
+import { wholeState } from "./wholeState";
 
 import { torchState } from "./torchState";
 import { sensorState } from "./sensorState";
@@ -47,9 +47,9 @@ export {
   oscState,
   otherNodeState,
   quantizeState,
-  scriptProcessorState,
   sensorState,
   socketState,
+  stereoPannerState,
   streamFlagState,
   streamChunk,
   streamState,
@@ -59,4 +59,5 @@ export {
   webRtcFrontState,
   webRtcState,
   voiceState,
+  wholeState,
 };

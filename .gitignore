@@ -24,3 +24,9 @@ packages/backend/static/hls/*
 packages/arduino/dist/*
 
 voskModel/*
+
+scenario/*.json
+
+packages/frontend/crate/target/*
+crate/target/debug/*
+
