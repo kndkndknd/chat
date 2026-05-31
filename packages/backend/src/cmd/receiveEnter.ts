@@ -54,10 +54,10 @@ export const receiveEnter = async (
     return;
   }
   console.log("flagState.scenario", flagState.scenario);
-  if (!flagState.scenario || strings === "REPLAY") {
+  // if (!flagState.scenario || strings === "REPLAY") {
     console.log("logging in receiveEnter");
     cmdLogging(strings);
-  }
+  // }
 
   //VOICE
   // if (strings.includes("VOICE ")) {
@@ -162,6 +162,10 @@ export const receiveEnter = async (
     stopCameraRotation();
     stopWebRTCSession();
     console.log("[STOPWEBRTC] werift session stop requested");
+  } else if (strings === "BLACK") {
+    // 全端末の画面を真っ黒にする。解除はクライアント側で文字入力時に行う。
+    console.log("BLACK");
+    ioState?.io.emit("blackFromServer");
   } else if (strings === "VOSK") {
     console.log("VOSK CALL");
     ioState?.io.emit("voskCallFromServer");

@@ -32,6 +32,7 @@ import {
 
 import { textPrint, canvasSizing } from "./canvasEvent";
 import { keyDown } from "./textInput";
+import { isBlackModeActive, disableBlackMode } from "./blackMode";
 
 import { simulateWorklet } from "./audioWorklet/simulateWorklet";
 
@@ -71,6 +72,12 @@ canvasSizing();
 
 document.addEventListener("keydown", (e) => {
   console.log(e);
+  // BLACK モード中はなにか文字を入力したら解除する。
+  // 解除のためのキーは通常入力として扱わず、そのキーで消えるだけにする。
+  if (isBlackModeActive()) {
+    disableBlackMode();
+    return;
+  }
   if (e.key === "Enter" && !flagState.start && window.location.pathname !== "nosound") {
     initialize(socketState.socket).then((stream) => {
       if (stream !== null) {
