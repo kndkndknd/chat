@@ -16,7 +16,6 @@ import { initAudioStream } from "./stream";
 import { getAcceleration } from "./sensor";
 import { getGPSPosition } from "./gps";
 import { accelarateOsc, gpsOsc } from "./webaudio";
-import { startChunkedRecording } from "./recording";
 import {
   chatScriptProcessor,
   initWhitenoiseScriptProcessor,
@@ -147,11 +146,6 @@ export const initializeSnowleopard = async (
   }
 
   flagState.start = true;
-  if (typeof MediaRecorder !== "undefined") {
-    startChunkedRecording(stream);
-  } else {
-    console.warn("MediaRecorder is not supported in this browser");
-  }
   timelapseState.flag = true;
   audioWorkletState.chat.flag.TIMELAPSE = false;
   timelapseState.setIntervalId = window.setInterval(() => {

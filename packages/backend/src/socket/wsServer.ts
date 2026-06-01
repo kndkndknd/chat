@@ -14,8 +14,6 @@ import { applyNightModeToClient } from "../nightMode/nightMode";
 import { countersRedis } from "../redis/streamsRedis";
 import { faceDetectScenario } from "../scenario/faceDetectScenario";
 import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
-import { feedWebMChunk } from "../webRTC/weriftClient";
-import { ensureWebRtcSession } from "../webRTC/cameraRotator";
 import { receiveWholeReq } from "../stream/receiveWholeReq";
 import { gainFromClient, gainReqFromClient } from "../cmd/gainFromClient";
 import { m5Switch } from "../rotate/m5Access";
@@ -119,20 +117,6 @@ export const wsServer = (
         case "gainReqFromClient":
           console.log("gainReqFromClient", id);
           gainReqFromClient(facade);
-          break;
-
-        case "bufferRecFromClient":
-          console.log("bufferRecFromClient", (data as ArrayBuffer).byteLength);
-          break;
-
-        case "bufferFromClient":
-          feedWebMChunk(Buffer.from(data as ArrayBuffer), id);
-          break;
-
-        case "ensureWebRtcFromClient":
-          // initialize 完了時にブラウザから送られる。peer (chat_sync ピア) が
-          // まだ立ち上がっていなければ CALL と同じ手順でセッションを起動する。
-          ensureWebRtcSession();
           break;
 
         case "wholeReqFromClient":

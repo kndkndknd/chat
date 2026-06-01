@@ -20,8 +20,6 @@ import { getGPSPosition } from "./gps";
 import { accelarateOsc, gpsOsc, feedback } from "./webaudio";
 import { chatWorklet } from "./audioWorklet/chatWorklet";
 import { initGainUI } from "./ui/gainUI";
-// import { initRecordButton } from "./recording";
-// import { toggleRecording } from "./recording";
 
 // counterbalance: 加速度(重力なし)X/Y/ZのRMSをfeedbackGainに反映する際のスケール係数。
 // RMSは概ね0〜十数の範囲になり得るため、gain(0〜2程度)に収まるよう縮小する。調整可能。
@@ -133,10 +131,6 @@ export const initialize = async (
       isMobile: sensorState.isMobile,
     });
 
-    // chat_sync ピアがまだ起動していなければ CALL と同等の起動を促す。
-    // backend 側で冪等にチェックされるため複数クライアントから同時に呼ばれても安全。
-    socket.emit("ensureWebRtcFromClient");
-
     if (sensorState.isMobile || flagState.counterbalanceFlag) {
       sensorState.sensorTimeIntervalId = window.setInterval(() => {
         // counterbalance: 重力を除いた加速度のX/Y/ZからRMSを算出し、
@@ -221,12 +215,6 @@ export const initialize = async (
     }
 
     flagState.start = true;
-    // initRecordButton(stream);
-    // 注: ここで startChunkedRecording を呼ぶと MediaRecorder が CALL 前から
-    //     動き出し、CALL 時点で MediaRecorder は mid-stream (EBML 無し) になる。
-    //     ffmpeg が EBML を見つけられず probe 失敗するため、MediaRecorder の起動は
-    //     bufferRecReqFromServer ハンドラ (CALL 経由) に任せる。
-    // streamFlag.timelapse = true;
     timelapseState.flag = true;
     // timelapseState.trriger = false;
     audioWorkletState.chat.flag.TIMELAPSE = false;

@@ -41,8 +41,6 @@ import { changeCmdParam } from "./changeCmdParam";
 
 import { wholeEmit } from "../stream/wholeEmit";
 import { replay } from "../scenario/replay";
-import { startWebRTCSession, stopWebRTCSession } from "../webRTC/weriftClient";
-import { startCameraRotation, stopCameraRotation } from "../webRTC/cameraRotator";
 import { enableNightMode, disableNightMode } from "../nightMode/nightMode";
 
 export const receiveEnter = async (
@@ -153,16 +151,6 @@ export const receiveEnter = async (
     } else {
       stringEmit("GET LIVESTREAM: FAILED");
     }
-  } else if (strings === "CALL") {
-    startWebRTCSession();
-    // 接続中の全クライアントを 20 秒ごとにローテーションして送信元にする。
-    // (受信側パイプラインは werift recv recorder のままで 1 系統。)
-    startCameraRotation();
-  } else if (strings === "STOPWEBRTC") {
-    // ローテーションを止めてから webRTC セッション全体を停止する。
-    stopCameraRotation();
-    stopWebRTCSession();
-    console.log("[STOPWEBRTC] werift session stop requested");
   } else if (strings === "BLACK") {
     // 全端末の画面を真っ黒にする。解除はクライアント側で文字入力時に行う。
     console.log("BLACK");
