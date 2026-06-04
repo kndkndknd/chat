@@ -15,7 +15,7 @@ if (fs.existsSync(dotenvPath)) {
 
 import { cmdLogging } from "./logging/cmdLogging";
 import { initStreams } from "./data";
-import { loadAllStates } from "./state";
+import { loadAllStates, clientState } from "./state";
 import { ioState } from "./state/states/ioState";
 import { countersRedis, streamsRedis } from "./redis/streamsRedis";
 import {
@@ -26,6 +26,7 @@ import { getMongoDb } from "./mongo/client";
 import {
   scenarioItsuki,
   isScenarioItsukiActive,
+  stopScenarioItsuki,
 } from "./scenario/scenarioItsuki";
 import {
   enableNightMode,
@@ -190,10 +191,16 @@ app.post("/api/persondetect", function (req, res) {
 });
 
 // シナリオ（scenarioItsuki）を HTTP から起動する。
+// 実行中だった場合は一度停止してから再度実行する。
 app.post("/api/scenario", async function (req, res) {
   try {
+    const wasActive = isScenarioItsukiActive();
+    if (wasActive) {
+      console.log("[POST /api/scenario] scenarioItsuki active, restarting");
+      stopScenarioItsuki();
+    }
     await scenarioItsuki();
-    res.json({ success: true });
+    res.json({ success: true, restarted: wasActive });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Something went wrong" });
@@ -203,6 +210,11 @@ app.post("/api/scenario", async function (req, res) {
 // itsukiTimer の状態を返す。NULL なら stopping、NULL でなければ active。
 app.get("/api/scenario", function (req, res) {
   res.json({ status: isScenarioItsukiActive() ? "active" : "stopping" });
+});
+
+// 各クライアント端末の状態（clientState.client）を返す。
+app.get("/api/machineStatus", function (req, res) {
+  res.json(clientState.client);
 });
 
 // ナイトモードの ON/OFF を切り替える。

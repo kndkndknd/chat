@@ -89,15 +89,14 @@ export const chatEmit = async (from?) => {
         chunk.video = await glitchStream(chunk.video);
       }
       if (
-        bpmState[targetId].stream.CHAT.gridFlag &&
-        !bpmState[targetId].stream.CHAT.quantizeFlag
+        bpmState[targetId]?.stream?.CHAT?.gridFlag &&
+        !bpmState[targetId]?.stream?.CHAT?.quantizeFlag
       ) {
         const timeOutVal = gridTimeoutVal("CHAT", targetId);
         setTimeout(() => {
           if (
-            bpmState[targetId] &&
-            bpmState[targetId].stream.CHAT.gridFlag &&
-            !bpmState[targetId].stream.CHAT.quantizeFlag
+            bpmState[targetId]?.stream?.CHAT?.gridFlag &&
+            !bpmState[targetId]?.stream?.CHAT?.quantizeFlag
           ) {
             ioEmitChatFromServer(chunk, targetId);
           }
@@ -114,7 +113,11 @@ export const chatEmit = async (from?) => {
 };
 
 const ioEmitChatFromServer = async (chunk, targetId) => {
-  if (streamState.floating && !clientState.client[targetId].projection) {
+  if (
+    streamState.floating &&
+    clientState.client[targetId] &&
+    !clientState.client[targetId].projection
+  ) {
     const projectionChunk = {
       ...chunk,
       floating: true,

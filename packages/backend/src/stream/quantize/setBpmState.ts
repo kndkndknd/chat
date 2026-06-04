@@ -5,6 +5,8 @@ export const setBpmState = (streamState: {
   [client: string]: bpmStreamStateType;
 }) => {
   for (const client in streamState) {
-    bpmState[client].stream = streamState[client];
+    if (bpmState[client] !== undefined) {
+      bpmState[client].stream = streamState[client];
+    }
   }
 };

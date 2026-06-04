@@ -28,7 +28,11 @@ import { previousCmd } from "./previousCmd";
 import { getLiveStream } from "../stream/getLiveStream";
 import { loadScenario } from "../scenario/loadScenario";
 import { execScenario } from "../scenario/execScenario";
-import { scenarioItsuki } from "../scenario/scenarioItsuki";
+import {
+  scenarioItsuki,
+  isScenarioItsukiActive,
+  stopScenarioItsuki,
+} from "../scenario/scenarioItsuki";
 import { putCmd } from "./putCmd";
 import { cmdLogging } from "../logging/cmdLogging";
 import { quantizeCmd } from "../stream/quantize";
@@ -124,6 +128,11 @@ export const receiveEnter = async (
     const scenario = await loadScenario();
     await execScenario(scenario);
   } else if (strings === "SCENARIOITSUKI") {
+    // 実行中だった場合は一度停止してから再度実行する。
+    if (isScenarioItsukiActive()) {
+      console.log("[SCENARIOITSUKI] scenarioItsuki active, restarting");
+      stopScenarioItsuki();
+    }
     await scenarioItsuki();
   } else if (id === "scenario") {
     console.log("scenario", strings);

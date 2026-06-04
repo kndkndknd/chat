@@ -167,9 +167,9 @@ export const streamEmit = async (
     if (!stream.video) console.log("not video");
     console.log(
       "bpmState, gridFlag:",
-      bpmState[targetId].stream[source].gridFlag,
+      bpmState[targetId]?.stream?.[source]?.gridFlag,
     );
-    if (!bpmState[targetId].stream[source].gridFlag) {
+    if (!bpmState[targetId]?.stream?.[source]?.gridFlag) {
       ioEmitStreamFromServer(stream, targetId, source);
     } else {
       const timeOutVal = gridTimeoutVal(source, targetId);
@@ -190,6 +190,7 @@ const ioEmitStreamFromServer = async (stream, targetId, source) => {
   if (
     stream.video &&
     streamState.floating &&
+    clientState.client[targetId] &&
     !clientState.client[targetId].projection
   ) {
     console.log("floating");
@@ -293,9 +294,9 @@ export const paStreamEmit = async (
     if (!stream.video) console.log("not video");
     console.log(
       "bpmState, gridFlag:",
-      bpmState[targetId].stream[source].gridFlag
+      bpmState[targetId]?.stream?.[source]?.gridFlag
     );
-    if (!bpmState[targetId].stream[source].gridFlag) {
+    if (!bpmState[targetId]?.stream?.[source]?.gridFlag) {
       ioEmitStreamFromServer(stream, targetId, source);
     } else {
       const timeOutVal = gridTimeoutVal(source, targetId);

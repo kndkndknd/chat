@@ -115,6 +115,10 @@ export const execCmd = async (
     // });
   } else if (strings === "TORCH" || strings === "BLINK") {
     // torch command
+    if (bpmState[id] === undefined) {
+      console.log("TORCH CMD skipped: no bpmState for", id);
+      return;
+    }
     const flag =
       (strings === "TORCH" &&
         (!bpmState[id].TORCH.flag || bpmState[id].TORCH.type === "BLINK")) ||
@@ -125,9 +129,7 @@ export const execCmd = async (
     const torchCommand = {
       flag: flag,
       type: <"STEADY" | "BLINK">(strings === "TORCH" ? "STEADY" : "BLINK"),
-      bpm: bpmState[id]
-        ? bpmState[id].TORCH.bpm
-        : bpmState[Object.keys(bpmState)[0]].METRONOME.bpm,
+      bpm: bpmState[id].TORCH.bpm,
     };
     bpmState[id].TORCH.flag = torchCommand.flag;
     bpmState[id].TORCH.type = torchCommand.type;

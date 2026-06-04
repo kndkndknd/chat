@@ -31,7 +31,7 @@ export const quantizeCmd = (id?: string) => {
     }
   } else {
     bpmStreamState[id] = {
-      ...bpmState[id].stream,
+      ...(bpmState[id]?.stream ?? {}),
     };
   }
   const quntizeStreamObj = quantize({ splited: false });
