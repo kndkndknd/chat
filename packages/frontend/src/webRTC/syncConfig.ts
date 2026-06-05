@@ -26,6 +26,13 @@ export const CHAT_SYNC_WS_URL = resolveChatSyncWsUrl();
 // chat_sync の固定 1 ルーム ID (chat_sync 側 main.ts と一致させる)。
 export const ROOM_ID = "chat sync";
 
+// 実機はカメラ・ディスプレイを 270 度回転して設置している。そのため /webrtc 端末は
+//   - 受信映像 (chat_sync → chat_itsuki) を表示時に 270 度回転させ、
+//   - 送信映像 (chat_itsuki → chat_sync) を送出前に 270 度回転させる。
+// いずれも時計回りを正とする (CSS / canvas の回転方向)。
+export const REMOTE_DISPLAY_ROTATION_DEG = 270;
+export const LOCAL_SEND_ROTATION_DEG = 270;
+
 // chat_sync に特権ピア (itsuki) として認識されるためのプレフィックス。
 // chat_sync は ROOM_MODE='itsuki-required' + 営業時間ゲートを持ち、
 // peerId が "itsuki-" で始まるピアだけが時間外でも入室でき、かつ在席することで

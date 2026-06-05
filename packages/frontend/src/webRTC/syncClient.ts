@@ -16,8 +16,11 @@ import {
   CHAT_SYNC_WS_URL,
   ICE_SERVERS,
   ITSUKI_PEER_PREFIX,
+  LOCAL_SEND_ROTATION_DEG,
+  REMOTE_DISPLAY_ROTATION_DEG,
   ROOM_ID,
 } from "./syncConfig";
+import { createRotatedSendStream, type RotatedStream } from "./rotateStream";
 
 interface SdpDescription {
   type: RTCSdpType;
@@ -73,6 +76,9 @@ export class SyncClient {
   private ws: WebSocket | null = null;
   private pc: RTCPeerConnection | null = null;
   private localStream: MediaStream | null = null;
+  // chat_sync へ送る回転済みストリーム (実機の 270 度設置を補正)。
+  private sendStream: MediaStream | null = null;
+  private rotated: RotatedStream | null = null;
   private remoteStream = new MediaStream();
   private remotePeerId: string | null = null;
   private pendingCandidates: RTCIceCandidateInit[] = [];
@@ -98,6 +104,10 @@ export class SyncClient {
       return;
     }
     this.localStream = stream;
+    // 実機カメラは 270 度回転設置なので、送出前に映像を回転させた track を用意する。
+    // PC 再接続をまたいで使い回すため、ここで一度だけ生成する。
+    this.rotated = createRotatedSendStream(stream, LOCAL_SEND_ROTATION_DEG);
+    this.sendStream = this.rotated.stream;
     log(`starting as ${this.peerId}`);
     this.connect();
   }
@@ -114,6 +124,9 @@ export class SyncClient {
     this.ws?.close();
     this.ws = null;
     this.clearRemoteVideo();
+    this.rotated?.stop();
+    this.rotated = null;
+    this.sendStream = null;
   }
 
   private async waitForStream(): Promise<MediaStream | null> {
@@ -269,10 +282,11 @@ export class SyncClient {
 
     this.pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
-    // 共有ストリーム (640x360/20fps) の track を送信に乗せる。
-    if (this.localStream) {
-      for (const track of this.localStream.getTracks()) {
-        this.pc.addTrack(track, this.localStream);
+    // 回転済みストリーム (270 度回転 video + 元 audio) の track を送信に乗せる。
+    const outStream = this.sendStream ?? this.localStream;
+    if (outStream) {
+      for (const track of outStream.getTracks()) {
+        this.pc.addTrack(track, outStream);
       }
     }
 
@@ -330,6 +344,8 @@ export class SyncClient {
       el.srcObject = this.remoteStream;
     }
     el.style.zIndex = VIDEO_FRONT_Z_INDEX; // 通話中は canvas 前面
+    // 実機ディスプレイは 270 度回転設置なので、受信映像を 90 度回転して正立させる。
+    el.style.transform = `rotate(${REMOTE_DISPLAY_ROTATION_DEG}deg)`;
     void el.play().catch((e) =>
       console.warn("[syncClient] remote video autoplay blocked:", e),
     );
@@ -341,6 +357,7 @@ export class SyncClient {
     if (!el) return;
     el.srcObject = null;
     el.style.removeProperty("z-index"); // CSS 本来の重なり順に戻す
+    el.style.removeProperty("transform"); // 回転も解除
   }
 
   private send(msg: ClientMessage): void {

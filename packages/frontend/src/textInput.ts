@@ -5,13 +5,14 @@ import { toggleGainUI } from "./ui/gainUI";
 import { voice } from "./voice";
 // import { frontState } from "./globalVariable";
 let bassFlag = false;
-// /counter で rotateReqFromClient 送信後、1分間は再送信を抑制するためのフラグ
+// /counter で rotateReqFromClient 送信後、30秒間は再送信を抑制するためのフラグ
 let counterCooldown = false;
 let counterTimer: ReturnType<typeof setTimeout> | null = null;
 const COUNTER_COOLDOWN_MS = 30 * 1000;
-// rotateReqFromClient(true) の送信回数。5回に達したら長いクールダウンに入る
+// rotateReqFromClient(true) の送信回数。COUNTER_MAX_SENDS に達したら長いクールダウンに入る。
+// COUNTER_MAX_SENDS が 0 のときは回数制限なし（長いクールダウンに入らず通常サイクルを繰り返す）。
 let counterSendCount = 0;
-const COUNTER_MAX_SENDS = 5;
+const COUNTER_MAX_SENDS = 0;
 const COUNTER_LONG_COOLDOWN_MS = 3 * 60 * 1000;
 // sinewave のゲイン既定値（バックエンド定義 cmdState.GAIN.SINEWAVE と一致）
 const SINEWAVE_DEFAULT_GAIN = 0.2;
@@ -50,8 +51,8 @@ export const keyDown = (
         // 1分経ったら character を ArrowDown として textInput を実行する
         processChar("ArrowDown", stringsClient, socket, strCnvs, stx);
 
-        if (counterSendCount >= COUNTER_MAX_SENDS) {
-          // 5回送信に達したら、false 実行後さらに3分間のクールダウンを継続する
+        if (COUNTER_MAX_SENDS > 0 && counterSendCount >= COUNTER_MAX_SENDS) {
+          // 規定回数に達したら、false 実行後さらに3分間のクールダウンを継続する
           counterTimer = setTimeout(() => {
             counterCooldown = false;
             counterTimer = null;
