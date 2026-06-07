@@ -12,6 +12,7 @@ import { previousState } from "./states/previousState";
 import { sampleRateState } from "./states/sampleRateState";
 import { webState } from "./states/webState";
 import { webRtcServerState } from "./states/webRtcServerState";
+import { relayState } from "./states/relayState";
 import { loadAllStates } from "../redis/stateRedis";
 
 export {
@@ -29,6 +30,7 @@ export {
   sampleRateState,
   streamState,
   webRtcServerState,
+  relayState,
   webState,
   loadAllStates,
 };

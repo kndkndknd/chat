@@ -28,6 +28,7 @@ import {
   isScenarioItsukiActive,
   stopScenarioItsuki,
 } from "./scenario/scenarioItsuki";
+import { stopAllScenarioTimers } from "./scenario/execScenario";
 import {
   enableNightMode,
   disableNightMode,
@@ -210,6 +211,21 @@ app.post("/api/scenario", async function (req, res) {
 // itsukiTimer の状態を返す。NULL なら stopping、NULL でなければ active。
 app.get("/api/scenario", function (req, res) {
   res.json({ status: isScenarioItsukiActive() ? "active" : "stopping" });
+});
+
+// シナリオを全停止する。
+// scenarioItsuki のループ（itsukiTimer）を止め、execScenario が setTimeout で
+// スケジュール済みの各ステップもすべて clearTimeout でキャンセルする。
+app.post("/api/stopScenario", function (req, res) {
+  try {
+    const wasActive = isScenarioItsukiActive();
+    stopScenarioItsuki();
+    stopAllScenarioTimers();
+    res.json({ success: true, wasActive });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
 });
 
 // 各クライアント端末の状態（clientState.client）を返す。

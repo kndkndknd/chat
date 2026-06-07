@@ -17,6 +17,13 @@ import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFro
 import { receiveWholeReq } from "../stream/receiveWholeReq";
 import { gainFromClient, gainReqFromClient } from "../cmd/gainFromClient";
 import { m5Switch } from "../rotate/m5Access";
+import {
+  registerRelay,
+  relayOffer,
+  relayAnswer,
+  relayIce,
+  handleRelayDisconnect,
+} from "../relay";
 import { IoFacade } from "./IoFacade";
 
 let strings = "";
@@ -142,6 +149,31 @@ export const wsServer = (
           break;
         }
 
+        // ---- /webrtc 受信映像のリレー (中継) シグナリング ----
+        // 既存ロジックとは分離した relay* 系。chat_sync とは無関係で、
+        // chat_itsuki 内ブラウザ間 (/webrtc sender ←→ /relay receiver) の中継。
+        case "relayRegisterFromClient":
+          registerRelay((data as { role: "sender" | "receiver" }).role, id);
+          break;
+
+        case "relayOfferFromClient": {
+          const d = data as { to: string; offer: RTCSessionDescriptionInit };
+          relayOffer(d.to, d.offer, id);
+          break;
+        }
+
+        case "relayAnswerFromClient": {
+          const d = data as { to: string; answer: RTCSessionDescriptionInit };
+          relayAnswer(d.to, d.answer, id);
+          break;
+        }
+
+        case "relayIceFromClient": {
+          const d = data as { to: string; candidate: RTCIceCandidateInit };
+          relayIce(d.to, d.candidate, id);
+          break;
+        }
+
         default:
           console.log("unknown message type:", type);
       }
@@ -150,6 +182,7 @@ export const wsServer = (
     ws.on("close", () => {
       console.log("disconnect:", id);
       facade.removeClient(id);
+      handleRelayDisconnect(id);
       if (clientState.client[id]) delete clientState.client[id];
       if (clientState.streamClient.includes(id)) {
         clientState.streamClient = clientState.streamClient.filter((el) => el !== id);

@@ -17,10 +17,18 @@ import {
   ICE_SERVERS,
   ITSUKI_PEER_PREFIX,
   LOCAL_SEND_ROTATION_DEG,
+  REMOTE_AUDIO_GAIN,
   REMOTE_DISPLAY_ROTATION_DEG,
   ROOM_ID,
 } from "./syncConfig";
 import { createRotatedSendStream, type RotatedStream } from "./rotateStream";
+import { RelayController } from "./relayController";
+import {
+  applyRandomVideoLayout,
+  clearVideoLayout,
+  hideVideo,
+  showVideo,
+} from "./remoteVideoLayout";
 
 interface SdpDescription {
   type: RTCSdpType;
@@ -53,9 +61,6 @@ type ClientMessage =
   | { type: "ice-candidate"; candidate: IceCandidateData; to: string; from: string }
   | { type: "leave"; peerId: string };
 
-// 通話中だけリモート映像を canvas より前面に出す z-index (旧 msePlayback.ts と同値)。
-const VIDEO_FRONT_Z_INDEX = "10";
-
 // streamState.stream 準備待ちのリトライ (initialize.ts 完了前に start された場合)。
 const STREAM_WAIT_INTERVAL_MS = 250;
 const STREAM_WAIT_MAX = 40; // 約 10 秒
@@ -83,6 +88,18 @@ export class SyncClient {
   private remotePeerId: string | null = null;
   private pendingCandidates: RTCIceCandidateInit[] = [];
 
+  // chat_sync から受信した remoteStream を他端末 (/relay) へ中継する。
+  private relay = new RelayController();
+
+  // 受信音声を 100% 超に増幅するための Web Audio グラフ
+  // (MediaStreamSource -> GainNode -> DynamicsCompressor -> destination)。
+  // 増幅で飽和した分はコンプレッサー (リミッター設定) で抑えて歪みを防ぐ。
+  // <video> 自体はミュートし、音声はこの経路だけで鳴らして二重再生を防ぐ。
+  private audioCtx: AudioContext | null = null;
+  private remoteAudioSource: MediaStreamAudioSourceNode | null = null;
+  private remoteGain: GainNode | null = null;
+  private remoteCompressor: DynamicsCompressorNode | null = null;
+
   // 再接続制御
   private stopRequested = false;
   private reconnectAttempt = 0;
@@ -109,6 +126,8 @@ export class SyncClient {
     this.rotated = createRotatedSendStream(stream, LOCAL_SEND_ROTATION_DEG);
     this.sendStream = this.rotated.stream;
     log(`starting as ${this.peerId}`);
+    // 受信映像を他端末へ中継する relay sender を起動 (常時待受)。
+    this.relay.start();
     this.connect();
   }
 
@@ -124,6 +143,7 @@ export class SyncClient {
     this.ws?.close();
     this.ws = null;
     this.clearRemoteVideo();
+    this.relay.clearSource();
     this.rotated?.stop();
     this.rotated = null;
     this.sendStream = null;
@@ -182,6 +202,11 @@ export class SyncClient {
     this.closePeerConnection();
     this.remotePeerId = null;
     this.pendingCandidates = [];
+    // WS 切断時も最後のフレームが残らないよう表示を初期化する
+    // (closePeerConnection が this.pc を null にした後に close イベントが届くため、
+    //  状態ハンドラ側では拾えない。ここで明示的にクリアする)。
+    this.clearRemoteVideo();
+    this.relay.clearSource();
 
     const d = Math.min(
       RECONNECT_BASE_MS * 2 ** this.reconnectAttempt,
@@ -233,6 +258,8 @@ export class SyncClient {
         this.closePeerConnection();
         this.remotePeerId = null;
         this.clearRemoteVideo();
+        // 中継元が消えたので relay の送信も止める (receiver 登録は維持)。
+        this.relay.clearSource();
         // 同一 WS セッションで別ピアが入れば chat_sync が peer-joined / peer-ready を
         // 再送するので、そのハンドラで PC を作り直す。
         break;
@@ -281,16 +308,19 @@ export class SyncClient {
     this.remoteStream = new MediaStream();
 
     this.pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    // ハンドラ内では this.pc ではなくこのローカル参照を使う。再接続で this.pc が
+    // 差し替わった後に古い PC の遅延イベントが発火しても、現行表示を壊さない。
+    const pc = this.pc;
 
     // 回転済みストリーム (270 度回転 video + 元 audio) の track を送信に乗せる。
     const outStream = this.sendStream ?? this.localStream;
     if (outStream) {
       for (const track of outStream.getTracks()) {
-        this.pc.addTrack(track, outStream);
+        pc.addTrack(track, outStream);
       }
     }
 
-    this.pc.onicecandidate = ({ candidate }) => {
+    pc.onicecandidate = ({ candidate }) => {
       if (!candidate || !this.remotePeerId) return;
       this.send({
         type: "ice-candidate",
@@ -300,23 +330,55 @@ export class SyncClient {
       });
     };
 
-    this.pc.ontrack = ({ track }) => {
+    pc.ontrack = ({ track }) => {
       // video / audio 両 track を 1 つの MediaStream に集約して <video> に流す
       // (werift と違い msid は付くが、両 track を同一 stream に乗せる方針は踏襲)。
       this.remoteStream.addTrack(track);
       this.attachRemoteVideo();
+      // 受信した映像+音声を他端末 (/relay) へも中継する。
+      this.relay.setSourceStream(this.remoteStream);
+      // 音声は <video> ではなく GainNode 経由で鳴らして +40% 増幅する。
+      if (track.kind === "audio") this.setupAmplifiedAudio();
+      // 相手が送信を止めて track が終了したら、最後のフレームが残らないよう初期化する
+      // (ended は恒久的な終了。一時的な瞬断では発火しないので誤クリアにならない)。
+      track.onended = () => {
+        if (this.pc !== pc) return;
+        this.clearRemoteVideo();
+        this.relay.clearSource();
+      };
+      // 映像が止まった瞬間 (mute) はフリーズフレームを即座に隠す暫定クリア。
+      // stream/PC は保持するため、unmute で同じ位置に即復帰する (瞬断対応)。
+      if (track.kind === "video") {
+        track.onmute = () => {
+          if (this.pc !== pc) return;
+          const el = webRtcState.videoPlayer;
+          if (el) hideVideo(el);
+        };
+        track.onunmute = () => {
+          if (this.pc !== pc) return;
+          const el = webRtcState.videoPlayer;
+          if (el) showVideo(el);
+        };
+      }
       log(`remote track: ${track.kind} (${this.remoteStream.getTracks().length} total)`);
     };
 
-    this.pc.oniceconnectionstatechange = () => {
-      const state = this.pc?.iceConnectionState ?? "unknown";
-      log("ice state: " + state);
+    pc.oniceconnectionstatechange = () => {
+      log("ice state: " + pc.iceConnectionState);
     };
 
-    this.pc.onconnectionstatechange = () => {
-      const state = this.pc?.connectionState ?? "unknown";
+    pc.onconnectionstatechange = () => {
+      const state = pc.connectionState;
       log("pc state: " + state);
+      // 現アクティブな PC のイベントだけ反映する (古い PC の遅延イベント対策)。
+      if (this.pc !== pc) return;
       webRtcState.isConnected = state === "connected";
+      // 通話終了 (failed/closed) で最後のフレームが残らないよう表示を初期化する。
+      // disconnected は一時的に復帰し得るのでここでは消さない。
+      if (state === "failed" || state === "closed") {
+        this.clearRemoteVideo();
+        this.relay.clearSource();
+      }
     };
   }
 
@@ -335,29 +397,81 @@ export class SyncClient {
     // ここで消すと remotePeerId セット → init → null になり offer 送信が空振りする)。
   }
 
+  // ---- リモート音声の増幅再生 ----
+
+  // 受信した音声 track を Web Audio の GainNode 経由で再生し、REMOTE_AUDIO_GAIN 倍に
+  // 増幅する。HTMLMediaElement.volume は 1.0 が上限で 100% 超の増幅ができないため。
+  // remoteStream は再接続のたびに作り直されるので、その都度ソースを張り直す。
+  private setupAmplifiedAudio(): void {
+    if (this.remoteStream.getAudioTracks().length === 0) return;
+    if (!this.audioCtx) {
+      this.audioCtx = new AudioContext();
+    }
+    // 前の接続のグラフを破棄してから張り直す。
+    this.remoteAudioSource?.disconnect();
+    this.remoteGain?.disconnect();
+    this.remoteCompressor?.disconnect();
+
+    const source = this.audioCtx.createMediaStreamSource(this.remoteStream);
+    const gain = this.audioCtx.createGain();
+    gain.gain.value = REMOTE_AUDIO_GAIN;
+
+    // 増幅で飽和したピークを抑えるリミッター設定のコンプレッサー。
+    // threshold 付近から強い ratio で圧縮し、knee=0 でハードに頭打ちさせる。
+    const compressor = this.audioCtx.createDynamicsCompressor();
+    compressor.threshold.value = -3; // dB: これを超えた分を圧縮
+    compressor.knee.value = 0; // ハードニー (リミッター的)
+    compressor.ratio.value = 20; // 強い圧縮比でピークを頭打ち
+    compressor.attack.value = 0.003; // 速く反応させてクリップを防ぐ
+    compressor.release.value = 0.25;
+
+    source.connect(gain).connect(compressor).connect(this.audioCtx.destination);
+    this.remoteAudioSource = source;
+    this.remoteGain = gain;
+    this.remoteCompressor = compressor;
+
+    // 自動再生ポリシーで suspended の場合に備えて resume する (キオスク前提)。
+    void this.audioCtx.resume().catch(() => {
+      /* gesture 待ちなどの一時失敗は無視 */
+    });
+  }
+
+  private teardownAmplifiedAudio(): void {
+    this.remoteAudioSource?.disconnect();
+    this.remoteGain?.disconnect();
+    this.remoteCompressor?.disconnect();
+    this.remoteAudioSource = null;
+    this.remoteGain = null;
+    this.remoteCompressor = null;
+  }
+
   // ---- リモート映像の <video> 反映 ----
 
   private attachRemoteVideo(): void {
     const el = webRtcState.videoPlayer;
     if (!el) return;
-    if (el.srcObject !== this.remoteStream) {
+    const isNewStream = el.srcObject !== this.remoteStream;
+    if (isNewStream) {
       el.srcObject = this.remoteStream;
+      // 最前面 + ランダムなサイズ・位置。実機ディスプレイは 270 度回転設置なので
+      // 受信映像を 270 度回転して正立させる (回転後の視覚サイズも考慮される)。
+      applyRandomVideoLayout(el, REMOTE_DISPLAY_ROTATION_DEG);
     }
-    el.style.zIndex = VIDEO_FRONT_Z_INDEX; // 通話中は canvas 前面
-    // 実機ディスプレイは 270 度回転設置なので、受信映像を 90 度回転して正立させる。
-    el.style.transform = `rotate(${REMOTE_DISPLAY_ROTATION_DEG}deg)`;
+    // 音声は GainNode 経由 (setupAmplifiedAudio) で増幅再生するため、
+    // <video> 自体はミュートして二重再生を防ぐ。
+    el.muted = true;
     void el.play().catch((e) =>
       console.warn("[syncClient] remote video autoplay blocked:", e),
     );
   }
 
   private clearRemoteVideo(): void {
+    this.teardownAmplifiedAudio();
     this.remoteStream = new MediaStream();
     const el = webRtcState.videoPlayer;
     if (!el) return;
     el.srcObject = null;
-    el.style.removeProperty("z-index"); // CSS 本来の重なり順に戻す
-    el.style.removeProperty("transform"); // 回転も解除
+    clearVideoLayout(el);
   }
 
   private send(msg: ClientMessage): void {

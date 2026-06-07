@@ -70,6 +70,26 @@ export async function m5Switch(type: "rotation" | "vibration", value: boolean): 
 }
 
 /**
+ * リレーを高速で交互にON/OFFするブリンク制御
+ * @param value 最初に実行する値。以降 interval ごとに反転する
+ * @param interval 各実行間の待機時間(ms)
+ * @param time 実行回数
+ */
+export async function blinkM5Switch(
+  type: "rotation" | "vibration",
+  value: boolean,
+  interval: number,
+  time: number
+): Promise<void> {
+  for (let i = 0; i < time; i++) {
+    if (i > 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, interval));
+    }
+    await m5Switch(type, i % 2 === 0 ? value : !value);
+  }
+}
+
+/**
  * 現在のリレー状態を取得する
  * @returns リレー状態。通信失敗時は例外を投げず false を返す
  */

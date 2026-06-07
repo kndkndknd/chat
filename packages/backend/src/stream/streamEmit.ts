@@ -163,12 +163,12 @@ export const streamEmit = async (
               sampleRateState.randomraterange[source].min),
         );
     }
-    console.log("sampleRateState", sampleRateState);
+    // console.log("sampleRateState", sampleRateState);
     if (!stream.video) console.log("not video");
-    console.log(
-      "bpmState, gridFlag:",
-      bpmState[targetId]?.stream?.[source]?.gridFlag,
-    );
+    // console.log(
+    //   "bpmState, gridFlag:",
+    //   bpmState[targetId]?.stream?.[source]?.gridFlag,
+    // );
     if (!bpmState[targetId]?.stream?.[source]?.gridFlag) {
       ioEmitStreamFromServer(stream, targetId, source);
     } else {

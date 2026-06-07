@@ -8,7 +8,9 @@ let bassFlag = false;
 // /counter で rotateReqFromClient 送信後、30秒間は再送信を抑制するためのフラグ
 let counterCooldown = false;
 let counterTimer: ReturnType<typeof setTimeout> | null = null;
+let keyboardCooldown = false;
 const COUNTER_COOLDOWN_MS = 30 * 1000;
+const KEYBOARD_COOLDOWN_MS = 5 * 1000;
 // rotateReqFromClient(true) の送信回数。COUNTER_MAX_SENDS に達したら長いクールダウンに入る。
 // COUNTER_MAX_SENDS が 0 のときは回数制限なし（長いクールダウンに入らず通常サイクルを繰り返す）。
 let counterSendCount = 0;
@@ -39,17 +41,19 @@ export const keyDown = (
 
   if (window.location.pathname === "/counter") {
     // クールダウン中は textInput があっても rotateReqFromClient を送信しない
-    if (!counterCooldown) {
+    if (!keyboardCooldown) {
       // クールダウン開始時の送信 → サーバで m5Switch(rotation, true)
       socket.emit("rotateReqFromClient", true);
       counterSendCount++;
       counterCooldown = true;
+      keyboardCooldown = true;
+      setTimeout(() => {
+        keyboardCooldown = false;
+      }, KEYBOARD_COOLDOWN_MS);
       counterTimer = setTimeout(() => {
         counterTimer = null;
         // クールダウン終了時の送信 → サーバで m5Switch(rotation, false)
         socket.emit("rotateReqFromClient", false);
-        // 1分経ったら character を ArrowDown として textInput を実行する
-        processChar("ArrowDown", stringsClient, socket, strCnvs, stx);
 
         if (COUNTER_MAX_SENDS > 0 && counterSendCount >= COUNTER_MAX_SENDS) {
           // 規定回数に達したら、false 実行後さらに3分間のクールダウンを継続する

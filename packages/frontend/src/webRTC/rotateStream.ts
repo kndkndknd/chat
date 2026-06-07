@@ -22,6 +22,9 @@ type VideoFrameVideo = HTMLVideoElement & {
   requestVideoFrameCallback?: (cb: () => void) => number;
 };
 
+// 送信前に上下左右それぞれ15%をクロップする。
+const SEND_CROP = 0.15;
+
 // source の video track を degrees 度回転させた MediaStream を返す。
 // degrees が 90 / 270 の場合は縦横が入れ替わる。
 export function createRotatedSendStream(
@@ -39,8 +42,10 @@ export function createRotatedSendStream(
   const swap = degrees % 180 !== 0; // 90 / 270 度は縦横が入れ替わる
 
   const canvas = document.createElement("canvas");
-  canvas.width = swap ? (settings.height ?? 360) : (settings.width ?? 640);
-  canvas.height = swap ? (settings.width ?? 640) : (settings.height ?? 360);
+  const initW = Math.round((settings.width ?? 640) * (1 - 2 * SEND_CROP));
+  const initH = Math.round((settings.height ?? 360) * (1 - 2 * SEND_CROP));
+  canvas.width = swap ? initH : initW;
+  canvas.height = swap ? initW : initH;
   const ctx = canvas.getContext("2d");
 
   // canvas へ描くためのオフスクリーン <video>。画面には見せないが、DOM から外したり
@@ -75,15 +80,20 @@ export function createRotatedSendStream(
     const w = video.videoWidth;
     const h = video.videoHeight;
     if (ctx && w > 0 && h > 0) {
-      // 解像度が確定/変化したら canvas を実寸に合わせる。
-      const cw = swap ? h : w;
-      const ch = swap ? w : h;
+      // 上下左右 SEND_CROP (15%) をクロップしたソース領域。
+      const cropX = Math.round(w * SEND_CROP);
+      const cropY = Math.round(h * SEND_CROP);
+      const cropW = w - 2 * cropX;
+      const cropH = h - 2 * cropY;
+      // 解像度が確定/変化したら canvas をクロップ後の寸法に合わせる。
+      const cw = swap ? cropH : cropW;
+      const ch = swap ? cropW : cropH;
       if (canvas.width !== cw) canvas.width = cw;
       if (canvas.height !== ch) canvas.height = ch;
       ctx.save();
       ctx.translate(canvas.width / 2, canvas.height / 2);
       ctx.rotate(rad);
-      ctx.drawImage(video, -w / 2, -h / 2, w, h);
+      ctx.drawImage(video, cropX, cropY, cropW, cropH, -cropW / 2, -cropH / 2, cropW, cropH);
       ctx.restore();
     }
   };

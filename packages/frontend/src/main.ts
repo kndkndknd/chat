@@ -36,6 +36,7 @@ import { isBlackModeActive, disableBlackMode } from "./blackMode";
 
 import { simulateWorklet } from "./audioWorklet/simulateWorklet";
 import { SyncClient } from "./webRTC/syncClient";
+import { RelayReceiver } from "./webRTC/relayReceiver";
 
 const ua = navigator.userAgent.toLowerCase();
 flagState.isMobile = /iphone|ipad|ipod|android/.test(ua);
@@ -126,6 +127,15 @@ if (window.location.pathname.includes("webrtc")) {
   }
   const syncClient = new SyncClient();
   void syncClient.start();
+}
+
+// /relay 端末は、/webrtc が chat_sync から受信して中継する映像+音声を
+// receiver として受け取り <video #remoteVideo> に表示する。カメラ/マイクは
+// 使わないため initialize() は呼ばない。無人運用のためロード時に自動開始する。
+// (/1・/2 など顔認識付きの client 端末は端末スペックの都合でリレー再生しない。)
+if (window.location.pathname.includes("relay")) {
+  const relayReceiver = new RelayReceiver();
+  relayReceiver.start();
 }
 
 textPrint("click screen");

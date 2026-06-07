@@ -1,5 +1,12 @@
 import { showImage } from "./showImage";
-import { textPrint, erasePrint, emojiState, eraseText } from "./textEvent";
+import {
+  textPrint,
+  erasePrint,
+  emojiState,
+  eraseText,
+  scheduleErasePrint,
+  cancelErasePrint,
+} from "./textEvent";
 import { toBase64 } from "./toBase64";
 import { canvasSizing } from "./canvasSizing";
 import { initVideo, initVideoStream } from "./initVideo";
@@ -10,6 +17,8 @@ export {
   textPrint,
   erasePrint,
   eraseText,
+  scheduleErasePrint,
+  cancelErasePrint,
   emojiState,
   toBase64,
   canvasSizing,

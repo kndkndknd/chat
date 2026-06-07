@@ -205,9 +205,9 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
       });
     }
 
-    console.log("bpmState", sockId, bpmState[sockId]);
+    // console.log("bpmState", sockId, bpmState[sockId]);
 
-    console.log(clientState.client);
+    // console.log(clientState.client);
     return true;
     // } else if (data.clientMode === "sinewaveClient") {
     //   console.log(sockId + " is sinewaveClient");

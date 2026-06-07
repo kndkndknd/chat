@@ -101,10 +101,12 @@ export const socket = (): void => {
 
   socketState.socket.on(
     "recordReqFromServer",
-    (data: { source: string; timeout: number }) => {
+    (data: { source: string; timeout: number, index?: number, textPrint?: boolean }) => {
       console.log("recordReqFromServer debug", data);
       recordReqFromServer(data);
-      textPrint("RECORD", { timeout: true, timeoutDuration: data.timeout });
+      if(data.textPrint === undefined || data.textPrint) {
+        textPrint("RECORD", { timeout: true, timeoutDuration: data.timeout });
+      }
       // setTimeout(() => {
       //   erasePrint();
       // }, data.timeout);

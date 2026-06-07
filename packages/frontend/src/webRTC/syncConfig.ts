@@ -33,6 +33,11 @@ export const ROOM_ID = "chat sync";
 export const REMOTE_DISPLAY_ROTATION_DEG = 270;
 export const LOCAL_SEND_ROTATION_DEG = 270;
 
+// 受信音声の増幅率。HTMLMediaElement.volume は 1.0 (100%) が上限で 100% を超える
+// 増幅ができないため、受信音声を Web Audio の GainNode 経由で再生して増幅する。
+// 1.4 = +40%。
+export const REMOTE_AUDIO_GAIN = 1.4;
+
 // chat_sync に特権ピア (itsuki) として認識されるためのプレフィックス。
 // chat_sync は ROOM_MODE='itsuki-required' + 営業時間ゲートを持ち、
 // peerId が "itsuki-" で始まるピアだけが時間外でも入室でき、かつ在席することで
