@@ -242,6 +242,20 @@ app.get("/api/machineStatus", function (req, res) {
   res.json(clientState.client);
 });
 
+// Redis 上の PLAYBACK / TIMELAPSE のバッファ数（llen）を返す。
+app.get("/api/buffer-count", async function (req, res) {
+  try {
+    const [playback, timelapse] = await Promise.all([
+      streamsRedis.getLength("PLAYBACK"),
+      streamsRedis.getLength("TIMELAPSE"),
+    ]);
+    res.json({ success: true, PLAYBACK: playback, TIMELAPSE: timelapse });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
 // ナイトモードの ON/OFF を切り替える。
 // value:true で全端末の顔認識停止 + scenarioItsuki 停止 + 全端末 BLACK モード。
 // value:false でナイトモードを解除する（顔認識を元の設定に復元し、BLACK を解除）。
