@@ -24,6 +24,15 @@ import {
 } from "./scenario/nightSchedule";
 import { getMongoDb } from "./mongo/client";
 import {
+  importStreamToMongo,
+  importAllStreamsToMongo,
+  REDIS_TO_MONGO_ALLOWED,
+} from "./mongo/redisToMongo";
+import {
+  halveStreamByRecordIndex,
+  HALVE_ALLOWED,
+} from "./redis/halveByRecordIndex";
+import {
   scenarioItsuki,
   isScenarioItsukiActive,
   stopScenarioItsuki,
@@ -276,6 +285,68 @@ app.post("/api/clear-buffer", async function (req, res) {
         .status(404)
         .json({ success: false, message: `Stream not found: ${stream}` });
     }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
+// Redis 上の streamBuffer を Mongo へ取り込む（scripts/redisToMongo.ts 相当）。
+// body.stream を省略すると PLAYBACK / TIMELAPSE の両方を取り込む。
+// 指定する場合は PLAYBACK / TIMELAPSE のいずれかのみ許可する。
+// 同一 timestamp が Mongo 側に既に存在するドキュメントはスキップする。
+app.post("/api/redis-to-mongo", async function (req, res) {
+  const stream: string | undefined = req.body?.stream;
+  try {
+    if (stream === undefined) {
+      const results = await importAllStreamsToMongo();
+      res.json({ success: true, results });
+    } else if (
+      REDIS_TO_MONGO_ALLOWED.includes(
+        stream as (typeof REDIS_TO_MONGO_ALLOWED)[number],
+      )
+    ) {
+      const result = await importStreamToMongo(stream);
+      res.json({ success: true, results: [result] });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: `対象は ${REDIS_TO_MONGO_ALLOWED.join(" / ")} のみです: ${stream}`,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
+// 同一 recordIndex のデータを timestamp 昇順の偶数番目で間引く（scripts/redisHalveByRecordIndex.ts 相当）。
+// body.stream を省略すると PLAYBACK / TIMELAPSE の両方を対象にする。
+// 指定する場合は PLAYBACK / TIMELAPSE のいずれかのみ許可する。
+// body.dryRun=true のときは集計のみ行い Redis は変更しない。
+app.post("/api/halve-by-record-index", async function (req, res) {
+  const stream: string | undefined = req.body?.stream;
+  const dryRun: boolean = req.body?.dryRun === true;
+  try {
+    let targets: string[];
+    if (stream === undefined) {
+      targets = [...HALVE_ALLOWED];
+    } else if (
+      HALVE_ALLOWED.includes(stream as (typeof HALVE_ALLOWED)[number])
+    ) {
+      targets = [stream];
+    } else {
+      res.status(400).json({
+        success: false,
+        message: `対象は ${HALVE_ALLOWED.join(" / ")} のみです: ${stream}`,
+      });
+      return;
+    }
+    const results = [];
+    for (const name of targets) {
+      results.push(await halveStreamByRecordIndex(name, dryRun));
+    }
+    res.json({ success: true, dryRun, results });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Something went wrong" });
