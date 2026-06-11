@@ -1,23 +1,25 @@
 /**
- * redisHalveByRecordIndex.ts
+ * redisHalveByRecordIndex_rename.ts
  *
- * docker/docker-compose.yml で定義されている Redis 上の streamBuffer について、
- * 同一 recordIndex を持つデータを「半分」に間引くスクリプト。
+ * redisHalveByRecordIndex.ts の「一時キー + RENAME 版」。
  *
- * 選別方法:
- *   recordIndex ごとにグループ化し、timestamp の昇順に並べたとき
- *   偶数番目(2番目, 4番目, ... = 1始まりの偶数位置)のエントリを削除する。
- *   例) 同一 recordIndex に 6 件あれば、timestamp 昇順で 1,2,3,4,5,6 とし
- *       2,4,6 番目を削除して 1,3,5 番目(3 件)を残す。
+ * オリジナルは残すエントリ kept を 1 つの MULTI トランザクションに積んで
+ * exec() していたため、kept の合計サイズが V8 の文字列長上限(約 512MB)を
+ * 超えると `RangeError: Invalid string length` で失敗していた。
  *
- * recordIndex を持たないエントリ(例: TIMELAPSE)は、ストリーム全体を 1 つの
- * グループとみなして同様に timestamp 昇順の偶数番目を削除する。
+ * 本ファイルでは MULTI を使わず、一時キー(:tmp)に rpush を CHUNK ごとに
+ * 分割して積み上げてから、最後に RENAME で本番キーへ原子的に差し替える。
+ * これにより:
+ *   - 1 回の書き込みに載る文字列が CHUNK 件分に抑えられ、上限超えを回避できる。
+ *   - 差し替え自体は RENAME 1 コマンドで原子的に行われるため、本番キーが
+ *     「途中まで書かれた中途半端な状態」で見えることがない。
+ *     (rpush 途中で失敗しても、本番キーは元のまま残る。)
  *
- * 実行:
+ * 選別方法・実行方法はオリジナルと同じ:
  *   cd packages/backend
- *   pnpm exec tsx scripts/redisHalveByRecordIndex.ts            # 実際に削除
- *   pnpm exec tsx scripts/redisHalveByRecordIndex.ts --dry-run  # 集計のみ(削除しない)
- *   pnpm exec tsx scripts/redisHalveByRecordIndex.ts PLAYBACK   # 対象を絞る(PLAYBACK / TIMELAPSE のみ可)
+ *   pnpm exec tsx scripts/redisHalveByRecordIndex_rename.ts            # 実際に削除
+ *   pnpm exec tsx scripts/redisHalveByRecordIndex_rename.ts --dry-run  # 集計のみ
+ *   pnpm exec tsx scripts/redisHalveByRecordIndex_rename.ts PLAYBACK   # 対象を絞る
  *
  * 接続情報は ルートの .env から読み込む:
  *   REDIS_URL (default: redis://localhost:6379)
@@ -112,15 +114,23 @@ const halveStream = async (name: string, dryRun: boolean): Promise<void> => {
     return;
   }
 
-  // リストを作り直す: 元のキーを消し、残すエントリを元の順序で rpush し直す。
+  // リストを作り直す: 一時キーに残すエントリを元の順序で rpush し直し、
+  // 最後に RENAME で本番キーへ原子的に差し替える。
+  // rpush を CHUNK ごとに個別 await することで、1 回の書き込みに載る文字列を
+  // CHUNK 件分に抑え、V8 の文字列長上限(RangeError: Invalid string length)を回避する。
   const key = buffKey(name);
-  const tx = redis.multi();
-  tx.del(key);
+  const tmp = `${key}:halve_tmp`;
+
+  // 前回の中断などで残っているかもしれない一時キーを掃除しておく。
+  await redis.del(tmp);
+
   const CHUNK = 1000;
   for (let i = 0; i < kept.length; i += CHUNK) {
-    tx.rpush(key, ...kept.slice(i, i + CHUNK));
+    await redis.rpush(tmp, ...kept.slice(i, i + CHUNK));
   }
-  await tx.exec();
+
+  // 一時キー -> 本番キー へ原子的に差し替え(本番キーは上書きされる)。
+  await redis.rename(tmp, key);
   console.log(`[halve] ${name}: redis updated (${kept.length} entries remain)`);
 };
 

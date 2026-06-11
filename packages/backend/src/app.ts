@@ -15,7 +15,7 @@ if (fs.existsSync(dotenvPath)) {
 
 import { cmdLogging } from "./logging/cmdLogging";
 import { initStreams } from "./data";
-import { loadAllStates, clientState } from "./state";
+import { loadAllStates, clientState, sampleRateState } from "./state";
 import { ioState } from "./state/states/ioState";
 import { countersRedis, streamsRedis } from "./redis/streamsRedis";
 import {
@@ -368,6 +368,12 @@ app.post("/api/halve-by-record-index", async function (req, res) {
 });
 
 loadAllStates()
+  .then(() => {
+    // サーバ起動時は randomrate を CHAT/PLAYBACK/TIMELAPSE について必ず true にする
+    sampleRateState.randomrate.CHAT = true;
+    sampleRateState.randomrate.PLAYBACK = true;
+    sampleRateState.randomrate.TIMELAPSE = true;
+  })
   .then(() => initStreams())
   .catch((err) => console.error("Redis init error:", err));
 cmdLogging("START");

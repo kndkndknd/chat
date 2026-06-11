@@ -16,7 +16,8 @@ import { recordEmit } from "../stream/recordEmit";
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
 // シナリオ実行終了後、追加で顔認識をブロックする時間。
-const FACE_DETECT_BLOCK_AFTER_MS = 15 * 1000;
+const FACE_DETECT_BLOCK_AFTER_MS = 20 * 1000;
+const ROTATE_OFF_INTERVAL = 60; // m5Test のポーリング間隔 (秒)
 
 // 顔認識成立の瞬間にフロント側でカメラ映像を1フレームだけ表示する時間。
 // faceApi/index.ts の SNAPSHOT_DURATION_MS と揃える。
@@ -244,7 +245,7 @@ export const faceDetectScenario = async (detectedClientId?: string) => {
   setTimeout(async () => {
     const rotationState = await m5Test("rotation");
     if (rotationState) m5Switch("rotation", false);
-  }, 30 * 1000);
+  }, ROTATE_OFF_INTERVAL * 1000);
 
   // Step 1: recent のみチェックし、playFirstBuffer を確定する。
   const recentBuffer = await checkRecentBuffer();

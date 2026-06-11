@@ -9,7 +9,7 @@ let bassFlag = false;
 let counterCooldown = false;
 let counterTimer: ReturnType<typeof setTimeout> | null = null;
 let keyboardCooldown = false;
-const COUNTER_COOLDOWN_MS = 30 * 1000;
+const COUNTER_COOLDOWN_MS = 60 * 1000;
 const KEYBOARD_COOLDOWN_MS = 5 * 1000;
 // rotateReqFromClient(true) の送信回数。COUNTER_MAX_SENDS に達したら長いクールダウンに入る。
 // COUNTER_MAX_SENDS が 0 のときは回数制限なし（長いクールダウンに入らず通常サイクルを繰り返す）。

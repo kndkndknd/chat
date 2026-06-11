@@ -9,9 +9,9 @@ export const sampleRateState = createPersistedState<sampleRateStateType>("sample
     EMPTY: 44100,
   },
   randomrate: {
-    CHAT: false,
-    PLAYBACK: false,
-    TIMELAPSE: false,
+    CHAT: true,
+    PLAYBACK: true,
+    TIMELAPSE: true,
     EMPTY: false,
   },
   randomratemode: "random",
