@@ -28,7 +28,11 @@ import { previousCmd } from "./previousCmd";
 import { getLiveStream } from "../stream/getLiveStream";
 import { loadScenario } from "../scenario/loadScenario";
 import { execScenario } from "../scenario/execScenario";
-import { scenarioItsuki } from "../scenario/scenarioItsuki";
+import {
+  scenarioItsuki,
+  isScenarioItsukiActive,
+  stopScenarioItsuki,
+} from "../scenario/scenarioItsuki";
 import { putCmd } from "./putCmd";
 import { cmdLogging } from "../logging/cmdLogging";
 import { quantizeCmd } from "../stream/quantize";
@@ -41,8 +45,6 @@ import { changeCmdParam } from "./changeCmdParam";
 
 import { wholeEmit } from "../stream/wholeEmit";
 import { replay } from "../scenario/replay";
-import { startWebRTCSession, stopWebRTCSession } from "../webRTC/weriftClient";
-import { startCameraRotation, stopCameraRotation } from "../webRTC/cameraRotator";
 import { enableNightMode, disableNightMode } from "../nightMode/nightMode";
 
 export const receiveEnter = async (
@@ -126,6 +128,11 @@ export const receiveEnter = async (
     const scenario = await loadScenario();
     await execScenario(scenario);
   } else if (strings === "SCENARIOITSUKI") {
+    // 実行中だった場合は一度停止してから再度実行する。
+    if (isScenarioItsukiActive()) {
+      console.log("[SCENARIOITSUKI] scenarioItsuki active, restarting");
+      stopScenarioItsuki();
+    }
     await scenarioItsuki();
   } else if (id === "scenario") {
     console.log("scenario", strings);
@@ -153,16 +160,6 @@ export const receiveEnter = async (
     } else {
       stringEmit("GET LIVESTREAM: FAILED");
     }
-  } else if (strings === "CALL") {
-    startWebRTCSession();
-    // 接続中の全クライアントを 20 秒ごとにローテーションして送信元にする。
-    // (受信側パイプラインは werift recv recorder のままで 1 系統。)
-    startCameraRotation();
-  } else if (strings === "STOPWEBRTC") {
-    // ローテーションを止めてから webRTC セッション全体を停止する。
-    stopCameraRotation();
-    stopWebRTCSession();
-    console.log("[STOPWEBRTC] werift session stop requested");
   } else if (strings === "BLACK") {
     // 全端末の画面を真っ黒にする。解除はクライアント側で文字入力時に行う。
     console.log("BLACK");

@@ -23,18 +23,9 @@ import { quantizeFromServer } from "./quantize/quantizeFromServer";
 import { chatReq, recordReqFromServer, streamPlay } from "./stream";
 import { setGainUI } from "./ui/gainUI";
 import { wholeCmd } from "./cmd/wholeCmd";
-import { startChunkedRecording, stopChunkedRecording } from "./recording";
 import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
 import { enableBlackMode, disableBlackMode, isBlackModeActive } from "./blackMode";
 import { muteMasterForNight, restoreMasterForNight } from "./nightAudio";
-import {
-  attachMsePlayback,
-  appendMediaChunk,
-  teardownMsePlayback,
-  attachMseAudioPlayback,
-  appendAudioChunk,
-  teardownMseAudioPlayback,
-} from "./webRTC/msePlayback";
 
 
 export const socket = (): void => {
@@ -110,10 +101,12 @@ export const socket = (): void => {
 
   socketState.socket.on(
     "recordReqFromServer",
-    (data: { source: string; timeout: number }) => {
+    (data: { source: string; timeout: number, index?: number, textPrint?: boolean }) => {
       console.log("recordReqFromServer debug", data);
       recordReqFromServer(data);
-      textPrint("RECORD", { timeout: true, timeoutDuration: data.timeout });
+      if(data.textPrint === undefined || data.textPrint) {
+        textPrint("RECORD", { timeout: true, timeoutDuration: data.timeout });
+      }
       // setTimeout(() => {
       //   erasePrint();
       // }, data.timeout);
@@ -343,57 +336,9 @@ export const socket = (): void => {
     }
   });
 
-  socketState.socket.on("bufferRecReqFromServer", () => {
-    // streamState.stream は initialize() 完了後にセットされる。
-    // ensureWebRtcFromClient → bufferRecReqFromServer が initialize 完了前
-    // (stream 準備前) に返ってくる競合があるため、stream が用意できるまで
-    // 少し待って再試行する (最大 10 秒)。
-    const tryStart = (attempt: number): void => {
-      if (streamState.stream) {
-        startChunkedRecording(streamState.stream as MediaStream);
-      } else if (attempt < 40) {
-        window.setTimeout(() => tryStart(attempt + 1), 250);
-      } else {
-        console.warn("bufferRecReqFromServer: stream not ready, gave up");
-      }
-    };
-    tryStart(0);
-  });
-
-  socketState.socket.on("bufferRecStopFromServer", () => {
-    stopChunkedRecording();
-    // 受信側 MSE もリセット（次回 CALL の init segment を取り直すため）
-    teardownMsePlayback();
-    teardownMseAudioPlayback();
-  });
-
-  // カメラローテーション切替用: MediaRecorder だけ止めて MSE はそのまま。
-  // 受信側 (werift recv recorder) は継続しているので、再生は途切れずに続く。
-  socketState.socket.on("recorderSwitchStopFromServer", () => {
-    stopChunkedRecording();
-  });
-
-  // backend の recv pipeline から流れてくる WebM チャンクを MSE で再生
-  socketState.socket.on("mediaChunkFromServer", (data: ArrayBuffer) => {
-    if (webRtcState.videoPlayer) {
-      attachMsePlayback(webRtcState.videoPlayer);
-    }
-    appendMediaChunk(data);
-  });
-
-  socketState.socket.on("audioChunkFromServer", (data: ArrayBuffer) => {
-    if (webRtcState.audioPlayer) {
-      attachMseAudioPlayback(webRtcState.audioPlayer);
-    }
-    appendAudioChunk(data);
-  });
-
-  // ピア再接続などで recv パイプラインが再起動するとき、新しい init segment を
-  // 受け取れるよう MSE を一度作り直す
-  socketState.socket.on("mediaResetFromServer", () => {
-    teardownMsePlayback();
-    teardownMseAudioPlayback();
-  });
+  // WebRTC 通話は /webrtc 端末のブラウザ (SyncClient) が chat_sync と直接やり取りする。
+  // 旧構成の MediaRecorder 中継 (bufferRecReqFromServer 等) / MSE 受信
+  // (mediaChunkFromServer 等) はバックエンド werift の撤去に伴い廃止した。
 
   socketState.socket.on("bufferFromServer", (data) => {
     const uint8Array = new Uint8Array(data);

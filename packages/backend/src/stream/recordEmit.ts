@@ -26,7 +26,7 @@ export const initRecordIndex = async (): Promise<void> => {
 
 const RECORD_TIMEOUT_MS = 10000;
 
-export const recordEmit = (target?: string) => {
+export const recordEmit = (target?: string, textPrint?: boolean) => {
   console.log("target", target);
   // if (!currentState.RECORD) {
   currentState.RECORD = true;
@@ -37,6 +37,7 @@ export const recordEmit = (target?: string) => {
       source: "PLAYBACK",
       timeout: RECORD_TIMEOUT_MS,
       index,
+      textPrint: textPrint ?? true,
     });
   } else {
     console.log("all");

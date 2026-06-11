@@ -26,7 +26,8 @@ export const gridChange = (arg?: { source?: string; value?: number; property?: s
       stringEmit(
         "GRID: " +
           String(
-            bpmState[Object.keys(bpmState)[0]].stream[arg.property].gridFlag
+            bpmState[Object.keys(bpmState)[0]]?.stream?.[arg.property]
+              ?.gridFlag ?? false
           ) +
           "(" +
           arg.property +
@@ -81,7 +82,9 @@ export const gridChange = (arg?: { source?: string; value?: number; property?: s
     }
     stringEmit(
       "GRID: " +
-        String(bpmState[Object.keys(bpmState)[0]].stream.CHAT.gridFlag),
+        String(
+          bpmState[Object.keys(bpmState)[0]]?.stream?.CHAT?.gridFlag ?? false
+        ),
       true
     );
   }

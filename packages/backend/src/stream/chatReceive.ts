@@ -24,10 +24,10 @@ export const chatReceive = async (
   if (buffer !== undefined) {
     switch (buffer.source) {
       case "CHAT":
+        console.log("chatReceive before redis push, buffer from:", buffer.from);
         await chatsRedis.push(buffer);
         console.log("chat length: ", await chatsRedis.length());
-        console.log("bpmState", bpmState);
-
+        console.log("chatReceive buffer from:", buffer.from);        
         if (buffer.from !== undefined) {
           chatEmit(buffer.from);
         } else {
@@ -56,6 +56,7 @@ export const chatReceive = async (
 };
 
 export const chatEmit = async (from?) => {
+  console.log("chatEmit called to", currentState.stream.CHAT ? "specific target" : "all clients");
   if (currentState.stream.CHAT) {
     let targetId =
       from !== undefined
@@ -64,6 +65,7 @@ export const chatEmit = async (from?) => {
     if (streamState.pa.CHAT) {
       targetId = pickupPaStreamTarget();
     }
+    console.log("debug: Emitting chat to targetId:", targetId, streamState.target.CHAT);
     console.log("chatEmit targetId: ", targetId);
     console.log("bpmState", targetId, bpmState[targetId]);
     const chatsLen = await chatsRedis.length();
@@ -89,15 +91,14 @@ export const chatEmit = async (from?) => {
         chunk.video = await glitchStream(chunk.video);
       }
       if (
-        bpmState[targetId].stream.CHAT.gridFlag &&
-        !bpmState[targetId].stream.CHAT.quantizeFlag
+        bpmState[targetId]?.stream?.CHAT?.gridFlag &&
+        !bpmState[targetId]?.stream?.CHAT?.quantizeFlag
       ) {
         const timeOutVal = gridTimeoutVal("CHAT", targetId);
         setTimeout(() => {
           if (
-            bpmState[targetId] &&
-            bpmState[targetId].stream.CHAT.gridFlag &&
-            !bpmState[targetId].stream.CHAT.quantizeFlag
+            bpmState[targetId]?.stream?.CHAT?.gridFlag &&
+            !bpmState[targetId]?.stream?.CHAT?.quantizeFlag
           ) {
             ioEmitChatFromServer(chunk, targetId);
           }
@@ -114,7 +115,11 @@ export const chatEmit = async (from?) => {
 };
 
 const ioEmitChatFromServer = async (chunk, targetId) => {
-  if (streamState.floating && !clientState.client[targetId].projection) {
+  if (
+    streamState.floating &&
+    clientState.client[targetId] &&
+    !clientState.client[targetId].projection
+  ) {
     const projectionChunk = {
       ...chunk,
       floating: true,

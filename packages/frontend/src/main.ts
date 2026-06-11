@@ -35,6 +35,8 @@ import { keyDown } from "./textInput";
 import { isBlackModeActive, disableBlackMode } from "./blackMode";
 
 import { simulateWorklet } from "./audioWorklet/simulateWorklet";
+import { SyncClient } from "./webRTC/syncClient";
+import { RelayReceiver } from "./webRTC/relayReceiver";
 
 const ua = navigator.userAgent.toLowerCase();
 flagState.isMobile = /iphone|ipad|ipod|android/.test(ua);
@@ -100,9 +102,41 @@ document.addEventListener("keydown", (e) => {
 
 socket();
 
-// remoteVideo / remoteAudio: WebRTC で受信したメディアを MSE で再生する <video>/<audio>
+// remoteVideo / remoteAudio: WebRTC で受信したメディアを流す <video>/<audio>
 webRtcState.videoPlayer = <HTMLVideoElement>document.getElementById("remoteVideo");
 webRtcState.audioPlayer = <HTMLAudioElement>document.getElementById("remoteAudio");
+
+// /webrtc 端末だけ、chat_sync の WebRTC ピアとして振る舞う。
+// 無人運用のためロード時に initialize() を自動起動し (クリック/Enter を待たない)、
+// SyncClient を開始する。getUserMedia / autoplay は Chrome にカメラ・マイク権限が
+// 永続許可されている前提 (キオスク設定)。SyncClient.start() は streamState.stream の
+// 準備を内部でリトライ待ちするため、initialize() と並行に呼んでよい。
+if (window.location.pathname.includes("webrtc")) {
+  if (!flagState.start) {
+    initialize(socketState.socket).then(async (stream) => {
+      if (stream !== null) {
+        streamState.stream = stream;
+        await simulateWorklet(stream);
+      } else {
+        textPrint("not support navigator.mediaDevices.getUserMedia", {
+          timeout: true,
+          timeoutDuration: 5000,
+        });
+      }
+    });
+  }
+  const syncClient = new SyncClient();
+  void syncClient.start();
+}
+
+// /relay 端末は、/webrtc が chat_sync から受信して中継する映像+音声を
+// receiver として受け取り <video #remoteVideo> に表示する。カメラ/マイクは
+// 使わないため initialize() は呼ばない。無人運用のためロード時に自動開始する。
+// (/1・/2 など顔認識付きの client 端末は端末スペックの都合でリレー再生しない。)
+if (window.location.pathname.includes("relay")) {
+  const relayReceiver = new RelayReceiver();
+  relayReceiver.start();
+}
 
 textPrint("click screen");
 

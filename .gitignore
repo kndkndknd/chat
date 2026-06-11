@@ -21,6 +21,11 @@ packages/backend/static/hls/*
 *.js
 *.map
 
+# wasm-bindgen が生成する glue JS。src/audioWorklet/simulateWorklet.ts が
+# import するため、ビルドに必須。上の *.js に巻き込まれて未コミットになると
+# クリーンチェックアウトでビルドが壊れるので、明示的に追跡対象へ戻す。
+!packages/frontend/src/wasm/simulate.js
+
 packages/arduino/dist/*
 
 voskModel/*

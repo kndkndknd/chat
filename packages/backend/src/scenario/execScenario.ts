@@ -1,6 +1,32 @@
 import { receiveEnter } from "../cmd/receiveEnter";
 import { flagState } from "../state";
 
+// execScenario が setTimeout でスケジュールした各ステップのタイマーハンドルを保持する。
+// stopAllScenarioTimers() で一括 clearTimeout できるようにするための集合。
+// 各タイマーは発火時に自分自身をこの集合から取り除くため、長時間のループでも
+// 「未発火のタイマー数」以上には増えず、メモリが蓄積しない。
+const scheduledTimers = new Set<NodeJS.Timeout>();
+
+// 1 ステップ分の setTimeout を登録する。発火時に自身を集合から取り除いてから cb を実行する。
+const scheduleStep = (cb: () => void, delay: number) => {
+  const timer = setTimeout(() => {
+    scheduledTimers.delete(timer);
+    cb();
+  }, delay);
+  scheduledTimers.add(timer);
+};
+
+// スケジュール済みのシナリオステップをすべてキャンセルする。
+// 既に発火済みのものは集合から取り除かれているため対象外。
+export const stopAllScenarioTimers = () => {
+  for (const timer of scheduledTimers) {
+    clearTimeout(timer);
+  }
+  scheduledTimers.clear();
+  flagState.scenario = false;
+  console.log("[execScenario] all scheduled scenario timers cleared");
+};
+
 export const execScenario = async (
   scenario: {
     format: "relative" | "absolute";
@@ -32,7 +58,7 @@ export const execScenario = async (
     });
     */
     for (let i = 0; i < timetableArr.length; i++) {
-      setTimeout(() => {
+      scheduleStep(() => {
         console.log("scenario", timetableArr[i].time, timetableArr[i].cmd);
         receiveEnter(timetableArr[i].cmd, "scenario");
       }, timetableArr[i].time);
@@ -63,7 +89,7 @@ export const execScenario = async (
       console.log('exec: ', scenario.timetable[key]);
 
       if (execTime >= 0 && scenario.timetable[key] !== undefined && scenario.timetable[key] !== "REPLAY") {
-        setTimeout(() => {
+        scheduleStep(() => {
           receiveEnter(scenario.timetable[key], "all");
         }, execTime);
       }

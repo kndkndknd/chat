@@ -21,7 +21,7 @@ const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
  * @param pollTimeoutMs ポーリングのタイムアウト (ms)。経過すると強制的に ON する
  */
 export async function rotateItsuki(
-  offDelayMs: number = 40_000,
+  offDelayMs: number = 60_000,
   testIntervalMs: number = 1_000,
   sets: number = 1,
   pollTimeoutMs: number = 60_000,

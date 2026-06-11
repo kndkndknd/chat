@@ -6,6 +6,11 @@ const MODEL_URL = "/models";
 // 顔の向きの許容範囲。鼻先が顔の中心からこの割合以内なら「正面に近い」とみなす（正面±40%）。
 const FRONTAL_RATIO = 0.4;
 
+// 検出ループの間隔。短いほど顔認識の反応は速いが、TF.js/WebGL 推論が頻繁に走り
+// メインスレッド/GPU を専有するため、同居する WebRTC リレー映像の消去ペイント等が
+// 遅れる。/1,/2 端末の表示終了の即時性を上げるため間引いている（旧 100ms）。
+const DETECT_INTERVAL_MS = 250;
+
 let overlayCanvas: HTMLCanvasElement | null = null;
 let active = false;
 let modelsLoaded = false;
@@ -162,7 +167,7 @@ async function detectLoop(): Promise<void> {
     ctx?.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
     stopFlashing();
     wasFrontal = false;
-    setTimeout(() => detectLoop(), 100);
+    setTimeout(() => detectLoop(), DETECT_INTERVAL_MS);
     return;
   }
 
@@ -222,5 +227,5 @@ async function detectLoop(): Promise<void> {
     stopFlashing();
   }
 
-  setTimeout(() => detectLoop(), 100);
+  setTimeout(() => detectLoop(), DETECT_INTERVAL_MS);
 }

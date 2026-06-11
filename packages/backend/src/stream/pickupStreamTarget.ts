@@ -47,11 +47,12 @@ export const pickupStreamTarget = (stream: string, from?: string): string => {
     streamState.target[stream] !== undefined &&
     streamState.target[stream].length === 1
   ) {
-    console.log("targetArr(1)", streamState.target[stream]);
+    console.log(stream, "targetArr(1)", streamState.target[stream]);
     return streamState.target[stream][0];
   } else {
-    // targetがなければランダムに返す
+    // targetがなければランダムに返す（CHAT以外かつfromが指定されていればそれを優先）
     console.log("random");
+    if (from !== undefined && stream !== "CHAT") return from;
     let targetArr = clientState.streamClient;
     console.log("targetArr", targetArr);
     // if (states.arduino.connected) {
@@ -59,7 +60,7 @@ export const pickupStreamTarget = (stream: string, from?: string): string => {
     //   console.log("push arduino");
     //   targetArr.push("arduino");
     // }
-    
+
     return targetArr.length > 0 ? targetArr[Math.floor(Math.random() * targetArr.length)] : "";
   }
 };

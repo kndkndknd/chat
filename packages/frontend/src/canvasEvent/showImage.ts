@@ -1,4 +1,5 @@
 import { canvasElement } from "./canvasElement";
+import { scheduleErasePrint } from "./textEvent";
 
 export function showImage(
   url: string,
@@ -40,6 +41,8 @@ export function showImage(
           position.height
         );
       }
+      // showImage 後、5秒間 showImage / textPrint が発生しなければ自動消去する
+      scheduleErasePrint(receive_ctx);
     };
   } catch (error) {
     console.log("showImage error: ", error);

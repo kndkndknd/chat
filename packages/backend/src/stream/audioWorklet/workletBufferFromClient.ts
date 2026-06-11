@@ -21,6 +21,7 @@ export const workletBufferFromClient = async (
       bufferSize: data.audio.byteLength,
       duration: data.audio.byteLength / 44100 / 4,
     };
+    console.log("debug: Received buffer from client for CHAT");
     chatReceive(buff);
   } else if (data.source === "TIMELAPSE") {
     const bufferSize = data.bufferSize || streamState.basisBufferSize;

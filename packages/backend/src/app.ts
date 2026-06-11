@@ -15,7 +15,7 @@ if (fs.existsSync(dotenvPath)) {
 
 import { cmdLogging } from "./logging/cmdLogging";
 import { initStreams } from "./data";
-import { loadAllStates } from "./state";
+import { loadAllStates, clientState, sampleRateState } from "./state";
 import { ioState } from "./state/states/ioState";
 import { countersRedis, streamsRedis } from "./redis/streamsRedis";
 import {
@@ -24,9 +24,20 @@ import {
 } from "./scenario/nightSchedule";
 import { getMongoDb } from "./mongo/client";
 import {
+  importStreamToMongo,
+  importAllStreamsToMongo,
+  REDIS_TO_MONGO_ALLOWED,
+} from "./mongo/redisToMongo";
+import {
+  halveStreamByRecordIndex,
+  HALVE_ALLOWED,
+} from "./redis/halveByRecordIndex";
+import {
   scenarioItsuki,
   isScenarioItsukiActive,
+  stopScenarioItsuki,
 } from "./scenario/scenarioItsuki";
+import { stopAllScenarioTimers } from "./scenario/execScenario";
 import {
   enableNightMode,
   disableNightMode,
@@ -190,10 +201,16 @@ app.post("/api/persondetect", function (req, res) {
 });
 
 // シナリオ（scenarioItsuki）を HTTP から起動する。
+// 実行中だった場合は一度停止してから再度実行する。
 app.post("/api/scenario", async function (req, res) {
   try {
+    const wasActive = isScenarioItsukiActive();
+    if (wasActive) {
+      console.log("[POST /api/scenario] scenarioItsuki active, restarting");
+      stopScenarioItsuki();
+    }
     await scenarioItsuki();
-    res.json({ success: true });
+    res.json({ success: true, restarted: wasActive });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Something went wrong" });
@@ -203,6 +220,40 @@ app.post("/api/scenario", async function (req, res) {
 // itsukiTimer の状態を返す。NULL なら stopping、NULL でなければ active。
 app.get("/api/scenario", function (req, res) {
   res.json({ status: isScenarioItsukiActive() ? "active" : "stopping" });
+});
+
+// シナリオを全停止する。
+// scenarioItsuki のループ（itsukiTimer）を止め、execScenario が setTimeout で
+// スケジュール済みの各ステップもすべて clearTimeout でキャンセルする。
+app.post("/api/stopScenario", function (req, res) {
+  try {
+    const wasActive = isScenarioItsukiActive();
+    stopScenarioItsuki();
+    stopAllScenarioTimers();
+    res.json({ success: true, wasActive });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
+// 各クライアント端末の状態（clientState.client）を返す。
+app.get("/api/machineStatus", function (req, res) {
+  res.json(clientState.client);
+});
+
+// Redis 上の PLAYBACK / TIMELAPSE のバッファ数（llen）を返す。
+app.get("/api/buffer-count", async function (req, res) {
+  try {
+    const [playback, timelapse] = await Promise.all([
+      streamsRedis.getLength("PLAYBACK"),
+      streamsRedis.getLength("TIMELAPSE"),
+    ]);
+    res.json({ success: true, PLAYBACK: playback, TIMELAPSE: timelapse });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
 });
 
 // ナイトモードの ON/OFF を切り替える。
@@ -254,7 +305,75 @@ app.post("/api/clear-buffer", async function (req, res) {
   }
 });
 
+// Redis 上の streamBuffer を Mongo へ取り込む（scripts/redisToMongo.ts 相当）。
+// body.stream を省略すると PLAYBACK / TIMELAPSE の両方を取り込む。
+// 指定する場合は PLAYBACK / TIMELAPSE のいずれかのみ許可する。
+// 同一 timestamp が Mongo 側に既に存在するドキュメントはスキップする。
+app.post("/api/redis-to-mongo", async function (req, res) {
+  const stream: string | undefined = req.body?.stream;
+  try {
+    if (stream === undefined) {
+      const results = await importAllStreamsToMongo();
+      res.json({ success: true, results });
+    } else if (
+      REDIS_TO_MONGO_ALLOWED.includes(
+        stream as (typeof REDIS_TO_MONGO_ALLOWED)[number],
+      )
+    ) {
+      const result = await importStreamToMongo(stream);
+      res.json({ success: true, results: [result] });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: `対象は ${REDIS_TO_MONGO_ALLOWED.join(" / ")} のみです: ${stream}`,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
+// 同一 recordIndex のデータを timestamp 昇順の偶数番目で間引く（scripts/redisHalveByRecordIndex.ts 相当）。
+// body.stream を省略すると PLAYBACK / TIMELAPSE の両方を対象にする。
+// 指定する場合は PLAYBACK / TIMELAPSE のいずれかのみ許可する。
+// body.dryRun=true のときは集計のみ行い Redis は変更しない。
+app.post("/api/halve-by-record-index", async function (req, res) {
+  const stream: string | undefined = req.body?.stream;
+  const dryRun: boolean = req.body?.dryRun === true;
+  try {
+    let targets: string[];
+    if (stream === undefined) {
+      targets = [...HALVE_ALLOWED];
+    } else if (
+      HALVE_ALLOWED.includes(stream as (typeof HALVE_ALLOWED)[number])
+    ) {
+      targets = [stream];
+    } else {
+      res.status(400).json({
+        success: false,
+        message: `対象は ${HALVE_ALLOWED.join(" / ")} のみです: ${stream}`,
+      });
+      return;
+    }
+    const results = [];
+    for (const name of targets) {
+      results.push(await halveStreamByRecordIndex(name, dryRun));
+    }
+    res.json({ success: true, dryRun, results });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
 loadAllStates()
+  .then(() => {
+    // サーバ起動時は randomrate を CHAT/PLAYBACK/TIMELAPSE について必ず true にする
+    sampleRateState.randomrate.CHAT = true;
+    sampleRateState.randomrate.PLAYBACK = true;
+    sampleRateState.randomrate.TIMELAPSE = true;
+  })
   .then(() => initStreams())
   .catch((err) => console.error("Redis init error:", err));
 cmdLogging("START");
