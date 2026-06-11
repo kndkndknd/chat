@@ -10,9 +10,8 @@ import * as path from "path";
 // var readFile = util.promisify(fs.readFile);
 // var execPromise = util.promisify(exec);
 
-import { streams, uploadParams } from "../../data";
+import { streamsRedis, uploadParams } from "../../data";
 import { streamState } from "../../state";
-// import SocketIO from "socket.io";
 
 import { getFilePath } from "./getFilePath";
 import { getDuration } from "./getDuration";
@@ -38,13 +37,8 @@ export const uploadStream = async (stringArr) => {
     return;
   }
 
-  if (!(f.split(".")[0] in streams)) {
-    streams[f.split(".")[0]] = {
-      audio: [],
-      video: [],
-      bufferSize: streamState.basisBufferSize,
-      index: 0,
-    };
+  if (!(await streamsRedis.hasKey(f.split(".")[0]))) {
+    await streamsRedis.initKey(f.split(".")[0]);
   }
 
   switch (f.split(".")[1].toLowerCase()) {
@@ -73,7 +67,7 @@ export const uploadStream = async (stringArr) => {
         await console.log("audioUploadResult", audioUploadResult);
         await console.log(
           `${f.split(".")[0]} length: `,
-          streams[f.split(".")[0]].audio.length
+          await streamsRedis.getLength(f.split(".")[0])
         );
         // pushStateStream(f.split(".")[0], states, true);
 

@@ -1,5 +1,3 @@
-import SocketIO from "socket.io";
-
 import {
   cmdState,
   currentState,
@@ -7,13 +5,13 @@ import {
   clientState,
   bpmStateDefault,
 } from "../state";
+import { ioState } from "../state/states/ioState";
 import { putCmd } from "../cmd/putCmd";
 import { stringEmit } from "../socket/ioEmit";
-import { millisecondsPerBar } from "../../../util/bpmCalc";
+import { millisecondsPerBar } from "../util/bpmCalc";
 import { streamList } from "../data";
 
 export const bpmChange = (
-  io: SocketIO.Server,
   arg?: { source?: string; value?: number; property?: string }
 ) => {
   if (arg && arg.value) {
@@ -42,7 +40,7 @@ export const bpmChange = (
         }
         // streamState.latency[arg.property] = latency;
         // cmdState.METRONOME = {};
-        io.emit("bpmFromServer", { bpm: arg.value, bar: bar });
+        ioState?.io.emit("bpmFromServer", { bpm: arg.value, bar: bar });
 
         // stringEmit(
         //   io,
@@ -72,7 +70,7 @@ export const bpmChange = (
                     latency: latency,
                   };
           }
-          io.to(target).emit("bpmFromServer", {
+          ioState?.io.to(target).emit("bpmFromServer", {
             bpm: arg.value,
             bar: bar,
           });
@@ -96,8 +94,8 @@ export const bpmChange = (
             gain: cmdState.GAIN.METRONOME,
             value: latency,
           };
-          putCmd(io, [target], cmd);
-          io.to(target).emit("bpmFromServer", {
+          putCmd([target], cmd);
+          ioState?.io.to(target).emit("bpmFromServer", {
             bpm: arg.value,
             bar: bar,
           });
@@ -156,13 +154,13 @@ export const bpmChange = (
             gain: cmdState.GAIN.METRONOME,
             value: latency,
           };
-          putCmd(io, [target], cmd);
+          putCmd([target], cmd);
         });
       }
-      io.emit("bpmFromServer", { bpm: arg.value, bar: bar });
+      ioState?.io.emit("bpmFromServer", { bpm: arg.value, bar: bar });
 
-      stringEmit(io, "BPM: " + String(arg.value));
-      io.emit("bpmFromServer", {
+      stringEmit("BPM: " + String(arg.value));
+      ioState?.io.emit("bpmFromServer", {
         bpm: arg.value,
         bar: bar,
       });

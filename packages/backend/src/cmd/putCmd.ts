@@ -1,10 +1,9 @@
-import SocketIO from "socket.io";
+import { ioState } from "../state/states/ioState";
 import { switchOneshot } from "../arduinoAccess/arduinoAccess";
 // import { time } from "console";
 import { clientState, arduinoState } from "../state";
 
 export const putCmd = (
-  io: SocketIO.Server,
   idArr: Array<string>,
   cmd: {
     cmd: string;
@@ -17,7 +16,7 @@ export const putCmd = (
 ) => {
   console.log('idArr', idArr);
   idArr.forEach((id) => {
-    io.to(id).emit("cmdFromServer", cmd);
+    ioState?.io.to(id).emit("cmdFromServer", cmd);
     console.log(id);
     if (
       clientState.client[id] !== undefined &&
@@ -32,7 +31,7 @@ export const putCmd = (
   /*
   if(state.cmd.VOICE.length > 0) {
     state.cmd.VOICE.forEach((element) => {
-      io.to(element).emit('voiceFromServer', cmd.cmd)
+      ioState?.io.to(element).emit('voiceFromServer', cmd.cmd);
     })
   }
   */

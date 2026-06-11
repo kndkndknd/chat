@@ -1,13 +1,13 @@
-import SocketIO from "socket.io";
+import { ioState } from "../state/states/ioState";
 import { cmdState } from "../state";
 
-export const voiceEmit = (io: SocketIO.Server, strings: string, id: string) => {
+export const voiceEmit = (strings: string, id: string) => {
   console.log("id", id);
   console.log("VOICE", cmdState.VOICE);
   if (cmdState.VOICE.length > 0) {
     cmdState.VOICE.forEach((element) => {
       if (element === id || id === "all" || id === "ALL" || id === "scenario") {
-        io.to(element).emit("voiceFromServer", {
+        ioState?.io.to(element).emit("voiceFromServer", {
           text: strings,
           lang: cmdState.voiceLang,
         });

@@ -10,10 +10,22 @@ import {
 } from "../../state";
 import { initWhitenoiseWorklet } from "../../audioWorklet/whitenoiseWorklet";
 
-const chatGainVal = 1.5;
+const chatGainVal = 2.0;
 const glitchGainVal = 1.5;
 
-export const initAudio = async () => {
+export const initAudio = async (
+  initWhitenoise: () => Promise<void> = initWhitenoiseWorklet,
+) => {
+
+  if(window.location.pathname.includes("left")) {
+    stereoPannerState.masterPannerParam = -1;
+    console.log("left channel");
+  } else if (window.location.pathname.includes("right")) {
+    stereoPannerState.masterPannerParam = 1;
+    console.log("right channel");
+  }
+
+
   // console.log("debug1");
   contextState.audioContext = new AudioContext();
   gainState.masterGain = contextState.audioContext.createGain();
@@ -43,7 +55,7 @@ export const initAudio = async () => {
   gainState.feedbackGain.gain.setValueAtTime(0, 0);
   //whitenoise
   // oscState.whitenoiseOsc = contextState.audioContext.createOscillator();
-  await initWhitenoiseWorklet();
+  await initWhitenoise();
   gainState.whitenoiseGain = await contextState.audioContext.createGain();
   await gainState.whitenoiseGain.gain.setValueAtTime(0, 0);
   await audioWorkletState.whitenoise.audioWorklet.connect(

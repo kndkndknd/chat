@@ -8,9 +8,13 @@ interface AccelerationData {
 
 /**
  * 加速度センサーの値を取得する関数
+ * @param includeGravity true の場合は重力込み(accelerationIncludingGravity)、
+ *   false の場合は重力を除いた動きのみ(acceleration)を取得する
  * @returns Promise<AccelerationData> x、y、z軸の加速度とタイムスタンプを含むオブジェクト
  */
-export async function getAcceleration(): Promise<AccelerationData> {
+export async function getAcceleration(
+  includeGravity: boolean = true
+): Promise<AccelerationData> {
   return new Promise((resolve, reject) => {
     // DeviceMotionEventの対応確認
     if (!window.DeviceMotionEvent) {
@@ -44,7 +48,9 @@ export async function getAcceleration(): Promise<AccelerationData> {
       const handleMotion = (event: DeviceMotionEvent) => {
         if (hasResponded) return;
 
-        const acceleration = event.accelerationIncludingGravity;
+        const acceleration = includeGravity
+          ? event.accelerationIncludingGravity
+          : event.acceleration;
 
         if (
           acceleration &&

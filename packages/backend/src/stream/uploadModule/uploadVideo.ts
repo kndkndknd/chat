@@ -1,26 +1,15 @@
 import * as fs from "fs";
-// import { execa } from "execa";
 import { spawn } from "child_process";
 
 import { streamState } from "../../state";
-import { streams } from "../../data";
+import { streamsRedis } from "../../data";
+import { buffStateType } from "../../../../../types";
 
 import { promiseGetPcmData } from "./getPcmData";
 import { promiseGetImageData } from "./getImageData";
 import { pushStateStream } from "../pushStateStream";
 
-// const fs = require("fs");
-// const pcm = require("pcm");
-// const util = require("util");
-// const exec = require("child_process").exec;
-// var readDir = util.promisify(fs.readdir);
-// var readFile = util.promisify(fs.readFile);
-// var execPromise = util.promisify(exec);
-
 export const uploadVideo = async (f: string, durationArr, mediaDirPath) => {
-  let tmpBuff = new Float32Array(streamState.basisBufferSize);
-  let rtnBuff = [];
-  let i = 0;
   const fSplit = f.split(".");
   const fName = fSplit[0];
 
@@ -37,7 +26,6 @@ export const uploadVideo = async (f: string, durationArr, mediaDirPath) => {
       const getPcmResult = <ArrayBuffer[]>await promiseGetPcmData(
         `${mediaDirPath}/${f}`,
         8192,
-        // fName,
         getPcmOption,
       );
       console.log("getPcmResult", getPcmResult.length);
@@ -46,16 +34,21 @@ export const uploadVideo = async (f: string, durationArr, mediaDirPath) => {
       );
       console.log("getImageResult", getImageResult.length);
 
-      streams[fName].audio = getPcmResult;
-      streams[fName].video = getImageResult;
+      await streamsRedis.clear(fName);
+      const maxLen = Math.max(getPcmResult.length, getImageResult.length);
+      const buffArr: buffStateType[] = [];
+      for (let i = 0; i < maxLen; i++) {
+        buffArr.push({
+          source: fName,
+          audio: (getPcmResult[i] as ArrayBuffer) ?? new ArrayBuffer(0),
+          video: getImageResult[i] ?? "",
+          bufferSize: 8192,
+          duration: 8192 / 44100,
+        });
+      }
+      await streamsRedis.pushBatch(fName, buffArr);
     });
     return await true;
-
-    // console.log("video file uploaded");
-    //コマンド、パラメータにUPLOAD対象を追加
-    // streamList.push(streamName);
-    // pushStateStream(fName, states);
-    // return true;
   } catch (err) {
     console.log("1st catch");
     console.error(err);

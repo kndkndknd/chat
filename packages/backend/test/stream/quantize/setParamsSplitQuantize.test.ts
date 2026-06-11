@@ -1,51 +1,109 @@
-import { expect, test } from "vitest";
-import { setParamsSplitQuantize } from "../../../src/stream/quantize/setParamsSplitQuantize";
-import { getTypeArr } from "../../../src/cmd/splitSpace/getTypeArr";
-import { bpmState, bpmStateDefault } from "../../../src/state";
-import { bpmClientStateType, bpmStreamStateType } from "../../../../../types";
+import { describe, expect, test, vi, beforeEach } from "vitest";
 
-test("splitQuantize", async () => {
-  // ターゲットについてはtargetに入ってる。下記targetを除いたstringArr
-  // stringArr.length === 1 => quantizeCmd(io, state, "all", target, 0);
-  // stringArr.length === 2 && 1つめがnumber === "number" => quantizeCmd(io, state, "all", target, Number(stringArr[1]));
-  // stringArr.length === 2 && 1つめがstringでstream => quantizeCmd(io, state, stringArr[2], target, 0);
-  // stringArr.length === 3 && 1つめがnumberで2つ目がstream  => quantizeCmd(io, state, stringArr[3], target, Number(stringArr[1]));
-  // stringArr.length === 3 && 1つめがstreamで2つ目がnumber => quantizeCmd(io, state, stringArr[1], target, Number(stringArr[2]));
-
-  const bpmStateObj: bpmClientStateType = {
-    METRONOME: {
-      bpm: bpmStateDefault.bpm,
-      beat: bpmStateDefault.beat,
-      flag: bpmStateDefault.metronomeFlag,
-    },
-    MODULATION: {
-      flag: bpmStateDefault.modulationFlag,
-      bpm: bpmStateDefault.bpm,
-      beat: bpmStateDefault.beat,
-    },
-    stream: {
-      CHAT: {
-        bpm: bpmStateDefault.bpm,
-        beat: bpmStateDefault.beat,
-        gridFlag: bpmStateDefault.gridFlag,
-        quantizeFlag: bpmStateDefault.quantizeFlag,
-        latency: bpmStateDefault.latency,
-      },
-    },
-  };
-  bpmState["clientTarget"] = bpmStateObj as bpmClientStateType;
-
-  const stringArr = ["QUANTIZE", "4", "CHAT"];
-  const arrTypeArr = getTypeArr(stringArr);
-  // quantizeState.bpm.CHAT = { target: 60 };
-
-  const result = await setParamsSplitQuantize(stringArr, arrTypeArr, "target");
-  console.log(result);
-  expect(result).toEqual({
-    flag: true,
-    stream: "CHAT",
+vi.mock("../../../src/state", () => ({
+  bpmState: {} as Record<string, any>,
+  bpmStateDefault: {
     bpm: 60,
-    bar: 4000,
     beat: 4,
+    metronomeFlag: true,
+    modulationFlag: false,
+    gridFlag: false,
+    quantizeFlag: false,
+    latency: 250,
+    torchType: "STEADY",
+    torchBlinkFlag: false,
+  },
+}));
+vi.mock("../../../src/data", () => ({
+  streamList: ["PLAYBACK", "TIMELAPSE", "EMPTY"],
+}));
+
+import { setParamsSplitQuantize } from "../../../src/stream/quantize/setParamsSplitQuantize";
+import { bpmState } from "../../../src/state";
+
+const baseStream = (q: boolean) => ({
+  bpm: 60,
+  beat: 4,
+  gridFlag: false,
+  quantizeFlag: q,
+  latency: 250,
+});
+
+const setupBpmState = (clients: string[]) => {
+  for (const k of Object.keys(bpmState)) delete (bpmState as any)[k];
+  for (const c of clients) {
+    (bpmState as any)[c] = {
+      stream: {
+        PLAYBACK: baseStream(false),
+        TIMELAPSE: baseStream(false),
+        EMPTY: baseStream(false),
+      },
+    };
+  }
+};
+
+describe("setParamsSplitQuantize", () => {
+  beforeEach(() => setupBpmState(["c1", "c2"]));
+
+  test("params.flag が undefined のとき: 対象が全部 quantizeFlag=true なら true 維持", () => {
+    setupBpmState(["c1"]);
+    (bpmState as any).c1.stream.PLAYBACK.quantizeFlag = true;
+    (bpmState as any).c1.stream.TIMELAPSE.quantizeFlag = true;
+    (bpmState as any).c1.stream.EMPTY.quantizeFlag = true;
+    const result = setParamsSplitQuantize({}, "c1");
+    for (const s of ["PLAYBACK", "TIMELAPSE", "EMPTY"]) {
+      expect(result.c1[s].quantizeFlag).toBe(true);
+    }
+  });
+
+  test("params.flag が undefined のとき: 1 つでも false が混じれば全部 false に統一される", () => {
+    setupBpmState(["c1"]);
+    (bpmState as any).c1.stream.PLAYBACK.quantizeFlag = true;
+    (bpmState as any).c1.stream.TIMELAPSE.quantizeFlag = false; // 混在
+    (bpmState as any).c1.stream.EMPTY.quantizeFlag = true;
+    const result = setParamsSplitQuantize({}, "c1");
+    for (const s of ["PLAYBACK", "TIMELAPSE", "EMPTY"]) {
+      expect(result.c1[s].quantizeFlag).toBe(false);
+    }
+  });
+
+  test("params.flag=true 指定時は対象 client のストリームを quantizeFlag=true・gridFlag=false に", () => {
+    const result = setParamsSplitQuantize({ flag: true }, "c1");
+    for (const s of ["PLAYBACK", "TIMELAPSE", "EMPTY"]) {
+      expect(result.c1[s].quantizeFlag).toBe(true);
+      expect(result.c1[s].gridFlag).toBe(false);
+    }
+    // c2 は対象外なので変化なし
+    for (const s of ["PLAYBACK", "TIMELAPSE", "EMPTY"]) {
+      expect(result.c2[s].quantizeFlag).toBe(false);
+    }
+  });
+
+  test("params.beat と params.bpm を指定すれば対象に反映される", () => {
+    const result = setParamsSplitQuantize(
+      { flag: true, beat: 8, bpm: 90 },
+      "c1",
+    );
+    expect(result.c1.PLAYBACK.beat).toBe(8);
+    expect(result.c1.PLAYBACK.bpm).toBe(90);
+  });
+
+  test("params.stream を指定すればその stream のみ更新", () => {
+    const result = setParamsSplitQuantize(
+      { flag: true, stream: "PLAYBACK" as any },
+      "c1",
+    );
+    expect(result.c1.PLAYBACK.quantizeFlag).toBe(true);
+    expect(result.c1.TIMELAPSE.quantizeFlag).toBe(false);
+    expect(result.c1.EMPTY.quantizeFlag).toBe(false);
+  });
+
+  test("target が undefined または 'all' なら全クライアントが対象", () => {
+    const result = setParamsSplitQuantize({ flag: true });
+    for (const c of ["c1", "c2"]) {
+      for (const s of ["PLAYBACK", "TIMELAPSE", "EMPTY"]) {
+        expect(result[c][s].quantizeFlag).toBe(true);
+      }
+    }
   });
 });

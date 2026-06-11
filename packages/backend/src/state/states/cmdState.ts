@@ -1,12 +1,13 @@
 import { cmdStateType } from "../../../../../types";
+import { createPersistedState } from "../../redis/stateRedis";
 
-export const cmdState: cmdStateType = {
+export const cmdState = createPersistedState<cmdStateType>("cmdState", {
   GAIN: {
     MASTER: 1.0,
-    SINEWAVE: 0.4,
-    FEEDBACK: 1,
-    WHITENOISE: 1.0,
-    CLICK: 0.9,
+    SINEWAVE: 0.2,
+    FEEDBACK: 0.6,
+    WHITENOISE: 0.5,
+    CLICK: 0.4,
     BASS: 1.5,
     CHAT: 1.5,
     GLITCH: 2,
@@ -22,4 +23,4 @@ export const cmdState: cmdStateType = {
   VOICE: [],
   voiceLang: "en-US",
   METRONOME: {},
-};
+});

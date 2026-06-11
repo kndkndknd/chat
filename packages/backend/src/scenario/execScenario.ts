@@ -1,13 +1,37 @@
-import SocketIO from "socket.io";
 import { receiveEnter } from "../cmd/receiveEnter";
 import { flagState } from "../state";
+
+// execScenario が setTimeout でスケジュールした各ステップのタイマーハンドルを保持する。
+// stopAllScenarioTimers() で一括 clearTimeout できるようにするための集合。
+// 各タイマーは発火時に自分自身をこの集合から取り除くため、長時間のループでも
+// 「未発火のタイマー数」以上には増えず、メモリが蓄積しない。
+const scheduledTimers = new Set<NodeJS.Timeout>();
+
+// 1 ステップ分の setTimeout を登録する。発火時に自身を集合から取り除いてから cb を実行する。
+const scheduleStep = (cb: () => void, delay: number) => {
+  const timer = setTimeout(() => {
+    scheduledTimers.delete(timer);
+    cb();
+  }, delay);
+  scheduledTimers.add(timer);
+};
+
+// スケジュール済みのシナリオステップをすべてキャンセルする。
+// 既に発火済みのものは集合から取り除かれているため対象外。
+export const stopAllScenarioTimers = () => {
+  for (const timer of scheduledTimers) {
+    clearTimeout(timer);
+  }
+  scheduledTimers.clear();
+  flagState.scenario = false;
+  console.log("[execScenario] all scheduled scenario timers cleared");
+};
 
 export const execScenario = async (
   scenario: {
     format: "relative" | "absolute";
     timetable: { [key: string]: string };
   },
-  io: SocketIO.Server
 ) => {
   flagState.scenario = true;
   const now = new Date();
@@ -34,9 +58,9 @@ export const execScenario = async (
     });
     */
     for (let i = 0; i < timetableArr.length; i++) {
-      setTimeout(() => {
+      scheduleStep(() => {
         console.log("scenario", timetableArr[i].time, timetableArr[i].cmd);
-        receiveEnter(timetableArr[i].cmd, "scenario", io);
+        receiveEnter(timetableArr[i].cmd, "scenario");
       }, timetableArr[i].time);
     }
   } else if (scenario.format === "absolute") {
@@ -51,9 +75,12 @@ export const execScenario = async (
       const timeTable = new Date();
       timeTable.setHours(Number(execTimeArr[0]));
       timeTable.setMinutes(Number(execTimeArr[1]));
-      if (timeTable) {
-        timeTable.setSeconds(Number(execTimeArr[2]));
-      }
+      // "SS.mmm" 形式から秒とミリ秒を分離する。
+      // mmm は cmdLogging が書き出す getMilliseconds() と同じ整数値（"5" = 5ms, "500" = 500ms）。
+      const [secStr, msStr] = (execTimeArr[2] ?? "0").split(".");
+      timeTable.setSeconds(Number(secStr));
+      // new Date() 由来の現在ミリ秒が残らないよう、ミリ秒は明示的に設定する。
+      timeTable.setMilliseconds(msStr ? Number(msStr) : 0);
 
       console.log("timeTable", timeTable);
       console.log(timeTable.getTime());
@@ -62,8 +89,8 @@ export const execScenario = async (
       console.log('exec: ', scenario.timetable[key]);
 
       if (execTime >= 0 && scenario.timetable[key] !== undefined && scenario.timetable[key] !== "REPLAY") {
-        setTimeout(() => {
-          receiveEnter(scenario.timetable[key], "all", io);
+        scheduleStep(() => {
+          receiveEnter(scenario.timetable[key], "all");
         }, execTime);
       }
     }

@@ -11,6 +11,8 @@ export function textPrint(
     timeoutDuration?: number;
   },
 ) {
+  // textPrint が発生したので、showImage 由来の自動 erasePrint はキャンセルする
+  cancelErasePrint();
   const stx = !option || !option.stx ? canvasElement.ctx : option.stx;
   const strCnvs =
     !option || !option.strCnvs ? canvasElement.cnvs : option.strCnvs;
@@ -41,13 +43,6 @@ export function textPrint(
       print(emoji.random().emoji, stx, strCnvs);
     }
   }
-  /*
-  if (hlsElement.played.length > 0) {
-    setTimeout(() => {
-      eraseText(stx, strCnvs);
-    }, 100);
-  }
-  */
 }
 
 export function eraseText(
@@ -73,6 +68,29 @@ export function erasePrint(
   ctx.clearRect(0, 0, cnvs.width, cnvs.height);
   //  ctx.fillStyle = 'white';
   //  ctx.fillRect(0, 0, cnvs.width, cnvs.height);
+}
+
+// showImage の後、一定時間 showImage / textPrint が発生しなかった場合に
+// 自動で erasePrint するためのタイマー。
+const ERASE_PRINT_DELAY = 2500;
+let erasePrintTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function scheduleErasePrint(
+  ctx: CanvasRenderingContext2D = canvasElement.ctx,
+  cnvs: HTMLCanvasElement = canvasElement.cnvs,
+) {
+  cancelErasePrint();
+  erasePrintTimer = setTimeout(() => {
+    erasePrintTimer = null;
+    erasePrint(ctx, cnvs);
+  }, ERASE_PRINT_DELAY);
+}
+
+export function cancelErasePrint() {
+  if (erasePrintTimer !== null) {
+    clearTimeout(erasePrintTimer);
+    erasePrintTimer = null;
+  }
 }
 
 const print = (

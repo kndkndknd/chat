@@ -1,6 +1,6 @@
-import SocketIO from "socket.io";
+import { ioState } from "../../state/states/ioState";
 import { clientState, cmdState, streamState } from "../../state";
-import { streamList, parameterList, streams } from "../../data";
+import { streamList, parameterList, streamsRedis } from "../../data";
 import { cmdEmit } from "../cmdEmit";
 import { sinewaveEmit } from "../sinewaveEmit";
 import { parameterChange } from "../../parameterChange";
@@ -32,6 +32,7 @@ import { voiceEmit } from "../voiceEmit";
 import { loadScenario } from "../../scenario/loadScenario";
 import { execScenario } from "../../scenario/execScenario";
 import { bufferSizeChange } from "../../stream/bufferSizeChange";
+import { glitchChange } from "../../parameterChange/glitchChange";
 import { modulationByBPM } from "./modulationByBPM";
 
 import { putLogFile } from "../../logging/putLogFile";
@@ -42,22 +43,20 @@ import { scheduleSplitCmd } from "../../schedule/scheduleSplitCmd";
 import { getScheduleFromSplitSpace } from "../../schedule/getScheduleFromSplitSpace";
 import { deleteLog } from "../../logging/deleteLog";
 import { getTypeArr } from "./getTypeArr";
+
+import { initRedis } from "../../redis/initRedis";
+
 import { splitRandomRate } from "./splitRandomRate";
 import { splitModulation } from "./splitModulation";
 import { splitArduino } from "./splitArduino";
-import { quantizeObjType } from "../../../../../types";
 import { splitVoskCmd } from "./splitVoskCmd";
 import { splitRotate } from "./splitRotate";
 import { splitToPostgres } from "./splitToPostgres";
+import { splitPlaybackWithIndex } from "./splitPlaybackWithIndex";
 
-import { millisecondsPerBar } from "../../../../util/bpmCalc";
-import { joinOrLeave, offerReq, answerReq } from "../../webRTC";
-import { getStream, decodeAudio } from "../../stream/toPostgres/getStream";
-import { pushStateStream } from "../../stream/pushStateStream";
 
 export const splitSpace = async (
   stringArr: Array<string>,
-  io: SocketIO.Server,
   // state: cmdStateType,
   source?: string,
 ) => {
@@ -66,48 +65,49 @@ export const splitSpace = async (
   // console.log(stringArr)
 
   if (arrTypeArr[0] === "number") {
-    numTarget(stringArr, arrTypeArr, io);
+    numTarget(stringArr, arrTypeArr);
     if (stringArr[1] !== "VOICE") {
       voiceEmit(
-        io,
         stringArr.slice(1).join(" "),
         source !== undefined ? source : "all",
       );
     }
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
     // RANDOMのみRATEとSTREAMがあるので個別処理
-    if (stringArr[0] === "RANDOM") {
-      splitRandomRate(stringArr, io);
+    if (stringArr[0] === "GLITCH") {
+      glitchChange({value: stringArr[1] === "ON" || stringArr[1] === "TRUE" ? 1 : 0});
+    } else if (stringArr[0] === "RANDOM") {
+      splitRandomRate(stringArr);
     } else if (stringArr[0] === "VOICE") {
       //  } else if (stringArr[0] === 'VOICE' && stringArr.length === 2 && arrTypeArr[1] === 'string') {
       if (stringArr[1] === "JA" || stringArr[1] === "JP") {
         cmdState.voiceLang = "ja-JP";
-        stringEmit(io, "VOICE: ja-JP");
+        stringEmit("VOICE: ja-JP");
         if (stringArr.length > 2) {
           const voiceText = stringArr.slice(2).join(" ");
           if (source !== undefined) {
-            voiceEmit(io, voiceText, source);
+            voiceEmit(voiceText, source);
           } else {
-            voiceEmit(io, voiceText, "all");
+            voiceEmit(voiceText, "all");
           }
         }
       } else if (stringArr[1] === "EN" || stringArr[1] === "US") {
         cmdState.voiceLang = "en-US";
-        stringEmit(io, "VOICE: en-US");
+        stringEmit("VOICE: en-US");
         if (stringArr.length > 2) {
           const voiceText = stringArr.slice(2).join(" ");
           if (source !== undefined) {
-            voiceEmit(io, voiceText, source);
+            voiceEmit(voiceText, source);
           } else {
-            voiceEmit(io, voiceText, "all");
+            voiceEmit(voiceText, "all");
           }
         }
       } else {
         const voiceText = stringArr.slice(1).join(" ");
         if (source !== undefined) {
-          voiceEmit(io, voiceText, source);
+          voiceEmit(voiceText, source);
         } else {
-          voiceEmit(io, voiceText, "all");
+          voiceEmit(voiceText, "all");
         }
       }
     } else {
@@ -132,18 +132,18 @@ export const splitSpace = async (
           argVal = Number(stringArr[2]);
         }
       }
-      parameterChange(parameterList[stringArr[0]], io, {
+      parameterChange(parameterList[stringArr[0]], {
         value: argVal,
         property: argProp,
       });
       // stringEmit(io, stringArr[0] + " " + stringArr[1]);
     }
   } else if (stringArr[0] === "ALL") {
-    voiceEmit(io, stringArr.join(" "), source !== undefined ? source : "all");
+    voiceEmit(stringArr.join(" "), source !== undefined ? source : "all");
 
     if (arrTypeArr[1] === "string" && !streamList.includes(stringArr[1])) {
       clientState.cmdClient.forEach((client, index) => {
-        cmdEmit(stringArr[1], io, client);
+        cmdEmit(stringArr[1], client);
       });
       // Object.keys(clientState.client).forEach((target) => {
       //   cmdEmit(stringArr[1], io, target);
@@ -151,14 +151,14 @@ export const splitSpace = async (
     } else if (arrTypeArr[1] === "number") {
       clientState.cmdClient.forEach((client, index) => {
         // Object.keys(clientState.client).forEach((target) => {
-        sinewaveEmit(Number(stringArr[1]), io, client);
+        sinewaveEmit(Number(stringArr[1]), client);
       });
     } else if (streamList.includes(stringArr[1])) {
       streamState.target[stringArr[1]] = [];
-      streamEmit(stringArr[1], io);
+      streamEmit(stringArr[1]);
     } else if (stringArr[1] === "CHAT") {
       streamState.target["CHAT"] = clientState.streamClient;
-      chatPreparation(io);
+      chatPreparation();
     }
   } else if (
     stringArr[0] === "BUFFER" ||
@@ -166,7 +166,7 @@ export const splitSpace = async (
   ) {
     const input = Number(stringArr[1]);
     streamState.basisBufferSize = bufferSizeChange(input);
-    stringEmit(io, `BufferSize: ${streamState.basisBufferSize}`);
+    stringEmit(`BufferSize: ${streamState.basisBufferSize}`);
   } else if (
     (stringArr[1] === "CHAT" ||
       (streamList.includes(stringArr[1]) && stringArr[0] !== "GET")) &&
@@ -189,14 +189,15 @@ export const splitSpace = async (
       console.log(streamState.target);
       if (stringArr[1] === "CHAT") {
         console.log("debug");
-        chatPreparation(io);
+        chatPreparation();
       } else {
-        streamEmit(stringArr[1], io);
+        streamEmit(stringArr[1]);
       }
     }
   } else if (stringArr[0] === "CLEAR") {
     if (stringArr[1] === "BUFFER") {
-      for (let stream in streams) {
+      const allKeys = await streamsRedis.getAllKeys();
+      for (const stream of allKeys) {
         if (
           stream !== "CHAT" &&
           stream !== "EMPTY" &&
@@ -204,22 +205,21 @@ export const splitSpace = async (
           stream !== "SNARE" &&
           stream !== "HAT"
         ) {
-          streams[stream].audio = [];
-          streams[stream].video = [];
+          await streamsRedis.clear(stream);
         }
       }
     } else if (streamList.includes(stringArr[1])) {
-      streams[stringArr[1]].audio = [];
-      streams[stringArr[1]].video = [];
+      await streamsRedis.clear(stringArr[1]);
     } else if (stringArr[1] === "INDEX") {
-      for (let stream in streams) {
-        streams[stream].index = 0;
+      const allKeys = await streamsRedis.getAllKeys();
+      for (const stream of allKeys) {
+        await streamsRedis.setIndex(stream, 0);
       }
     }
     // } else if (stringArr[0] === "FADE" && Object.keys(cmdList).includes(stringArr[1])) {
   } else if (stringArr[0] === "FADE") {
-    fadeCmd(stringArr, arrTypeArr, io);
-    voiceEmit(io, stringArr.join(" "), source);
+    fadeCmd(stringArr, arrTypeArr);
+    voiceEmit(stringArr.join(" "), source);
   } else if (
     stringArr[0] === "GAIN" &&
     stringArr.length === 3 &&
@@ -228,7 +228,7 @@ export const splitSpace = async (
   ) {
     cmdState.GAIN[stringArr[1]] = Number(stringArr[2]);
     console.log(cmdState.GAIN);
-    stringEmit(io, stringArr[1] + " GAIN: " + stringArr[2]);
+    stringEmit(stringArr[1] + " GAIN: " + stringArr[2]);
     // 動作確認用
   } else if (
     stringArr[0] === "GAIN" &&
@@ -238,7 +238,6 @@ export const splitSpace = async (
       cmdState.GAIN[stringArr[1]] = Number(stringArr[2]);
     }
     stringEmit(
-      io,
       `${stringArr[1]} GAIN: ${String(cmdState.GAIN[stringArr[1]])}`,
       true,
     );
@@ -270,15 +269,15 @@ export const splitSpace = async (
     //     stringEmit(io, "GET BUSHBASH MEMORY: FAILED");
     //   }
     // } else {
-      stringEmit(io, `GETTING ${stringArr.slice(1).join(" ")}...`, true);
+      stringEmit(`GETTING ${stringArr.slice(1).join(" ")}...`, true);
       if (stringArr[1] === "LIVESTREAM") {
         if (stringArr.length === 2) {
           const result = await getLiveStream("LIVESTREAM");
           console.log("get livestream", result);
           if (result) {
-            stringEmit(io, "GET LIVESTREAM: SUCCESS");
+            stringEmit("GET LIVESTREAM: SUCCESS");
           } else {
-            stringEmit(io, "GET LIVESTREAM: FAILED");
+            stringEmit("GET LIVESTREAM: FAILED");
           }
         } else {
           const qWord = stringArr.slice(1).join(" ");
@@ -286,25 +285,25 @@ export const splitSpace = async (
           const result = await getLiveStream("LIVESTREAM", qWord);
           console.log("get livestream", result);
           if (result) {
-            stringEmit(io, "GET LIVESTREAM: SUCCESS");
+            stringEmit("GET LIVESTREAM: SUCCESS");
           } else {
-            stringEmit(io, "GET LIVESTREAM: FAILED");
+            stringEmit("GET LIVESTREAM: FAILED");
           }
         }
       } else {
         const result = await getLiveStream(stringArr[1]);
         console.log("get livestream as ", stringArr[1], result);
         if (result) {
-          stringEmit(io, "GET LIVESTREAM: SUCCESS");
+          stringEmit("GET LIVESTREAM: SUCCESS");
         } else {
-          stringEmit(io, "GET LIVESTREAM: FAILED");
+          stringEmit("GET LIVESTREAM: FAILED");
         }
       }
     // }
   } else if (stringArr[0] === "HELP") {
-    helpPrint(stringArr.slice(1), io);
+    helpPrint(stringArr.slice(1));
   } else if (stringArr[0] === "INSERT" || stringArr[0] === "FIND") {
-    splitToPostgres(stringArr, arrTypeArr, io);
+    splitToPostgres(stringArr, arrTypeArr);
 
     /*
     if (
@@ -314,26 +313,26 @@ export const splitSpace = async (
       insertStream(stringArr[1], io);
     }
     */
-  } else if (
-    (stringArr[0] === "JOIN" ||
-      stringArr[0] === "OFFER" ||
-      stringArr[0] === "ANSWER") &&
-    stringArr[1] === "ALL"
-  ) {
-    console.log(`${stringArr[0]} ALL clients to WebRTC room`);
-    if (stringArr[0] === "JOIN") {
-      Object.keys(clientState.client).forEach((id) => {
-        joinOrLeave("JOIN", io, id);
-      });
-    } else if (stringArr[0] === "OFFER") {
-      Object.keys(clientState.client).forEach((id) => {
-        offerReq(io, id);
-      });
-    } else if (stringArr[0] === "ANSWER") {
-      Object.keys(clientState.client).forEach((id) => {
-        answerReq(io, id);
-      });
-    }
+  // } else if (
+  //   (stringArr[0] === "JOIN" ||
+  //     stringArr[0] === "OFFER" ||
+  //     stringArr[0] === "ANSWER") &&
+  //   stringArr[1] === "ALL"
+  // ) {
+  //   console.log(`${stringArr[0]} ALL clients to WebRTC room`);
+  //   if (stringArr[0] === "JOIN") {
+  //     Object.keys(clientState.client).forEach((id) => {
+  //       joinOrLeave("JOIN", io, id);
+  //     });
+  //   } else if (stringArr[0] === "OFFER") {
+  //     Object.keys(clientState.client).forEach((id) => {
+  //       offerReq(io, id);
+  //     });
+  //   } else if (stringArr[0] === "ANSWER") {
+  //     Object.keys(clientState.client).forEach((id) => {
+  //       answerReq(io, id);
+  //     });
+  //   }
   } else if (stringArr[0] === "LOG") {
     if (
       stringArr[1] === "FILE" ||
@@ -342,9 +341,9 @@ export const splitSpace = async (
     ) {
       const result = await putLogFile();
       if (result) {
-        stringEmit(io, "LOG: PUT SUCCESS");
+        stringEmit("LOG: PUT SUCCESS");
       } else {
-        stringEmit(io, "LOG: PUT FAILED");
+        stringEmit("LOG: PUT FAILED");
       }
 
       // console.log(result);
@@ -354,100 +353,83 @@ export const splitSpace = async (
       //   stringEmit(io, "LOG: FAILED");
       // }
     } else if (stringArr[1] === "IMPORT") {
-      const result = getScheduleFromSplitSpace(stringArr, io);
+      const result = getScheduleFromSplitSpace(stringArr);
       if (!result) {
-        stringEmit(io, "LOG: IMPORT FAILED");
+        stringEmit("LOG: IMPORT FAILED");
       }
     } else if (stringArr[1] === "CLEAR") {
       deleteLog();
     }
   } else if (stringArr[0] === "PA") {
-    splitPaTarget(stringArr, arrTypeArr, io);
+    splitPaTarget(stringArr, arrTypeArr);
+  } else if (stringArr[0] === "PLAYBACK" && arrTypeArr[1] === "number") {
+    splitPlaybackWithIndex(Number(stringArr[1]));
+
   } else if (stringArr[0] === "QUANTIZE") {
-    splitQuantize(stringArr.splice(1), io);
+    splitQuantize(stringArr.splice(1));
   } else if (
     stringArr[0] === "RECORD" &&
     stringArr[1] === "AS" &&
     stringArr.length === 3
   ) {
-    recordAsOtherEmit(io, stringArr[2]);
+    recordAsOtherEmit(stringArr[2]);
+  } else if (stringArr[0] === "REDIS") {
+    if (stringArr[1] === "CLEAR") {
+      await initRedis();
+      stringEmit("REDIS CLEARED");
+    }
   } else if (stringArr[0] === "ROTATE") {
-    splitRotate(stringArr.splice(1), io);
+    splitRotate("rotation", stringArr.splice(1));
   } else if (stringArr[0] === "SCENARIO" || stringArr[0] === "START") {
     const scenario = await loadScenario(stringArr[1]);
-    await execScenario(scenario, io);
+    await execScenario(scenario);
   } else if (stringArr[1] === "SOLO") {
-    solo(stringArr, arrTypeArr, io);
+    solo(stringArr, arrTypeArr);
   } else if (stringArr[0] === "STOP") {
-    voiceEmit(io, stringArr.join(" "), source);
+    voiceEmit(stringArr.join(" "), source);
 
-    splitStop(stringArr, io);
+    splitStop(stringArr);
     // } else if (stringArr[0] === "FADE") {
   } else if (stringArr[0] === "SWITCH" || stringArr[0] === "ARDUINO") {
-    splitArduino(stringArr, io);
+    splitRotate("vibration", stringArr.splice(1));
+    // splitArduino(stringArr);
   } else if (stringArr[0] === "TIMELAPSE") {
     console.log("timelapse split", stringArr[1]);
     if (stringArr[1] === "FALSE" || stringArr[1] === "OFF") {
-      io.emit("timelapseFromServer", {
+      ioState?.io.emit("timelapseFromServer", {
         cmd: "FALSE",
       });
     } else if (stringArr[1] === "TRUE" || stringArr[1] === "ON") {
-      io.emit("timelapseFromServer", {
+      ioState?.io.emit("timelapseFromServer", {
         cmd: "TRUE",
       });
     } else if (stringArr[1] === "GET" || stringArr[1] === "FETCH") {
-      io.emit("timelapseFromServer", {
+      ioState?.io.emit("timelapseFromServer", {
         cmd: "GET",
       });
     }
-  } else if (stringArr[0] === "TWITTER" || stringArr[0] === "X") {
-    const result = await getTimeLine(stringArr, io);
-    if (result) {
-      //stringEmit(io, "GET TIMELINE: SUCCESS");
-    } else {
-      stringEmit(io, "GET TIMELINE: FAILED");
-    }
   } else if (stringArr[0] === "UPLOAD" && stringArr.length == 2) {
-    voiceEmit(io, stringArr.join(" "), source);
+    voiceEmit(stringArr.join(" "), source);
 
     // const uploadResult = await uploadStream(stringArr);
     // uploadStream(stringArr, io);
     const result = await uploadStream(stringArr);
     console.log(result);
-    stringEmit(io, result, true);
-  } else if (stringArr[0] === "VIDEO" || stringArr[0] === "HLS") {
-    const cmd: {
-      cmd: string;
-      property: string;
-      value: number;
-      flag: boolean;
-      target?: string;
-      overlay?: boolean;
-      fade?: number;
-      portament?: number;
-      gain?: number;
-      solo?: boolean;
-    } = {
-      cmd: "HLS",
-      property: stringArr[1],
-      value: 0,
-      flag: true,
-    };
-    io.emit("cmdFromServer", cmd);
+    stringEmit(result, true);
   } else if (stringArr[0] === "VOSK") {
-    splitVoskCmd(stringArr.splice(1), arrTypeArr.splice(1), io);
+    splitVoskCmd(stringArr.splice(1), arrTypeArr.splice(1));
   } else if (stringArr[0].includes(":")) {
-    scheduleSplitCmd(stringArr, source, io);
+    scheduleSplitCmd(stringArr, source);
   } else if (
     arrTypeArr[1] === "number" &&
     (stringArr[0] === "MODULATION" || stringArr[0] === "MOD")
   ) {
-    splitModulation(stringArr, arrTypeArr, io);
+    splitModulation(stringArr, arrTypeArr);
   } else {
-    stringEmit(io, stringArr.join(" "), false);
+    stringEmit(stringArr.join(" "), false);
     if (cmdState.VOICE.length > 0) {
       console.log("voiceEmit split space");
-      voiceEmit(io, stringArr.join(" "), "scenario");
+      voiceEmit(stringArr.join(" "), "scenario");
     }
   }
 };

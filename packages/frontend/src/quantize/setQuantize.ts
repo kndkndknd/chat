@@ -12,7 +12,7 @@ import {
 } from "../state";
 import { chatReq } from "../stream";
 import { quantizePlay } from "./quantizePlay";
-import { millisecondsPerBar } from "../../../util/bpmCalc";
+import { millisecondsPerBar } from "../util/bpmCalc";
 
 export const setQuantize = (
   data: bpmStreamStateType

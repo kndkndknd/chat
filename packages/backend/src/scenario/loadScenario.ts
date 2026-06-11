@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-const dirPath = path.join(__dirname, "../../../../..", "chat_scenario");
+const dirPath = path.join(__dirname, "../../../../", "scenario");
 
 export const loadScenario = async (
   scenarioName?: string

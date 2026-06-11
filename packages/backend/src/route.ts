@@ -1,5 +1,4 @@
-import SocketIO from "socket.io"
-export function selectOtherClient(rooms:SocketIO.Namespace, source:string) {
+export function selectOtherClient(rooms: any, source:string) {
   let targetArr: Array<string> = []
 
   for(let id in rooms) {
@@ -16,7 +15,7 @@ export function selectOtherClient(rooms:SocketIO.Namespace, source:string) {
   return targetID
 }
 
-export function roomEmit(io:SocketIO.Server, func:string, arg:{cmd:string, property?: string, value?:number, flag?:boolean, obj?: {}}, target:{}) {
+export function roomEmit(io:any, func:string, arg:{cmd:string, property?: string, value?:number, flag?:boolean, obj?: {}}, target:{}) {
   for(let key in target) {
     if(key in io.sockets.adapter.rooms) {
       io.to(key).emit(func, arg)
@@ -26,7 +25,7 @@ export function roomEmit(io:SocketIO.Server, func:string, arg:{cmd:string, prope
   }
 }
 
-export function pickupTarget(io:SocketIO.Server, list:{}, sourceId:string){
+export function pickupTarget(io:any, list:{}, sourceId:string){
   let idArr = []
   let idStrArr = []
   if(io.sockets.adapter.rooms !== undefined) {

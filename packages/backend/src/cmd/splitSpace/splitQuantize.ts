@@ -65,21 +65,21 @@ export function classifyArgs(input: string[]): quantizeParamClass {
   return params;
 }
 
-export const splitQuantize = (paramArr, io, target?: string) => {
+export const splitQuantize = (paramArr, target?: string) => {
   console.log("debug quantize", paramArr);
   if (
     (paramArr.length === 1 && paramArr[0] === "HELP") ||
     paramArr[0] === "?"
   ) {
     const strings = `QUANTIZE (stream or ALL) (beat or 0) (ON/TRUE or OFF/FALSE)`;
-    stringEmit(io, strings, false);
+    stringEmit(strings, false);
   } else {
     const params = classifyArgs(paramArr);
     const targetClient = target !== undefined ? target : "all";
     const quantizeObj = setParamsSplitQuantize(params, targetClient);
     console.log("splitQuantize return: ", quantizeObj);
     setBpmState(quantizeObj);
-    emitQuantize(quantizeObj, io);
+    emitQuantize(quantizeObj);
 
     // io.emit("quantizeFromServer", quantizeObj);
   }

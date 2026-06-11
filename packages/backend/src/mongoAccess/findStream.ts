@@ -1,8 +1,6 @@
-import SocketIO from "socket.io";
 import dotenv from "dotenv";
 import path from "path";
-import { cmdList, streamList, parameterList, streams } from "../data";
-// import { stringEmit } from "../socket/ioEmit.js";
+import { cmdList, streamList, parameterList, streamsRedis } from "../data";
 import { pushStateStream } from "../stream/pushStateStream";
 
 const dotenvPath = path.resolve(__dirname, "../../../../.env");
@@ -22,7 +20,6 @@ interface streamInterface {
 export const findStream = async (
   key: string,
   value: string = "UNDEFINED",
-  io: SocketIO.Server
 ) => {
   const queryParams = new URLSearchParams({
     name: "20230527",
@@ -32,65 +29,32 @@ export const findStream = async (
   const res = fetch(`http://${ipaddress}:3030/find?${queryParams}`)
     .then((response) => response.body)
     .then((body) => {
-      // const reader = body?.getReader();
       console.log(body);
     })
     .catch((error) => {
       console.error("Error:", error);
     });
-  // .then(response => {
-  //   const reader = response.body.getReader();
-
-  // // })
-  // const resBody = <ReadableStream<Uint8Array>>res.body;
-  // const reader = resBody.pipeThrough(new TextDecoderStream()).getReader();
-  // let i = 1;
-  // let str = "";
-  // const result: Array<streamInterface> = JSON.parse(str);
-  // while (true) {
-  //   const { done, value } = await reader.read();
-  //   if (done) {
-  //     const
-  //     // const audio = new Float32Array(result[0].audio.buffer);
-  //     // pushStream(result);
-  //     // console.log(result[0].audio)
-  //     console.log(i);
-  //     return;
-  //   }
-  //   str = str + value;
-  //   i++;
-  // }
-
-  //  console.log(res.length)
-
-  // return res
 };
 
-const pushStream = (streamArray: Array<streamInterface>) => {
+const pushStream = async (streamArray: Array<streamInterface>) => {
   const type = "FIND";
-  // const type = streamArray[0].type
-  streams[type] = {
-    audio: [],
-    video: [],
-    index: 0,
-    bufferSize: 8192,
-  };
-  streamArray.forEach((element: streamInterface, index: number) => {
-    /*
-    console.log(element.audio)
-    console.log(element.audio.buffer)
-    const audio = new Float32Array(element.audio.buffer)
-    */
+  await streamsRedis.initKey(type);
+  await streamsRedis.clear(type);
+
+  for (const element of streamArray) {
     const audio = new Uint8Array(
       [...atob(element.audio)].map((c) => c.charCodeAt(0))
     ).buffer;
-    console.log(audio);
-
-    // streams[type].audio.push(audio);
-    streams[type].video.push(element.video);
-    // streams[type].index.push(index);
-  });
-  console.log(streams[type].audio[0]);
+    await streamsRedis.push(type, {
+      source: type,
+      audio,
+      video: element.video,
+      bufferSize: 8192,
+      duration: 8192 / 44100,
+    });
+  }
+  const entry = await streamsRedis.get(type, 0);
+  console.log(entry?.audio);
   streamList.push(type);
   pushStateStream(type);
 };

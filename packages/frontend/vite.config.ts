@@ -6,30 +6,25 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: "./html/index.html",
+        snowleopard: "./html/snowleopard.html",
         "chat-processor": path.resolve(
           __dirname,
-          "./src/audioWorklet/chat-processor.js",
+          "./src/audioWorklet/chat-processor.ts",
         ),
         "whitenoise-processor": path.resolve(
           __dirname,
-          "./src/audioWorklet/whitenoise-processor.js",
-        ),
-        form: "./html/form.html",
-        vosk: "./html/vosk.html",
-        rotate: "./html/rotate.html",
-        wsclient: "./html/wsClient.html",
-        torch: "./html/torch.html",
-        // snowleopard: "./src/snowleopard/snowLeopardClient.js",
+          "./src/audioWorklet/whitenoise-processor.ts",
+        )
       },
       output: {
         dir: "../backend/static",
         entryFileNames: (chunk) => {
-          if (chunk.name === "chat-processor") {
-            return "chat-processor.js";
-          }
-          if (chunk.name === "whitenoise-processor") {
-            return "whitenoise-processor.js";
-          }
+          // if (chunk.name === "chat-processor") {
+          //   return "chat-processor.js";
+          // }
+          // if (chunk.name === "whitenoise-processor") {
+          //   return "whitenoise-processor.js";
+          // }
           return "[name].js";
         },
         // entryFileNames: "[name].js",

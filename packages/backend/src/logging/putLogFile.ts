@@ -2,7 +2,7 @@ import * as path from "path";
 import * as fs from "fs";
 
 import { cmdLog } from "../data";
-import { getDateTimeString } from "../../../util/getDateTimeString";
+import { getDateTimeString } from "../util/getDateTimeString";
 
 // cmd 'LOG FILE' to save log file
 export const putLogFile = async () => {

@@ -1,0 +1,6 @@
+[Unit]
+Description=Redis daily RDB snapshot and flush
+
+[Service]
+Type=oneshot
+ExecStart=/home/knd/chat_itsuki/docker/redis/snapshot_and_flush.sh

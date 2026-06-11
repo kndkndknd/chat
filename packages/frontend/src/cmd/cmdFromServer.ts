@@ -8,10 +8,8 @@ import {
   metronome,
 } from "../webaudio";
 import { textPrint, erasePrint } from "../canvasEvent";
-import { hlsVideoPlay } from "../hlsVideo";
 import { flagState } from "../state";
 import { stopCmd } from "./stopCmd";
-// import { frontState } from "./globalVariable";
 
 export const cmdFromServer = (cmd: {
   cmd: string;
@@ -33,17 +31,8 @@ export const cmdFromServer = (cmd: {
         textPrint(cmd.cmd);
       } else {
         textPrint(`STOP ${cmd.cmd}`, { timeout: true, timeoutDuration: 500 });
-        // setTimeout(() => {
-        //   erasePrint();
-        // }, 500);
       }
-      // if(cmd.fade && cmd.gain)
       whitenoise(cmd.flag, cmd.fade, cmd.gain);
-      // if (cinemaFlag) {
-      //   setTimeout(() => {
-      //     erasePrint();
-      //   }, 500);
-      // }
       break;
     case "SINEWAVE":
       // erasePrint(stx, strCnvs);
@@ -53,67 +42,31 @@ export const cmdFromServer = (cmd: {
         textPrint(cmdString);
       } else {
         textPrint(`STOP ${cmdString}`, { timeout: true, timeoutDuration: 500 });
-        // setTimeout(() => {
-        //   erasePrint();
-        // }, 500);
       }
-      // textPrint(cmdString);
-      // if(cmd.fade && cmd.portament && cmd.gain) {
       sinewave(cmd.flag, cmd.value, cmd.fade, cmd.portament, cmd.gain);
-      // if (cinemaFlag) {
-      //   setTimeout(() => {
-      //     erasePrint();
-      //   }, 500);
-      // }
       break;
     case "FEEDBACK":
-      // erasePrint(stx, strCnvs);
       erasePrint();
-      // textPrint("FEEDBACK");
       if (cmd.flag) {
         textPrint(cmd.cmd);
       } else {
         textPrint(`STOP ${cmd.cmd}`, { timeout: true, timeoutDuration: 500 });
-        // setTimeout(() => {
-        //   erasePrint();
-        // }, 500);
       }
-      // if(cmd.fade && cmd.gain)
       feedback(cmd.flag, cmd.fade, cmd.gain);
-      // if (cinemaFlag) {
-      //   setTimeout(() => {
-      //     erasePrint();
-      //   }, 500);
-      // }
       break;
     case "BASS":
-      // if(cmd.gain)
       bass(cmd.flag, cmd.gain);
-      // erasePrint(stx, strCnvs);
       erasePrint();
       if (cmd.flag) {
         textPrint(cmd.cmd);
       } else {
         textPrint(`STOP ${cmd.cmd}`, { timeout: true, timeoutDuration: 500 });
-        // setTimeout(() => {
-        //   erasePrint();
-        // }, 500);
       }
-      // if (cinemaFlag) {
-      //   setTimeout(() => {
-      //     erasePrint();
-      //   }, 500);
-      // }
       break;
     case "CLICK":
-      // if(cmd.gain)
       click(cmd.gain);
-      // erasePrint(stx, strCnvs)
       erasePrint();
       textPrint("CLICK", { timeout: true, timeoutDuration: 300 });
-      // setTimeout(() => {
-      //   erasePrint();
-      // }, 300);
       break;
     case "SIMULATE":
       simulate(cmd.gain);
@@ -122,20 +75,12 @@ export const cmdFromServer = (cmd: {
       console.log("METRONOME");
       metronome(cmd.flag, cmd.value, cmd.gain);
       break;
-    case "HLS":
-      console.log("HLS");
-      erasePrint();
-      hlsVideoPlay(cmd.property);
-      break;
     case "LATENCY":
       flagState.recLatency = !flagState.recLatency;
       textPrint(`LATENCY: ${flagState.recLatency}`, {
         timeout: true,
         timeoutDuration: 500,
       });
-      // setTimeout(() => {
-      //   erasePrint();
-      // }, 500);
       break;
     default:
       break;

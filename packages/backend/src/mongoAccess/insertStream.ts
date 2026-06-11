@@ -1,8 +1,7 @@
-import SocketIO from "socket.io";
 import dotenv from "dotenv";
 import path from "path";
 
-import { streams } from "../data";
+import { streamsRedis } from "../data";
 import { stringEmit } from "../socket/ioEmit";
 
 const dotenvPath = path.resolve(__dirname, "../../../../.env");
@@ -13,52 +12,25 @@ console.log("IP Address:", ipaddress);
 
 export const insertStream = async (
   type: string,
-  io: SocketIO.Server,
   place: string,
   date: string
 ) => {
   try {
     console.log(ipaddress);
+    const buffLen = await streamsRedis.getLength(type);
 
-    // if (type === "PLAYBACK") {
-    //   await streams[type].forEach(async (stream: buffStateType) => {
-    //     await setTimeout(async () => {
-    //       const audio = btoa(
-    //         String.fromCharCode(...new Uint8Array(stream.audio))
-    //       );
-    //       // if (place !== undefined && date !== undefined) {
-    //       await postStream(type, stream.video, audio, place, date);
-    //       // } else {
-    //       //   await postStream(type, stream.video, audio, io);
-    //       // }
-    //     }, 1000);
-    //   });
-    //   await io.emit("stringsFromServer", {
-    //     strings: "INSERT DONE",
-    //     timeout: true,
-    //   });
-    // } else {
-    streams[type].audio.forEach(async (audio: Float32Array, index) => {
+    for (let index = 0; index < buffLen; index++) {
       await setTimeout(async () => {
-        const video = streams[type].video[index];
-        const audioStr = btoa(String.fromCharCode(...new Uint8Array(audio)));
-        // if (place !== undefined && date !== undefined) {
-        await postStream(type, video, audioStr, place, date);
-        // } else {
-        // await postStream(type, video, audioStr, io);
-        // }
+        const entry = await streamsRedis.get(type, index);
+        const audioStr = btoa(String.fromCharCode(...new Uint8Array(entry.audio)));
+        await postStream(type, entry.video, audioStr, place, date);
       }, 1000);
-    });
+    }
 
-    stringEmit(io, "INSERT DONE", true);
-    // await io.emit("stringsFromServer", {
-    //   strings: "INSERT DONE",
-    //   timeout: true,
-    // });
-    // }
+    stringEmit("INSERT DONE", true);
   } catch (error) {
     console.log(error);
-    stringEmit(io, "INSERT ERROR", true);
+    stringEmit("INSERT ERROR", true);
   }
 };
 
@@ -66,7 +38,6 @@ const postStream = async (
   type: string,
   video: string,
   audio: string,
-  // io: SocketIO.Server,
   place: string,
   date: string
 ) => {
@@ -77,10 +48,6 @@ const postStream = async (
     location: place,
     name: date,
   };
-  // if (place !== undefined && date !== undefined) {
-  // body["location"] = place;
-  // body["name"] = date;
-  // }
   const options = {
     method: "POST",
     body: JSON.stringify(body),
@@ -98,7 +65,6 @@ const postStream = async (
           console.log(value);
           return;
         }
-        // console.log(value);
       }
     }
   } catch (error) {

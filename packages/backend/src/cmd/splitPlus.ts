@@ -1,4 +1,4 @@
-import SocketIO from "socket.io";
+import { ioState } from "../state/states/ioState";
 import { cmdEmit } from "./cmdEmit";
 import { sinewaveEmit } from "./sinewaveEmit";
 import { chatPreparation } from "../stream/chatPreparation";
@@ -13,7 +13,6 @@ import { mergeStreamTarget } from "../stream/mergeStreamTarget";
 
 export const splitPlus = (
   stringArr: Array<string>,
-  io: SocketIO.Server,
   // state: cmdStateType
 ) => {
   const arrTypeArr = getTypeArr(stringArr);
@@ -21,14 +20,14 @@ export const splitPlus = (
   stringArr.forEach((string, index) => {
     // const target = Object.keys(clientState.client)[Number(stringArr[0])];
     if (string === "CHAT") {
-      chatPreparation(io);
+      chatPreparation();
     } else if (string === "RECORD" || string === "REC") {
       if (!currentState.RECORD) {
         currentState.RECORD = true;
-        io.emit("recordReqFromServer", { target: "PLAYBACK", timeout: 10000 });
+        ioState?.io.emit("recordReqFromServer", { target: "PLAYBACK", timeout: 10000 });
         if (cmdState.VOICE.length > 0) {
           cmdState.VOICE.forEach((element) => {
-            io.to(element).emit("voiceFromServer", {
+            ioState?.io.to(element).emit("voiceFromServer", {
               text: "RECORD",
               lang: cmdState.voiceLang,
             });
@@ -39,15 +38,15 @@ export const splitPlus = (
       }
     } else if (streamList.includes(string)) {
       currentState.stream[string] = true;
-      streamEmit(string, io);
+      streamEmit(string);
     } else if (Object.keys(cmdList).includes(string)) {
       const target = clientState.cmdClient[Number(stringArr[0])];
-      cmdEmit(cmdList[string], io, target);
+      cmdEmit(cmdList[string], target);
     } else if (Number.isFinite(Number(string))) {
       const target = clientState.cmdClient[Number(stringArr[0])];
-      sinewaveEmit(Number(string), io, target);
+      sinewaveEmit(Number(string), target);
     } else if (string === "TWICE" || string === "HALF") {
-      sinewaveChange(string, io);
+      sinewaveChange(string);
       // } else if (strings === 'PREVIOUS' || strings === 'PREV') {
       // previousCmd(io, state)
     } else if (Object.keys(parameterList).includes(string)) {
@@ -57,9 +56,9 @@ export const splitPlus = (
           : string === "VOICE" || string === "BPM"
             ? Object.keys(clientState.client)[Number(stringArr[0])]
             : mergeStreamTarget(streamState)[Number(stringArr[0])];
-      parameterChange(parameterList[string], io, { source: target });
+      parameterChange(parameterList[string], { source: target });
     } else if (string === "STOP") {
-      stopEmit(io, "", "ALL");
+      stopEmit("", "ALL");
     }
   });
 };

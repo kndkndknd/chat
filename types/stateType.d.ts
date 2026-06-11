@@ -11,7 +11,7 @@ export type gainStateType = {
   GLITCH: number;
   SIMULATE: number;
   METRONOME: number;
-}
+};
 
 export type cmdStateType = {
   GAIN: gainStateType;
@@ -111,8 +111,14 @@ export type clientStateType = {
       };
       self: boolean;
       snowLeopard: boolean;
+      index: number;
+      facedetection: boolean;
+      hanged: boolean;
     };
   };
+  arduinoClient?: {
+    [key: string]: boolean;
+  }
   cmdClient: string[];
   streamClient: string[];
   sinewaveClient: string[];
@@ -156,14 +162,6 @@ export type previousStateType = {
   RECORD: boolean;
 };
 
-export type formStateType = {
-  hls: {
-    [key: string]: string;
-  };
-  cmd: {
-    [key: string]: string;
-  };
-};
 
 export type webStateType = {
   flag: boolean;
@@ -191,4 +189,9 @@ export type arduinoStateType = {
   port: number;
   connected: boolean;
   relay: "on" | "off";
+};
+
+export type m5StateType = {
+  rotation: arduinoStateType;
+  vibration: arduinoStateType;
 };

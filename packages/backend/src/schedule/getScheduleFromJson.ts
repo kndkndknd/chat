@@ -1,6 +1,6 @@
-import { LogType } from "../../../types/log_schedule";
+import { LogType } from "../../../../types";
 import { exchangeRelativeSchedule } from "./exchangeRelativeSchedule";
-import { getTime } from "../../../util/getTime";
+import { getTime } from "../util/getTime";
 
 export const getScheduleFromJson = async (log: LogType[]) => {
   console.log(log[0].date);

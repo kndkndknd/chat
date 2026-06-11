@@ -2,14 +2,14 @@ import { playAudioStream } from "./playAudioStream";
 import { chatReq } from "../chatReq";
 import { showImage, textPrint, erasePrint } from "../../canvasEvent";
 import { flagState } from "../../state";
-import { Socket } from "socket.io-client";
+import { SocketFacade } from "../../socket/SocketFacade";
 import { filterStateType } from "../../../../../types";
 
 let debugCount = 0;
 
 export const streamPlay = async (
   type: "CHAT" | "STREAM",
-  socket: Socket,
+  socket: SocketFacade,
   stream: {
     audio: Float32Array;
     sampleRate: number;
@@ -20,9 +20,14 @@ export const streamPlay = async (
     source?: string;
     floating?: boolean;
     filter?: filterStateType;
+    index?: number;
   },
   cinemaFlag?: boolean
 ) => {
+  const streamReq =
+    stream.index !== undefined
+      ? { source: stream.source, index: stream.index }
+      : stream.source;
   // if (!frontState.quantize.flag) {
   // console.log("chatFromServer");
   // console.log("socket.id(socket.on): " + String(socket.id));
@@ -49,7 +54,7 @@ export const streamPlay = async (
     console.log("debugCount:", debugCount);
     setTimeout(() => {
       if (type !== "CHAT") {
-        socket.emit("streamReqFromClient", stream.source);
+        socket.emit("streamReqFromClient", streamReq);
       } else {
         console.log("debugCount in setTimeout:", debugCount);
         chatReq(socket.id);

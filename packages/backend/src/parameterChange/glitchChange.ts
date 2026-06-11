@@ -1,7 +1,7 @@
-import { cmdState, glitchState } from "../state";
+import { glitchState } from "../state";
 import { stringEmit } from "../socket/ioEmit";
 
-export const glitchChange = (arg, io) => {
+export const glitchChange = (arg) => {
   if (arg && arg.property) {
     glitchState.glitch[arg.property] = !glitchState.glitch[arg.property];
     // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(glitchState.glitch[arg.source]), timeout: true})
@@ -10,11 +10,16 @@ export const glitchChange = (arg, io) => {
     //   `GLITCH ${arg.property}: ${glitchState.glitch[arg.property]}`
     // );
     stringEmit(
-      io,
       `GLITCH ${arg.property}: ${glitchState.glitch[arg.property]}`,
       true
       // state
     );
+  } else if (arg && arg.value !== undefined) {
+    Object.keys(glitchState.glitch).forEach((key) => {
+      glitchState.glitch[key] = arg.value === 1 ? true : false;
+    });
+    // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(glitchState.glitch.CHAT), timeout: true})
+    stringEmit("GLITCH: " + String(glitchState.glitch.CHAT), true);
   } else {
     let flag = false;
     if (Object.values(glitchState.glitch).includes(false)) {
@@ -24,6 +29,6 @@ export const glitchChange = (arg, io) => {
       glitchState.glitch[target] = flag;
     }
     // io.emit('stringsFromServer',{strings: 'GLITCH: ' + String(glitchState.glitch.CHAT), timeout: true})
-    stringEmit(io, "GLITCH: " + String(glitchState.glitch.CHAT), true);
+    stringEmit("GLITCH: " + String(glitchState.glitch.CHAT), true);
   }
 };

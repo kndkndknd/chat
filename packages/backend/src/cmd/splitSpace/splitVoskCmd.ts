@@ -1,19 +1,20 @@
+import { ioState } from "../../state/states/ioState";
 import { flagState } from "../../state";
 
-export const splitVoskCmd = (stringArr: string[], arrTypeArr: string[], io) => {
+export const splitVoskCmd = (stringArr: string[], arrTypeArr: string[]) => {
   console.log("splitQuantize: ", stringArr);
   console.log("arrTypeArr: ", arrTypeArr);
 
   if (stringArr.length === 0) {
     // flagState.vosk = !flagState.vosk;
-    io.emit("voskCallFromServer");
+    ioState?.io.emit("voskCallFromServer");
 
     // io.emit("voskCtrlFromServer", {
     //   type: "flag",
     //   flag: flagState.vosk,
     // });
   } else if (stringArr.length === 1 && arrTypeArr[0] === "number") {
-    io.emit("voskCtrlFromServer", {
+    ioState?.io.emit("voskCtrlFromServer", {
       type: "interval change",
       value: Number(stringArr[0]),
     });
@@ -24,7 +25,7 @@ export const splitVoskCmd = (stringArr: string[], arrTypeArr: string[], io) => {
       stringArr[0] === "START")
   ) {
     flagState.vosk = true;
-    io.emit("voskCtrlFromServer", {
+    ioState?.io.emit("voskCtrlFromServer", {
       type: "flag",
       flag: flagState.vosk,
     });
@@ -35,7 +36,7 @@ export const splitVoskCmd = (stringArr: string[], arrTypeArr: string[], io) => {
       stringArr[0] === "STOP")
   ) {
     flagState.vosk = false;
-    io.emit("voskCtrlFromServer", {
+    ioState?.io.emit("voskCtrlFromServer", {
       type: "flag",
       flag: flagState.vosk,
     });

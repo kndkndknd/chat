@@ -1,7 +1,7 @@
 import { bpmState } from "../state";
 import { stringEmit } from "../socket/ioEmit";
 
-export const gridChange = (arg, io) => {
+export const gridChange = (arg?: { source?: string; value?: number; property?: string }) => {
   if (arg && arg.property) {
     if (arg.property !== "TRUE" && arg.property !== "FALSE") {
       let averageFlag = 0;
@@ -24,10 +24,10 @@ export const gridChange = (arg, io) => {
         }
       }
       stringEmit(
-        io,
         "GRID: " +
           String(
-            bpmState[Object.keys(bpmState)[0]].stream[arg.property].gridFlag
+            bpmState[Object.keys(bpmState)[0]]?.stream?.[arg.property]
+              ?.gridFlag ?? false
           ) +
           "(" +
           arg.property +
@@ -42,7 +42,6 @@ export const gridChange = (arg, io) => {
         }
       }
       stringEmit(
-        io,
         "GRID: " + arg.property
         // state
       );
@@ -82,9 +81,10 @@ export const gridChange = (arg, io) => {
       }
     }
     stringEmit(
-      io,
       "GRID: " +
-        String(bpmState[Object.keys(bpmState)[0]].stream.CHAT.gridFlag),
+        String(
+          bpmState[Object.keys(bpmState)[0]]?.stream?.CHAT?.gridFlag ?? false
+        ),
       true
     );
   }

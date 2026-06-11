@@ -1,6 +1,6 @@
-import { Socket } from "socket.io-client";
+import { SocketFacade } from "../socket/SocketFacade";
 
-export function canvasSizing(socket?: Socket) {
+export function canvasSizing(socket?: SocketFacade) {
   const windowWidth = window.innerWidth;
   const windowHeight = window.innerHeight;
   const width = String(windowWidth);

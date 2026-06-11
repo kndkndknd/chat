@@ -1,0 +1,12 @@
+{
+  "steps": [
+    {
+      "delayMs": 0,
+      "actions": [{ "type": "playFirstBuffer" }]
+    },
+    {
+      "delayMs": 15000,
+      "actions": [{ "type": "playRestBuffers" }]
+    }
+  ]
+}

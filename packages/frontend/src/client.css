@@ -21,8 +21,14 @@ body #bckcnvs{
   position:absolute;
   z-index:0;
 }
-
-body #cinema{
+body #remoteVideo{
   position:absolute;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  background:transparent;
+  pointer-events:none;
   z-index:1;
 }
