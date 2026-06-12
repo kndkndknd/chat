@@ -1,6 +1,6 @@
 import { loadScenario } from "./loadScenario";
 import { execScenario } from "./execScenario";
-import { loadYesterdayPlayback } from "../mongo/loadYesterdayPlayback";
+// import { loadYesterdayPlayback } from "../mongo/loadYesterdayPlayback";
 import { itsukiState } from "../state/states/itsukiState";
 
 const INTERVAL = 25;
@@ -11,13 +11,13 @@ let itsukiTimer: NodeJS.Timeout | null = null;
 let lastScenarioJson: string | null = null;
 
 const runOnce = async () => {
-  try {
-    await loadYesterdayPlayback();
-    itsukiState.faceDetect.yesterdayLoaded = true;
-  } catch (e) {
-    itsukiState.faceDetect.yesterdayLoaded = false;
-    console.error("[scenarioItsuki] loadYesterdayPlayback error", e);
-  }
+  // try {
+  //   await loadYesterdayPlayback();
+  //   itsukiState.faceDetect.yesterdayLoaded = true;
+  // } catch (e) {
+  //   itsukiState.faceDetect.yesterdayLoaded = false;
+  //   console.error("[scenarioItsuki] loadYesterdayPlayback error", e);
+  // }
   // 毎ループ JSON ファイルを読み直すので、scenario.json を書き換えれば次のループから反映される。
   const scenario = await loadScenario("scenario");
   const scenarioJson = JSON.stringify(scenario);

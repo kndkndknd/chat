@@ -11,6 +11,7 @@ import { stringEmit } from "../../socket/ioEmit";
 import { chatPreparation } from "../../stream/chatPreparation";
 import { splitQuantize } from "./splitQuantize";
 import { numPaSwitch } from "./numPaSwitch";
+import { execStream } from "../execStream";
 
 export const numTarget = (
   stringArr: Array<string>,
@@ -42,13 +43,14 @@ export const numTarget = (
     (streamList.includes(stringArr[1]) || stringArr[1] === "CHAT")
   ) {
     console.log("target stream");
-    streamState.target[stringArr[1]] = [target];
-    console.log(`set ${stringArr[1]} stream`, streamState.target[stringArr[1]]);
-    if (stringArr[1] === "CHAT") {
-      chatPreparation();
-    } else {
-      streamEmit(stringArr[1], target);
-    }
+    execStream(stringArr[1], undefined, undefined, undefined, [target]);
+    // streamState.target[stringArr[1]] = [target];
+    // console.log(`set ${stringArr[1]} stream`, streamState.target[stringArr[1]]);
+    // if (stringArr[1] === "CHAT") {
+    //   chatPreparation();
+    // } else {
+    //   streamEmit(stringArr[1], undefined, undefined, undefined, target);
+    // }
   } else if (stringArr[1] === "RECORD" || stringArr[1] === "REC") {
     recordEmit(target);
   } else if (arrTypeArr[1] === "number") {

@@ -44,7 +44,10 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
       }
     });
 
-    const facedetection = data.urlPathName === "/1" || data.urlPathName === "/2";
+    // /1, /2 のルーティングで顔認証(facedetection)を有効化していたが、その動作をコメントアウト。
+    // 顔認証機能自体(faceDetectScenario など)は残しつつ、このルーティングからは有効化しない。
+    // const facedetection = data.urlPathName === "/1" || data.urlPathName === "/2";
+    const facedetection = false;
     const hanged = data.urlPathName === "/3";
 
     clientState.client[id] = {

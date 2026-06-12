@@ -22,12 +22,12 @@ import {
   nightScheduleState,
   startNightSchedule,
 } from "./scenario/nightSchedule";
-import { getMongoDb } from "./mongo/client";
-import {
-  importStreamToMongo,
-  importAllStreamsToMongo,
-  REDIS_TO_MONGO_ALLOWED,
-} from "./mongo/redisToMongo";
+// import { getMongoDb } from "./mongo/client";
+// import {
+//   importStreamToMongo,
+//   importAllStreamsToMongo,
+//   REDIS_TO_MONGO_ALLOWED,
+// } from "./mongo/redisToMongo";
 import {
   halveStreamByRecordIndex,
   HALVE_ALLOWED,
@@ -82,10 +82,10 @@ app.use(allowCrossDomain);
 //const httpsserver = Https.createServer(options,app).listen(port);
 const options = {
   key: fs.readFileSync(
-    path.join(__dirname, "../../../../..", "keys/chat/private.key")
+    path.join(__dirname, "../../../..", "keys/chat/private.key")
   ),
   cert: fs.readFileSync(
-    path.join(__dirname, "../../../../..", "keys/chat/selfsigned.crt")
+    path.join(__dirname, "../../../..", "keys/chat/selfsigned.crt")
   ),
   passphrase: "chat",
 };
@@ -115,9 +115,9 @@ httpserver.on("error", (err: NodeJS.ErrnoException) => {
 });
 
 // 起動時に一度だけ Mongo へ接続し、疎通を確認する。
-getMongoDb().catch((err) => {
-  console.error("Mongo initial connection failed:", err);
-});
+// getMongoDb().catch((err) => {
+//   console.error("Mongo initial connection failed:", err);
+// });
 
 wsServer(httpserver);
 
@@ -309,30 +309,30 @@ app.post("/api/clear-buffer", async function (req, res) {
 // body.stream を省略すると PLAYBACK / TIMELAPSE の両方を取り込む。
 // 指定する場合は PLAYBACK / TIMELAPSE のいずれかのみ許可する。
 // 同一 timestamp が Mongo 側に既に存在するドキュメントはスキップする。
-app.post("/api/redis-to-mongo", async function (req, res) {
-  const stream: string | undefined = req.body?.stream;
-  try {
-    if (stream === undefined) {
-      const results = await importAllStreamsToMongo();
-      res.json({ success: true, results });
-    } else if (
-      REDIS_TO_MONGO_ALLOWED.includes(
-        stream as (typeof REDIS_TO_MONGO_ALLOWED)[number],
-      )
-    ) {
-      const result = await importStreamToMongo(stream);
-      res.json({ success: true, results: [result] });
-    } else {
-      res.status(400).json({
-        success: false,
-        message: `対象は ${REDIS_TO_MONGO_ALLOWED.join(" / ")} のみです: ${stream}`,
-      });
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: "Something went wrong" });
-  }
-});
+// app.post("/api/redis-to-mongo", async function (req, res) {
+//   const stream: string | undefined = req.body?.stream;
+//   try {
+//     if (stream === undefined) {
+//       const results = await importAllStreamsToMongo();
+//       res.json({ success: true, results });
+//     } else if (
+//       REDIS_TO_MONGO_ALLOWED.includes(
+//         stream as (typeof REDIS_TO_MONGO_ALLOWED)[number],
+//       )
+//     ) {
+//       const result = await importStreamToMongo(stream);
+//       res.json({ success: true, results: [result] });
+//     } else {
+//       res.status(400).json({
+//         success: false,
+//         message: `対象は ${REDIS_TO_MONGO_ALLOWED.join(" / ")} のみです: ${stream}`,
+//       });
+//     }
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ success: false, message: "Something went wrong" });
+//   }
+// });
 
 // 同一 recordIndex のデータを timestamp 昇順の偶数番目で間引く（scripts/redisHalveByRecordIndex.ts 相当）。
 // body.stream を省略すると PLAYBACK / TIMELAPSE の両方を対象にする。

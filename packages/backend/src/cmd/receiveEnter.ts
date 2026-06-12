@@ -10,21 +10,11 @@ import {
 
 import { cmdList, parameterList, streamList } from "../data";
 
-import { streamEmit } from "../stream/streamEmit";
-import { cmdEmit } from "./cmdEmit";
 import { stopEmit } from "./stopEmit";
 import { splitSpace } from "./splitSpace";
 import { splitPlus } from "./splitPlus";
-import { sinewaveEmit } from "./sinewaveEmit";
-import { sinewaveChange } from "./sinewaveChange";
-import { parameterChange } from "../parameterChange";
 import { voiceEmit } from "./voiceEmit";
-import { chatPreparation } from "../stream/chatPreparation";
-// import { putString } from "./putString";
-import { recordEmit } from "../stream/recordEmit";
-import { switchCtrl } from "../arduinoAccess/arduinoAccess";
 import { stringEmit } from "../socket/ioEmit";
-import { previousCmd } from "./previousCmd";
 import { getLiveStream } from "../stream/getLiveStream";
 import { loadScenario } from "../scenario/loadScenario";
 import { execScenario } from "../scenario/execScenario";
@@ -35,9 +25,7 @@ import {
 } from "../scenario/scenarioItsuki";
 import { putCmd } from "./putCmd";
 import { cmdLogging } from "../logging/cmdLogging";
-import { quantizeCmd } from "../stream/quantize";
 import { mergeStreamTarget } from "../stream/mergeStreamTarget";
-import { millisecondsPerBar } from "../util/bpmCalc";
 
 import { execStream } from "../cmd/execStream";
 import { execCmd } from "./execCmd";
@@ -134,44 +122,44 @@ export const receiveEnter = async (
       stopScenarioItsuki();
     }
     await scenarioItsuki();
-  } else if (id === "scenario") {
-    console.log("scenario", strings);
-    if (cmdState.VOICE.length > 0) {
-      console.log("voiceEmit scenario");
-      voiceEmit(strings, "scenario");
-    }
-    stringEmit(strings, false);
+  // } else if (id === "scenario") {
+  //   console.log("scenario", strings);
+  //   if (cmdState.VOICE.length > 0) {
+  //     console.log("voiceEmit scenario");
+  //     voiceEmit(strings, "scenario");
+  //   }
+  //   stringEmit(strings, false);
   } else if (strings === "FLOATING") {
     streamState.floating = !streamState.floating;
     stringEmit("FLOATING: " + streamState.floating, true);
   } else if (strings === "LATENCY") {
     putCmd(mergeStreamTarget(streamState), { cmd: "LATENCY" });
-  } else if (
-    strings === "TWITCASTING" ||
-    strings === "TWICAS" ||
-    strings === "TWITCAS"
-  ) {
-    const qWord = "TWITCASTING";
-    console.log("qWord", qWord);
-    const result = await getLiveStream("LIVESTREAM", qWord);
-    console.log("get livestream", result);
-    if (result) {
-      stringEmit("GET LIVESTREAM: SUCCESS");
-    } else {
-      stringEmit("GET LIVESTREAM: FAILED");
-    }
-  } else if (strings === "BLACK") {
-    // 全端末の画面を真っ黒にする。解除はクライアント側で文字入力時に行う。
-    console.log("BLACK");
-    ioState?.io.emit("blackFromServer");
-  } else if (strings === "NIGHTMODE") {
-    // /api/nightmode {value:true} 相当。全端末の顔認識停止 + scenarioItsuki 停止 + 全端末 BLACK。
-    console.log("NIGHTMODE");
-    enableNightMode();
-  } else if (strings === "MORNINGMODE") {
-    // /api/nightmode {value:false} 相当。ナイトモードを解除（顔認識を元の設定に復元し、BLACK を解除）。
-    console.log("MORNINGMODE");
-    disableNightMode();
+  // } else if (
+  //   strings === "TWITCASTING" ||
+  //   strings === "TWICAS" ||
+  //   strings === "TWITCAS"
+  // ) {
+  //   const qWord = "TWITCASTING";
+  //   console.log("qWord", qWord);
+  //   const result = await getLiveStream("LIVESTREAM", qWord);
+  //   console.log("get livestream", result);
+  //   if (result) {
+  //     stringEmit("GET LIVESTREAM: SUCCESS");
+  //   } else {
+  //     stringEmit("GET LIVESTREAM: FAILED");
+  //   }
+  // } else if (strings === "BLACK") {
+  //   // 全端末の画面を真っ黒にする。解除はクライアント側で文字入力時に行う。
+  //   console.log("BLACK");
+  //   ioState?.io.emit("blackFromServer");
+  // } else if (strings === "NIGHTMODE") {
+  //   // /api/nightmode {value:true} 相当。全端末の顔認識停止 + scenarioItsuki 停止 + 全端末 BLACK。
+  //   console.log("NIGHTMODE");
+  //   enableNightMode();
+  // } else if (strings === "MORNINGMODE") {
+  //   // /api/nightmode {value:false} 相当。ナイトモードを解除（顔認識を元の設定に復元し、BLACK を解除）。
+  //   console.log("MORNINGMODE");
+  //   disableNightMode();
   } else if (strings === "VOSK") {
     console.log("VOSK CALL");
     ioState?.io.emit("voskCallFromServer");

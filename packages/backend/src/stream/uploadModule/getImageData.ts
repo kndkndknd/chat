@@ -26,10 +26,10 @@ export const promiseGetImageData = (f: string, filePath: string, options) => {
 
     const proc = spawn("ffmpeg", ffmpegOption);
     proc.stdout.on("end", async (buff) => {
+      let jpgs = <Array<string>>[];
       try {
         const files = await fs.readdirSync(filePath + "/tmp");
         const base64Arr: string[] = [];
-        let jpgs = <Array<string>>[];
         files.forEach((file) => {
           if (file.includes(fileName) && file.includes(".jpg")) {
             jpgs.push(file);
@@ -45,6 +45,10 @@ export const promiseGetImageData = (f: string, filePath: string, options) => {
       } catch (e) {
         console.error(e);
         reject(["error", String(e)]);
+      } finally {
+        jpgs.forEach((element) => {
+          fs.unlinkSync(filePath + "/tmp/" + element);
+        });
       }
     });
 

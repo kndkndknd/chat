@@ -194,8 +194,8 @@ export const splitSpace = async (
         streamEmit(stringArr[1]);
       }
     }
-  } else if (stringArr[0] === "CLEAR") {
-    if (stringArr[1] === "BUFFER") {
+  } else if (stringArr[0] === "CLEAR" || stringArr[0] === "INIT") {
+    if (stringArr[1] === "BUFFER" || stringArr[1] === "REDIS") {
       const allKeys = await streamsRedis.getAllKeys();
       for (const stream of allKeys) {
         if (
@@ -373,11 +373,6 @@ export const splitSpace = async (
     stringArr.length === 3
   ) {
     recordAsOtherEmit(stringArr[2]);
-  } else if (stringArr[0] === "REDIS") {
-    if (stringArr[1] === "CLEAR") {
-      await initRedis();
-      stringEmit("REDIS CLEARED");
-    }
   } else if (stringArr[0] === "ROTATE") {
     splitRotate("rotation", stringArr.splice(1));
   } else if (stringArr[0] === "SCENARIO" || stringArr[0] === "START") {

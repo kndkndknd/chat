@@ -18,8 +18,10 @@ export const streamEmit = async (
   from?: string,
   timestamp?: number,
   index?: number,
+  target?: string,
 ) => {
   currentState.stream[source] = true;
+  
   console.log(`debug ${source} targetArr`, streamState.target[source]);
   let targetId =
     from === undefined
@@ -31,6 +33,8 @@ export const streamEmit = async (
   if (targetId === "") {
     return;
   }
+  console.log("from:", from);
+  console.log("targetId", targetId);
 
   let buff: buffStateType;
   const buffLen = await streamsRedis.getLength(source);

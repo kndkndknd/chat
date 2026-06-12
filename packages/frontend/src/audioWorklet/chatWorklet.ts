@@ -3,6 +3,8 @@ import { SocketFacade } from "../socket/SocketFacade";
 import { toBase64 } from "../canvasEvent/toBase64";
 import { bufferSizeState, wholeState } from "../state";
 
+let messageCount = 0; // CHAT/TIMELAPSE 以外の送信を間引くためのカウンタ
+
 export async function chatWorklet(stream: MediaStream, socket: SocketFacade) {
   await contextState.audioContext.audioWorklet.addModule("chat-processor.js");
   const source = contextState.audioContext.createMediaStreamSource(stream);
@@ -35,23 +37,31 @@ export async function chatWorklet(stream: MediaStream, socket: SocketFacade) {
       try {
         const ab: ArrayBuffer = payload; // Float32Array.buffer
         const video = toBase64();
+        messageCount++;
         console.log(Object.keys(audioWorkletState.chat.flag));
         Object.keys(audioWorkletState.chat.flag).forEach((streamSource) => {
+          const isChatOrTimelapse =
+            streamSource === "CHAT" || streamSource === "TIMELAPSE";
+          // CHAT/TIMELAPSE 以外はフラグが立ち続けて毎回送信されるため、5回に1回だけ送信する
+          if (!isChatOrTimelapse && messageCount % 8 !== 0) {
+            return;
+          }
           if (audioWorkletState.chat.flag[streamSource]) {
             // socket.emit("audiobufferFromClient", {
             //   buffer: ab,
             //   type: streamSource,
             // });
             console.log("workletFromClient emit:", streamSource);
-            socket.emit("workletBufferFromClient", {
-              video: video,
-              audio: ab,
-              source: streamSource,
-              bufferSize: bufferSizeState.bufferSize,
-              ...(streamSource === "PLAYBACK"
-                ? { index: audioWorkletState.chat.recordIndex.PLAYBACK }
-                : {}),
-            });
+              socket.emit("workletBufferFromClient", {
+                video: video,
+                audio: ab,
+                source: streamSource,
+                bufferSize: bufferSizeState.bufferSize,
+                ...(streamSource === "PLAYBACK"
+                  ? { index: audioWorkletState.chat.recordIndex.PLAYBACK }
+                  : {}),
+              });
+              
             console.log("audio buffer sent for source:", streamSource);
             if (streamSource === "CHAT" || streamSource === "TIMELAPSE") {
               // CHAT と TIMELAPSE は送信後にフラグを下ろす

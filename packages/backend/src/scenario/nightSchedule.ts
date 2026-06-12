@@ -2,7 +2,7 @@ import { ioState } from "../state/states/ioState";
 import { clientState } from "../state";
 import { stopEmit } from "../cmd/stopEmit";
 import { scenarioItsuki, stopScenarioItsuki } from "./scenarioItsuki";
-import { flushPlaybackAndTimelapse } from "../mongo/flushStreams";
+// import { flushPlaybackAndTimelapse } from "../mongo/flushStreams";
 
 export const nightScheduleState = {
   quiet: false,
@@ -29,9 +29,9 @@ const enterQuiet = () => {
 
   ioState?.io.emit("timelapseFromServer", { cmd: "FALSE" });
 
-  flushPlaybackAndTimelapse().catch((e) =>
-    console.error("[nightSchedule] flushPlaybackAndTimelapse error", e)
-  );
+  // flushPlaybackAndTimelapse().catch((e) =>
+  //   console.error("[nightSchedule] flushPlaybackAndTimelapse error", e)
+  // );
 };
 
 const exitQuiet = () => {

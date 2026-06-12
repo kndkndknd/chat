@@ -1,6 +1,6 @@
 import { ioState } from "../state/states/ioState";
 import { pickupStreamTarget, pickupPaStreamTarget } from "./pickupStreamTarget";
-import { currentState } from "../state";
+import { currentState, streamState, clientState } from "../state";
 
 export const chatPreparation = async () => {
   console.log(currentState.stream.CHAT);

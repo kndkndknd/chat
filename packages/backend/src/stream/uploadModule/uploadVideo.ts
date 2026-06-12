@@ -32,12 +32,16 @@ export const uploadVideo = async (f: string, durationArr, mediaDirPath) => {
       const getImageResult = <string[]>(
         await promiseGetImageData(f, mediaDirPath, getPcmOption)
       );
-      console.log("getImageResult", getImageResult.length);
+      // console.log("getImageResult", getImageResult.length);
 
       await streamsRedis.clear(fName);
       const maxLen = Math.max(getPcmResult.length, getImageResult.length);
       const buffArr: buffStateType[] = [];
       for (let i = 0; i < maxLen; i++) {
+        if(!getPcmResult[i] || !getImageResult[i]) {
+          console.warn(`Warning: Missing data at index ${i} for file ${fName}. Skipping this chunk.`);
+          continue;
+        }
         buffArr.push({
           source: fName,
           audio: (getPcmResult[i] as ArrayBuffer) ?? new ArrayBuffer(0),
