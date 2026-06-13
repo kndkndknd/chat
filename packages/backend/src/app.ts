@@ -43,7 +43,6 @@ import {
   disableNightMode,
   isNightModeActive,
 } from "./nightMode/nightMode";
-import { startNightModeSchedule } from "./nightMode/nightModeSchedule";
 
 // import { cors } from "cors";
 // const corsOptions = {
@@ -383,5 +382,3 @@ if(scenarioMode){
 } else {
   console.log("Scenario mode disabled");
 }
-// 19:30 にナイトモード ON、10:30 に OFF を自動実行するタイマー。
-startNightModeSchedule();

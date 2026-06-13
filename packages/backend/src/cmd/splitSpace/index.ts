@@ -65,13 +65,60 @@ export const splitSpace = async (
   // console.log(stringArr)
 
   if (arrTypeArr[0] === "number") {
-    numTarget(stringArr, arrTypeArr);
+    const target = Object.keys(clientState.client).find(
+      (key) => clientState.client[key].index === Number(stringArr[0])
+    );
+
+    numTarget([target],stringArr.splice(1), arrTypeArr.splice(1));
     if (stringArr[1] !== "VOICE") {
       voiceEmit(
         stringArr.slice(1).join(" "),
         source !== undefined ? source : "all",
       );
     }
+  } else if (
+    (stringArr[0].includes(",") && getTypeArr(stringArr[0].split(",")).every((type) => type === "number")) 
+    || (stringArr[0].includes("-") && getTypeArr(stringArr[0].split("-")).every((type) => type === "number"))
+  ) {
+    const targetArr = stringArr[0].split(",").map((numStr) => {
+      return Object.keys(clientState.client).find(
+        (key) => clientState.client[key].index === Number(numStr.trim())
+      );
+    });
+    numTarget(targetArr, stringArr.splice(1), arrTypeArr.splice(1));
+    if (stringArr[1] !== "VOICE") {
+      voiceEmit(
+        stringArr.slice(1).join(" "),
+        source !== undefined ? source : "all",
+      );
+    }
+  // } else if (
+  //   (stringArr[1] === "CHAT" ||
+  //     (streamList.includes(stringArr[1]) && stringArr[0] !== "GET")) &&
+  //   (stringArr[0].includes("-") || arrTypeArr[0] === "number")
+  // ) {
+  //   console.log("route", stringArr);
+  //   const targetArr = stringArr[0].split("-");
+  //   if (
+  //     targetArr.length > 1 &&
+  //     targetArr.every((el) => {
+  //       return !isNaN(Number(el)) && el !== "";
+  //     })
+  //   ) {
+  //     console.log("targetArr", targetArr);
+  //     const targetIdArr = targetArr.map((el) => {
+  //       return Object.keys(clientState.client)[Number(el)];
+  //     });
+  //     console.log("targetIdArr", targetIdArr);
+  //     streamState.target[stringArr[1]] = targetIdArr;
+  //     console.log(streamState.target);
+  //     if (stringArr[1] === "CHAT") {
+  //       console.log("debug");
+  //       chatPreparation();
+  //     } else {
+  //       streamEmit(stringArr[1]);
+  //     }
+    // }
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
     // RANDOMのみRATEとSTREAMがあるので個別処理
     if (stringArr[0] === "GLITCH") {
@@ -167,33 +214,6 @@ export const splitSpace = async (
     const input = Number(stringArr[1]);
     streamState.basisBufferSize = bufferSizeChange(input);
     stringEmit(`BufferSize: ${streamState.basisBufferSize}`);
-  } else if (
-    (stringArr[1] === "CHAT" ||
-      (streamList.includes(stringArr[1]) && stringArr[0] !== "GET")) &&
-    (stringArr[0].includes("-") || arrTypeArr[0] === "number")
-  ) {
-    console.log("route", stringArr);
-    const targetArr = stringArr[0].split("-");
-    if (
-      targetArr.length > 1 &&
-      targetArr.every((el) => {
-        return !isNaN(Number(el)) && el !== "";
-      })
-    ) {
-      console.log("targetArr", targetArr);
-      const targetIdArr = targetArr.map((el) => {
-        return Object.keys(clientState.client)[Number(el)];
-      });
-      console.log("targetIdArr", targetIdArr);
-      streamState.target[stringArr[1]] = targetIdArr;
-      console.log(streamState.target);
-      if (stringArr[1] === "CHAT") {
-        console.log("debug");
-        chatPreparation();
-      } else {
-        streamEmit(stringArr[1]);
-      }
-    }
   } else if (stringArr[0] === "CLEAR" || stringArr[0] === "INIT") {
     if (stringArr[1] === "BUFFER" || stringArr[1] === "REDIS") {
       const allKeys = await streamsRedis.getAllKeys();
@@ -245,30 +265,6 @@ export const splitSpace = async (
     // } else if (stringArr[0] === 'FIND' && stringArr.length === 3) {
     // findStream(stringArr[1], stringArr[2], io);
   } else if (stringArr[0] === "GET" || stringArr[0] === "YOUTUBE") {
-    // if(stringArr[1] === "BUSHBASH") {
-    //   stringEmit(io, "GETTING BUSHBASH MEMORY...", true);
-    //   const result = await getStream("BUSHBASH");
-    //   console.log("get bushbash memory", result);
-    //   if(streams["BUSHBASH"] === undefined) {
-    //     pushStateStream("BUSHBASH", true);
-    //     streams.BUSHBASH = {
-    //       audio: [],
-    //       video: [],
-    //       index: 0,
-    //       bufferSize: streamState.basisBufferSize,
-    //     };
-    //   }
-    //   await result.forEach((record) => {
-    //     streams.BUSHBASH.video.push(record.video);
-    //     streams.BUSHBASH.audio.push(decodeAudio(record.audio));
-    //   });
-
-    //   if(result.length > 0) {
-    //     stringEmit(io, "GET BUSHBASH MEMORY: SUCCESS");
-    //   } else {
-    //     stringEmit(io, "GET BUSHBASH MEMORY: FAILED");
-    //   }
-    // } else {
       stringEmit(`GETTING ${stringArr.slice(1).join(" ")}...`, true);
       if (stringArr[1] === "LIVESTREAM") {
         if (stringArr.length === 2) {
@@ -304,35 +300,6 @@ export const splitSpace = async (
     helpPrint(stringArr.slice(1));
   } else if (stringArr[0] === "INSERT" || stringArr[0] === "FIND") {
     splitToPostgres(stringArr, arrTypeArr);
-
-    /*
-    if (
-      stringArr.length === 2 &&
-      Object.keys(state.stream.sampleRate).includes(stringArr[1])
-    ) {
-      insertStream(stringArr[1], io);
-    }
-    */
-  // } else if (
-  //   (stringArr[0] === "JOIN" ||
-  //     stringArr[0] === "OFFER" ||
-  //     stringArr[0] === "ANSWER") &&
-  //   stringArr[1] === "ALL"
-  // ) {
-  //   console.log(`${stringArr[0]} ALL clients to WebRTC room`);
-  //   if (stringArr[0] === "JOIN") {
-  //     Object.keys(clientState.client).forEach((id) => {
-  //       joinOrLeave("JOIN", io, id);
-  //     });
-  //   } else if (stringArr[0] === "OFFER") {
-  //     Object.keys(clientState.client).forEach((id) => {
-  //       offerReq(io, id);
-  //     });
-  //   } else if (stringArr[0] === "ANSWER") {
-  //     Object.keys(clientState.client).forEach((id) => {
-  //       answerReq(io, id);
-  //     });
-  //   }
   } else if (stringArr[0] === "LOG") {
     if (
       stringArr[1] === "FILE" ||
@@ -345,13 +312,6 @@ export const splitSpace = async (
       } else {
         stringEmit("LOG: PUT FAILED");
       }
-
-      // console.log(result);
-      // if(result) {
-      //   stringEmit(io, "LOG: SUCCESS");
-      // } else {
-      //   stringEmit(io, "LOG: FAILED");
-      // }
     } else if (stringArr[1] === "IMPORT") {
       const result = getScheduleFromSplitSpace(stringArr);
       if (!result) {

@@ -5,6 +5,11 @@ import {
 } from "../../stream/quantize";
 import { stringEmit } from "../../socket/ioEmit";
 import { streamList } from "../../data";
+import { bpmState } from "../../state";
+import {
+  bpmStreamStateType,
+} from "../../../../../types";
+
 
 // 入力2番の候補
 // const streamList = ["CHAT", "PLAYBACK", "TIMELAPSE"] as const;
@@ -65,7 +70,7 @@ export function classifyArgs(input: string[]): quantizeParamClass {
   return params;
 }
 
-export const splitQuantize = (paramArr, target?: string) => {
+export const splitQuantize = (paramArr, target?: string | string[]) => {
   console.log("debug quantize", paramArr);
   if (
     (paramArr.length === 1 && paramArr[0] === "HELP") ||
@@ -75,8 +80,9 @@ export const splitQuantize = (paramArr, target?: string) => {
     stringEmit(strings, false);
   } else {
     const params = classifyArgs(paramArr);
-    const targetClient = target !== undefined ? target : "all";
-    const quantizeObj = setParamsSplitQuantize(params, targetClient);
+    
+    const targetClientArr: string[] = target !== undefined ? (Array.isArray(target) ? target : [target]) : ['all'];
+    const quantizeObj = setParamsSplitQuantize(params, targetClientArr);
     console.log("splitQuantize return: ", quantizeObj);
     setBpmState(quantizeObj);
     emitQuantize(quantizeObj);
