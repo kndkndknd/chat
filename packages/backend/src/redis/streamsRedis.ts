@@ -26,6 +26,7 @@ export function serializeStream(buff: buffStateType): string {
     filter: buff.filter,
     timestamp: buff.timestamp,
     recordIndex: buff.recordIndex,
+    id: buff.id,
   });
 }
 
@@ -43,6 +44,7 @@ export function deserializeStream(raw: string): buffStateType {
     filter: obj.filter,
     timestamp: obj.timestamp,
     recordIndex: obj.recordIndex,
+    id: obj.id,
   };
 }
 

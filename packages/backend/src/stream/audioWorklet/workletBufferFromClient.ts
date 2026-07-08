@@ -12,6 +12,7 @@ export const workletBufferFromClient = async (
     bufferSize: number;
     index?: number;
   },
+  id: string
 ) => {
   if (data.source === "CHAT") {
     const buff: buffStateType = {
@@ -58,6 +59,7 @@ export const workletBufferFromClient = async (
       video: data.video,
       bufferSize,
       duration: bufferSize / 44100,
+      id
     });
     const idx = await streamsRedis.incrementIndex(data.source);
     console.log(`RECORD AS ${data.source} length: ${idx}`);

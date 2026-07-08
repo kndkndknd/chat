@@ -112,7 +112,7 @@ export const wsServer = (
 
         case "workletBufferFromClient":
           await workletBufferFromClient(
-            data as { video: string; audio: ArrayBuffer; source: string; bufferSize: number; index?: number }
+            data as { video: string; audio: ArrayBuffer; source: string; bufferSize: number; index?: number; id?: string },
           );
           break;
 
