@@ -14,6 +14,7 @@ import { applyNightModeToClient } from "../nightMode/nightMode";
 import { countersRedis } from "../redis/streamsRedis";
 import { faceDetectScenario } from "../scenario/faceDetectScenario";
 import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
+import { mediaUploadFromClient } from "../media/mediaUploadFromClient";
 import { receiveWholeReq } from "../stream/receiveWholeReq";
 import { gainFromClient, gainReqFromClient } from "../cmd/gainFromClient";
 import { m5Switch } from "../rotate/m5Access";
@@ -112,7 +113,14 @@ export const wsServer = (
 
         case "workletBufferFromClient":
           await workletBufferFromClient(
-            data as { video: string; audio: ArrayBuffer; source: string; bufferSize: number; index?: number; id?: string },
+            data as { video: string; audio: ArrayBuffer; source: string; bufferSize: number; index?: number;}, id
+          );
+          break;
+
+        case "mediaUploadFromClient":
+          mediaUploadFromClient(
+            data as { container: string; mimeType: string; blob: ArrayBuffer },
+            id
           );
           break;
 

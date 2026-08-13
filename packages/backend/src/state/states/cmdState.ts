@@ -23,4 +23,5 @@ export const cmdState = createPersistedState<cmdStateType>("cmdState", {
   VOICE: [],
   voiceLang: "en-US",
   METRONOME: {},
+  CLICKFREQ: 440
 });

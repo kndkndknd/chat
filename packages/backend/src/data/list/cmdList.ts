@@ -10,4 +10,8 @@ export const cmdList = {
   METRONOME: "METRONOME",
   PREVIOUS: "PREVIOUS",
   PREV: "PREVIOUS",
+  UP: "UP",
+  DOWN: "DOWN",
+  SAME: "SAME",
+  KEEP: "SAME",
 };

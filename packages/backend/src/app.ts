@@ -15,7 +15,7 @@ if (fs.existsSync(dotenvPath)) {
 
 import { cmdLogging } from "./logging/cmdLogging";
 import { initStreams } from "./data";
-import { loadAllStates, clientState, sampleRateState } from "./state";
+import { loadAllStates, clientState, sampleRateState, cmdState } from "./state";
 import { ioState } from "./state/states/ioState";
 import { countersRedis, streamsRedis } from "./redis/streamsRedis";
 import {
@@ -172,32 +172,32 @@ app.get("/:name", function (req, res, next) {
 });
 
 
-app.post("/api/char", function (req, res, next) {
-  console.log("POST /api/char", req.body);
-  console.log("ip:", req.ip);
-  res.json({ success: true, message: "char received" });
-});
+// app.post("/api/char", function (req, res, next) {
+//   console.log("POST /api/char", req.body);
+//   console.log("ip:", req.ip);
+//   res.json({ success: true, message: "char received" });
+// });
 
-app.post("/api/persondetect", function (req, res) {
-  const body: { type: string; direction: string } = req.body;
-  console.log(JSON.parse(JSON.stringify(body)));
-  if (nightScheduleState.quiet) {
-    res.json({ success: true, skipped: true });
-    return;
-  }
-  ioState.io?.emit("personDetectFromServer");
-  if (body.direction === "left") {
-    countersRedis.increment("visitor").then((count) => {
-      console.log("visitor count:", count);
-    });
-  }
-  if (body.direction === "right") {
-    countersRedis.increment("leave").then((count) => {
-      console.log("leave count:", count);
-    });
-  }
-  res.json({ success: true });
-});
+// app.post("/api/persondetect", function (req, res) {
+//   const body: { type: string; direction: string } = req.body;
+//   console.log(JSON.parse(JSON.stringify(body)));
+//   if (nightScheduleState.quiet) {
+//     res.json({ success: true, skipped: true });
+//     return;
+//   }
+//   ioState.io?.emit("personDetectFromServer");
+//   if (body.direction === "left") {
+//     countersRedis.increment("visitor").then((count) => {
+//       console.log("visitor count:", count);
+//     });
+//   }
+//   if (body.direction === "right") {
+//     countersRedis.increment("leave").then((count) => {
+//       console.log("leave count:", count);
+//     });
+//   }
+//   res.json({ success: true });
+// });
 
 // シナリオ（scenarioItsuki）を HTTP から起動する。
 // 実行中だった場合は一度停止してから再度実行する。
@@ -216,62 +216,6 @@ app.post("/api/scenario", async function (req, res) {
   }
 });
 
-// itsukiTimer の状態を返す。NULL なら stopping、NULL でなければ active。
-app.get("/api/scenario", function (req, res) {
-  res.json({ status: isScenarioItsukiActive() ? "active" : "stopping" });
-});
-
-// シナリオを全停止する。
-// scenarioItsuki のループ（itsukiTimer）を止め、execScenario が setTimeout で
-// スケジュール済みの各ステップもすべて clearTimeout でキャンセルする。
-app.post("/api/stopScenario", function (req, res) {
-  try {
-    const wasActive = isScenarioItsukiActive();
-    stopScenarioItsuki();
-    stopAllScenarioTimers();
-    res.json({ success: true, wasActive });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: "Something went wrong" });
-  }
-});
-
-// 各クライアント端末の状態（clientState.client）を返す。
-app.get("/api/machineStatus", function (req, res) {
-  res.json(clientState.client);
-});
-
-// Redis 上の PLAYBACK / TIMELAPSE のバッファ数（llen）を返す。
-app.get("/api/buffer-count", async function (req, res) {
-  try {
-    const [playback, timelapse] = await Promise.all([
-      streamsRedis.getLength("PLAYBACK"),
-      streamsRedis.getLength("TIMELAPSE"),
-    ]);
-    res.json({ success: true, PLAYBACK: playback, TIMELAPSE: timelapse });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: "Something went wrong" });
-  }
-});
-
-// ナイトモードの ON/OFF を切り替える。
-// value:true で全端末の顔認識停止 + scenarioItsuki 停止 + 全端末 BLACK モード。
-// value:false でナイトモードを解除する（顔認識を元の設定に復元し、BLACK を解除）。
-app.post("/api/nightmode", function (req, res) {
-  try {
-    const value: boolean = req.body?.value === true;
-    if (value) {
-      enableNightMode();
-    } else {
-      disableNightMode();
-    }
-    res.json({ success: true, nightmode: isNightModeActive() });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: "Something went wrong" });
-  }
-});
 
 // CLEAR BUFFER 相当の処理を HTTP から実行する。
 // body.stream を省略すると全ストリームのバッファをクリア（CHAT/EMPTY/KICK/SNARE/HAT は除外）、
@@ -333,45 +277,14 @@ app.post("/api/clear-buffer", async function (req, res) {
 //   }
 // });
 
-// 同一 recordIndex のデータを timestamp 昇順の偶数番目で間引く（scripts/redisHalveByRecordIndex.ts 相当）。
-// body.stream を省略すると PLAYBACK / TIMELAPSE の両方を対象にする。
-// 指定する場合は PLAYBACK / TIMELAPSE のいずれかのみ許可する。
-// body.dryRun=true のときは集計のみ行い Redis は変更しない。
-app.post("/api/halve-by-record-index", async function (req, res) {
-  const stream: string | undefined = req.body?.stream;
-  const dryRun: boolean = req.body?.dryRun === true;
-  try {
-    let targets: string[];
-    if (stream === undefined) {
-      targets = [...HALVE_ALLOWED];
-    } else if (
-      HALVE_ALLOWED.includes(stream as (typeof HALVE_ALLOWED)[number])
-    ) {
-      targets = [stream];
-    } else {
-      res.status(400).json({
-        success: false,
-        message: `対象は ${HALVE_ALLOWED.join(" / ")} のみです: ${stream}`,
-      });
-      return;
-    }
-    const results = [];
-    for (const name of targets) {
-      results.push(await halveStreamByRecordIndex(name, dryRun));
-    }
-    res.json({ success: true, dryRun, results });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false, message: "Something went wrong" });
-  }
-});
 
 loadAllStates()
   .then(() => {
     // サーバ起動時は randomrate を CHAT/PLAYBACK/TIMELAPSE について必ず true にする
-    sampleRateState.randomrate.CHAT = true;
-    sampleRateState.randomrate.PLAYBACK = true;
-    sampleRateState.randomrate.TIMELAPSE = true;
+    // sampleRateState.randomrate.CHAT = true;
+    // sampleRateState.randomrate.PLAYBACK = true;
+    // sampleRateState.randomrate.TIMELAPSE = true;
+    cmdState.CLICKFREQ = 440;
   })
   .then(() => initStreams())
   .catch((err) => console.error("Redis init error:", err));

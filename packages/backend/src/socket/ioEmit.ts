@@ -4,7 +4,7 @@ export const stringEmit = (
   timeout?: boolean,
   target?: string
 ) => {
-  console.log(strings);
+  console.log('stringEmit', strings);
   if (timeout === undefined) timeout = true;
   if (target === undefined) {
     console.log("target is undefined", strings);

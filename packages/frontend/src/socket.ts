@@ -24,14 +24,15 @@ import { chatReq, recordReqFromServer, streamPlay } from "./stream";
 import { setGainUI } from "./ui/gainUI";
 import { wholeCmd } from "./cmd/wholeCmd";
 import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
-import { enableBlackMode, disableBlackMode, isBlackModeActive } from "./blackMode";
-import { muteMasterForNight, restoreMasterForNight } from "./nightAudio";
+import { recordAll, uploadRecording } from "./mediaRecorder";
 
 
 export const socket = (): void => {
   socketState.socket.on(
     "stringsFromServer",
     (data: { strings: string; timeout: boolean }) => {
+      // console.log("stringsFromServer", data.strings);
+      textPrint(data.strings + "debug", { timeout: data.timeout });
       erasePrint();
       canvasState.stringsClient = data.strings;
       textPrint(canvasState.stringsClient, { timeout: data.timeout });
@@ -42,25 +43,25 @@ export const socket = (): void => {
     erasePrint();
   });
 
-  // BLACK コマンド: 画面全体を真っ黒にする。解除は文字入力(main.ts keydown)で行う。
-  socketState.socket.on("blackFromServer", () => {
-    enableBlackMode();
-  });
+  // // BLACK コマンド: 画面全体を真っ黒にする。解除は文字入力(main.ts keydown)で行う。
+  // socketState.socket.on("blackFromServer", () => {
+  //   enableBlackMode();
+  // });
 
-  // ナイトモード解除時: BLACK モードをサーバーから明示的に解除する。
-  socketState.socket.on("blackOffFromServer", () => {
-    disableBlackMode();
-  });
+  // // ナイトモード解除時: BLACK モードをサーバーから明示的に解除する。
+  // socketState.socket.on("blackOffFromServer", () => {
+  //   disableBlackMode();
+  // });
 
-  // ナイトモード移行時: masterGain と glitchGain を 0 にして消音する。
-  socketState.socket.on("masterMuteFromServer", () => {
-    muteMasterForNight();
-  });
+  // // ナイトモード移行時: masterGain と glitchGain を 0 にして消音する。
+  // socketState.socket.on("masterMuteFromServer", () => {
+  //   muteMasterForNight();
+  // });
 
-  // ナイトモード解除時: masterGain と glitchGain を移行前の値へ戻す。
-  socketState.socket.on("masterUnmuteFromServer", () => {
-    restoreMasterForNight();
-  });
+  // // ナイトモード解除時: masterGain と glitchGain を移行前の値へ戻す。
+  // socketState.socket.on("masterUnmuteFromServer", () => {
+  //   restoreMasterForNight();
+  // });
 
   socketState.socket.on(
     "cmdFromServer",
@@ -76,6 +77,7 @@ export const socket = (): void => {
       gain?: number;
       solo?: boolean;
     }) => {
+      // console.log("cmdFromServer", cmd);
       cmdFromServer(cmd);
       canvasState.stringsClient = "";
     },
@@ -222,6 +224,17 @@ export const socket = (): void => {
     },
   );
 
+  socketState.socket.on("mediaRecReqFromServer", async () => {
+    await recordAll(streamState.stream as MediaStream, 5000).then((recordings) => {
+      console.log(recordings);
+      recordings.forEach(async (recording) => {
+        await uploadRecording(recording, socketState.socket).then((result) => {
+          console.log(result);
+        });
+      });
+    });
+  });
+
   // gainFromClient(スライダー操作)/ gainReqFromClient(UI を開く)への応答。
   // 実際の音量(GainNode)には適用せず、入力欄の表示のみ更新する。
   // スライダー操作時の発音は gainUI 側のローカル audition が担う。
@@ -232,10 +245,7 @@ export const socket = (): void => {
   socketState.socket.on(
     "voiceFromServer",
     (data: { text: string; lang: string }) => {
-      // /counter 端末は BLACK モード中、サーバ駆動の音声も発声しない。
-      if (isBlackModeActive() && window.location.pathname === "/counter") {
-        return;
-      }
+
       const uttr = new SpeechSynthesisUtterance();
       uttr.lang = data.lang;
       uttr.text = data.text;

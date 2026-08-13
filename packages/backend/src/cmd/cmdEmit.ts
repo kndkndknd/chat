@@ -8,6 +8,7 @@ import { previousCmd } from "./previousCmd";
 import { pickupCmdTarget } from "./pickupCmdTarget";
 // import { getLengthFromBPM } from "../util/getLengthFromBPM";
 import { metronomeEmit } from "./metronomeEmit";
+import { clickFreq } from "./clickFreq";
 
 export const cmdEmit = (
   cmdStrings: string,
@@ -73,6 +74,19 @@ export const cmdEmit = (
       cmd = {
         cmd: "CLICK",
         gain: cmdState.GAIN.CLICK,
+      };
+      putCmd(targetIdArr, cmd);
+      break;
+    case "UP":
+    case "DOWN":
+    case "SAME":
+      const clickFreqValue = clickFreq(cmdStrings);
+      cmdState.CLICKFREQ = clickFreqValue;
+      // console.log("clickFreq", clickFreqValue);
+      cmd = {
+        cmd: "CLICK",
+        gain: cmdState.GAIN.CLICK,
+        value: clickFreqValue,
       };
       putCmd(targetIdArr, cmd);
       break;

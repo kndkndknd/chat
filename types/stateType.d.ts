@@ -28,6 +28,7 @@ export type cmdStateType = {
   METRONOME: {
     [key: string]: number;
   };
+  CLICKFREQ: number;
 };
 
 export type streamStateType = {

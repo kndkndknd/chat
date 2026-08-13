@@ -64,7 +64,11 @@ export const cmdFromServer = (cmd: {
       }
       break;
     case "CLICK":
-      click(cmd.gain);
+      if(cmd.value === undefined || !cmd.value || cmd.value < 20 || cmd.value > 20000) {
+        click(cmd.gain, 440);
+      } else {
+        click(cmd.gain, cmd.value);
+      }
       erasePrint();
       textPrint("CLICK", { timeout: true, timeoutDuration: 300 });
       break;
