@@ -24,7 +24,7 @@ import { chatReq, recordReqFromServer, streamPlay } from "./stream";
 import { setGainUI } from "./ui/gainUI";
 import { wholeCmd } from "./cmd/wholeCmd";
 import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
-import { recordAll, uploadRecording } from "./mediaRecorder";
+import { recordAll, uploadRecording, playRecording } from "./mediaRecorder";
 
 
 export const socket = (): void => {
@@ -234,6 +234,15 @@ export const socket = (): void => {
       });
     });
   });
+
+  socketState.socket.on(
+    "mediaRecFromServer",
+    (data: { container: string; mimeType: string; blob: ArrayBuffer }) => {
+      console.log(`mediaRecFromServer: container=${data.container} mimeType=${data.mimeType} size=${data.blob?.byteLength ?? 0}`);
+      playRecording(data);
+    },
+  );
+    
 
   // gainFromClient(スライダー操作)/ gainReqFromClient(UI を開く)への応答。
   // 実際の音量(GainNode)には適用せず、入力欄の表示のみ更新する。

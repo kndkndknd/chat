@@ -160,6 +160,9 @@ export const receiveEnter = async (
   //   // /api/nightmode {value:false} 相当。ナイトモードを解除（顔認識を元の設定に復元し、BLACK を解除）。
   //   console.log("MORNINGMODE");
   //   disableNightMode();
+  } else if (strings === "MEDIARECORD") {
+    console.log("MEDIARECORD CALL");
+    ioState?.io.emit("mediaRecReqFromServer");
   } else if (strings === "VOSK") {
     console.log("VOSK CALL");
     ioState?.io.emit("voskCallFromServer");
