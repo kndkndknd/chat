@@ -24,37 +24,43 @@ export const promiseGetImageData = (f: string, filePath: string, options) => {
       ffmpegOption.push(options.t);
     }
 
-    const proc = spawn("ffmpeg", ffmpegOption);
-    proc.stdout.on("end", async (buff) => {
-      let jpgs = <Array<string>>[];
-      try {
-        const files = await fs.readdirSync(filePath + "/tmp");
-        const base64Arr: string[] = [];
-        files.forEach((file) => {
-          if (file.includes(fileName) && file.includes(".jpg")) {
-            jpgs.push(file);
-          }
-        });
-        jpgs.forEach((element) => {
-          const img = fs.readFileSync(filePath + "/tmp/" + element);
-          const base64str = new Buffer(img).toString("base64");
-          // console.log(base64str)
-          base64Arr.push("data:image/jpeg;base64," + String(base64str));
-        });
-        resolve(base64Arr);
-      } catch (e) {
-        console.error(e);
-        reject(["error", String(e)]);
-      } finally {
-        jpgs.forEach((element) => {
-          fs.unlinkSync(filePath + "/tmp/" + element);
-        });
-      }
-    });
+    try {
 
-    proc.stdout.on("error", (err) => {
+      const proc = spawn("ffmpeg", ffmpegOption);
+      proc.stdout.on("end", async (buff) => {
+        let jpgs = <Array<string>>[];
+        try {
+          const files = await fs.readdirSync(filePath + "/tmp");
+          const base64Arr: string[] = [];
+          files.forEach((file) => {
+            if (file.includes(fileName) && file.includes(".jpg")) {
+              jpgs.push(file);
+            }
+          });
+          jpgs.forEach((element) => {
+            const img = fs.readFileSync(filePath + "/tmp/" + element);
+            const base64str = new Buffer(img).toString("base64");
+            // console.log(base64str)
+            base64Arr.push("data:image/jpeg;base64," + String(base64str));
+          });
+          resolve(base64Arr);
+        } catch (e) {
+          console.error(e);
+          reject(["error", String(e)]);
+        } finally {
+          jpgs.forEach((element) => {
+            fs.unlinkSync(filePath + "/tmp/" + element);
+          });
+        }
+      });
+
+      proc.stdout.on("error", (err) => {
+        console.error(err);
+        reject(["error", String(err)]);
+      });
+    } catch (err) {
       console.error(err);
-      reject(["error", String(err)]);
-    });
+      reject(["promiseGetImageData error", String(err)]);
+    }
   });
 };

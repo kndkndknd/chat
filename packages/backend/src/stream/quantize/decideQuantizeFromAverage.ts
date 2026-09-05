@@ -39,15 +39,15 @@ export const decideQuantizeFromAverage = (
   for (const client in argBpmClientObj) {
     for (const stream in argBpmClientObj[client]) {
       sumBeat += argBpmClientObj[client][stream].beat;
-      sumBpm += argBpmClientObj[client][stream].bpm;
+      // sumBpm += argBpmClientObj.bpm;
       // sumGridFlag += argBpmClientObj[client].stream[stream].gridFlag ? 1 : 0;
       sumQuantizeFlag += argBpmClientObj[client][stream].quantizeFlag ? 1 : 0;
     }
   }
-  const bpm =
-    argParams === undefined || argParams.bpm === undefined
-      ? sumBpm / denominator
-      : argParams.bpm;
+  // const bpm =
+  //   argParams === undefined || argParams.bpm === undefined
+  //     ? sumBpm / denominator
+  //     : argParams.bpm;
   const beat =
     argParams === undefined || argParams.beat === undefined
       ? Math.round(sumBeat / denominator)
@@ -62,11 +62,11 @@ export const decideQuantizeFromAverage = (
   for (const client in argBpmClientObj) {
     for (const stream in argBpmClientObj[client]) {
       argBpmClientObj[client][stream] = {
-        bpm,
+        // bpm,
         beat,
         gridFlag: !quantizeFlag,
         quantizeFlag,
-        latency: 60000 / bpm / beat,
+        // latency: 60000 / bpm / beat,
       };
     }
   }

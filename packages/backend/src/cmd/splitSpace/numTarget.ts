@@ -12,6 +12,7 @@ import { chatPreparation } from "../../stream/chatPreparation";
 import { splitQuantize } from "./splitQuantize";
 import { numPaSwitch } from "./numPaSwitch";
 import { execStream } from "../execStream";
+import { splitBeat } from "../../stream/quantize/splitBeat";
 
 export const numTarget = (
   targetArr: Array<string>,
@@ -81,10 +82,17 @@ export const numTarget = (
     }
   } else if (stringArr[0] === "QUANTIZE") {
     splitQuantize(stringArr.slice(1), targetArr);
-    // if (quantizeObj === "quantize failed") {
-    //   stringEmit(io, "quantize failed", true, target);
-    // } else {
-    // }
+  } else if (stringArr[0] === "BEAT" && (arrTypeArr[1] === "number" || stringArr[1] === "RANDOM")) {
+    const arg = stringArr[1] === "RANDOM" ? "RANDOM" : Number(stringArr[1]);
+    if(stringArr.length === 2) {
+      for (const target of targetArr) {
+        splitBeat(arg, {target});
+      }
+    } else if(stringArr.length === 3 && arrTypeArr[2] === "string") {
+      for (const target of targetArr) {
+        splitBeat(arg, {target, stream: stringArr[2]});
+      }
+    }
   } else if (stringArr[0] === "PA") {
     for (const target of targetArr) {
       numPaSwitch(target);

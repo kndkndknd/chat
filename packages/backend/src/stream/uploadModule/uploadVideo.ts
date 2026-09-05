@@ -54,7 +54,7 @@ export const uploadVideo = async (f: string, durationArr, mediaDirPath) => {
     });
     return await true;
   } catch (err) {
-    console.log("1st catch");
+    console.log("uploadVideo error", err);
     console.error(err);
     return await false;
   }

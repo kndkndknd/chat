@@ -1,11 +1,4 @@
 import * as fs from "fs";
-import util from "util";
-import * as path from "path";
-
-// const exec = require("child_process").exec;
-// var readDir = util.promisify(fs.readdir);
-// var readFile = util.promisify(fs.readFile);
-// var execPromise = util.promisify(exec);
 
 import { uploadParams } from "../../data";
 

@@ -63,9 +63,9 @@ export const setParamsSplitQuantize = (
           if (params.beat !== undefined) {
             bpmStreamState[client][stream].beat = params.beat;
           }
-          if (params.bpm !== undefined) {
-            bpmStreamState[client][stream].bpm = params.bpm;
-          }
+          // if (params.bpm !== undefined) {
+          //   bpmStreamState[client][stream].bpm = params.bpm;
+          // }
           if (flag) {
             bpmStreamState[client][stream].gridFlag = false;
           }

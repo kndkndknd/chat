@@ -46,6 +46,7 @@ import { getTypeArr } from "./getTypeArr";
 
 import { initRedis } from "../../redis/initRedis";
 
+import { splitBeat } from "../../stream/quantize/splitBeat";
 import { splitRandomRate } from "./splitRandomRate";
 import { splitModulation } from "./splitModulation";
 import { splitArduino } from "./splitArduino";
@@ -53,6 +54,8 @@ import { splitVoskCmd } from "./splitVoskCmd";
 import { splitRotate } from "./splitRotate";
 import { splitToPostgres } from "./splitToPostgres";
 import { splitPlaybackWithIndex } from "./splitPlaybackWithIndex";
+
+import { changeBPM } from "../../parameterChange/changeBpm";
 
 
 export const splitSpace = async (
@@ -170,13 +173,13 @@ export const splitSpace = async (
         if (arrTypeArr[1] === "string" && arrTypeArr[2] === "number") {
           argProp = stringArr[1];
           argVal = Number(stringArr[2]);
-        } else if (
-          stringArr[0] === "BPM" &&
-          arrTypeArr[1] === "number" &&
-          arrTypeArr[2] === "number"
-        ) {
-          argProp = stringArr[1];
-          argVal = Number(stringArr[2]);
+        // } else if (
+        //   stringArr[0] === "BPM" &&
+        //   arrTypeArr[1] === "number" &&
+        //   arrTypeArr[2] === "number"
+        // ) {
+        //   argProp = stringArr[1];
+        //   argVal = Number(stringArr[2]);
         }
       }
       parameterChange(parameterList[stringArr[0]], {
@@ -206,6 +209,18 @@ export const splitSpace = async (
     } else if (stringArr[1] === "CHAT") {
       streamState.target["CHAT"] = clientState.streamClient;
       chatPreparation();
+    }
+  } else if (stringArr[0] === "BEAT" && (arrTypeArr[1] === "number" || stringArr[1] === "RANDOM")) {
+    // BEAT (number | "RANDOM") [stream]
+    const arg = stringArr[1] === "RANDOM" ? "RANDOM" : Number(stringArr[1]);
+    if(stringArr.length === 2) {
+      splitBeat(arg);
+    } else if(stringArr.length === 3 && arrTypeArr[2] === "string") {
+      splitBeat(arg, {stream: stringArr[2]});
+    }
+  } else if (stringArr[0] === "BPM" && arrTypeArr[1] === "number") {
+    if(stringArr.length === 2) {
+      changeBPM(Number(stringArr[1]));
     }
   } else if (
     stringArr[0] === "BUFFER" ||

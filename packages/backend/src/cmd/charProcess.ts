@@ -8,7 +8,7 @@ import { getLogCmd, resetCmdLogNum } from "../logging/getLogCmd";
 import { cmdLogging } from "../logging/cmdLogging";
 // import { get } from "http";
 
-let cmdLogNum = 0;
+// let cmdLogNum = 0;
 
 export function charProcess(
   character: string,
@@ -38,27 +38,27 @@ export function charProcess(
   } else if (character === "Escape") {
     // const client: 'client' | 'sinewaveClient' = state.sinewaveMode ? "sinewaveClient" : "client";
     // console.log(client)
-    console.log("cmdLogging in Escape");
+    // console.log("cmdLogging in Escape");
     cmdLogging("STOP");
     stopEmit(id, "ALL");
     strings = "";
   } else if (character === "BASS") {
-    console.log("cmdLogging in BASS");
+    // console.log("cmdLogging in BASS");
     cmdLogging("BASS");
     previousState.text = "BASS";
   } else if (character === "BASSS") {
-    console.log("cmdLogging in BASS");
+    // console.log("cmdLogging in BASS");
     cmdLogging("BASS");
-    console.log(
-      "io.to(" + id + ').emit("cmdFromServer",{"cmd":"BASS","property":"HIGH"})'
-    );
+    // console.log(
+    //   "io.to(" + id + ').emit("cmdFromServer",{"cmd":"BASS","property":"HIGH"})'
+    // );
     ioState?.io.to(id).emit("cmdFromServer", { cmd: "BASS", property: "HIGH" });
     previousState.text = "BASSS";
   } else if (character === "ArrowDown") {
     strings = "";
   } else if (character === "ArrowUp") {
-    console.log("up arrow");
-    console.log(previousState.text);
+    // console.log("up arrow");
+    // console.log(previousState.text);
     strings = previousState.text;
     ioState?.io.emit("stringFromServer", { strings: strings, timeout: false });
   } else if (character === " " && strings === "") {
@@ -74,6 +74,6 @@ export function charProcess(
     // io.emit("stringsFromServer", { strings: strings, timeout: false });
     // }
   }
-  console.log(strings);
+  // console.log(strings);
   return strings;
 }

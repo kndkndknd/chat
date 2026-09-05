@@ -8,7 +8,7 @@ import { stopStream } from "../cmd/splitSpace/stopStream";
 import { stopEmit } from "../cmd/stopEmit";
 import { rotateItsuki } from "../rotate/rotateItsuki";
 import { m5Test, blinkM5Switch, m5Switch } from "../rotate/m5Access";
-import { bpmChange } from "../parameterChange/bpmChange";
+// import { bpmChange } from "../parameterChange/bpmChange";
 import { gridChange } from "../parameterChange/gridChange";
 import { ioState } from "../state/states/ioState";
 import { recordEmit } from "../stream/recordEmit";
@@ -186,18 +186,18 @@ const runAction = (action: ScenarioAction, ctx: ScenarioContext) => {
       console.log("[faceDetectScenario] rotateItsuki");
       break;
     }
-    case "bpmChange": {
-      const value =
-        action.value ??
-        (action.valueMin ?? 0) +
-          Math.floor(
-            Math.random() *
-              ((action.valueMax ?? 0) - (action.valueMin ?? 0) + 1),
-          );
-      bpmChange({ value });
-      console.log("[faceDetectScenario] bpmChange", value);
-      break;
-    }
+    // case "bpmChange": {
+    //   const value =
+    //     action.value ??
+    //     (action.valueMin ?? 0) +
+    //       Math.floor(
+    //         Math.random() *
+    //           ((action.valueMax ?? 0) - (action.valueMin ?? 0) + 1),
+    //       );
+    //   bpmChange({ value });
+    //   console.log("[faceDetectScenario] bpmChange", value);
+    //   break;
+    // }
     case "gridChange": {
       gridChange({ property: action.property });
       console.log("[faceDetectScenario] gridChange", action.property);

@@ -24,7 +24,7 @@ export function textPrint(
   //   stx.fillStyle = "white";
   //   stx.fillRect(0, 0, strCnvs.width, strCnvs.height);
   // }
-  console.log("textPrint", text);
+  // console.log("textPrint", text);
   if (option && option.timeout) {
     const duration = option.timeoutDuration ? option.timeoutDuration : 500;
     if (!flagState.emoji) {

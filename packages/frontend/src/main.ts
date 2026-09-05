@@ -72,7 +72,7 @@ window.addEventListener("resize", (e) => {
 canvasSizing();
 
 document.addEventListener("keydown", (e) => {
-  console.log(e);
+  // console.log(e);
   // BLACK モード中はなにか文字を入力したら解除する。
   // 解除のためのキーは通常入力として扱わず、そのキーで消えるだけにする。
   // ただし /counter 端末は文字入力による解除を無効にし、BLACK を維持する。

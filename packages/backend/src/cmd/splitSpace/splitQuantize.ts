@@ -5,10 +5,8 @@ import {
 } from "../../stream/quantize";
 import { stringEmit } from "../../socket/ioEmit";
 import { streamList } from "../../data";
-import { bpmState } from "../../state";
-import {
-  bpmStreamStateType,
-} from "../../../../../types";
+import { bpmState, bpmStateDefault } from "../../state";
+
 
 
 // 入力2番の候補
@@ -72,12 +70,42 @@ export function classifyArgs(input: string[]): quantizeParamClass {
 
 export const splitQuantize = (paramArr, target?: string | string[]) => {
   console.log("debug quantize", paramArr);
+  console.log("debug bpmState", bpmState);
   if (
     (paramArr.length === 1 && paramArr[0] === "HELP") ||
     paramArr[0] === "?"
   ) {
     const strings = `QUANTIZE (stream or ALL) (beat or 0) (ON/TRUE or OFF/FALSE)`;
     stringEmit(strings, false);
+  } else if (paramArr.length === 0 && target !== undefined && target) {
+    const quantizeObj = {};
+    if(bpmState[target as string].stream !== undefined && bpmState[target as string].stream) {
+      quantizeObj[target as string] = bpmState[target as string].stream;
+    } else {
+      quantizeObj[target as string] = {};
+      streamList.forEach((stream) => {
+        quantizeObj[target as string][stream] = {
+          bpm: bpmStateDefault.bpm,
+          beat: bpmStateDefault.beat,
+          quantizeFlag: bpmStateDefault.quantizeFlag,
+        };
+      });
+    }
+    let sum = 0;
+    for (const stream in quantizeObj[target as string]) {
+      if (quantizeObj[target as string][stream].quantizeFlag) {
+        sum++;
+      }
+    }
+    console.log("sum", sum);
+    console.log("length", Object.keys(quantizeObj[target as string]).length);
+    const flag: boolean = sum / Object.keys(quantizeObj[target as string]).length > 0.5 ? false : true;
+    for (const stream in quantizeObj[target as string]) {
+      quantizeObj[target as string][stream].quantizeFlag = flag;
+    }
+    console.log("splitQuantize return: ", quantizeObj);
+    setBpmState(quantizeObj);
+    emitQuantize(quantizeObj);
   } else {
     const params = classifyArgs(paramArr);
     

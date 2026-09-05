@@ -1,3 +1,5 @@
+import { bpmStreamStateType } from "./bpmType";
+
 export type quantizeObjType = {
   flag: boolean;
   bpm: number;
@@ -16,3 +18,17 @@ export type frontQuantizeStateType = {
   timeout: number;
   stream: string[];
 };
+
+export type quantizeType = {
+  bar: number;
+  interval: number | null;
+  currentTime: number;
+  timeout: number;
+  intervalFlag: boolean;
+  stream: {
+    [stream: string]: {
+      flag: boolean;
+      beat: number;
+    };
+  }
+}

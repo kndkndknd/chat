@@ -3,7 +3,7 @@ import { portamentChange } from "./portamentChange";
 import { sampleRateChange } from "./sampleRateChange";
 import { glitchChange } from "./glitchChange";
 import { gridChange } from "./gridChange";
-import { bpmChange } from "./bpmChange";
+// import { bpmChange } from "./bpmChange";
 import { randomStreamOrder } from "./randomStreamOrder";
 import { voiceChange } from "./voiceChange";
 
@@ -24,9 +24,9 @@ export const parameterChange = (
     case "GRID":
       gridChange(arg);
       break;
-    case "BPM":
-      bpmChange(arg);
-      break;
+    // case "BPM":
+    //   bpmChange(arg);
+    //   break;
     case "RANDOM":
       randomStreamOrder();
       break;

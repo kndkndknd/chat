@@ -127,7 +127,7 @@ const processChar = (
     character === "Control" ||
     character === "Alt"
   ) {
-    console.log(character + " pressed");
+    // console.log(character + " pressed");
   } else {
     if (character === " ") {
     }
@@ -138,7 +138,7 @@ const processChar = (
       socket.emit("charFromClient", character);
     }
 
-    console.log(character);
+    // console.log(character);
 
     if (character === "Enter" && stringsClient != "VOICE") stringsClient = "";
     //  erasePrint('strings', stx, strCnvs)

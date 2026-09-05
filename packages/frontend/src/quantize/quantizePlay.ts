@@ -16,6 +16,7 @@ export const quantizePlay = (data: {
   position?: { top: number; left: number; width: number; height: number };
   target?: string;
 }) => {
+  console.log("quantizePlay", data);
   const beat =
     quantizeState.beat === 0
       ? Math.pow(2, Math.floor(Math.random() * 6))
@@ -47,12 +48,4 @@ export const quantizePlay = (data: {
     console.log("streamReqFromClient");
     socketState.socket.emit("streamReqFromClient", data.source);
   }
-  // if (frontState.recLatency) {
-  //   setTimeout(() => {
-  //     if (data.source === "CHAT") {
-  //       chatReq(String(id));
-  //     } else {
-  //       socket.emit("streamReqFromClient", data.source);
-  //     }
-  //   }, (data.bufferSize / data.sampleRate) * 1000);
 };
