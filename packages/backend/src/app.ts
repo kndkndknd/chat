@@ -16,33 +16,12 @@ if (fs.existsSync(dotenvPath)) {
 import { cmdLogging } from "./logging/cmdLogging";
 import { initStreams } from "./data";
 import { loadAllStates, clientState, sampleRateState, cmdState } from "./state";
-import { ioState } from "./state/states/ioState";
-import { countersRedis, streamsRedis } from "./redis/streamsRedis";
-import {
-  nightScheduleState,
-  startNightSchedule,
-} from "./scenario/nightSchedule";
-// import { getMongoDb } from "./mongo/client";
-// import {
-//   importStreamToMongo,
-//   importAllStreamsToMongo,
-//   REDIS_TO_MONGO_ALLOWED,
-// } from "./mongo/redisToMongo";
-import {
-  halveStreamByRecordIndex,
-  HALVE_ALLOWED,
-} from "./redis/halveByRecordIndex";
+import { streamsRedis } from "./redis/streamsRedis";
 import {
   scenarioItsuki,
   isScenarioItsukiActive,
   stopScenarioItsuki,
 } from "./scenario/scenarioItsuki";
-import { stopAllScenarioTimers } from "./scenario/execScenario";
-import {
-  enableNightMode,
-  disableNightMode,
-  isNightModeActive,
-} from "./nightMode/nightMode";
 
 // import { cors } from "cors";
 // const corsOptions = {
@@ -289,9 +268,3 @@ loadAllStates()
   .then(() => initStreams())
   .catch((err) => console.error("Redis init error:", err));
 cmdLogging("START");
-if(scenarioMode){
-  console.log("Scenario mode enabled");
-  startNightSchedule();
-} else {
-  console.log("Scenario mode disabled");
-}

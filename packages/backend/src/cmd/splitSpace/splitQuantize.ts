@@ -1,11 +1,11 @@
 import {
   setParamsSplitQuantize,
   setBpmState,
-  emitQuantize,
 } from "../../stream/quantize";
 import { stringEmit } from "../../socket/ioEmit";
 import { streamList } from "../../data";
 import { bpmState, bpmStateDefault } from "../../state";
+import { quantizeEmit } from "../../socket/ioEmit";
 
 
 
@@ -105,7 +105,7 @@ export const splitQuantize = (paramArr, target?: string | string[]) => {
     }
     console.log("splitQuantize return: ", quantizeObj);
     setBpmState(quantizeObj);
-    emitQuantize(quantizeObj);
+    quantizeEmit(quantizeObj);
   } else {
     const params = classifyArgs(paramArr);
     
@@ -113,7 +113,7 @@ export const splitQuantize = (paramArr, target?: string | string[]) => {
     const quantizeObj = setParamsSplitQuantize(params, targetClientArr);
     console.log("splitQuantize return: ", quantizeObj);
     setBpmState(quantizeObj);
-    emitQuantize(quantizeObj);
+    quantizeEmit(quantizeObj);
 
     // io.emit("quantizeFromServer", quantizeObj);
   }

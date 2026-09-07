@@ -9,7 +9,7 @@ export const bpmFromServer = (data: {bpm: number, source: string[] }) => {
     } else if(source === "MODULATION") {
     } else {
       quantizeState.bar = 4 * 60 / data.bpm;
-      if(!quantizeState.stream.includes(source)) {
+      if(!Object.keys(quantizeState.stream).includes(source)) {
         quantizeState.stream.push(source);
       }
         // quantizeObj.flagがtrueの場合、streamが実行中の場合、quantizePlayを実行

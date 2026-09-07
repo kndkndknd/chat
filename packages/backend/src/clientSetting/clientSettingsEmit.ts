@@ -1,5 +1,5 @@
 import { clientState } from "../state";
-import { ioState } from "../state/states/ioState";
+import { clientSettingEmit } from "../socket/ioEmit";
 
 export const buildPayload = (id: string) => {
   const c = clientState.client[id];
@@ -13,7 +13,8 @@ export const buildPayload = (id: string) => {
 export const emitClientSettings = (id: string): void => {
   const payload = buildPayload(id);
   if (!payload) return;
-  ioState.io?.to(id).emit("clientSettingsFromServer", payload);
+  clientSettingEmit(payload, id);
+
 };
 
 export const broadcastClientSettings = (): void => {

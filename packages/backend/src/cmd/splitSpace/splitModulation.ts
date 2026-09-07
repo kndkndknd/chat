@@ -1,6 +1,6 @@
 import { modulationByBPM } from "./modulationByBPM";
 import { bpmState, bpmStateDefault, clientState } from "../../state";
-import { sinewaveEmit } from "../sinewaveEmit";
+import { execSinewave } from "../execSinewave";
 
 export const splitModulation = (
   stringArr: string[],
@@ -15,11 +15,11 @@ export const splitModulation = (
         )
       : modulationByBPM(
           Number(stringArr[1]),
-          bpmState[clientState.cmdClient[0]]?.MODULATION?.bpm ??
+          bpmState[clientState.cmdClient[0]]?.bpm ??
             bpmStateDefault.bpm,
           clientState.cmdClient
         );
   freqArr.forEach((freq, index) => {
-    sinewaveEmit(freq, clientState.cmdClient[index]);
+    execSinewave(freq, clientState.cmdClient[index]);
   });
 };

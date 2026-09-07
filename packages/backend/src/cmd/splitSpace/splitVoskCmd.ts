@@ -1,4 +1,4 @@
-import { ioState } from "../../state/states/ioState";
+import { voskCallEmit } from "../../socket/ioEmit";
 import { flagState } from "../../state";
 
 export const splitVoskCmd = (stringArr: string[], arrTypeArr: string[]) => {
@@ -7,17 +7,14 @@ export const splitVoskCmd = (stringArr: string[], arrTypeArr: string[]) => {
 
   if (stringArr.length === 0) {
     // flagState.vosk = !flagState.vosk;
-    ioState?.io.emit("voskCallFromServer");
+    voskCallEmit();
 
     // io.emit("voskCtrlFromServer", {
     //   type: "flag",
     //   flag: flagState.vosk,
     // });
   } else if (stringArr.length === 1 && arrTypeArr[0] === "number") {
-    ioState?.io.emit("voskCtrlFromServer", {
-      type: "interval change",
-      value: Number(stringArr[0]),
-    });
+    voskCallEmit();
   } else if (
     stringArr.length === 1 &&
     (stringArr[0] === "ON" ||
@@ -25,10 +22,7 @@ export const splitVoskCmd = (stringArr: string[], arrTypeArr: string[]) => {
       stringArr[0] === "START")
   ) {
     flagState.vosk = true;
-    ioState?.io.emit("voskCtrlFromServer", {
-      type: "flag",
-      flag: flagState.vosk,
-    });
+    voskCallEmit();
   } else if (
     stringArr.length === 1 &&
     (stringArr[0] === "OFF" ||
@@ -36,9 +30,6 @@ export const splitVoskCmd = (stringArr: string[], arrTypeArr: string[]) => {
       stringArr[0] === "STOP")
   ) {
     flagState.vosk = false;
-    ioState?.io.emit("voskCtrlFromServer", {
-      type: "flag",
-      flag: flagState.vosk,
-    });
+    voskCallEmit();
   }
 };

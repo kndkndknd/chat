@@ -8,7 +8,6 @@ import {
   arduinoState,
   bpmState,
 } from "../state";
-import { ioState } from "../state/states/ioState";
 
 import { chatsRedis, streamsRedis } from "../data";
 import { glitchStream } from "./glitchStream";
@@ -17,6 +16,7 @@ import { pickupPaStreamTarget, pickupStreamTarget } from "./pickupStreamTarget";
 import { switchCramp } from "../arduinoAccess/arduinoAccess";
 import { sampleRateRandomize } from "./sampleRateRandomize";
 import { gridTimeoutVal } from "./gridTimeoutVal";
+import { chatEmit, chatReqEmit, erasePrintEmit } from "../socket/ioEmit";
 
 export const chatReceive = async (
   buffer?: buffStateType
@@ -29,9 +29,9 @@ export const chatReceive = async (
         console.log("chat length: ", await chatsRedis.length());
         console.log("chatReceive buffer from:", buffer.from);        
         if (buffer.from !== undefined) {
-          chatEmit(buffer.from);
+          execChat(buffer.from);
         } else {
-          chatEmit();
+          execChat();
         }
         break;
       case "PLAYBACK":
@@ -51,11 +51,11 @@ export const chatReceive = async (
         pushStateStream(buffer.source);
     }
   } else {
-    chatEmit();
+    execChat();
   }
 };
 
-export const chatEmit = async (from?) => {
+export const execChat = async (from?) => {
   console.log("chatEmit called to", currentState.stream.CHAT ? "specific target" : "all clients");
   if (currentState.stream.CHAT) {
     let targetId =
@@ -72,7 +72,7 @@ export const chatEmit = async (from?) => {
     if (chatsLen > 0) {
       const shifted = await chatsRedis.shift();
       if (!shifted) {
-        ioState?.io.to(targetId).emit("chatReqFromServer");
+        chatReqEmit(targetId);
         return;
       }
       const chunk = {
@@ -100,17 +100,17 @@ export const chatEmit = async (from?) => {
             bpmState[targetId]?.stream?.CHAT?.gridFlag &&
             !bpmState[targetId]?.stream?.CHAT?.quantizeFlag
           ) {
-            ioEmitChatFromServer(chunk, targetId);
+            chatEmit(chunk, targetId);
           }
         }, timeOutVal);
       } else {
-        ioEmitChatFromServer(chunk, targetId);
+        chatEmit(chunk, targetId);
       }
     } else {
-      ioState?.io.to(targetId).emit("chatReqFromServer");
+      chatReqEmit(targetId);
     }
   } else {
-    ioState?.io.emit("erasePrintFromServer");
+    erasePrintEmit();
   }
 };
 
@@ -129,7 +129,8 @@ const ioEmitChatFromServer = async (chunk, targetId) => {
     const projectionTargetId = Object.keys(clientState.client).find((key) => {
       return clientState.client[key].projection;
     });
-    ioState?.io.to(projectionTargetId).emit("chatFromServer", projectionChunk);
+    chatEmit(projectionChunk, projectionTargetId);
+    // ioState?.io.to(projectionTargetId).emit("chatFromServer", projectionChunk);
   }
 
   if (
@@ -141,5 +142,5 @@ const ioEmitChatFromServer = async (chunk, targetId) => {
     console.log("switchCramp", result);
   }
   console.log("chunk sampleRate:", chunk.sampleRate);
-  ioState?.io.to(targetId).emit("chatFromServer", chunk);
+  chatEmit(chunk, targetId);
 };

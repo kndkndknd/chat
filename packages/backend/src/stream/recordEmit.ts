@@ -1,7 +1,7 @@
-import { ioState } from "../state/states/ioState";
 import { currentState, cmdState } from "../state";
 import { pushStateStream } from "./pushStateStream";
 import { streamsRedis } from "../redis/streamsRedis";
+import { recordReqEmit, voiceEmit } from "../socket/ioEmit";
 
 let recordIndex = 0;
 
@@ -33,19 +33,10 @@ export const recordEmit = (target?: string, textPrint?: boolean) => {
   const index = recordIndex;
   if (target && target !== undefined) {
     console.log(`target: ${target}`);
-    ioState?.io.to(target).emit("recordReqFromServer", {
-      source: "PLAYBACK",
-      timeout: RECORD_TIMEOUT_MS,
-      index,
-      textPrint: textPrint ?? true,
-    });
+    recordReqEmit({source: "PLAYBACK", timeout: RECORD_TIMEOUT_MS, index: index, textPrint: textPrint ?? true}, target);
   } else {
     console.log("all");
-    ioState?.io.emit("recordReqFromServer", {
-      source: "PLAYBACK",
-      timeout: RECORD_TIMEOUT_MS,
-      index,
-    });
+    recordReqEmit({source: "PLAYBACK", timeout: RECORD_TIMEOUT_MS, index: index});
   }
   recordIndex++;
   // クライアントは timeout で録画を止めるので、同じタイミングで RECORD を戻す。
@@ -57,10 +48,7 @@ export const recordEmit = (target?: string, textPrint?: boolean) => {
   if (cmdState.VOICE.length > 0) {
     cmdState.VOICE.forEach((element) => {
       //          io.to(element).emit('voiceFromServer', 'RECORD')
-      ioState?.io.to(element).emit("voiceFromServer", {
-        text: "RECORD",
-        lang: cmdState.voiceLang,
-      });
+      voiceEmit("RECORD", cmdState.voiceLang, element);
     });
   }
   //     setTimeout(() => {
@@ -83,21 +71,15 @@ export const recordAsOtherEmit = (
     pushStateStream(source);
     if (target && target !== undefined) {
       console.log(`target: ${target}`);
-      ioState?.io.to(target).emit("recordReqFromServer", {
-        source: source,
-        timeout: 10000,
-      });
+      recordReqEmit({source: source, timeout: 10000}, target);
     } else {
       console.log("all");
-      ioState?.io.emit("recordReqFromServer", { source: source, timeout: 10000 });
+      recordReqEmit({source: source, timeout: 10000});
     }
     if (cmdState.VOICE.length > 0) {
       cmdState.VOICE.forEach((element) => {
         //          io.to(element).emit('voiceFromServer', 'RECORD')
-        ioState?.io.to(element).emit("voiceFromServer", {
-          text: source,
-          lang: cmdState.voiceLang,
-        });
+        voiceEmit(source, cmdState.voiceLang, element);
       });
     }
   } else {

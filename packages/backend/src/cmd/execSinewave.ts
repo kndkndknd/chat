@@ -1,9 +1,9 @@
-import { putCmd } from "./putCmd";
+import { cmdEmit } from "../socket/ioEmit";
 // import { notTargetEmit } from "./notTargetEmit";
 import { pickupCmdTarget } from "./pickupCmdTarget";
 import { currentState, previousState, clientState, cmdState } from "../state";
 
-export const sinewaveEmit = (
+export const execSinewave = (
   frequencyStr: number,
   // state: cmdStateType,
   target?: string
@@ -117,7 +117,7 @@ export const sinewaveEmit = (
   */
   console.log("current sinewave", currentState.sinewave);
   // console.log(targetIdArr);
-  putCmd(targetIdArr, cmd);
+  cmdEmit(targetIdArr, cmd);
   // putCmd(io, targetId, cmd, state);
   // if (target === undefined) {
   //   notTargetEmit(targetId, state.client, io);

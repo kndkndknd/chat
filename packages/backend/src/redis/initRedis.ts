@@ -54,30 +54,27 @@ export const initRedis = async () => {
   // bpmState を全接続クライアントに対して初期値で再設定
   for (const id of connectedIds) {
     bpmState[id] = {
+      bpm: bpmStateDefault.bpm,
       METRONOME: {
-        bpm: bpmStateDefault.bpm,
         beat: bpmStateDefault.beat,
         flag: bpmStateDefault.metronomeFlag,
       },
       MODULATION: {
-        bpm: bpmStateDefault.bpm,
         beat: bpmStateDefault.beat,
         flag: bpmStateDefault.modulationFlag,
       },
       TORCH: {
-        bpm: bpmStateDefault.bpm,
         flag: bpmStateDefault.torchBlinkFlag,
         type: bpmStateDefault.torchType,
+        beat: bpmStateDefault.beat,
       },
       stream: {},
     };
     ["CHAT", ...streamList].forEach((stream) => {
       bpmState[id].stream[stream] = {
-        bpm: bpmStateDefault.bpm,
         beat: bpmStateDefault.beat,
         gridFlag: bpmStateDefault.gridFlag,
         quantizeFlag: bpmStateDefault.quantizeFlag,
-        latency: bpmStateDefault.latency,
       };
     });
   }

@@ -1,139 +1,134 @@
-import { ioState } from "../state/states/ioState";
-import { cmdEmit } from "./cmdEmit";
-import { voiceEmit } from "./voiceEmit";
-import { sinewaveEmit } from "./sinewaveEmit";
-import { previousCmd } from "./previousCmd";
-import { switchCtrl } from "../arduinoAccess/arduinoAccess";
-import { millisecondsPerBeat } from "../util/bpmCalc";
-import { m5Switch } from "../rotate/m5Access";
-import { m5State } from "../rotate/m5State";
-
+import { clientState, cmdState, currentState } from "../state";
 import { cmdList } from "../data";
-import { clientState, arduinoState, bpmState, streamState } from "../state";
-import { quantizeCmd } from "../stream/quantize";
-import { stringEmit } from "../socket/ioEmit";
-import { joinOrLeave, offerReq } from "../webRTC";
 
-export const execCmd = async (
-  strings: string,
-  id: string
-): Promise<void> => {
-  if (Object.keys(cmdList).includes(strings)) {
-    console.log("in cmd");
-    voiceEmit(cmdList[strings], id);
-    if (id !== "all" && clientState.client[id] !== undefined && clientState.client[id].self) {
-      cmdEmit(cmdList[strings], id);
-    } else {
-      cmdEmit(cmdList[strings]);
-    }
-  } else if (strings === "FILTER") {
-    for (const stream in streamState.filter) {
-      streamState.filter[stream].flag = !streamState.filter[stream].flag;
-    }
-    console.log(streamState.filter);
-    stringEmit("FILTER: TOGGLED", true);
-    // webRTC
-  // } else if (strings === "JOIN" || strings === "LEAVE") {
-  //   joinOrLeave(strings as "JOIN" | "LEAVE", io, id);
-  // } else if (strings === "OFFER") {
-  //   offerReq(io, id);
-  } else if (strings === "PREVIOUS" || strings === "PREV") {
-    voiceEmit("PREVIOUS", id);
-    previousCmd();
-  } else if (strings === "QUANTIZE") {
-    if (id !== "all" && clientState.client[id] !== undefined && clientState.client[id].self) {
-      quantizeCmd(id);
-    } else {
-      quantizeCmd();
-    }
-  } else if (strings === "NO" || strings === "NUMBER") {
-    Object.keys(clientState.client).forEach((id) => {
-      console.log(id);
-      ioState?.io.to(id).emit("stringsFromServer", {
-        strings: String(clientState.client[id].index),
-        timeout: true,
-      });
-      //putString(io, String(index), state)
-    });
-    // 20230923 sinewave Clientの表示
-    clientState.sinewaveClient.forEach((id, index) => {
-      console.log(id);
-      ioState?.io.to(id).emit("stringsFromServer", {
-        strings: String(index) + "(sinewave)",
-        timeout: true,
-      });
-      //putString(io, String(index), state)
-    });
-  } else if (strings === "ROTATE") {
-    const switchState = m5State.rotation.relay === "on" ? false : true;
-    m5Switch("rotation", switchState);
-    m5State.rotation.relay = switchState ? "on" : "off";
-  } else if (strings === "SELF") {
-    clientState.client[id].self = !clientState.client[id].self;
-    console.log("SELF: ", clientState.client[id].self);
-    ioState?.io.to(id).emit("stringsFromServer", {
-      strings: "SELF " + clientState.client[id].self,
-      timeout: true,
-    });
-  } else if (strings === "SINEWAVE") {
-    const frequency = 20 + Math.random() * 19980;
-    voiceEmit(frequency + "Hz", id);
-    sinewaveEmit(frequency);
-    if (id !== "all" && clientState.client[id] !== undefined && clientState.client[id].self) {
-      sinewaveEmit(frequency, id);
-    } else {
-      sinewaveEmit(frequency);
-    }
-  } else if (Number.isFinite(Number(strings))) {
-    console.log("sinewave");
-    voiceEmit(strings + "Hz", id);
-    // if (clientState.client[id].self) {
-    //   sinewaveEmit(Number(strings), io, id);
-    // } else {
-    sinewaveEmit(Number(strings));
-    // }
-  } else if (strings === "SOLFEGGIO") {
-    const solfeggioArr = [285, 396, 417, 528, 639, 741, 852, 963];
-    const frequency =
-      solfeggioArr[Math.floor(Math.random() * solfeggioArr.length)];
-    if (clientState.client[id] !== undefined && clientState.client[id].self) {
-      sinewaveEmit(frequency);
-    } else {
-      sinewaveEmit(frequency);
-    }
-  } else if (strings === "SWITCH") {
-    const switchState = m5State.vibration.relay === "on" ? false : true;
-    m5Switch("vibration", switchState);
-    m5State.vibration.relay = switchState ? "on" : "off";
-    // console.log(switchState);
-    // ioState?.io.emit("stringsFromServer", {
-    //   strings: "SWITCH " + switchState,
-    //   timeout: true,
-    // });
-    // switchCtrl().then((result) => {
-    //   console.log(result);
-    // });
-  } else if (strings === "TORCH" || strings === "BLINK") {
-    // torch command
-    if (bpmState[id] === undefined) {
-      console.log("TORCH CMD skipped: no bpmState for", id);
-      return;
-    }
-    const flag =
-      (strings === "TORCH" &&
-        (!bpmState[id].TORCH.flag || bpmState[id].TORCH.type === "BLINK")) ||
-      (strings === "BLINK" &&
-        (!bpmState[id].TORCH.flag || bpmState[id].TORCH.type === "STEADY"))
-        ? true
-        : false;
-    const torchCommand = {
-      flag: flag,
-      type: <"STEADY" | "BLINK">(strings === "TORCH" ? "STEADY" : "BLINK"),
-      bpm: bpmState[id].TORCH.bpm,
-    };
-    bpmState[id].TORCH.flag = torchCommand.flag;
-    bpmState[id].TORCH.type = torchCommand.type;
-    ioState?.io.emit("torchCmdFromServer", torchCommand);
-    console.log("TORCH CMD:", torchCommand, "to", id);
+import { execStop } from "./execStop";
+import { cmdEmit } from "../socket/ioEmit";
+import { notTargetEmit } from "./notTargetEmit";
+import { previousCmd } from "./previousCmd";
+import { pickupCmdTarget } from "./pickupCmdTarget";
+// import { getLengthFromBPM } from "../util/getLengthFromBPM";
+import { metronomeEmit } from "./metronomeEmit";
+import { clickFreq } from "./clickFreq";
+
+export const execCmd = (
+  cmdStrings: string,
+  target?: string,
+  flag?: boolean,
+) => {
+  const command = getCmd(cmdStrings, target, flag);
+  switch (command.type) {
+    case "CMD":
+      if(command.cmd.cmd === "METRONOME") {
+        metronomeEmit(command.cmd, command.target?.[0]);
+      } else {
+        cmdEmit(command.target ?? [""], command.cmd);
+      }
+      break;
+    case "STOP":
+      execStop(command.source, command.target ?? "ALL", command.group ?? "ALL");
+      break;
+    case "PREVIOUS":
+      previousCmd();
+      break;
+  }
+
+  cmdStrings = "";
+};
+
+export const getCmd = (cmdStrings: string,
+  target?: string,
+  flag?: boolean,
+):
+  {type: "CMD",cmd: { cmd: string; value?: number; flag?: boolean; fade?: number; gain?: number }, target?: string[]} |
+  {type: "STOP", source: string, target?: "CMD" | "ALL" | "STREAM" , group?: string} |
+  {type: "PREVIOUS"} => {
+  // Implement the logic for getCmd here
+    let targetId = "";
+  let cmd: {
+    cmd: string;
+    property?: string;
+    value?: number;
+    flag?: boolean;
+    fade?: number;
+    gain?: number;
+  };
+  const targetIdArr = target
+    ? pickupCmdTarget(cmdStrings, { target: target })
+    : pickupCmdTarget(cmdStrings);
+
+  switch (cmdStrings) {
+    case "STOP":
+      const client = "all";
+      return { type: "STOP", source: "", target: "ALL", group: client };
+    case "WHITENOISE":
+    case "FEEDBACK":
+    case "BASS":
+      const cmdKey = cmdStrings as keyof typeof cmdList;
+      cmd = {
+        cmd: cmdList[cmdKey],
+        gain: cmdState.GAIN[cmdKey],
+      };
+
+      if (
+        currentState.cmd[cmd.cmd].filter((id) => targetIdArr.includes(id))
+          .length > 0
+      ) {
+        cmd.flag = false;
+        cmd.fade = cmdState.FADE.OUT;
+        currentState.cmd[cmd.cmd]
+          .filter((id) => targetIdArr.includes(id))
+          .forEach((id) => {
+            delete currentState.cmd[cmd.cmd][id];
+          });
+      } else {
+        cmd.flag = true;
+        cmd.fade = cmdState.FADE.IN;
+        currentState.cmd[cmd.cmd] = [
+          ...currentState.cmd[cmd.cmd],
+          ...targetIdArr,
+        ];
+        console.log(`current ${cmd.cmd}`, currentState.cmd[cmd.cmd]);
+      }
+      if (flag !== undefined) cmd.flag = flag;
+
+      console.log("flag", flag);
+      console.log("cmd", cmd);
+      return { type: "CMD", cmd, target: targetIdArr };
+      // cmdEmit(targetIdArr, cmd);
+
+    case "CLICK":
+      console.log(cmdState.GAIN.CLICK);
+      cmd = {
+        cmd: "CLICK",
+        gain: cmdState.GAIN.CLICK,
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
+    case "UP":
+    case "DOWN":
+    case "SAME":
+      const clickFreqValue = clickFreq(cmdStrings);
+      cmdState.CLICKFREQ = clickFreqValue;
+      // console.log("clickFreq", clickFreqValue);
+      cmd = {
+        cmd: "CLICK",
+        gain: cmdState.GAIN.CLICK,
+        value: clickFreqValue,
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
+    case "SIMULATE":
+      console.log(cmdState.GAIN.SIMULATE);
+      cmd = {
+        cmd: "SIMULATE",
+        gain: cmdState.GAIN.SIMULATE,
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
+    case "METRONOME":
+      return { type: "CMD", cmd, target: targetIdArr };
+      // metronomeEmit(cmd, target);
+      // break;
+    case "PREVIOUS":
+    case "PREV":
+      console.log("previous");
+      return { type: "PREVIOUS" };
   }
 };

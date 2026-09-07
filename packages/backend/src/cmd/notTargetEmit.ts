@@ -1,4 +1,4 @@
-import { ioState } from "../state/states/ioState";
+import { erasePrintEmit } from "../socket/ioEmit";
 
 export const notTargetEmit = (
   targetId: string | string[],
@@ -7,9 +7,9 @@ export const notTargetEmit = (
   idArr.forEach((id) => {
     console.log("erasePrint", id);
     if (Array.isArray(targetId)) {
-      if (!targetId.includes(id)) ioState?.io.to(id).emit("erasePrintFromServer");
+      if (!targetId.includes(id)) erasePrintEmit(id);
     } else {
-      if (id !== targetId) ioState?.io.to(id).emit("erasePrintFromServer");
+      if (id !== targetId) erasePrintEmit(id);
     }
   });
 };

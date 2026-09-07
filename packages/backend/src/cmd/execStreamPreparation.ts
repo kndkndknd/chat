@@ -1,11 +1,11 @@
 import { chatPreparation } from "../stream/chatPreparation";
 import { recordEmit } from "../stream/recordEmit";
-import { voiceEmit } from "./voiceEmit";
-import { streamEmit } from "../stream/streamEmit";
+import { voiceEmit } from "../socket/ioEmit";
+import { execStream } from "../stream/execStream";
 import { streamList } from "../data";
 import { streamState, clientState } from "../state";
 
-export const execStream = async (
+export const execStreamPreparation = async (
   source: string,
   id: string,
   index?: number,
@@ -33,7 +33,7 @@ export const execStream = async (
     console.log("in stream");
 
     // from が指定されていればその端末を起点に再生する
-    streamEmit(source, from ?? undefined, undefined, index);
+    execStream(source, from ?? undefined, undefined, index);
     voiceEmit(source, id);
   }
 };

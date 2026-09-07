@@ -1,4 +1,4 @@
-import { putCmd } from "./putCmd";
+import { cmdEmit } from "../socket/ioEmit";
 import { notTargetEmit } from "./notTargetEmit";
 import { millisecondsPerBeat } from "../util/bpmCalc";
 import { currentState, cmdState, bpmState, clientState } from "../state";
@@ -13,18 +13,17 @@ export const metronomeEmit = (cmd?, target?) => {
   if (target) {
     if (bpmState[target] === undefined) {
       bpmState[target] = {
+        bpm: 60,
         stream: {},
-        METRONOME: { bpm: 60, beat: 4, flag: false },
-        MODULATION: { bpm: 60, beat: 4, flag: false },
-        TORCH: { bpm: 60, type: "STEADY", flag: false },
+        METRONOME: { beat: 4, flag: false },
+        MODULATION: { beat: 4, flag: false },
+        TORCH: { type: "STEADY", flag: false, beat: 4 },
       };
       for (const stream of streamList) {
         bpmState[target].stream[stream] = {
-          bpm: 60,
           beat: 0,
           gridFlag: false,
           quantizeFlag: false,
-          latency: 1000,
         };
       }
     }
@@ -43,7 +42,7 @@ export const metronomeEmit = (cmd?, target?) => {
       cmd.gain = cmdState.GAIN.METRONOME;
       currentState.cmd.METRONOME.push(target);
       // cmd.value = cmdState.METRONOME[target];
-      cmd.value = millisecondsPerBeat(bpmState[target].METRONOME.bpm);
+      cmd.value = millisecondsPerBeat(bpmState[target].bpm);
     }
   } else {
     if (currentState.cmd.METRONOME.length === 0) {
@@ -57,17 +56,17 @@ export const metronomeEmit = (cmd?, target?) => {
       //   Math.floor(Math.random() * Object.keys(clientState.client).length)
       // ];
       currentState.cmd[cmd.cmd].push(target);
-      cmd.value = millisecondsPerBeat(bpmState[target].METRONOME.bpm);
+      cmd.value = millisecondsPerBeat(bpmState[target].bpm);
       // cmd.value = cmdState.METRONOME[target];
     } else {
       cmd.flag = false;
       cmd.gain = cmdState.GAIN.METRONOME;
       target = currentState.cmd.METRONOME.shift();
       // cmd.value = cmdState.METRONOME[target];
-      cmd.value = millisecondsPerBeat(bpmState[target].METRONOME.bpm);
+      cmd.value = millisecondsPerBeat(bpmState[target].bpm);
     }
   }
-  putCmd([target], cmd);
+  cmdEmit([target], cmd);
   notTargetEmit(target, Object.keys(clientState.client));
   console.log("metronome");
 };

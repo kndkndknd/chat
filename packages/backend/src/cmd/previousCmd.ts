@@ -1,7 +1,7 @@
 import { previousState } from "../state";
-import { cmdEmit } from "./cmdEmit";
-import { streamEmit } from "../stream/streamEmit";
-import { sinewaveEmit } from "./sinewaveEmit";
+import { execCmd } from "./execCmd";
+import { execStream } from "../stream/execStream";
+import { execSinewave } from "./execSinewave";
 import { chatPreparation } from "../stream/chatPreparation";
 
 export const previousCmd = () => {
@@ -10,7 +10,7 @@ export const previousCmd = () => {
   console.log("previous stream", previousState.stream);
   for (let cmd in previousState.cmd) {
     previousState.cmd[cmd].forEach((target) => {
-      cmdEmit(cmd, target);
+      execCmd(cmd, target);
     });
   }
   for (let stream in previousState.stream) {
@@ -19,12 +19,12 @@ export const previousCmd = () => {
         console.log("chat previous");
         chatPreparation();
       } else {
-        streamEmit(stream);
+        execStream(stream);
       }
     }
   }
   for (let target in previousState.sinewave) {
     console.log(previousState.sinewave[target]);
-    sinewaveEmit(previousState.sinewave[target], target);
+    execSinewave(previousState.sinewave[target], target);
   }
 };

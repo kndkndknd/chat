@@ -2,10 +2,10 @@
 import { portamentChange } from "./portamentChange";
 import { sampleRateChange } from "./sampleRateChange";
 import { glitchChange } from "./glitchChange";
-import { gridChange } from "./gridChange";
 // import { bpmChange } from "./bpmChange";
 import { randomStreamOrder } from "./randomStreamOrder";
 import { voiceChange } from "./voiceChange";
+import { gridChange } from "../bpm/gridChange";
 
 export const parameterChange = (
   param: string,
@@ -24,9 +24,6 @@ export const parameterChange = (
     case "GRID":
       gridChange(arg);
       break;
-    // case "BPM":
-    //   bpmChange(arg);
-    //   break;
     case "RANDOM":
       randomStreamOrder();
       break;

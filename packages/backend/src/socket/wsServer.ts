@@ -6,11 +6,10 @@ import { buffStateType, gainStateType } from "../../../../types";
 import { clientState, currentState, bpmState } from "../state";
 import { chatReceive } from "../stream/chatReceive";
 import { charProcess } from "../cmd/charProcess";
-import { streamEmit } from "../stream/streamEmit";
+import { execStream } from "../stream/execStream";
 import { ioState } from "../state/states/ioState";
 import { connectFromClient } from "../clientSetting/connectFromClient";
 import { emitClientSettings } from "../clientSetting/clientSettingsEmit";
-import { applyNightModeToClient } from "../nightMode/nightMode";
 import { countersRedis } from "../redis/streamsRedis";
 import { faceDetectScenario } from "../scenario/faceDetectScenario";
 import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
@@ -76,9 +75,6 @@ export const wsServer = (
           const result = connectFromClient(data, id, ipAddress);
           if (result) {
             ws.send(JSON.stringify({ type: "debugFromServer" }));
-            // ナイトモード作動中なら、この端末も顔認識OFF＋BLACKに合わせる。
-            // emitClientSettings の前に facedetection を false にしておく。
-            applyNightModeToClient(id);
             emitClientSettings(id);
           } else {
             console.log("connectFromClient failed");
@@ -106,7 +102,7 @@ export const wsServer = (
             typeof data === "string" ? undefined : (data as { index?: number }).index;
           console.log(source, "index:", index);
           if (currentState.stream[source]) {
-            streamEmit(source, id, undefined, index);
+            execStream(source, id, undefined, index);
           }
           break;
         }

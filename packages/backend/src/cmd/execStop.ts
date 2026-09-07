@@ -1,5 +1,4 @@
-import { ioState } from "../state/states/ioState";
-import { voiceEmit } from "./voiceEmit";
+import { stopEmit, voiceEmit } from "../socket/ioEmit";
 import {
   clientState,
   cmdState,
@@ -9,7 +8,8 @@ import {
 } from "../state";
 import { wholeParams } from "../data/list/wholeParams";
 
-export const stopEmit = (
+
+export const execStop = (
   source: string,
   target?: "ALL" | "STREAM" | "CMD",
   client?: string
@@ -28,10 +28,7 @@ export const stopEmit = (
       !clientState.client[source].self
     ) {
       Object.keys(clientState.client).forEach((element) => {
-        ioState?.io.to(element).emit("stopFromServer", {
-          target: target === undefined ? "ALL" : target,
-          fadeOutVal: cmdState.FADE.OUT,
-        });
+        stopEmit({fadeOutVal: cmdState.FADE.OUT, target: element === undefined ? "ALL" : element});
       });
       for (let cmd in currentState.cmd) {
         previousState.cmd[cmd] = currentState.cmd[cmd];
@@ -40,10 +37,7 @@ export const stopEmit = (
       previousState.sinewave = currentState.sinewave;
       currentState.sinewave = {};
     } else {
-      ioState?.io.to(source).emit("stopFromServer", {
-        target: target === undefined ? "ALL" : target,
-        fadeOutVal: cmdState.FADE.OUT,
-      });
+      stopEmit({fadeOutVal: cmdState.FADE.OUT, target: target === undefined ? "ALL" : target});
       for (let cmd in currentState.cmd) {
         if (currentState.cmd[cmd].includes(source)) {
           previousState.cmd[cmd] = currentState.cmd[cmd];
@@ -58,10 +52,7 @@ export const stopEmit = (
       }
     }
   } else if (Object.keys(clientState.client).includes(client)) {
-    ioState?.io.to(client).emit("stopFromServer", {
-      target: target === undefined ? "ALL" : target,
-      fadeOutVal: cmdState.FADE.OUT,
-    });
+    stopEmit({fadeOutVal: cmdState.FADE.OUT, target: target === undefined ? "ALL" : target});
     for (let cmd in currentState.cmd) {
       if (currentState.cmd[cmd].includes(client)) {
         previousState.cmd[cmd] = currentState.cmd[cmd];

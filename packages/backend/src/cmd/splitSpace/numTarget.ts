@@ -1,17 +1,15 @@
-import { ioState } from "../../state/states/ioState";
 import { clientState, currentState, streamState } from "../../state";
 import { cmdList, streamList } from "../../data";
-import { cmdEmit } from "../cmdEmit";
+import { execCmd } from "../execCmd";
 import { recordEmit } from "../../stream/recordEmit";
-import { sinewaveEmit } from "../sinewaveEmit";
-import { streamEmit } from "../../stream/streamEmit";
+import { execSinewave } from "../execSinewave";
 import { parameterChange } from "../../parameterChange";
 import { notTargetEmit } from "../notTargetEmit";
 import { stringEmit } from "../../socket/ioEmit";
 import { chatPreparation } from "../../stream/chatPreparation";
 import { splitQuantize } from "./splitQuantize";
 import { numPaSwitch } from "./numPaSwitch";
-import { execStream } from "../execStream";
+import { execStreamPreparation } from "../execStreamPreparation";
 import { splitBeat } from "../../stream/quantize/splitBeat";
 
 export const numTarget = (
@@ -33,7 +31,7 @@ export const numTarget = (
         const cmd = cmdList[stringArr[0]];
         console.log("currend cmd", currentState.cmd[stringArr[0]]);
         const flag = !currentState.cmd[cmd].includes(target);
-        cmdEmit(stringArr[0], target, flag);
+        execCmd(stringArr[0], target, flag);
       } else {
         stringEmit("target is not cmd client", true, target);
       }
@@ -43,7 +41,7 @@ export const numTarget = (
     (streamList.includes(stringArr[0]) || stringArr[0] === "CHAT")
   ) {
     console.log("target stream");
-    execStream(stringArr[0], undefined, undefined, undefined, targetArr);
+    execStreamPreparation(stringArr[0], undefined, undefined, undefined, targetArr);
     // streamState.target[stringArr[0]] = [target];
     // console.log(`set ${stringArr[0]} stream`, streamState.target[stringArr[0]]);
     // if (stringArr[1] === "CHAT") {
@@ -57,7 +55,7 @@ export const numTarget = (
     }
   } else if (arrTypeArr[0] === "number") {
     for (const target of targetArr) {
-      sinewaveEmit(Number(stringArr[1]), target);
+      execSinewave(Number(stringArr[1]), target);
     }
   } else if (stringArr[0] === "VOICE") {
     // console.log("VOICE", target);
@@ -93,18 +91,18 @@ export const numTarget = (
         splitBeat(arg, {target, stream: stringArr[2]});
       }
     }
-  } else if (stringArr[0] === "PA") {
-    for (const target of targetArr) {
-      numPaSwitch(target);
-    }
-  } else if (stringArr[0] === "GPS") {
-    for (const target of targetArr) {
-      ioState?.io.to(target).emit("gpsFlagFromServer");
-    }
-  } else if (stringArr[0] === "ACCELARATE") {
-    for (const target of targetArr) {
-      ioState?.io.to(target).emit("accelarateFlagFromServer");
-    }
+  // } else if (stringArr[0] === "PA") {
+  //   for (const target of targetArr) {
+  //     numPaSwitch(target);
+  //   }
+  // } else if (stringArr[0] === "GPS") {
+  //   for (const target of targetArr) {
+  //     ioState?.io.to(target).emit("gpsFlagFromServer");
+  //   }
+  // } else if (stringArr[0] === "ACCELARATE") {
+  //   for (const target of targetArr) {
+  //     ioState?.io.to(target).emit("accelarateFlagFromServer");
+  //   }
   } else {
     for (const target of targetArr) {
     stringEmit("not cmd", true, target);

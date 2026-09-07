@@ -3,15 +3,15 @@ import { join } from "path";
 import { streamsRedis } from "../redis/streamsRedis";
 import { itsukiState } from "../state/states/itsukiState";
 import { clientState, currentState, streamState } from "../state";
-import { execStream } from "../cmd/execStream";
+import { execStreamPreparation } from "../cmd/execStreamPreparation";
 import { stopStream } from "../cmd/splitSpace/stopStream";
-import { stopEmit } from "../cmd/stopEmit";
+import { execStop } from "../cmd/execStop";
 import { rotateItsuki } from "../rotate/rotateItsuki";
 import { m5Test, blinkM5Switch, m5Switch } from "../rotate/m5Access";
 // import { bpmChange } from "../parameterChange/bpmChange";
-import { gridChange } from "../parameterChange/gridChange";
-import { ioState } from "../state/states/ioState";
+import { gridChange } from "../bpm/gridChange";
 import { recordEmit } from "../stream/recordEmit";
+import { chatReqEmit } from "../socket/ioEmit";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
@@ -128,7 +128,7 @@ const runBuffer = (candidate: Candidate, fixedId?: string) => {
     return;
   }
   const source = candidate.buffer === "yesterday" ? "YESTERDAY" : "PLAYBACK";
-  execStream(source, id, candidate.index ?? undefined, fixedId);
+  execStreamPreparation(source, id, candidate.index ?? undefined, fixedId);
   console.log("[faceDetectScenario] execStream", source, candidate.index, "->", id);
 };
 
@@ -171,13 +171,13 @@ const runAction = (action: ScenarioAction, ctx: ScenarioContext) => {
         console.log("[faceDetectScenario] no client for", action.source);
         break;
       }
-      execStream(action.source ?? "", id);
+      execStreamPreparation(action.source ?? "", id);
       console.log("[faceDetectScenario] execStream", action.source, "->", id);
       break;
     }
     case "stopEmit": {
       const id = pickClientId();
-      stopEmit(id ?? "");
+      execStop(id ?? "");
       console.log("[faceDetectScenario] stopEmit ->", id);
       break;
     }
@@ -219,14 +219,14 @@ export const availableBuffersState: AvailableBuffers = {
 export const faceDetectScenario = async (detectedClientId?: string) => {
   // 顔認識時はまず再生中のストリームをすべて停止してから、
   // 録画リクエスト（recordEmit）とシナリオ再生（execStream）を行う。
-  stopEmit(pickClientId() ?? "all");
+  execStop(pickClientId() ?? "all");
 
   streamState.target.CHAT = detectedClientId ? [detectedClientId] : streamState.target.CHAT;
   currentState.stream.CHAT = true;
   if(detectedClientId !== undefined && detectedClientId !== null) {
-    ioState.io?.to(detectedClientId).emit("chatReqFromServer");
+    chatReqEmit(detectedClientId);
   } else {
-    ioState.io?.emit("chatReqFromServer");
+    chatReqEmit();
   }
   setTimeout(() => {
     streamState.target.CHAT = Object.keys(clientState.client);
@@ -275,7 +275,7 @@ export const faceDetectScenario = async (detectedClientId?: string) => {
     0,
   );
   const blockDurationMs = scenarioDurationMs + FACE_DETECT_BLOCK_AFTER_MS;
-  ioState.io?.emit("faceDetectBlockFromServer", { durationMs: blockDurationMs });
+  // ioState.io?.emit("faceDetectBlockFromServer", { durationMs: blockDurationMs });
   console.log("[faceDetectScenario] block face detection for", blockDurationMs, "ms");
 
   // recent の playFirstBuffer を含むシナリオを先に実行する。

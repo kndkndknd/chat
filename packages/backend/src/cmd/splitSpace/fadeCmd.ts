@@ -4,7 +4,7 @@ import { cmdState, currentState } from "../../state";
 
 import { stringEmit } from "../../socket/ioEmit";
 import { pickupCmdTarget } from "../pickupCmdTarget";
-import { putCmd } from "../putCmd";
+import { cmdEmit } from "../../socket/ioEmit";
 
 export const fadeCmd = (
   stringArr: string[],
@@ -38,7 +38,7 @@ export const fadeCmd = (
           ? cmdState.FADE.IN
           : 5;
     }
-    putCmd(targetIdArr, cmd);
+    cmdEmit(targetIdArr, cmd);
   } else if (
     (stringArr[1] === "IN" || stringArr[1] === "OUT") &&
     stringArr.length === 2

@@ -23,18 +23,13 @@ export const decideFlagFromAverage = (
   streamTarget: string
 ): boolean => {
   let sumQuantizeFlag = 0;
-
-  const denominator = Object.keys(argBpmClientObj)
-    .map((client) => {
-      return Object.keys(argBpmClientObj[client]).length;
-    })
-    .reduce((a, b) => a + b, 0);
-  console.log("denominator: ", denominator);
+  let denominator = 0;
 
   for (const client in argBpmClientObj) {
     if (clientTarget === "all" || client === clientTarget) {
       for (const stream in argBpmClientObj[client]) {
         if (streamTarget === "all" || stream === streamTarget) {
+          denominator++;
           sumQuantizeFlag += argBpmClientObj[client][stream].quantizeFlag
             ? 1
             : 0;
@@ -42,6 +37,7 @@ export const decideFlagFromAverage = (
       }
     }
   }
+  console.log("denominator: ", denominator);
   console.log("sumQuantizeFlag: ", sumQuantizeFlag);
   console.log(
     "denominator / 2: ",

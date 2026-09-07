@@ -1,9 +1,8 @@
 import { previousState } from "../state";
-import { ioState } from "../state/states/ioState";
 import { receiveEnter } from "./receiveEnter";
-import { stopEmit } from "./stopEmit";
+import { execStop } from "./execStop";
 import { metronomeBpmSet } from "./metronomeBpmSet";
-import { stringEmit } from "../socket/ioEmit";
+import { cmdEmit, stringEmit, erasePrintEmit } from "../socket/ioEmit";
 import { getLogCmd, resetCmdLogNum } from "../logging/getLogCmd";
 import { cmdLogging } from "../logging/cmdLogging";
 // import { get } from "http";
@@ -30,20 +29,24 @@ export function charProcess(
     strings = getLogCmd(character);
     stringEmit(strings, false);
   } else if (character === "Tab" || character === "ArrowRight") {
-    ioState?.io.emit("erasePrintFromServer", "");
+    // ioState?.io.emit("erasePrintFromServer", "");
+    // stringEmit("", false);
+    erasePrintEmit();
     strings = "";
   } else if (character === "ArrowLeft" || character === "Backspace") {
     strings = strings.slice(0, -1);
-    ioState?.io.emit("stringsFromServer", { strings: strings, timeout: false });
+    stringEmit(strings, false);
+    // ioState?.io.emit("stringsFromServer", { strings: strings, timeout: false });
   } else if (character === "Escape") {
     // const client: 'client' | 'sinewaveClient' = state.sinewaveMode ? "sinewaveClient" : "client";
     // console.log(client)
     // console.log("cmdLogging in Escape");
     cmdLogging("STOP");
-    stopEmit(id, "ALL");
+    execStop(id, "ALL");
     strings = "";
   } else if (character === "BASS") {
     // console.log("cmdLogging in BASS");
+    cmdEmit([id],{ cmd: "BASS"});
     cmdLogging("BASS");
     previousState.text = "BASS";
   } else if (character === "BASSS") {
@@ -52,7 +55,8 @@ export function charProcess(
     // console.log(
     //   "io.to(" + id + ').emit("cmdFromServer",{"cmd":"BASS","property":"HIGH"})'
     // );
-    ioState?.io.to(id).emit("cmdFromServer", { cmd: "BASS", property: "HIGH" });
+    cmdEmit([id],{ cmd: "BASS"});
+    // ioState?.io.to(id).emit("cmdFromServer", { cmd: "BASS", property: "HIGH" });
     previousState.text = "BASSS";
   } else if (character === "ArrowDown") {
     strings = "";
@@ -60,7 +64,8 @@ export function charProcess(
     // console.log("up arrow");
     // console.log(previousState.text);
     strings = previousState.text;
-    ioState?.io.emit("stringFromServer", { strings: strings, timeout: false });
+    stringEmit(strings, false);
+    // ioState?.io.emit("stringFromServer", { strings: strings, timeout: false });
   } else if (character === " " && strings === "") {
     metronomeBpmSet(id);
   } else if (character === "Shift") {

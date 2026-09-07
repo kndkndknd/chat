@@ -1,4 +1,4 @@
-import { voiceEmit } from "../cmd/voiceEmit";
+import { voiceEmit } from "../socket/ioEmit";
 import { splitTimerCmd } from "./splitTimerCmd";
 
 export const scheduleSplitCmd = async (

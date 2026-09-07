@@ -4,9 +4,9 @@ import { clientState, bpmState } from "../../state";
 import { bpmClientStateType, bpmStreamStateType } from "../../../../../types";
 import { decideQuantizeFromAverage } from "./decideQuantizeFromAverage";
 import { streamList } from "../../data";
-import { emitQuantize } from "./emitQuantize";
 import { setBpmState } from "./setBpmState";
 import { quantize } from "./quantize";
+import { quantizeEmit } from "../../socket/ioEmit";
 
 /**
  * クオンタイズコマンドに使用するクオンタイズ設定を決定する関数
@@ -37,5 +37,5 @@ export const quantizeCmd = (id?: string) => {
   const quntizeStreamObj = quantize({ splited: false });
   setBpmState(quntizeStreamObj);
   console.log("quntizeStreamObj", quntizeStreamObj);
-  emitQuantize(quntizeStreamObj);
+  quantizeEmit(quntizeStreamObj);
 };

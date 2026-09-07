@@ -7,13 +7,13 @@ import {
   clientState,
   bpmState,
 } from "../state";
-import { ioState } from "../state/states/ioState";
 import { streamsRedis } from "../data";
 import { pickupStreamTarget, pickupPaStreamTarget } from "./pickupStreamTarget";
 import { glitchStream } from "./glitchStream";
 import { gridTimeoutVal } from "./gridTimeoutVal";
+import { streamEmit, stringEmit } from "../socket/ioEmit";
 
-export const streamEmit = async (
+export const execStream = async (
   source: string,
   from?: string,
   timestamp?: number,
@@ -142,7 +142,7 @@ export const streamEmit = async (
         };
       }
     } else {
-      ioState?.io.emit("stringsFromServer", { strings: "NO BUFFER", timeout: true });
+      stringEmit("NO BUFFER", true);
     }
   }
   if (buff) {
@@ -207,9 +207,9 @@ const ioEmitStreamFromServer = async (stream, targetId, source) => {
     const projectionTargetId = Object.keys(clientState.client).find((key) => {
       return clientState.client[key].projection;
     });
-    ioState?.io.to(projectionTargetId).emit("streamFromServer", projectionStream);
+    streamEmit(stream, projectionTargetId);
   }
-  ioState?.io.to(targetId).emit("streamFromServer", stream);
+  streamEmit(stream, targetId);
 };
 
 export const paStreamEmit = async (
@@ -270,7 +270,7 @@ export const paStreamEmit = async (
         };
       }
     } else {
-      ioState?.io.emit("stringsFromServer", { strings: "NO BUFFER", timeout: true });
+      stringEmit("NO BUFFER", true);
     }
   }
   if (buff) {

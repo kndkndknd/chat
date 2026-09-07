@@ -1,4 +1,4 @@
-import { putCmd } from "./putCmd";
+import { cmdEmit } from "../socket/ioEmit";
 import { currentState, previousState, cmdState } from "../state";
 
 export const sinewaveChange = (
@@ -28,7 +28,7 @@ export const sinewaveChange = (
           portament: cmdState.PORTAMENT,
           gain: cmdState.GAIN.SINEWAVE,
         };
-        putCmd([id], cmd);
+        cmdEmit([id], cmd);
       }
     } else if (cmdStrings === "HALF") {
       for (let id in currentState.sinewave) {
@@ -49,7 +49,7 @@ export const sinewaveChange = (
           portament: cmdState.PORTAMENT,
           gain: cmdState.GAIN.SINEWAVE,
         };
-        putCmd([id], cmd);
+        cmdEmit([id], cmd);
       }
     }
   } else {
@@ -72,7 +72,7 @@ export const sinewaveChange = (
         portament: cmdState.PORTAMENT,
         gain: cmdState.GAIN.SINEWAVE,
       };
-      putCmd([id], cmd);
+      cmdEmit([id], cmd);
     } else if (cmdStrings === "HALF") {
       previousState.sinewave[id] = currentState.sinewave[id];
       currentState.sinewave[id] = currentState.sinewave[id] / 2;
@@ -91,7 +91,7 @@ export const sinewaveChange = (
         portament: cmdState.PORTAMENT,
         gain: cmdState.GAIN.SINEWAVE,
       };
-      putCmd([id], cmd);
+      cmdEmit([id], cmd);
     }
   }
 };

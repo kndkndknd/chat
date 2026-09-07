@@ -9,7 +9,7 @@
 // イベント名も分離しており、互いに干渉しない。
 
 import { relayState } from "../state/states/relayState";
-import { ioState } from "../state/states/ioState";
+import { relayReceiverLeftEmit, relaySenderGoneEmit, relayOfferEmit, relayAnswerEmit, relayIceEmit, relayRoomFullEmit, relayReceiverJoinedEmit } from "../socket/ioEmit";
 
 // receiver 登録時に sender へ既存の自分を知らせ、sender 登録時には在室中の
 // receiver 一覧を sender へ通知して接続を張り直させる。
@@ -23,9 +23,7 @@ export const registerRelay = (
     // 既に待機中の receiver がいれば、sender に join 済みとして通知して
     // PC を張らせる (sender が後から起動したケース)。
     relayState.receivers.forEach((receiverId) => {
-      ioState?.io
-        .to(id)
-        .emit("relayReceiverJoinedFromServer", { receiverId });
+      relayReceiverJoinedEmit(receiverId, id);
     });
     return;
   }
@@ -33,16 +31,14 @@ export const registerRelay = (
   // role === "receiver"
   if (relayState.receivers.size >= relayState.maxReceivers) {
     console.log("relay room full, reject receiver:", id);
-    ioState?.io.to(id).emit("relayRoomFullFromServer");
+    relayRoomFullEmit(id);
     return;
   }
   relayState.receivers.add(id);
   console.log("relay receiver registered:", id, "total:", relayState.receivers.size);
   // sender が在室していれば、新規 receiver を通知して offer を作らせる。
   if (relayState.senderId) {
-    ioState?.io
-      .to(relayState.senderId)
-      .emit("relayReceiverJoinedFromServer", { receiverId: id });
+    relayReceiverJoinedEmit(id, relayState.senderId);
   }
 };
 
@@ -51,7 +47,7 @@ export const relayOffer = (
   offer: RTCSessionDescriptionInit,
   fromId: string
 ): void => {
-  ioState?.io.to(to).emit("relayOfferFromServer", { from: fromId, offer });
+  relayOfferEmit(to, offer, fromId);
 };
 
 export const relayAnswer = (
@@ -59,7 +55,7 @@ export const relayAnswer = (
   answer: RTCSessionDescriptionInit,
   fromId: string
 ): void => {
-  ioState?.io.to(to).emit("relayAnswerFromServer", { from: fromId, answer });
+  relayAnswerEmit(to, answer, fromId);
 };
 
 export const relayIce = (
@@ -67,7 +63,7 @@ export const relayIce = (
   candidate: RTCIceCandidateInit,
   fromId: string
 ): void => {
-  ioState?.io.to(to).emit("relayIceFromServer", { from: fromId, candidate });
+  relayIceEmit(to, candidate, fromId);
 };
 
 // ws 切断時のクリーンアップ。sender なら全 receiver へ通知して状態リセット、
@@ -77,7 +73,7 @@ export const handleRelayDisconnect = (id: string): void => {
     console.log("relay sender gone:", id);
     relayState.senderId = null;
     relayState.receivers.forEach((receiverId) => {
-      ioState?.io.to(receiverId).emit("relaySenderGoneFromServer");
+      relaySenderGoneEmit(receiverId);
     });
     return;
   }
@@ -85,9 +81,7 @@ export const handleRelayDisconnect = (id: string): void => {
     relayState.receivers.delete(id);
     console.log("relay receiver left:", id, "total:", relayState.receivers.size);
     if (relayState.senderId) {
-      ioState?.io
-        .to(relayState.senderId)
-        .emit("relayReceiverLeftFromServer", { receiverId: id });
+      relayReceiverLeftEmit(id, relayState.senderId);
     }
   }
 };

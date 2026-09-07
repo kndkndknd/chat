@@ -1,17 +1,15 @@
-import { ioState } from "../../state/states/ioState";
 import { clientState, cmdState, streamState } from "../../state";
 import { streamList, parameterList, streamsRedis } from "../../data";
-import { cmdEmit } from "../cmdEmit";
-import { sinewaveEmit } from "../sinewaveEmit";
+import { execCmd } from "../execCmd";
+import { execSinewave } from "../execSinewave";
 import { parameterChange } from "../../parameterChange";
 
-import { putCmd } from "../putCmd";
-import { stringEmit } from "../../socket/ioEmit";
+import { cmdEmit } from "../../socket/ioEmit";
+import { stringEmit, voiceEmit, timelapseEmit } from "../../socket/ioEmit";
 // import { putString } from "./putString";
 
 // import { insertStream } from "../../mongoAccess/insertStream";
 // import { findStream } from "../../mongoAccess/findStream";
-import { stopEmit } from "../stopEmit";
 import { numTarget } from "./numTarget";
 import { fadeCmd } from "./fadeCmd";
 import { splitStop } from "./splitStop";
@@ -20,14 +18,14 @@ import { splitPaTarget } from "./splitPaTarget";
 
 import { recordEmit, recordAsOtherEmit } from "../../stream/recordEmit";
 import { chatPreparation } from "../../stream/chatPreparation";
-import { streamEmit } from "../../stream/streamEmit";
+import { execStream } from "../../stream/execStream";
 import { helpPrint } from "../help";
 import { getLiveStream } from "../../stream/getLiveStream";
 import { getTimeLine } from "./getTimeLine";
 import { connectTest, switchCramp } from "../../arduinoAccess/arduinoAccess";
 // import { uploadStreamModule } from "../../stream/uploadModule/uploadStream";
 import { uploadStream } from "../../stream/uploadModule/uploadStream";
-import { voiceEmit } from "../voiceEmit";
+// import { voiceEmit } from "../voiceEmit";
 
 import { loadScenario } from "../../scenario/loadScenario";
 import { execScenario } from "../../scenario/execScenario";
@@ -55,7 +53,7 @@ import { splitRotate } from "./splitRotate";
 import { splitToPostgres } from "./splitToPostgres";
 import { splitPlaybackWithIndex } from "./splitPlaybackWithIndex";
 
-import { changeBPM } from "../../parameterChange/changeBpm";
+import { execChangeBPM } from "../../bpm/changeBpm";
 
 
 export const splitSpace = async (
@@ -193,19 +191,16 @@ export const splitSpace = async (
 
     if (arrTypeArr[1] === "string" && !streamList.includes(stringArr[1])) {
       clientState.cmdClient.forEach((client, index) => {
-        cmdEmit(stringArr[1], client);
+        execCmd(stringArr[1], client);
       });
-      // Object.keys(clientState.client).forEach((target) => {
-      //   cmdEmit(stringArr[1], io, target);
-      // });
     } else if (arrTypeArr[1] === "number") {
       clientState.cmdClient.forEach((client, index) => {
         // Object.keys(clientState.client).forEach((target) => {
-        sinewaveEmit(Number(stringArr[1]), client);
+        execSinewave(Number(stringArr[1]), client);
       });
     } else if (streamList.includes(stringArr[1])) {
       streamState.target[stringArr[1]] = [];
-      streamEmit(stringArr[1]);
+      execStream(stringArr[1]);
     } else if (stringArr[1] === "CHAT") {
       streamState.target["CHAT"] = clientState.streamClient;
       chatPreparation();
@@ -220,7 +215,7 @@ export const splitSpace = async (
     }
   } else if (stringArr[0] === "BPM" && arrTypeArr[1] === "number") {
     if(stringArr.length === 2) {
-      changeBPM(Number(stringArr[1]));
+      execChangeBPM(Number(stringArr[1]));
     }
   } else if (
     stringArr[0] === "BUFFER" ||
@@ -366,17 +361,11 @@ export const splitSpace = async (
   } else if (stringArr[0] === "TIMELAPSE") {
     console.log("timelapse split", stringArr[1]);
     if (stringArr[1] === "FALSE" || stringArr[1] === "OFF") {
-      ioState?.io.emit("timelapseFromServer", {
-        cmd: "FALSE",
-      });
+      timelapseEmit("FALSE");
     } else if (stringArr[1] === "TRUE" || stringArr[1] === "ON") {
-      ioState?.io.emit("timelapseFromServer", {
-        cmd: "TRUE",
-      });
+      timelapseEmit("TRUE");
     } else if (stringArr[1] === "GET" || stringArr[1] === "FETCH") {
-      ioState?.io.emit("timelapseFromServer", {
-        cmd: "GET",
-      });
+      timelapseEmit("GET");
     }
   } else if (stringArr[0] === "UPLOAD" && stringArr.length == 2) {
     voiceEmit(stringArr.join(" "), source);
