@@ -194,11 +194,10 @@ export const socket = (): void => {
 
   socketState.socket.on(
     "stopFromServer",
-    (data: { fadeOutVal: number; target?: string }) => {
+    (data: { fadeOutVal: number }) => {
+      // console.log("stopFromServer debug", data);
       erasePrint();
-      if (data.target === undefined || data.target === "ALL") {
-        stopCmd(data.fadeOutVal);
-      }
+      stopCmd(data.fadeOutVal);
       textPrint("STOP", { timeout: true, timeoutDuration: 800 });
     },
   );

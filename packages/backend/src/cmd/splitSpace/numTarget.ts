@@ -55,7 +55,9 @@ export const numTarget = (
     }
   } else if (arrTypeArr[0] === "number") {
     for (const target of targetArr) {
-      execSinewave(Number(stringArr[1]), target);
+      // console.log("target number", target);
+      // console.log("stringArr[0]", stringArr[0]);
+      execSinewave(Number(stringArr[0]), target);
     }
   } else if (stringArr[0] === "VOICE") {
     // console.log("VOICE", target);

@@ -128,6 +128,7 @@ app.get("/rotate", function (req, res, next) {
 });
 
 app.get("/:name", function (req, res, next) {
+  // left, rightはクライアントのinitAudio.tsでパンを設定している
   const name = req.params.name;
   try {
     // if (name == "" || name === "pi" || name === "pi5") {

@@ -207,14 +207,13 @@ export const relayReceiverLeftEmit = (receiverId: string, target?: string) => {
 };
 
 export const stopEmit = (data: {fadeOutVal: number, target: string, group?: string}) => {
+  // console.log("stopEmit", data);
   if (data.target === "ALL") {
     ioState?.io.emit("stopFromServer", {
-      target: "ALL",
       fadeOutVal: data.fadeOutVal,
     });
   } else {
     ioState?.io.to(data.target).emit("stopFromServer", {
-      target: data.target,
       fadeOutVal: data.fadeOutVal,
     });
   }
@@ -262,9 +261,9 @@ export const wholeCmdEmit = (option: any, target?: string) => {
 };
 
 export const voiceEmit = (text: string, lang: string, target?: string) => {
-  if (target === undefined) {
-    ioState?.io.emit("voiceFromServer", { text: text, lang: lang });
-  } else {
-    ioState?.io.to(target).emit("voiceFromServer", { text: text, lang: lang });
-  }
+  // if (target === undefined) {
+  //   ioState?.io.emit("voiceFromServer", { text: text, lang: lang });
+  // } else {
+  //   ioState?.io.to(target).emit("voiceFromServer", { text: text, lang: lang });
+  // }
 };
