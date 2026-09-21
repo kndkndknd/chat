@@ -20,7 +20,7 @@ import {
 import { emojiState, erasePrint, textPrint, showImage, flickering } from "./canvasEvent";
 import { stopCmd, cmdFromServer } from "./cmd";
 import { quantizeFromServer } from "./quantize/quantizeFromServer";
-// import { quantizeFromServer2 } from "./quantize/quantizeFromServer2";
+import { quantizeParamFromServer } from "./quantize/quantizeParamFromServer";
 import { chatReq, recordReqFromServer, streamPlay } from "./stream";
 import { setGainUI } from "./ui/gainUI";
 import { wholeCmd } from "./cmd/wholeCmd";
@@ -174,9 +174,9 @@ export const socket = (): void => {
   });
 
 
-  // socketState.socket.on("quantizeParamFromServer", (data: {data: bpmStreamStateType; stream: string}) => {
-  //   quantizeParamFromServer(data.data, data.stream);
-  // });
+  socketState.socket.on("quantizeParamFromServer", (data: {data: bpmStreamStateType; stream: string[]}) => {
+    quantizeParamFromServer(data.data, data.stream);
+  });
 
   socketState.socket.on(
     "recordReqFromServer",

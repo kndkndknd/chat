@@ -61,7 +61,7 @@ export const emitSplitBeat = (option?: {target?: string; stream?: string}) => {
   if(ioState?.io) {
     for (const target of targetArr) {
       console.log(`emitSplitBeat: target=${target}, stream=${streamArr}`, bpmState[target].stream);
-        ioState.io.emit("quantizeFromServer2", {data:bpmState[target].stream, stream: streamArr});
+        ioState.io.emit("quantizeParamFromServer", {data:bpmState[target].stream, stream: streamArr});
     }
   }
 }

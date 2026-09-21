@@ -95,6 +95,6 @@ vi.spyOn(Math, "random").mockReturnValue(0.45);
 - **MediaStream / Recording**: `recording/*` / `scriptProcessor/*` / `stream/init/initAudioStream` / `stream/play/playAudioStream` / `stream/play/streamPlay` / `stream/socketFromServer/*` / `stream/chatReq`
 - **WebRTC / face-api**: `faceApi/index` / `initialize.ts` / `initializeSnowleopard.ts`
 - **navigator API**: `gps/index`（Geolocation） / `sensor/index`（DeviceMotionEvent）
-- **その他**: `voice/index`（speechSynthesis） / `clientMode/clockMode` / `socket.ts` / `textInput.ts` の `keyDown` / `cmd/*` / `quantize/quantizeFromServer` / `quantize/quantizePlay` / `quantize/old_setQuantize`
+- **その他**: `voice/index`（speechSynthesis） / `clientMode/clockMode` / `socket.ts` / `textInput.ts` の `keyDown` / `cmd/*` / `quantize/quantizeFromServer` / `quantize/quantizeParamFromServer` / `quantize/quantizePlay` / `quantize/old_setQuantize`
 
 これらは E2E もしくは結合テスト（実ブラウザを伴う）の対象とすることを推奨。

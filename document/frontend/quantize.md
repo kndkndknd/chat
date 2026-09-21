@@ -5,8 +5,8 @@
 サーバから送られる BPM / クオンタイズ設定を受け取り、対象ストリーム（`CHAT` / `PLAYBACK` / `TIMELAPSE`）の音声・映像バッファを小節単位で再生するフロントエンドの仕組みです。
 
 - バックエンドはクライアント単位で `bpmState[client]`（`bpmClientStateType`）を保持し、`bpmState[client].stream`（`bpmStreamStateType`）に各ストリームのクオンタイズ状態を持ちます。
-- 値を変更したタイミングで `bpmFromServer` / `quantizeFromServer` を emit し、フロントは `quantizeState` に反映して `quantizePlay` で再生します。
-- BPM（小節長）は `bpmFromServer`、クオンタイズ ON/OFF・beat は `quantizeFromServer` が担当する分離構成です。
+- 値を変更したタイミングで `bpmFromServer` / `quantizeFromServer` / `quantizeParamFromServer` を emit し、フロントは `quantizeState` に反映して `quantizePlay` で再生します。
+- BPM（小節長）は `bpmFromServer`、クオンタイズ ON/OFF は `quantizeFromServer`、`splitBeat`（`BEAT` コマンド）による beat 変更は `quantizeParamFromServer` が担当する分離構成です。
 
 ### 関連ファイル
 
@@ -15,6 +15,7 @@
 | `src/state/quantizeState.ts` | フロントのクオンタイズ状態（`quantizeType`）。 |
 | `src/quantize/bpmFromServer.ts` | `bpmFromServer` ハンドラ。小節長（`bar`）を更新。 |
 | `src/quantize/quantizeFromServer.ts` | `quantizeFromServer` ハンドラ。flag/beat 反映と interval 管理。 |
+| `src/quantize/quantizeParamFromServer.ts` | `quantizeParamFromServer` ハンドラ。対象ストリームの beat のみ反映。 |
 | `src/quantize/quantizePlay.ts` | 1 バッファ分の再生と次バッファ要求。 |
 | `src/quantize/quantizeStop.ts` | interval 停止と状態リセット（現在 src 未使用）。 |
 | `src/util/bpmCalc.ts` | `millisecondsPerBar` などの計算。 |
@@ -71,11 +72,21 @@
   3. `refreshQuantizeInterval()` を呼ぶ。
   4. `quantizeState` を返す（呼び出し側では未使用）。
 
+### `quantizeParamFromServer` — `{ data: bpmStreamStateType; stream: string[] }`
+
+- 送信元: バックエンド `stream/quantize/splitBeat.ts` の `emitSplitBeat`（`BEAT` コマンドから呼ばれる `splitBeat`）。
+- payload は `{ data, stream }` のラッパー形式です。`data` が `bpmStreamStateType`（bare）、`stream` が対象ストリーム名の配列です。
+- ハンドラ: `src/socket.ts` → `quantizeParamFromServer(data.data, data.stream)`。
+- 処理（`src/quantize/quantizeParamFromServer.ts`）:
+  1. `quantizeState.stream` の各キーのうち、`streams` に含まれかつ `data[stream]` が存在するものについて `beat = data[stream].beat` を反映。
+  2. `flag` は変更しません（ON/OFF は `quantizeFromServer` の担当）。
+  3. `refreshQuantizeInterval()` は呼びません（`beat` は interval tick ごとに参照されるため、interval の再生成は不要）。
+
 ## 処理フロー
 
-1. `socket.ts` が `bpmFromServer` / `quantizeFromServer` を受信して各ハンドラを呼ぶ。
-2. `quantizeState.bar` と `quantizeState.stream[*].flag/beat` を更新する。
-3. `refreshQuantizeInterval()`（`quantizeFromServer.ts`）が interval を作り直す。
+1. `socket.ts` が `bpmFromServer` / `quantizeFromServer` / `quantizeParamFromServer` を受信して各ハンドラを呼ぶ。
+2. `quantizeState.bar` と `quantizeState.stream[*].flag/beat` を更新する（`quantizeParamFromServer` は `beat` のみ）。
+3. `refreshQuantizeInterval()`（`quantizeFromServer.ts`）が interval を作り直す（`quantizeParamFromServer` では呼ばない）。
    - いずれかの `stream[*].flag` が `true` … `clearInterval` 後に `quantizeInterval(quantizeState.bar)` を開始し、`intervalFlag = true`。
    - すべて `false` … `clearInterval` のみ行い、`interval = null` / `intervalFlag = false`。
 4. interval tick（`bar` ms ごと）で各ストリームを判定し、条件を満たせば `quantizePlay(streamChunk[stream], stream[stream].beat)` を呼ぶ。
@@ -121,17 +132,16 @@
 | --- | --- |
 | `BPM <n>`（`cmd/splitSpace/index.ts`）→ `changeBPM` → `changeBpm.ts` が `bpmFromServer {bpm, source}` を emit | `bpmFromServer()` が `quantizeState.bar` を更新 |
 | `QUANTIZE ...`（`splitQuantize`）/ `QUANTIZE`（`quantizeCmd`）→ `setBpmState` + `emitQuantize` が `quantizeFromServer`（bare）を emit | `quantizeFromServer()` が `stream[*].flag/beat` を更新 |
-| `splitBeat.ts` が `quantizeFromServer2 {data, stream}` を emit | フロント未実装（受信ハンドラなし） |
+| `BEAT <n\|RANDOM>`（`splitSpace/index.ts` / `numTarget.ts`）→ `splitBeat` → `splitBeat.ts` の `emitSplitBeat` が `quantizeParamFromServer {data, stream}` を emit | `quantizeParamFromServer()` が対象 `stream[*].beat` を更新（`flag` は変更しない） |
 
 ## テスト（`packages/frontend/test/quantize/`)
 
 - `quantizeStop.test.ts` … `interval` 停止、`intervalFlag` / 各 `stream[*].flag` のリセット、`clearInterval` 呼び出しを検証。
 - `setQuantize.test.ts` … `src/quantize/setQuantize.ts` は意図的に無効化（全コメント）のため `describe.skip`。型整合のみ維持。
-- `bpmFromServer` / `quantizeFromServer` / `quantizePlay` は state・ブラウザ API 依存のため未テスト（`document/frontend_test.md` の方針どおり）。
+- `bpmFromServer` / `quantizeFromServer` / `quantizeParamFromServer` / `quantizePlay` は state・ブラウザ API 依存のため未テスト（`document/frontend_test.md` の方針どおり）。
 
 ## 既知の注意点
 
 - `src/quantize/setQuantize.ts` は全行コメントで無効、`old_setQuantize.ts` は未使用（型エラー回避のみ）。
 - `bpmChange.ts` の `{ bpm, bar }` はデッドコードです。現行の `bpmFromServer` 送信元は `changeBpm.ts` の `{ bpm, source }` のみ。
-- `quantizeFromServer2` はバックエンドが emit していますがフロントにハンドラがありません。
 - `src/stream/socketFromServer/chatFromServer.ts` は現在使用されていません（`stream/index.ts` から export されているだけ）。実際の CHAT バッファリングは `src/socket.ts` の `chatFromServer` ハンドラが担います。
