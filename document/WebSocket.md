@@ -284,6 +284,7 @@ socketState.socket.on("connected", (data) => {
 | `streamFromServer` | CHAT以外のストリームを受信して再生 |
 | `workletBufferFromServer` | AudioWorkletバッファを受信して再生 |
 | `quantizeFromServer` | クォンタイズ設定を適用 |
+| `quantizeParamFromServer` | 対象ストリームの beat を適用 |
 | `gainFromServer` | ゲイン変更 |
 | `voiceFromServer` | SpeechSynthesis で音声読み上げ |
 | `emojiFromServer` | 絵文字表示 |

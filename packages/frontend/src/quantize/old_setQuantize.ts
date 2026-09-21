@@ -19,7 +19,7 @@ export const setQuantize = (bar: number, beat?: number, stream?: string[]) => {
   //   stream !== undefined ? stream : frontState.quantize.stream;
 
   quantizeState.interval = window.setInterval(() => {
-    for (const stream of quantizeState.stream) {
+    for (const stream of Object.keys(quantizeState.stream)) {
       console.log("stream", stream);
       if (
         streamFlagState[stream] &&

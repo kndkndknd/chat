@@ -4,31 +4,35 @@ import { showImage, erasePrint, textPrint } from "../canvasEvent";
 import { chatReq } from "../stream";
 import { socketState } from "../state/socketState";
 
-export const quantizePlay = (data: {
-  source: string;
-  audio: Float32Array;
-  video?: string;
-  sampleRate: number;
-  glitch: boolean;
-  bufferSize: number;
-  duration?: number;
-  floating?: boolean;
-  position?: { top: number; left: number; width: number; height: number };
-  target?: string;
-}) => {
-  console.log("quantizePlay", data);
-  const beat =
-    quantizeState.beat === 0
-      ? Math.pow(2, Math.floor(Math.random() * 6))
-      : quantizeState.beat;
-  for (let i = 0; i <= beat; i++) {
+export const quantizePlay = (
+  data: {
+    source: string;
+    audio: Float32Array;
+    video?: string;
+    sampleRate: number;
+    glitch: boolean;
+    bufferSize: number;
+    duration?: number;
+    floating?: boolean;
+    position?: { top: number; left: number; width: number; height: number };
+    target?: string;
+  },
+  beat?: number,
+) => {
+  const streamBeat = quantizeState.stream[data.source]?.beat;
+  const rawBeat = beat !== undefined ? beat : streamBeat ?? 1;
+  const resolvedBeat =
+    rawBeat === 0 ? Math.pow(2, Math.floor(Math.random() * 6)) : rawBeat;
+  const playCount = resolvedBeat > 0 ? resolvedBeat : 1;
+
+  for (let i = 0; i < playCount; i++) {
     setTimeout(() => {
       if (streamFlagState[data.source]) {
         playAudioStream(
           data.audio,
           data.sampleRate,
           data.glitch,
-          data.bufferSize
+          data.bufferSize,
         );
         if (data.video) {
           showImage(data.video);
@@ -39,13 +43,12 @@ export const quantizePlay = (data: {
           textPrint(data.source.toLowerCase());
         }
       }
-    }, (quantizeState.bar / beat) * i);
+    }, (quantizeState.bar / playCount) * i);
   }
+
   if (data.source === "CHAT") {
-    console.log("chatreq");
     chatReq(String(socketState.socketId));
   } else {
-    console.log("streamReqFromClient");
     socketState.socket.emit("streamReqFromClient", data.source);
   }
 };

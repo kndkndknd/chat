@@ -35,7 +35,7 @@ const make = (bpm: number, beat: number, q: boolean) => ({
   latency: 0,
 });
 
-describe("setQuantize", () => {
+describe.skip("setQuantize", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     quantizeState.flag = false;

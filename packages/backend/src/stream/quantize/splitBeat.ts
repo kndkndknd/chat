@@ -1,6 +1,6 @@
 import { bpmState } from "../../state/states/bpmState";
+import { ioState } from "../../state/states/ioState";
 import { streamList } from "../../data";
-import { beatEmit } from "../../socket/ioEmit";
 
 export const splitBeat = (arg: number | "RANDOM", option?: {target?: string; stream?: string}) => {
   const beat: number = arg === "RANDOM" ? 0 : arg;
@@ -58,8 +58,10 @@ export const emitSplitBeat = (option?: {target?: string; stream?: string}) => {
     }
   }
   
+  if(ioState?.io) {
     for (const target of targetArr) {
       console.log(`emitSplitBeat: target=${target}, stream=${streamArr}`, bpmState[target].stream);
-      beatEmit({data:bpmState[target].stream, stream: streamArr});
+        ioState.io.emit("quantizeParamFromServer", {data:bpmState[target].stream, stream: streamArr});
     }
+  }
 }

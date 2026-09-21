@@ -20,7 +20,7 @@ import {
 import { emojiState, erasePrint, textPrint, showImage, flickering } from "./canvasEvent";
 import { stopCmd, cmdFromServer } from "./cmd";
 import { quantizeFromServer } from "./quantize/quantizeFromServer";
-// import { quantizeFromServer2 } from "./quantize/quantizeFromServer2";
+import { quantizeParamFromServer } from "./quantize/quantizeParamFromServer";
 import { chatReq, recordReqFromServer, streamPlay } from "./stream";
 import { setGainUI } from "./ui/gainUI";
 import { wholeCmd } from "./cmd/wholeCmd";
@@ -169,14 +169,14 @@ export const socket = (): void => {
     },
   );
 
-  socketState.socket.on("quantizeFromServer", (data: { bpm: number; stream: bpmStreamStateType }) => {
-    quantizeFromServer(data.stream, data.bpm);
+  socketState.socket.on("quantizeFromServer", (data: bpmStreamStateType) => {
+    quantizeFromServer(data);
   });
 
 
-  // socketState.socket.on("quantizeParamFromServer", (data: {data: bpmStreamStateType; stream: string}) => {
-  //   quantizeParamFromServer(data.data, data.stream);
-  // });
+  socketState.socket.on("quantizeParamFromServer", (data: {data: bpmStreamStateType; stream: string[]}) => {
+    quantizeParamFromServer(data.data, data.stream);
+  });
 
   socketState.socket.on(
     "recordReqFromServer",
@@ -194,10 +194,11 @@ export const socket = (): void => {
 
   socketState.socket.on(
     "stopFromServer",
-    (data: { fadeOutVal: number }) => {
-      // console.log("stopFromServer debug", data);
+    (data: { fadeOutVal: number; target?: string }) => {
       erasePrint();
-      stopCmd(data.fadeOutVal);
+      if (data.target === undefined || data.target === "ALL") {
+        stopCmd(data.fadeOutVal);
+      }
       textPrint("STOP", { timeout: true, timeoutDuration: 800 });
     },
   );
@@ -220,7 +221,7 @@ export const socket = (): void => {
       index?: number;
     }) => {
       streamFlagState[data.source] = true;
-      if (quantizeState.stream[data.source].flag && Object.keys(quantizeState.stream).includes(data.source)) {
+      if (quantizeState.stream[data.source]?.flag) {
         streamChunk[data.source] = data;
       } else {
         if (data.floating === undefined || !data.floating) {
