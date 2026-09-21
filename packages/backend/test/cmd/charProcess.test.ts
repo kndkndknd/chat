@@ -11,9 +11,13 @@ vi.mock("../../src/state/states/ioState", () => ({
   ioState: { io: ioMock },
 }));
 vi.mock("../../src/cmd/receiveEnter", () => ({ receiveEnter: vi.fn() }));
-vi.mock("../../src/cmd/stopEmit", () => ({ stopEmit: vi.fn() }));
+vi.mock("../../src/cmd/execStop", () => ({ execStop: vi.fn() }));
 vi.mock("../../src/cmd/metronomeBpmSet", () => ({ metronomeBpmSet: vi.fn() }));
-vi.mock("../../src/socket/ioEmit", () => ({ stringEmit: vi.fn() }));
+vi.mock("../../src/socket/ioEmit", () => ({
+  stringEmit: vi.fn(),
+  erasePrintEmit: vi.fn(),
+  cmdEmit: vi.fn(),
+}));
 vi.mock("../../src/logging/getLogCmd", () => ({
   getLogCmd: vi.fn(() => "FROM_LOG"),
   resetCmdLogNum: vi.fn(),
@@ -21,6 +25,7 @@ vi.mock("../../src/logging/getLogCmd", () => ({
 vi.mock("../../src/logging/cmdLogging", () => ({ cmdLogging: vi.fn() }));
 
 import { charProcess } from "../../src/cmd/charProcess";
+import { execStop } from "../../src/cmd/execStop";
 import { previousState } from "../../src/state";
 
 describe("charProcess", () => {
@@ -47,8 +52,9 @@ describe("charProcess", () => {
     expect(charProcess("ArrowRight", "ABC", "id1")).toBe("");
   });
 
-  test("Escape で空文字、cmdLogging('STOP') 経由 stopEmit が呼ばれる", () => {
+  test("Escape で空文字、cmdLogging('STOP') 経由 execStop が呼ばれる", () => {
     expect(charProcess("Escape", "X", "id1")).toBe("");
+    expect(execStop).toHaveBeenCalledWith("id1", "ALL");
   });
 
   test("通常文字は strings に連結される", () => {

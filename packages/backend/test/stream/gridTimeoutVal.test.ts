@@ -2,6 +2,7 @@ import { describe, expect, test, vi, beforeEach, afterEach } from "vitest";
 
 vi.mock("../../src/state/states/bpmState", () => ({
   bpmState: {} as Record<string, any>,
+  bpmStateDefault: { bpm: 60 },
 }));
 vi.mock("../../../util/bpmCalc", () => ({
   millisecondsPerBeat: (bpm: number) => 60000 / bpm,
@@ -19,18 +20,18 @@ describe("gridTimeoutVal", () => {
     vi.restoreAllMocks();
   });
 
-  test("stream が bpmState[target].stream に存在する場合はそのストリームの bpm で計算", () => {
+  test("bpmState[target].bpm で計算する", () => {
     (bpmState as any).c1 = {
-      stream: { CHAT: { bpm: 120 } },
-      METRONOME: { bpm: 60 },
+      bpm: 120,
+      stream: { CHAT: { beat: 0 } },
+      METRONOME: { beat: 4 },
     };
     // Math.random()=0.5 → round(0.5*16)=8, msPerBeat=500, → 8*500/4 = 1000
     expect(gridTimeoutVal("CHAT", "c1")).toBe(1000);
   });
 
-  test("stream が bpmState[target].stream に無いとき METRONOME.bpm で計算", () => {
-    (bpmState as any).c2 = { stream: {}, METRONOME: { bpm: 60 } };
+  test("bpmState[target] が無いときは bpmStateDefault.bpm で計算", () => {
     // 8 * 1000 / 4 = 2000
-    expect(gridTimeoutVal("MISSING", "c2")).toBe(2000);
+    expect(gridTimeoutVal("MISSING", "cX")).toBe(2000);
   });
 });

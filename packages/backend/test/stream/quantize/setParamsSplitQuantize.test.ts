@@ -22,11 +22,9 @@ import { setParamsSplitQuantize } from "../../../src/stream/quantize/setParamsSp
 import { bpmState } from "../../../src/state";
 
 const baseStream = (q: boolean) => ({
-  bpm: 60,
   beat: 4,
   gridFlag: false,
   quantizeFlag: q,
-  latency: 250,
 });
 
 const setupBpmState = (clients: string[]) => {
@@ -79,13 +77,9 @@ describe("setParamsSplitQuantize", () => {
     }
   });
 
-  test("params.beat と params.bpm を指定すれば対象に反映される", () => {
-    const result = setParamsSplitQuantize(
-      { flag: true, beat: 8, bpm: 90 },
-      ["c1"],
-    );
+  test("params.beat を指定すれば対象に反映される", () => {
+    const result = setParamsSplitQuantize({ flag: true, beat: 8 }, ["c1"]);
     expect(result.c1.PLAYBACK.beat).toBe(8);
-    expect(result.c1.PLAYBACK.bpm).toBe(90);
   });
 
   test("params.stream を指定すればその stream のみ更新", () => {
