@@ -75,11 +75,9 @@ export const getCmd = (cmdStrings: string,
       ) {
         cmd.flag = false;
         cmd.fade = cmdState.FADE.OUT;
-        currentState.cmd[cmd.cmd]
-          .filter((id) => targetIdArr.includes(id))
-          .forEach((id) => {
-            delete currentState.cmd[cmd.cmd][id];
-          });
+        currentState.cmd[cmd.cmd] = currentState.cmd[cmd.cmd].filter(
+          (id) => !targetIdArr.includes(id),
+        );
       } else {
         cmd.flag = true;
         cmd.fade = cmdState.FADE.IN;
