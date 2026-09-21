@@ -1,4 +1,4 @@
-import { putCmd } from "./putCmd";
+import { putCmd } from "./cmdEmit";
 import { currentState, previousState, cmdState } from "../state";
 
 export const sinewaveChange = (

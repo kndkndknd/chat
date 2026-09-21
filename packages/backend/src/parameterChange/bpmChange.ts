@@ -6,7 +6,7 @@ import {
   bpmStateDefault,
 } from "../state";
 import { ioState } from "../state/states/ioState";
-import { putCmd } from "../cmd/putCmd";
+import { putCmd } from "../cmd/cmdEmit";
 import { stringEmit } from "../socket/ioEmit";
 import { millisecondsPerBar } from "../util/bpmCalc";
 import { streamList } from "../data";

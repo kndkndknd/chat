@@ -1,19 +1,11 @@
 import { quantizeState } from "../state";
 
 export const quantizeStop = () => {
-  console.log("stop quantize");
   clearInterval(quantizeState.interval);
-  return {
-    flag: false,
-    bar: quantizeState.bar,
-    beat: quantizeState.beat,
-    stream: [],
-    interval: quantizeState.interval,
-    timeout: 0,
-  };
-  // quantizeState.flag = false;
-  // quantizeState.currentTime = 0;
-  // quantizeState.bar = 0;
-  // console.log("quantizeState:", quantizeState);
-  // quantizerCurrentTime = 0;
+  quantizeState.interval = null;
+  quantizeState.intervalFlag = false;
+  for (const stream of Object.keys(quantizeState.stream)) {
+    quantizeState.stream[stream].flag = false;
+  }
+  return quantizeState;
 };

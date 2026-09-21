@@ -15,7 +15,7 @@ export const splitModulation = (
         )
       : modulationByBPM(
           Number(stringArr[1]),
-          bpmState[clientState.cmdClient[0]]?.MODULATION?.bpm ??
+          bpmState[clientState.cmdClient[0]]?.bpm ??
             bpmStateDefault.bpm,
           clientState.cmdClient
         );

@@ -1,5 +1,5 @@
 import { stringEmit } from "../../socket/ioEmit";
-import { putCmd } from "../putCmd";
+import { putCmd } from "../cmdEmit";
 import { stopEmit } from "../stopEmit";
 import { notTargetEmit } from "../notTargetEmit";
 import {

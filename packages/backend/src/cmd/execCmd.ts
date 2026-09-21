@@ -129,7 +129,6 @@ export const execCmd = async (
     const torchCommand = {
       flag: flag,
       type: <"STEADY" | "BLINK">(strings === "TORCH" ? "STEADY" : "BLINK"),
-      bpm: bpmState[id].TORCH.bpm,
     };
     bpmState[id].TORCH.flag = torchCommand.flag;
     bpmState[id].TORCH.type = torchCommand.type;

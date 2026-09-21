@@ -13,9 +13,9 @@ export const gridTimeoutVal = (stream: string, targetId: string): number => {
   return clientBpm.stream[stream] !== undefined &&
     Object.keys(clientBpm.stream).includes(stream)
     ? (Math.round(Math.random() * 16) *
-        millisecondsPerBeat(clientBpm.stream[stream].bpm)) /
+        millisecondsPerBeat(clientBpm.bpm)) /
         4
     : (Math.round(Math.random() * 16) *
-        millisecondsPerBeat(clientBpm.METRONOME.bpm)) /
+        millisecondsPerBeat(clientBpm.bpm)) /
         4;
 };

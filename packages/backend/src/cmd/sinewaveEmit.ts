@@ -1,4 +1,4 @@
-import { putCmd } from "./putCmd";
+import { putCmd } from "./cmdEmit";
 // import { notTargetEmit } from "./notTargetEmit";
 import { pickupCmdTarget } from "./pickupCmdTarget";
 import { currentState, previousState, clientState, cmdState } from "../state";

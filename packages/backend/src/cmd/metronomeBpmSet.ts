@@ -1,6 +1,5 @@
 import { clientState, bpmState } from "../state";
 import { stringEmit } from "../socket/ioEmit";
-// import { putCmd } from './putCmd'
 
 const metronomeArr: number[] = [];
 
@@ -21,11 +20,7 @@ export const metronomeBpmSet = (sourceId: string) => {
       // cmdState.METRONOME[sourceId] = latency;
       const bpm = 60000 / latency;
       for (const client in bpmState) {
-        bpmState[client].METRONOME.bpm = bpm;
-        bpmState[client].MODULATION.bpm = bpm;
-        for (const stream in bpmState[client].stream) {
-          bpmState[client].stream[stream].bpm = bpm;
-        }
+        bpmState[client].bpm = bpm;
       }
 
       const targetIndex = clientState.client[sourceId].index;

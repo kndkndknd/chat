@@ -5,7 +5,6 @@ import { cmdEmit } from "../cmdEmit";
 import { sinewaveEmit } from "../sinewaveEmit";
 import { parameterChange } from "../../parameterChange";
 
-import { putCmd } from "../putCmd";
 import { stringEmit } from "../../socket/ioEmit";
 // import { putString } from "./putString";
 

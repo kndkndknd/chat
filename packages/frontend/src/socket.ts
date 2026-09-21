@@ -169,8 +169,8 @@ export const socket = (): void => {
     },
   );
 
-  socketState.socket.on("quantizeFromServer", (data: { bpm: number; stream: bpmStreamStateType }) => {
-    quantizeFromServer(data.stream, data.bpm);
+  socketState.socket.on("quantizeFromServer", (data: bpmStreamStateType) => {
+    quantizeFromServer(data);
   });
 
 
@@ -221,7 +221,7 @@ export const socket = (): void => {
       index?: number;
     }) => {
       streamFlagState[data.source] = true;
-      if (quantizeState.stream[data.source].flag && Object.keys(quantizeState.stream).includes(data.source)) {
+      if (quantizeState.stream[data.source]?.flag) {
         streamChunk[data.source] = data;
       } else {
         if (data.floating === undefined || !data.floating) {

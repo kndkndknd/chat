@@ -2,7 +2,7 @@ import { clientState, cmdState, currentState } from "../state";
 import { cmdList } from "../data";
 
 import { stopEmit } from "./stopEmit";
-import { putCmd } from "./putCmd";
+// import { putCmd } from "./putCmd";
 import { notTargetEmit } from "./notTargetEmit";
 import { previousCmd } from "./previousCmd";
 import { pickupCmdTarget } from "./pickupCmdTarget";
@@ -48,11 +48,9 @@ export const cmdEmit = (
       ) {
         cmd.flag = false;
         cmd.fade = cmdState.FADE.OUT;
-        currentState.cmd[cmd.cmd]
-          .filter((id) => targetIdArr.includes(id))
-          .forEach((id) => {
-            delete currentState.cmd[cmd.cmd][id];
-          });
+        currentState.cmd[cmd.cmd] = currentState.cmd[cmd.cmd].filter(
+          (id) => !targetIdArr.includes(id),
+        );
       } else {
         cmd.flag = true;
         cmd.fade = cmdState.FADE.IN;
@@ -66,6 +64,7 @@ export const cmdEmit = (
 
       console.log("flag", flag);
       console.log("cmd", cmd);
+      console.log('currentState', currentState.cmd[cmd.cmd])
       putCmd(targetIdArr, cmd);
 
       break;
@@ -108,4 +107,43 @@ export const cmdEmit = (
       break;
   }
   cmdStrings = "";
+};
+
+import { ioState } from "../state/states/ioState";
+import { switchOneshot } from "../arduinoAccess/arduinoAccess";
+// import { time } from "console";
+import { arduinoState } from "../state";
+
+export const putCmd = (
+  idArr: Array<string>,
+  cmd: {
+    cmd: string;
+    value?: number;
+    flag?: boolean;
+    fade?: number;
+    portament?: number;
+    gain?: number;
+  }
+) => {
+  console.log('idArr', idArr);
+  idArr.forEach((id) => {
+    ioState?.io.to(id).emit("cmdFromServer", cmd);
+    console.log(id);
+    if (
+      clientState.client[id] !== undefined &&
+      clientState.client[id].urlPathName.includes("pi") &&
+      arduinoState.connected
+    ) {
+      let timeout = cmd.cmd === "CLICK" || cmd.cmd === "STOP" ? 100 : 500;
+      const result = switchOneshot(timeout);
+      console.log("putCmd: switchOneshot", result);
+    }
+  });
+  /*
+  if(state.cmd.VOICE.length > 0) {
+    state.cmd.VOICE.forEach((element) => {
+      ioState?.io.to(element).emit('voiceFromServer', cmd.cmd);
+    })
+  }
+  */
 };

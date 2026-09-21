@@ -19,7 +19,7 @@ export const chatFromServer = (
   socket: SocketFacade
 ) => {
   // console.log("chatFromServer");
-  if (quantizeState.flag && quantizeState.stream.includes("CHAT")) {
+  if (quantizeState.stream.CHAT?.flag) {
     const chunk = {
       source: "CHAT",
       audio: data.audio,

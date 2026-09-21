@@ -4,7 +4,7 @@ import { cmdState, currentState } from "../../state";
 
 import { stringEmit } from "../../socket/ioEmit";
 import { pickupCmdTarget } from "../pickupCmdTarget";
-import { putCmd } from "../putCmd";
+import { putCmd } from "../cmdEmit";
 
 export const fadeCmd = (
   stringArr: string[],

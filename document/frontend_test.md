@@ -7,7 +7,7 @@
 - **テストランナー**: vitest 3.0.8（リポジトリルートの devDependency）
 - **対象**: `packages/frontend/src/**` 配下で「値を返す純粋関数」と「値を返す state 依存関数」（純粋に近い計算ロジック）
 - **対象外**: DOM / Web Audio API / Canvas / WebSocket / WebRTC / face-api.js / hls.js / vosk-browser / MediaStream など、ブラウザ API に深く結合した関数。これらは戻り値を持たない / `void` の関数も多く、本テストではスコープ外。
-- **テスト規模**: 5 ファイル / 22 ケース（全合格）
+- **テスト規模**: 5 ファイル / 22 ケース（18 合格 / 4 skip）
 
 実行コマンド:
 ```bash
@@ -62,8 +62,8 @@ pnpm -F frontend exec vitest run
 
 | テストファイル | 対象関数 | ソース | ケース内容 |
 |---|---|---|---|
-| `test/quantize/quantizeStop.test.ts` | `quantizeStop` | `src/quantize/quantizeStop.ts` | bar/beat/interval をコピーし flag=false / stream=[] / timeout=0 を返す / interval=null でも壊れない / clearInterval 呼び出し確認 |
-| `test/quantize/setQuantize.test.ts` | `setQuantize` | `src/quantize/setQuantize.ts` | interval=null から新規生成 / 同 bar はクリアのみ / 異 bar は再生成 / 複数 stream で最後の値が結果に残る |
+| `test/quantize/quantizeStop.test.ts` | `quantizeStop` | `src/quantize/quantizeStop.ts` | interval を停止し intervalFlag と各 stream の flag を false にする / interval=null でも壊れない / clearInterval 呼び出し確認 |
+| `test/quantize/setQuantize.test.ts` | `setQuantize` | `src/quantize/setQuantize.ts` | `setQuantize.ts` は意図的に無効化（全コメント）のため `describe.skip`。quantizeType 準拠の型のみ維持 |
 
 ## 共通テクニック
 

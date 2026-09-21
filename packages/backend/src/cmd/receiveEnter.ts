@@ -23,7 +23,7 @@ import {
   isScenarioItsukiActive,
   stopScenarioItsuki,
 } from "../scenario/scenarioItsuki";
-import { putCmd } from "./putCmd";
+import { putCmd } from "./cmdEmit";
 import { cmdLogging } from "../logging/cmdLogging";
 import { mergeStreamTarget } from "../stream/mergeStreamTarget";
 
