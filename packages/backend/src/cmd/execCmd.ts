@@ -57,9 +57,43 @@ export const getCmd = (cmdStrings: string,
     : pickupCmdTarget(cmdStrings);
 
   switch (cmdStrings) {
+    case "CLICK":
+      console.log(cmdState.GAIN.CLICK);
+      cmd = {
+        cmd: "CLICK",
+        gain: cmdState.GAIN.CLICK,
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
+    case "METRONOME":
+      return { type: "CMD", cmd, target: targetIdArr };
+      // metronomeEmit(cmd, target);
+      // break;
+    case "PREVIOUS":
+    case "PREV":
+      console.log("previous");
+      return { type: "PREVIOUS" };
+    case "SIMULATE":
+      console.log(cmdState.GAIN.SIMULATE);
+      cmd = {
+        cmd: "SIMULATE",
+        gain: cmdState.GAIN.SIMULATE,
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
     case "STOP":
       const client = "all";
       return { type: "STOP", source: "", target: "ALL", group: client };
+    case "UP":
+    case "DOWN":
+    case "SAME":
+      const clickFreqValue = clickFreq(cmdStrings);
+      cmdState.CLICKFREQ = clickFreqValue;
+      // console.log("clickFreq", clickFreqValue);
+      cmd = {
+        cmd: "CLICK",
+        gain: cmdState.GAIN.CLICK,
+        value: clickFreqValue,
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
     case "WHITENOISE":
     case "FEEDBACK":
     case "BASS":
@@ -94,39 +128,5 @@ export const getCmd = (cmdStrings: string,
       return { type: "CMD", cmd, target: targetIdArr };
       // cmdEmit(targetIdArr, cmd);
 
-    case "CLICK":
-      console.log(cmdState.GAIN.CLICK);
-      cmd = {
-        cmd: "CLICK",
-        gain: cmdState.GAIN.CLICK,
-      };
-      return { type: "CMD", cmd, target: targetIdArr };
-    case "UP":
-    case "DOWN":
-    case "SAME":
-      const clickFreqValue = clickFreq(cmdStrings);
-      cmdState.CLICKFREQ = clickFreqValue;
-      // console.log("clickFreq", clickFreqValue);
-      cmd = {
-        cmd: "CLICK",
-        gain: cmdState.GAIN.CLICK,
-        value: clickFreqValue,
-      };
-      return { type: "CMD", cmd, target: targetIdArr };
-    case "SIMULATE":
-      console.log(cmdState.GAIN.SIMULATE);
-      cmd = {
-        cmd: "SIMULATE",
-        gain: cmdState.GAIN.SIMULATE,
-      };
-      return { type: "CMD", cmd, target: targetIdArr };
-    case "METRONOME":
-      return { type: "CMD", cmd, target: targetIdArr };
-      // metronomeEmit(cmd, target);
-      // break;
-    case "PREVIOUS":
-    case "PREV":
-      console.log("previous");
-      return { type: "PREVIOUS" };
   }
 };

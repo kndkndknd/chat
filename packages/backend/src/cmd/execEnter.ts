@@ -36,6 +36,29 @@ export const execEnter = async (
     } else {
       execCmd(cmdList[strings]);
     }
+  } else if (Object.keys(parameterList).includes(strings)) {
+    const param = parameterList[strings]
+    const arg = { source: id };
+    switch (param) {
+      case "PORTAMENT":
+        portamentChange(arg);
+        break;
+      case "SAMPLERATE":
+        sampleRateChange(arg);
+        break;
+      case "GLITCH":
+        glitchChange(arg);
+        break;
+      case "GRID":
+        gridChange(arg);
+        break;
+      case "RANDOM":
+        randomStreamOrder();
+        break;
+      case "VOICE":
+        voiceChange(arg);
+        break;
+    }
   } else if (strings === "FILTER") {
     for (const stream in streamState.filter) {
       streamState.filter[stream].flag = !streamState.filter[stream].flag;
@@ -47,15 +70,9 @@ export const execEnter = async (
   //   joinOrLeave(strings as "JOIN" | "LEAVE", io, id);
   // } else if (strings === "OFFER") {
   //   offerReq(io, id);
-  } else if (strings === "PREVIOUS" || strings === "PREV") {
-    voiceEmit("PREVIOUS", id);
-    previousCmd();
-  } else if (strings === "QUANTIZE") {
-    if (id !== "all" && clientState.client[id] !== undefined && clientState.client[id].self) {
-      quantizeCmd(id);
-    } else {
-      quantizeCmd();
-    }
+  } else if (strings === "FUSEJI" || strings === "EMOJI") {
+    flagState.emoji = !flagState.emoji;
+    emojiEmit(flagState.emoji);
   } else if (strings === "NO" || strings === "NUMBER") {
     Object.keys(clientState.client).forEach((id) => {
       console.log(id);
@@ -67,6 +84,15 @@ export const execEnter = async (
       stringEmit(String(index) + "(sinewave)", true, id);
       //putString(io, String(index), state)
     });
+  } else if (strings === "PREVIOUS" || strings === "PREV") {
+    voiceEmit("PREVIOUS", id);
+    previousCmd();
+  } else if (strings === "QUANTIZE") {
+    if (id !== "all" && clientState.client[id] !== undefined && clientState.client[id].self) {
+      quantizeCmd(id);
+    } else {
+      quantizeCmd();
+    }
   } else if (strings === "ROTATE") {
     const switchState = m5State.rotation.relay === "on" ? false : true;
     m5Switch("rotation", switchState);
@@ -136,34 +162,8 @@ export const execEnter = async (
     torchCmdEmit(torchCommand, id);
     // ioState?.io.emit("torchCmdFromServer", torchCommand);
     console.log("TORCH CMD:", torchCommand, "to", id);
-  } else if (Object.keys(parameterList).includes(strings)) {
-    const param = parameterList[strings]
-    const arg = { source: id };
-    switch (param) {
-      case "PORTAMENT":
-        portamentChange(arg);
-        break;
-      case "SAMPLERATE":
-        sampleRateChange(arg);
-        break;
-      case "GLITCH":
-        glitchChange(arg);
-        break;
-      case "GRID":
-        gridChange(arg);
-        break;
-      case "RANDOM":
-        randomStreamOrder();
-        break;
-      case "VOICE":
-        voiceChange(arg);
-        break;
-    }
   } else if (strings === "TWICE" || strings === "HALF") {
     sinewaveChange(strings);
-  } else if (strings === "FUSEJI" || strings === "EMOJI") {
-    flagState.emoji = !flagState.emoji;
-    emojiEmit(flagState.emoji);
   }
   
 };
