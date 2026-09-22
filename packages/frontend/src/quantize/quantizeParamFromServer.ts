@@ -8,5 +8,5 @@ export const quantizeParamFromServer = (data:bpmStreamStateType, streams: string
       quantizeState.stream[stream].beat = data[stream].beat;
     }
   }
-  textPrint(`BEAT: ${data['CHAT']?.beat ?? ''}`)
+  textPrint(`BEAT: ${data['CHAT']?.beat ?? ''}`, { timeout: true })
 };
