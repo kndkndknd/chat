@@ -45,7 +45,6 @@ export function charProcess(
     execStop(id, "ALL");
     strings = "";
   } else if (character === "BASS") {
-    // console.log("cmdLogging in BASS");
     cmdEmit([id],{ cmd: "BASS"});
     cmdLogging("BASS");
     previousState.text = "BASS";

@@ -108,7 +108,6 @@ export const socket = (): void => {
       gain?: number;
       solo?: boolean;
     }) => {
-      // console.log("cmdFromServer", cmd);
       cmdFromServer(cmd);
       canvasState.stringsClient = "";
     },
