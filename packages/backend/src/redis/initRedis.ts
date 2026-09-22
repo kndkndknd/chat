@@ -27,6 +27,7 @@ export const initRedis = async () => {
   currentState.cmd.CLICK = [];
   currentState.cmd.BASS = [];
   currentState.cmd.METRONOME = [];
+  currentState.cmd.CINEMA = [];
   for (const key of Object.keys(currentState.stream)) {
     currentState.stream[key] = false;
   }

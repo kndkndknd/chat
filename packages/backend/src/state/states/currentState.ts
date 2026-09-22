@@ -8,6 +8,7 @@ export const currentState = createPersistedState<currentStateType>("currentState
     CLICK: [],
     BASS: [],
     METRONOME: [],
+    CINEMA: [],
   },
   sinewave: {},
   stream: {

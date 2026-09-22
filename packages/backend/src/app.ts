@@ -39,6 +39,9 @@ app.use(Express.json());
 // console.log(__dirname);
 
 app.use(Express.static(path.join(__dirname, "..", "static")));
+// CINEMA 上映用の HLS (m3u8/ts) をリポジトリ外の ../hls から配信する。
+// TLS 鍵と同じく __dirname から4階層上が /Users/knd/chat になる。
+app.use("/hls", Express.static(path.join(__dirname, "../../../..", "hls")));
 app.use(favicon(path.join(__dirname, "..", "lib/favicon.ico")));
 
 const allowCrossDomain = function (req, res, next) {
