@@ -5,6 +5,7 @@ import {
   quantizeState,
   socketState,
   streamChunk,
+  loopChunk,
   streamFlagState,
   streamState,
   timelapseState,
@@ -28,6 +29,8 @@ import { wholeCmd } from "./cmd/wholeCmd";
 import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
 import { recordAll, uploadRecording, playRecording } from "./mediaRecorder";
 import { bpmFromServer } from "./quantize/bpmFromServer";
+import { loopToggle } from "./stream/loop/loopToggle";
+import { streamReq } from "./stream/streamReq";
 
 export const socket = (): void => {
 
@@ -94,8 +97,10 @@ export const socket = (): void => {
         source: data.source,
       };
       const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
+      loopChunk[data.source] = streamData;
       if(!quantizeState.stream.CHAT.flag || !Object.keys(quantizeState.stream).includes(data.source)) {
-        streamPlay(streamType, socketState.socket, streamData);
+        streamPlay(streamType, streamData);
+        streamReq(socketState.socket, streamType, streamData, data.source);
       } else {
         streamChunk[data.source] = streamData;
         playPendingQuantizeChunk(data.source);
@@ -157,6 +162,14 @@ export const socket = (): void => {
       textPrint("This device is not mobile", { timeout: false });
     }
   });
+
+  socketState.socket.on(
+    "loopToggleFromServer",
+    (data: { stream: string; target: string }) => {
+      console.log("loopToggleFromServer debug", data);
+      loopToggle(data.stream, data.target);
+    },
+  );
 
 
   socketState.socket.on("mediaRecReqFromServer", async () => {
@@ -233,10 +246,13 @@ export const socket = (): void => {
       streamFlagState[data.source] = true;
       if (quantizeState.stream[data.source]?.flag) {
         streamChunk[data.source] = data;
+        loopChunk[data.source] = data;
         playPendingQuantizeChunk(data.source);
       } else {
         if (data.floating === undefined || !data.floating) {
-          streamPlay("STREAM", socketState.socket, data /*, cinemaFlag*/);
+          loopChunk[data.source] = data;
+          streamPlay("STREAM", data /*, cinemaFlag*/);
+          streamReq(socketState.socket, "STREAM", data, data.source);
         } else {
           showImage(data.video, data.position);
         }
@@ -291,7 +307,9 @@ export const socket = (): void => {
         source: data.source,
       };
       const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
-      streamPlay(streamType, socketState.socket, streamData);
+      loopChunk[data.source] = streamData;
+      streamPlay(streamType, streamData);
+      streamReq(socketState.socket, streamType, streamData, data.source);
       audioWorkletState.chat.flag[data.source] = true;
     },
   );

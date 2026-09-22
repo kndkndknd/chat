@@ -40,6 +40,11 @@ export const initRedis = async () => {
     streamState.pa[key] = false;
   }
 
+  // streamState の loop を初期化
+  for (const key of Object.keys(streamState.loop)) {
+    streamState.loop[key] = [];
+  }
+
   // 現在接続しているクライアントに初期値を与える
   const connectedIds = Object.keys(clientState.client);
 

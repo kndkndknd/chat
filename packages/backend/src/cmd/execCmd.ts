@@ -1,4 +1,4 @@
-import { clientState, cmdState, currentState } from "../state";
+import { cmdState, currentState, clientState } from "../state";
 import { cmdList } from "../data";
 
 import { execStop } from "./execStop";
@@ -82,6 +82,11 @@ export const getCmd = (cmdStrings: string,
       cmd = {
         cmd: "CLICK",
         gain: cmdState.GAIN.CLICK,
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
+    case "LOOP":
+      cmd = {
+        cmd: "LOOP",
       };
       return { type: "CMD", cmd, target: targetIdArr };
     case "METRONOME":

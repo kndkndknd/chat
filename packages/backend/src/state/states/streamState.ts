@@ -23,7 +23,6 @@ export const streamState = createPersistedState<streamStateType>("streamState", 
     PLAYBACK: { flag: false, type: "lowpass", frequency: 1000, Q: 2.5, gain: 1 },
     TIMELAPSE: { flag: false, type: "lowpass", frequency: 1000, Q: 2.5, gain: 1 },
   },
-  loop: false,
   timelapse: false,
   floating: false,
   pa: {
@@ -32,6 +31,11 @@ export const streamState = createPersistedState<streamStateType>("streamState", 
     TIMELAPSE: false,
     EMPTY: false,
   },
+  loop: {
+    CHAT: [],
+    PLAYBACK: [],
+    TIMELAPSE: []
+  }
 });
 
 export const defaultFilterState: filterStateType = {

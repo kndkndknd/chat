@@ -3,6 +3,7 @@ import { bufferSizeState, socketState, wholeState } from "../state"
 import { sinewave } from "../webaudio"
 import { cmdFromServer } from "./cmdFromServer"
 import { streamPlay } from "../stream"
+import { streamReq } from "../stream/streamReq"
 
 export const wholeCmd = (option: wholeCmdOption) => {
   wholeState.flag = true;
@@ -13,7 +14,7 @@ export const wholeCmd = (option: wholeCmdOption) => {
       emitWholeReq();
     }, option.duration);
   } else if (option.type === "stream" && option.source !== "CHAT") {
-    streamPlay("STREAM", socketState.socket, {
+    streamPlay("STREAM", {
       audio: new Float32Array(option.audio),
       sampleRate: option.sampleRate,
       glitch: option.glitch !== undefined ? option.glitch : false,
@@ -22,11 +23,20 @@ export const wholeCmd = (option: wholeCmdOption) => {
       video: option.video,
       source: option.source
     }, true);
+    streamReq(socketState.socket, "STREAM", {
+      audio: new Float32Array(option.audio),
+      sampleRate: option.sampleRate,
+      glitch: option.glitch !== undefined ? option.glitch : false,
+      bufferSize: option.bufferSize,
+      duration: option.duration,
+      video: option.video,
+      source: option.source
+    }, option.source);
     setTimeout(() => {
       emitWholeReq();
     }, option.duration);
   } else if (option.type === "stream" && option.source === "CHAT") {
-    streamPlay("CHAT", socketState.socket, {
+    streamPlay("CHAT", {
       audio: new Float32Array(option.audio),
       sampleRate: option.sampleRate,
       glitch: option.glitch !== undefined ? option.glitch : false,
@@ -35,6 +45,15 @@ export const wholeCmd = (option: wholeCmdOption) => {
       video: option.video,
       source: option.source
     }, true);
+    streamReq(socketState.socket, "CHAT", {
+      audio: new Float32Array(option.audio),
+      sampleRate: option.sampleRate,
+      glitch: option.glitch !== undefined ? option.glitch : false,
+      bufferSize: option.bufferSize,
+      duration: option.duration,
+      video: option.video,
+      source: option.source
+    }, option.source);
     setTimeout(() => {
       emitWholeReq();
     }, option.duration);

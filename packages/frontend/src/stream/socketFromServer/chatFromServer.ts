@@ -2,6 +2,7 @@ import { streamChunk, socketState, quantizeState } from "../../state";
 import { SocketFacade } from "../../socket/SocketFacade";
 import { streamPlay } from "../play/streamPlay";
 import { showImage } from "../../canvasEvent";
+import { streamReq } from "../streamReq";
 
 export const chatFromServer = (
   data: {
@@ -34,7 +35,8 @@ export const chatFromServer = (
     streamChunk.CHAT = chunk;
   } else {
     if (data.floating === undefined || !data.floating) {
-      streamPlay("CHAT", socket, data);
+      streamPlay("CHAT", data);
+      streamReq(socket, "CHAT", data, data.source);
     } else {
       // const position = positionFloatingImage(data.target);
       showImage(data.video, data.position);

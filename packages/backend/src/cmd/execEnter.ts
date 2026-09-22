@@ -19,7 +19,7 @@ import { glitchChange } from "../parameterChange/glitchChange";
 import { randomStreamOrder } from "../parameterChange/randomStreamOrder";
 import { voiceChange } from "../parameterChange/voiceChange";
 import { gridChange } from "../bpm/gridChange";
-
+import { loopToggle } from "../stream/loop/loopToggle";
 
 
 import { joinOrLeave, offerReq } from "../webRTC";
@@ -73,6 +73,9 @@ export const execEnter = async (
   } else if (strings === "FUSEJI" || strings === "EMOJI") {
     flagState.emoji = !flagState.emoji;
     emojiEmit(flagState.emoji);
+  } else if (strings === "LOOP") {
+    console.log("LOOP");
+    loopToggle();
   } else if (strings === "NO" || strings === "NUMBER") {
     Object.keys(clientState.client).forEach((id) => {
       console.log(id);

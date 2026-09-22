@@ -1,28 +1,6 @@
 import { ioState } from "../state/states/ioState";
 import { bpmStreamStateType } from "../../../../types";
 
-
-export const stringEmit = (
-  strings: string,
-  timeout?: boolean,
-  target?: string
-) => {
-  console.log('stringEmit', strings);
-  if (timeout === undefined) timeout = true;
-  if (target === undefined) {
-    console.log("target is undefined", strings);
-    ioState?.io.emit("stringsFromServer", {
-      strings: strings,
-      timeout: timeout,
-    });
-  } else {
-    ioState?.io.to(target).emit("stringsFromServer", {
-      strings: strings,
-      timeout: timeout,
-    });
-  }
-};
-
 export const beatEmit = (option: any, target?: string) => {
   if (target === undefined) {
     ioState?.io.emit("beatFromServer", option);
@@ -30,7 +8,6 @@ export const beatEmit = (option: any, target?: string) => {
     ioState?.io.to(target).emit("beatFromServer", option);
   }
 };
-
 
 export const bpmEmit = (
   bpm: number,
@@ -139,6 +116,13 @@ export const erasePrintEmit = (target?: string) => {
   }
 };
 
+export const loopToggleEmit = (stream: string, target: string) => {
+  if (target === undefined) {
+    ioState?.io.emit("loopToggleFromServer", { stream, target });
+  } else {
+    ioState?.io.to(target).emit("loopToggleFromServer", { stream, target });
+  }
+}
 
 export const mediaRecReqEmit = (data?: {container: string; mimeType: string; blob: ArrayBuffer }, target?: string) => {
   if (target === undefined) {
@@ -240,6 +224,26 @@ export const streamEmit = (stream: any, target?: string) => {
   }
 };
 
+export const stringEmit = (
+  strings: string,
+  timeout?: boolean,
+  target?: string
+) => {
+  console.log('stringEmit', strings);
+  if (timeout === undefined) timeout = true;
+  if (target === undefined) {
+    console.log("target is undefined", strings);
+    ioState?.io.emit("stringsFromServer", {
+      strings: strings,
+      timeout: timeout,
+    });
+  } else {
+    ioState?.io.to(target).emit("stringsFromServer", {
+      strings: strings,
+      timeout: timeout,
+    });
+  }
+};
 
 export const timelapseEmit = (cmd: string, target?: string) => {
   if (target === undefined) {
