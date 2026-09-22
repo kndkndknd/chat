@@ -7,7 +7,7 @@
 - **テストランナー**: vitest 3.0.8（リポジトリルートの devDependency）
 - **対象**: `packages/frontend/src/**` 配下で「値を返す純粋関数」と「値を返す state 依存関数」（純粋に近い計算ロジック）
 - **対象外**: DOM / Web Audio API / Canvas / WebSocket / WebRTC / face-api.js / hls.js / vosk-browser / MediaStream など、ブラウザ API に深く結合した関数。これらは戻り値を持たない / `void` の関数も多く、本テストではスコープ外。
-- **テスト規模**: 5 ファイル / 22 ケース（18 合格 / 4 skip）
+- **テスト規模**: 7 ファイル / 37 ケース（すべて合格）
 
 実行コマンド:
 ```bash
@@ -63,7 +63,9 @@ pnpm -F frontend exec vitest run
 | テストファイル | 対象関数 | ソース | ケース内容 |
 |---|---|---|---|
 | `test/quantize/quantizeStop.test.ts` | `quantizeStop` | `src/quantize/quantizeStop.ts` | interval を停止し intervalFlag と各 stream の flag を false にする / interval=null でも壊れない / clearInterval 呼び出し確認 |
-| `test/quantize/setQuantize.test.ts` | `setQuantize` | `src/quantize/setQuantize.ts` | `setQuantize.ts` は意図的に無効化（全コメント）のため `describe.skip`。quantizeType 準拠の型のみ維持 |
+| `test/quantize/quantizeFromServer.test.ts` | `quantizeFromServer` / `refreshQuantizeInterval` / `playPendingQuantizeChunk` | `src/quantize/quantizeFromServer.ts` | flag/beat 反映 / ON→OFF で streamChunk 破棄と CHAT の chatReq / 初回チャンク即再生（pending 消費・flag false 時は再生しない） / 稼働中は再アームしない / 全 false で停止 / BPM 変更の位相保持再アーム |
+| `test/quantize/bpmFromServer.test.ts` | `bpmFromServer` | `src/quantize/bpmFromServer.ts` | ストリーム指定で bar 更新と `refreshQuantizeInterval(true)` / METRONOME は metronome のみ / MODULATION は何もしない / source 非配列は return |
+| `test/quantize/quantizeParamFromServer.test.ts` | `quantizeParamFromServer` | `src/quantize/quantizeParamFromServer.ts` | 対象 stream の beat のみ反映（flag 不変） / streams 外・data なしは更新しない / CHAT beat の canvas 表示 |
 
 ## 共通テクニック
 
@@ -82,8 +84,27 @@ import { quantizeState } from "../../src/state";
 vi.spyOn(Math, "random").mockReturnValue(0.45);
 ```
 
-### `window.setInterval` の制御
-`test/setup.ts` で `globalThis.window = globalThis` を貼っているので、`vi.useFakeTimers()` で Node 側のタイマーを差し替えるだけで `window.setInterval` も同時に偽装される。
+### モジュールスコープ state を持つ関数のテスト
+`quantizeFromServer.ts` のようにモジュールスコープの状態（`pendingFirstPlay` / `lastTickAt`）を持つ関数は、`vi.hoisted` でモック参照を作り、`beforeEach` で `vi.resetModules()` → 動的 `import()` してモジュール状態をテストごとに初期化する:
+```ts
+const { quantizePlayMock, stateMock } = vi.hoisted(() => ({
+  quantizePlayMock: vi.fn(),
+  stateMock: { quantizeState: { /* ... */ }, /* ... */ },
+}));
+vi.mock("../../src/state", () => stateMock);
+vi.mock("../../src/quantize/quantizePlay", () => ({ quantizePlay: quantizePlayMock }));
+
+let mod: typeof import("../../src/quantize/quantizeFromServer");
+beforeEach(async () => {
+  vi.clearAllMocks();
+  vi.resetModules();
+  mod = await import("../../src/quantize/quantizeFromServer");
+});
+```
+`vi.mock` ファクトリはホイストされるため、外側変数を参照する場合は必ず `vi.hoisted` を使う。
+
+### `window` のタイマー制御
+`test/setup.ts` で `globalThis.window = globalThis` を貼っているので、`vi.useFakeTimers()` で Node 側のタイマーを差し替えるだけで `window.setInterval` / `window.setTimeout` も同時に偽装される。
 
 ## スコープ外の関数
 
@@ -95,6 +116,6 @@ vi.spyOn(Math, "random").mockReturnValue(0.45);
 - **MediaStream / Recording**: `recording/*` / `scriptProcessor/*` / `stream/init/initAudioStream` / `stream/play/playAudioStream` / `stream/play/streamPlay` / `stream/socketFromServer/*` / `stream/chatReq`
 - **WebRTC / face-api**: `faceApi/index` / `initialize.ts` / `initializeSnowleopard.ts`
 - **navigator API**: `gps/index`（Geolocation） / `sensor/index`（DeviceMotionEvent）
-- **その他**: `voice/index`（speechSynthesis） / `clientMode/clockMode` / `socket.ts` / `textInput.ts` の `keyDown` / `cmd/*` / `quantize/quantizeFromServer` / `quantize/quantizeParamFromServer` / `quantize/quantizePlay` / `quantize/old_setQuantize`
+- **その他**: `voice/index`（speechSynthesis） / `clientMode/clockMode` / `socket.ts` / `textInput.ts` の `keyDown` / `cmd/*` / `quantize/quantizePlay` / `quantize/old_setQuantize`
 
 これらは E2E もしくは結合テスト（実ブラウザを伴う）の対象とすることを推奨。
