@@ -7,6 +7,7 @@ import { streamList } from "../../data";
 import { setBpmState } from "./setBpmState";
 import { quantize } from "./quantize";
 import { quantizeEmit } from "../../socket/ioEmit";
+import { emitQuantizeText } from "./emitQuantizeText";
 
 /**
  * クオンタイズコマンドに使用するクオンタイズ設定を決定する関数
@@ -38,4 +39,8 @@ export const quantizeCmd = (id?: string) => {
   setBpmState(quntizeStreamObj);
   console.log("quntizeStreamObj", quntizeStreamObj);
   quantizeEmit(quntizeStreamObj);
+  emitQuantizeText(
+    quntizeStreamObj,
+    id !== undefined ? [id] : Object.keys(quntizeStreamObj),
+  );
 };

@@ -105,6 +105,11 @@ pnpm -F backend exec vitest run
 | `test/stream/genEmptyBuff.test.ts` | `genEmptyBuff` | `src/stream/genEmptyBuff.ts` | basisBufferSize 個の Float32 で全て 1.0 |
 | `test/stream/quantize/quantize.test.ts` | `quantize` | `src/stream/quantize/quantize.ts` | splited=false で多数決（true 1 件 → 全 true 化） / splited=true は state 透過 / 過半数 true で全 false 化 |
 | `test/stream/quantize/setParamsSplitQuantize.test.ts` | `setParamsSplitQuantize` | `src/stream/quantize/setParamsSplitQuantize.ts` | 全 true なら true 維持 / 1 つでも false なら全 false / params.flag=true で対象更新（gridFlag=false） / params.beat を反映 / params.stream で部分更新 / target 未指定で全 client |
+| `test/stream/quantize/splitBeat.test.ts` | `splitBeat` / `emitSplitBeat` | `src/stream/quantize/splitBeat.ts` | target 指定時は対象のみ変更し `io.to(target)` で送信（`io.emit` しない） / stream 指定 / target 未指定時は各 client へ個別送信 / RANDOM は beat 0 |
+| `test/stream/quantize/emitQuantizeText.test.ts` | `emitQuantizeText` | `src/stream/quantize/emitQuantizeText.ts` | 対象 client のみ `QUANTIZE:<flag>` を timeout=true で送る / 複数 client / stream 指定時はその stream の flag / client undefined・不在は送らない / clients 空 |
+| `test/cmd/splitSpace/splitQuantize.test.ts` | `splitQuantize` | `src/cmd/splitSpace/splitQuantize.ts` | target 指定時は対象のみ `emitQuantizeText` / stream 指定を渡す / target 未指定時は全 client / paramArr 空 + target |
+| `test/cmd/splitSpace/numTarget.test.ts` | `numTarget` | `src/cmd/splitSpace/numTarget.ts` | `BPM <number>` で対象 client の `execChangeBPM` を呼び、対象のみへ `stringEmit("BPM:<n>", true, target)` / 複数 target / `BEAT <number>`・`BEAT <number> <stream>` で `splitBeat` を呼ぶ / target undefined はどちらも呼ばない |
+| `test/bpm/changeBpm.test.ts` | `execChangeBPM` | `src/bpm/changeBpm.ts` | target 指定時は対象 client のみ bpm 変更・対象へ送信 / target 未指定時は全 client |
 
 ## 共通テクニック
 
