@@ -21,6 +21,6 @@ export const bpmFromServer = (data: {
   }
 
   if (streamBarChanged) {
-    refreshQuantizeInterval();
+    refreshQuantizeInterval(true);
   }
 };

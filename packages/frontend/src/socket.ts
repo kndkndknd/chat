@@ -19,7 +19,7 @@ import {
 } from "../../../types";
 import { emojiState, erasePrint, textPrint, showImage, flickering } from "./canvasEvent";
 import { stopCmd, cmdFromServer } from "./cmd";
-import { quantizeFromServer } from "./quantize/quantizeFromServer";
+import { quantizeFromServer, playPendingQuantizeChunk } from "./quantize/quantizeFromServer";
 import { quantizeParamFromServer } from "./quantize/quantizeParamFromServer";
 import { chatReq, recordReqFromServer, streamPlay } from "./stream";
 import { setGainUI } from "./ui/gainUI";
@@ -89,6 +89,7 @@ export const socket = (): void => {
         streamPlay(streamType, socketState.socket, streamData);
       } else {
         streamChunk[data.source] = streamData;
+        playPendingQuantizeChunk(data.source);
       }
     },
   );
@@ -223,6 +224,7 @@ export const socket = (): void => {
       streamFlagState[data.source] = true;
       if (quantizeState.stream[data.source]?.flag) {
         streamChunk[data.source] = data;
+        playPendingQuantizeChunk(data.source);
       } else {
         if (data.floating === undefined || !data.floating) {
           streamPlay("STREAM", socketState.socket, data /*, cinemaFlag*/);

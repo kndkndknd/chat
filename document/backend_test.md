@@ -82,7 +82,7 @@ pnpm -F backend exec vitest run
 | `test/socket/wsServer/deserialize.test.ts` | `deserialize` | `src/socket/wsServer.ts` | 通常 JSON / __type=ArrayBuffer 変換 / ネスト ArrayBuffer<br>※Node Buffer pool の仕様で返却 ArrayBuffer は実バイト長以上になり得る点に注意。バイト一致は検証していない |
 | `test/schedule/exchangeRelativeSchedule.test.ts` | `exchangeRelativeSchedule` | `src/schedule/exchangeRelativeSchedule.ts` | 先頭起点の相対時刻 ms / ms 付き日時 / 1 件のみ |
 | `test/schedule/getScheduleFromJson.test.ts` | `getScheduleFromJson` | `src/schedule/getScheduleFromJson.ts` | 通常日時 → 相対 ms / 0000-00-00 はじまり → getTime ベース / 1 件のみ |
-| `test/stream/quantize/decideQuantizeFromAverage.test.ts` | `decideQuantizeFromAverage` | `src/stream/quantize/decideQuantizeFromAverage.ts` | argParams 指定で固定値 / argParams 未指定で平均値ベース（quantizeFlag は多数決） / flag のみ指定で bpm/beat は平均 |
+| `test/stream/quantize/decideQuantizeFromAverage.test.ts` | `decideQuantizeFromAverage` | `src/stream/quantize/decideQuantizeFromAverage.ts` | argParams 指定で beat/flag を固定 / argParams 未指定で beat は平均・quantizeFlag は多数決（`gridFlag = !quantizeFlag`） / flag のみ指定で beat は平均 |
 | `test/stream/quantize/decideFlagFromAverage.test.ts` | `decideFlagFromAverage` | `src/stream/quantize/decideFlagFromAverage.ts` | 過半数 true → false / 半数以下 → true / clientTarget フィルタ / streamTarget フィルタ |
 | `test/stream/uploadModule/durationPattern.test.ts` | `durationPattern` | `src/stream/uploadModule/durationPattern.ts` | duration<20 / duration>60 / HH:MM:SS / MM:SS / FULL / length=4 で t も上書き |
 
@@ -104,7 +104,7 @@ pnpm -F backend exec vitest run
 | `test/stream/sampleRateRandomize.test.ts` | `sampleRateRandomize` | `src/stream/sampleRateRandomize.ts` | random / diatonic / diatonic で min>max エラー / serial |
 | `test/stream/genEmptyBuff.test.ts` | `genEmptyBuff` | `src/stream/genEmptyBuff.ts` | basisBufferSize 個の Float32 で全て 1.0 |
 | `test/stream/quantize/quantize.test.ts` | `quantize` | `src/stream/quantize/quantize.ts` | splited=false で多数決（true 1 件 → 全 true 化） / splited=true は state 透過 / 過半数 true で全 false 化 |
-| `test/stream/quantize/setParamsSplitQuantize.test.ts` | `setParamsSplitQuantize` | `src/stream/quantize/setParamsSplitQuantize.ts` | 全 true なら true 維持 / 1 つでも false なら全 false / params.flag=true で対象更新 / beat,bpm 反映 / params.stream で部分更新 / target 未指定で全 client |
+| `test/stream/quantize/setParamsSplitQuantize.test.ts` | `setParamsSplitQuantize` | `src/stream/quantize/setParamsSplitQuantize.ts` | 全 true なら true 維持 / 1 つでも false なら全 false / params.flag=true で対象更新（gridFlag=false） / params.beat を反映 / params.stream で部分更新 / target 未指定で全 client |
 
 ## 共通テクニック
 
