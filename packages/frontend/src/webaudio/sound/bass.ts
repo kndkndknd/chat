@@ -7,7 +7,13 @@ export const bass = (flag: boolean, gain: number) => {
     oscState.bassOsc.frequency.setValueAtTime(freq, 0);
     gainState.bassGain.gain.setValueAtTime(gain, 0);
   } else {
-    gainState.bassGain.gain.setValueAtTime(0, 0);
+    if(gainState.bassGain.gain.value !== 0) {
+      gainState.bassGain.gain.setValueAtTime(0, 0);
+    } else {
+      const freq = setBassNote();
+      oscState.bassOsc.frequency.setValueAtTime(freq, 0);
+      gainState.bassGain.gain.setValueAtTime(gain, 0);
+    }
   }
 };
 

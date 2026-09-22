@@ -106,12 +106,10 @@ const processChar = (
 ): string => {
   if (character === "\\") {
     bassFlag = !bassFlag;
-    stringsClient = "BASS";
-    socket.emit("charFromClient", "BASS");
     if(!window.location.pathname.includes("nosound")){
       bass(bassFlag, 0.4);
       if (bassFlag) {
-        textPrint(stringsClient);
+        textPrint("BASS");
       } else {
         erasePrint(stx, strCnvs);
       }
