@@ -11,6 +11,7 @@ import { splitQuantize } from "./splitQuantize";
 import { numPaSwitch } from "./numPaSwitch";
 import { execStreamPreparation } from "../execStreamPreparation";
 import { splitBeat } from "../../stream/quantize/splitBeat";
+import { execChangeBPM } from "../../bpm/changeBpm";
 
 export const numTarget = (
   targetArr: Array<string>,
@@ -86,12 +87,21 @@ export const numTarget = (
     const arg = stringArr[1] === "RANDOM" ? "RANDOM" : Number(stringArr[1]);
     if(stringArr.length === 2) {
       for (const target of targetArr) {
+        if (target === undefined) continue;
         splitBeat(arg, {target});
       }
     } else if(stringArr.length === 3 && arrTypeArr[2] === "string") {
       for (const target of targetArr) {
+        if (target === undefined) continue;
         splitBeat(arg, {target, stream: stringArr[2]});
       }
+    }
+  } else if (stringArr[0] === "BPM" && arrTypeArr[1] === "number") {
+    // BPM <number>
+    for (const target of targetArr) {
+      if (target === undefined) continue;
+      execChangeBPM(Number(stringArr[1]), {target});
+      stringEmit(`BPM:${Number(stringArr[1])}`, true, target);
     }
   // } else if (stringArr[0] === "PA") {
   //   for (const target of targetArr) {

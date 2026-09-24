@@ -65,12 +65,12 @@ describe("quantizeParamFromServer", () => {
     quantizeParamFromServer(makeData({ CHAT: 6 }), ["CHAT"]);
 
     expect(textPrintMock).toHaveBeenCalledTimes(1);
-    expect(textPrintMock).toHaveBeenCalledWith("BEAT: 6");
+    expect(textPrintMock).toHaveBeenCalledWith("BEAT: 6", { timeout: true });
   });
 
   test("CHAT が無ければ空の BEAT 表示になる", () => {
     quantizeParamFromServer(makeData({ PLAYBACK: 8 }), ["PLAYBACK"]);
 
-    expect(textPrintMock).toHaveBeenCalledWith("BEAT: ");
+    expect(textPrintMock).toHaveBeenCalledWith("BEAT: ", { timeout: true });
   });
 });

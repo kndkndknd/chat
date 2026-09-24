@@ -9,6 +9,7 @@ export const previousState = createPersistedState<previousStateType>("previousSt
     CLICK: [],
     BASS: [],
     METRONOME: [],
+    CINEMA: [],
   },
   sinewave: {},
   stream: {

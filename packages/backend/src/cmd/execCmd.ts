@@ -1,4 +1,4 @@
-import { clientState, cmdState, currentState } from "../state";
+import { cmdState, currentState, clientState } from "../state";
 import { cmdList } from "../data";
 
 import { execStop } from "./execStop";
@@ -9,6 +9,7 @@ import { pickupCmdTarget } from "./pickupCmdTarget";
 // import { getLengthFromBPM } from "../util/getLengthFromBPM";
 import { metronomeEmit } from "./metronomeEmit";
 import { clickFreq } from "./clickFreq";
+import { hlsEmit } from "../hls/hlsEmit";
 
 export const execCmd = (
   cmdStrings: string,
@@ -20,6 +21,8 @@ export const execCmd = (
     case "CMD":
       if(command.cmd.cmd === "METRONOME") {
         metronomeEmit(command.cmd, command.target?.[0]);
+      } else if(command.cmd.cmd === "CINEMA") {
+        hlsEmit(command.cmd, command.target ?? []);
       } else {
         cmdEmit(command.target ?? [""], command.cmd);
       }
@@ -57,9 +60,65 @@ export const getCmd = (cmdStrings: string,
     : pickupCmdTarget(cmdStrings);
 
   switch (cmdStrings) {
+    case "CINEMA":
+    case "VIDEO":
+    case "VID":
+    case "MOVIE":
+    case "MOV":
+      cmd = {
+        cmd: "CINEMA",
+      };
+      // 番号指定 (CINEMA 1) があればその端末、無ければ接続中の全ストリーム端末へ上映する。
+      return {
+        type: "CMD",
+        cmd,
+        target:
+          target !== undefined && target
+            ? targetIdArr
+            : [...clientState.streamClient],
+      };
+    case "CLICK":
+      console.log(cmdState.GAIN.CLICK);
+      cmd = {
+        cmd: "CLICK",
+        gain: cmdState.GAIN.CLICK,
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
+    case "LOOP":
+      cmd = {
+        cmd: "LOOP",
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
+    case "METRONOME":
+      return { type: "CMD", cmd, target: targetIdArr };
+      // metronomeEmit(cmd, target);
+      // break;
+    case "PREVIOUS":
+    case "PREV":
+      console.log("previous");
+      return { type: "PREVIOUS" };
+    case "SIMULATE":
+      console.log(cmdState.GAIN.SIMULATE);
+      cmd = {
+        cmd: "SIMULATE",
+        gain: cmdState.GAIN.SIMULATE,
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
     case "STOP":
       const client = "all";
       return { type: "STOP", source: "", target: "ALL", group: client };
+    case "UP":
+    case "DOWN":
+    case "SAME":
+      const clickFreqValue = clickFreq(cmdStrings);
+      cmdState.CLICKFREQ = clickFreqValue;
+      // console.log("clickFreq", clickFreqValue);
+      cmd = {
+        cmd: "CLICK",
+        gain: cmdState.GAIN.CLICK,
+        value: clickFreqValue,
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
     case "WHITENOISE":
     case "FEEDBACK":
     case "BASS":
@@ -94,39 +153,5 @@ export const getCmd = (cmdStrings: string,
       return { type: "CMD", cmd, target: targetIdArr };
       // cmdEmit(targetIdArr, cmd);
 
-    case "CLICK":
-      console.log(cmdState.GAIN.CLICK);
-      cmd = {
-        cmd: "CLICK",
-        gain: cmdState.GAIN.CLICK,
-      };
-      return { type: "CMD", cmd, target: targetIdArr };
-    case "UP":
-    case "DOWN":
-    case "SAME":
-      const clickFreqValue = clickFreq(cmdStrings);
-      cmdState.CLICKFREQ = clickFreqValue;
-      // console.log("clickFreq", clickFreqValue);
-      cmd = {
-        cmd: "CLICK",
-        gain: cmdState.GAIN.CLICK,
-        value: clickFreqValue,
-      };
-      return { type: "CMD", cmd, target: targetIdArr };
-    case "SIMULATE":
-      console.log(cmdState.GAIN.SIMULATE);
-      cmd = {
-        cmd: "SIMULATE",
-        gain: cmdState.GAIN.SIMULATE,
-      };
-      return { type: "CMD", cmd, target: targetIdArr };
-    case "METRONOME":
-      return { type: "CMD", cmd, target: targetIdArr };
-      // metronomeEmit(cmd, target);
-      // break;
-    case "PREVIOUS":
-    case "PREV":
-      console.log("previous");
-      return { type: "PREVIOUS" };
   }
 };

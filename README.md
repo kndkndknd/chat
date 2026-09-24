@@ -208,6 +208,7 @@ pnpm install
 | GET | `/:name` | 任意パスを `index.html` にフォールバック。 |
 | POST | `/api/scenario` | `scenarioItsuki` を起動（実行中なら停止して再起動）。 |
 | POST | `/api/clear-buffer` | Redis の streamBuffer をクリア（`body.stream` 省略時は `CHAT/EMPTY/KICK/SNARE/HAT` 以外）。 |
+| POST | `/api/parameter/reset` | パラメータを初期化（`body.targets` 省略時は全パラメータ。対象は `PORTAMENT/SAMPLERATE/GLITCH/GRID/QUANTIZE/RANDOM/VOICE/FILTER/GAIN/FADE/BPM/CLICKFREQ`）。 |
 
 静的ファイルは `packages/backend/static` から配信します。CORS は全許可です。
 

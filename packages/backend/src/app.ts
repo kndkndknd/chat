@@ -18,6 +18,10 @@ import { initStreams } from "./data";
 import { loadAllStates, clientState, sampleRateState, cmdState } from "./state";
 import { streamsRedis } from "./redis/streamsRedis";
 import {
+  isResettableParameter,
+  resetParameters,
+} from "./parameterChange/resetParameters";
+import {
   scenarioItsuki,
   isScenarioItsukiActive,
   stopScenarioItsuki,
@@ -39,6 +43,9 @@ app.use(Express.json());
 // console.log(__dirname);
 
 app.use(Express.static(path.join(__dirname, "..", "static")));
+// CINEMA 上映用の HLS (m3u8/ts) をリポジトリ外の ../hls から配信する。
+// TLS 鍵と同じく __dirname から4階層上が /Users/knd/chat になる。
+app.use("/hls", Express.static(path.join(__dirname, "../../../..", "hls")));
 app.use(favicon(path.join(__dirname, "..", "lib/favicon.ico")));
 
 const allowCrossDomain = function (req, res, next) {
@@ -222,6 +229,38 @@ app.post("/api/clear-buffer", async function (req, res) {
         .status(404)
         .json({ success: false, message: `Stream not found: ${stream}` });
     }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
+  }
+});
+
+// パラメータ（PORTAMENT / GLITCH / GRID 等）を各 state の既定値へ初期化する。
+// body.targets を省略（または空配列）すると全パラメータをリセットする。
+// 指定する場合は PORTAMENT / SAMPLERATE / GLITCH / GRID / QUANTIZE / RANDOM /
+// VOICE / FILTER / GAIN / FADE / BPM / CLICKFREQ のいずれか（別名 PORT, RATE も可）。
+app.post("/api/parameter/reset", function (req, res) {
+  const rawTargets = req.body?.targets;
+  if (rawTargets !== undefined && !Array.isArray(rawTargets)) {
+    res
+      .status(400)
+      .json({ success: false, message: "targets must be an array" });
+    return;
+  }
+  const targets = rawTargets as string[] | undefined;
+  if (targets) {
+    const unknown = targets.filter((target) => !isResettableParameter(target));
+    if (unknown.length > 0) {
+      res.status(400).json({
+        success: false,
+        message: `Unknown parameter: ${unknown.join(", ")}`,
+      });
+      return;
+    }
+  }
+  try {
+    const reset = resetParameters(targets);
+    res.json({ success: true, reset });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: "Something went wrong" });

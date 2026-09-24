@@ -14,4 +14,9 @@ export const cmdList = {
   DOWN: "DOWN",
   SAME: "SAME",
   KEEP: "SAME",
+  CINEMA: "CINEMA",
+  VIDEO: "CINEMA",
+  VID: "CINEMA",
+  MOVIE: "CINEMA",
+  MOV: "CINEMA",
 };

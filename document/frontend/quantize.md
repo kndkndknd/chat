@@ -88,7 +88,7 @@
 - 処理（`src/quantize/quantizeParamFromServer.ts`）:
   1. `quantizeState.stream` の各キーのうち、`streams` に含まれかつ `data[stream]` が存在するものについて `beat = data[stream].beat` を反映。
   2. `flag` は変更しません（ON/OFF は `quantizeFromServer` の担当）。
-  3. `textPrint` で `BEAT: <CHAT の beat>` を canvas に表示。
+  3. `textPrint` で `BEAT: <CHAT の beat>` を canvas に表示（`{ timeout: true }` で 500ms 後に自動消去）。
   4. `refreshQuantizeInterval()` は呼びません（`beat` は tick ごとに参照されるため、interval の再生成は不要）。
 
 ## 処理フロー
