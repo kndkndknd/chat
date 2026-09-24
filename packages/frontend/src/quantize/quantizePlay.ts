@@ -1,7 +1,6 @@
 import { quantizeState, streamFlagState } from "../state";
 import { playAudioStream } from "../stream";
 import { showImage, erasePrint, textPrint } from "../canvasEvent";
-import { chatReq } from "../stream";
 import { socketState } from "../state/socketState";
 
 export const quantizePlay = (
@@ -46,9 +45,7 @@ export const quantizePlay = (
     }, (quantizeState.bar / playCount) * i);
   }
 
-  if (data.source === "CHAT") {
-    chatReq(String(socketState.socketId));
-  } else {
+  if (data.source !== "CHAT") {
     socketState.socket.emit("streamReqFromClient", data.source);
   }
 };

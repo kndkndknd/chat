@@ -104,6 +104,9 @@ export const socket = (): void => {
       } else {
         streamChunk[data.source] = streamData;
         playPendingQuantizeChunk(data.source);
+        if (streamType === "CHAT") {
+          chatReq(String(socketState.socketId));
+        }
       }
     },
   );
