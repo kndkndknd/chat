@@ -36,11 +36,9 @@ export const pushStateStream = (
   // bpmState.stream[streamName] = {};
   for (const client in bpmState) {
     bpmState[client].stream[streamName] = {
-      bpm: 60,
       beat: 0,
       gridFlag: true,
       quantizeFlag: false,
-      latency: 0,
     };
   }
 };

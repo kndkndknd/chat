@@ -28,6 +28,7 @@ export type cmdStateType = {
   METRONOME: {
     [key: string]: number;
   };
+  CLICKFREQ: number;
 };
 
 export type streamStateType = {
@@ -44,11 +45,14 @@ export type streamStateType = {
   filter: {
     [key: string]: filterStateType;
   };
-  loop: boolean;
   timelapse: boolean;
   floating: boolean;
+  tile: boolean;
   pa: {
     [key: string]: boolean;
+  };
+  loop: {
+    [key: string]: Array<string>;
   };
 };
 
@@ -133,6 +137,7 @@ export type currentStateType = {
     CLICK: Array<string>; // 管理する意味なさそう…
     BASS: Array<string>;
     METRONOME: Array<string>;
+    CINEMA: Array<string>;
   };
   sinewave: {
     [key: string]: number;
@@ -152,6 +157,7 @@ export type previousStateType = {
     CLICK: Array<string>; // 管理する意味なさそう…
     BASS: Array<string>;
     METRONOME: Array<string>;
+    CINEMA: Array<string>;
   };
   sinewave: {
     [key: string]: number;

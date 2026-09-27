@@ -44,7 +44,10 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
       }
     });
 
-    const facedetection = data.urlPathName === "/1" || data.urlPathName === "/2";
+    // /1, /2 のルーティングで顔認証(facedetection)を有効化していたが、その動作をコメントアウト。
+    // 顔認証機能自体(faceDetectScenario など)は残しつつ、このルーティングからは有効化しない。
+    // const facedetection = data.urlPathName === "/1" || data.urlPathName === "/2";
+    const facedetection = false;
     const hanged = data.urlPathName === "/3";
 
     clientState.client[id] = {
@@ -73,30 +76,32 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
 
     if (bpmState[id] === undefined) {
       bpmState[id] = {
+        bpm: bpmStateDefault.bpm,
         METRONOME: {
-          bpm: bpmStateDefault.bpm,
+          // bpm: bpmStateDefault.bpm,
           beat: bpmStateDefault.beat,
           flag: bpmStateDefault.metronomeFlag,
         },
         MODULATION: {
-          bpm: bpmStateDefault.bpm,
+          // bpm: bpmStateDefault.bpm,
           beat: bpmStateDefault.beat,
           flag: bpmStateDefault.modulationFlag,
         },
         TORCH: {
-          bpm: bpmStateDefault.bpm,
+          // bpm: bpmStateDefault.bpm,
           flag: bpmStateDefault.torchBlinkFlag,
           type: bpmStateDefault.torchType,
+          beat: bpmStateDefault.beat,
         },
         stream: {},
       };
       ["CHAT", ...streamList].forEach((stream) => {
         bpmState[id].stream[stream] = {
-          bpm: bpmStateDefault.bpm,
+          // bpm: bpmStateDefault.bpm,
           beat: bpmStateDefault.beat,
           gridFlag: bpmStateDefault.gridFlag,
           quantizeFlag: bpmStateDefault.quantizeFlag,
-          latency: bpmStateDefault.latency,
+          // latency: bpmStateDefault.latency,
         };
       });
     }
@@ -177,18 +182,17 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
 
     if (bpmState[sockId] === undefined) {
       bpmState[sockId] = {
+        bpm: bpmStateDefault.bpm,
         METRONOME: {
-          bpm: bpmStateDefault.bpm,
           beat: bpmStateDefault.beat,
           flag: bpmStateDefault.metronomeFlag,
         },
         MODULATION: {
-          bpm: bpmStateDefault.bpm,
           beat: bpmStateDefault.beat,
           flag: bpmStateDefault.modulationFlag,
         },
         TORCH: {
-          bpm: bpmStateDefault.bpm,
+          beat: bpmStateDefault.beat,
           flag: bpmStateDefault.torchBlinkFlag,
           type: bpmStateDefault.torchType,
         },
@@ -196,11 +200,11 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
       };
       ["CHAT", ...streamList].forEach((stream) => {
         bpmState[sockId].stream[stream] = {
-          bpm: bpmStateDefault.bpm,
+          // bpm: bpmStateDefault.bpm,
           beat: bpmStateDefault.beat,
           gridFlag: bpmStateDefault.gridFlag,
           quantizeFlag: bpmStateDefault.quantizeFlag,
-          latency: bpmStateDefault.latency,
+          // latency: bpmStateDefault.latency,
         };
       });
     }
@@ -224,10 +228,11 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
     // cmdState.METRONOME[sockId] = 1000;
     if (bpmState[sockId] === undefined) {
       bpmState[sockId] = {
+        bpm: bpmStateDefault.bpm,
         stream: {},
-        METRONOME: { bpm: 60, beat: 4, flag: false },
-        MODULATION: { bpm: 60, beat: 4, flag: false },
-        TORCH: { bpm: 60, flag: false, type: "STEADY" },
+        METRONOME: { beat: 4, flag: false },
+        MODULATION: { beat: 4, flag: false },
+        TORCH: { beat: 4, flag: false, type: "STEADY" },
       };
     }
     console.log(sockId + " is noStream Client");

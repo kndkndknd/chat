@@ -22,6 +22,11 @@ body #bckcnvs {
   z-index: 0;
 }
 
+body #cinemaCnvs {
+  position: absolute;
+  z-index: 1;
+}
+
 body #hls {
   position: absolute;
   z-index: 1;

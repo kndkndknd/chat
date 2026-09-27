@@ -1,10 +1,14 @@
 import {
   setParamsSplitQuantize,
   setBpmState,
-  emitQuantize,
 } from "../../stream/quantize";
 import { stringEmit } from "../../socket/ioEmit";
 import { streamList } from "../../data";
+import { bpmState, bpmStateDefault } from "../../state";
+import { quantizeEmit } from "../../socket/ioEmit";
+import { emitQuantizeText } from "../../stream/quantize/emitQuantizeText";
+
+
 
 // 入力2番の候補
 // const streamList = ["CHAT", "PLAYBACK", "TIMELAPSE"] as const;
@@ -65,21 +69,63 @@ export function classifyArgs(input: string[]): quantizeParamClass {
   return params;
 }
 
-export const splitQuantize = (paramArr, target?: string) => {
+export const splitQuantize = (paramArr, target?: string | string[]) => {
   console.log("debug quantize", paramArr);
+  console.log("debug bpmState", bpmState);
   if (
     (paramArr.length === 1 && paramArr[0] === "HELP") ||
     paramArr[0] === "?"
   ) {
     const strings = `QUANTIZE (stream or ALL) (beat or 0) (ON/TRUE or OFF/FALSE)`;
     stringEmit(strings, false);
-  } else {
-    const params = classifyArgs(paramArr);
-    const targetClient = target !== undefined ? target : "all";
-    const quantizeObj = setParamsSplitQuantize(params, targetClient);
+  } else if (paramArr.length === 0 && target !== undefined && target) {
+    const quantizeObj = {};
+    if(bpmState[target as string].stream !== undefined && bpmState[target as string].stream) {
+      quantizeObj[target as string] = bpmState[target as string].stream;
+    } else {
+      quantizeObj[target as string] = {};
+      streamList.forEach((stream) => {
+        quantizeObj[target as string][stream] = {
+          bpm: bpmStateDefault.bpm,
+          beat: bpmStateDefault.beat,
+          quantizeFlag: bpmStateDefault.quantizeFlag,
+        };
+      });
+    }
+    let sum = 0;
+    for (const stream in quantizeObj[target as string]) {
+      if (quantizeObj[target as string][stream].quantizeFlag) {
+        sum++;
+      }
+    }
+    console.log("sum", sum);
+    console.log("length", Object.keys(quantizeObj[target as string]).length);
+    const flag: boolean = sum / Object.keys(quantizeObj[target as string]).length > 0.5 ? false : true;
+    for (const stream in quantizeObj[target as string]) {
+      quantizeObj[target as string][stream].quantizeFlag = flag;
+    }
     console.log("splitQuantize return: ", quantizeObj);
     setBpmState(quantizeObj);
-    emitQuantize(quantizeObj);
+    quantizeEmit(quantizeObj);
+    emitQuantizeText(
+      quantizeObj,
+      Array.isArray(target) ? target : [target as string],
+    );
+  } else {
+    const params = classifyArgs(paramArr);
+    
+    const targetClientArr: string[] = target !== undefined ? (Array.isArray(target) ? target : [target]) : ['all'];
+    const quantizeObj = setParamsSplitQuantize(params, targetClientArr);
+    console.log("splitQuantize return: ", quantizeObj);
+    setBpmState(quantizeObj);
+    quantizeEmit(quantizeObj);
+    emitQuantizeText(
+      quantizeObj,
+      targetClientArr.includes("all")
+        ? Object.keys(quantizeObj)
+        : targetClientArr,
+      params.stream,
+    );
 
     // io.emit("quantizeFromServer", quantizeObj);
   }

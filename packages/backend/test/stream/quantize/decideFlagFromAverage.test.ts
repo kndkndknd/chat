@@ -28,21 +28,21 @@ describe("decideFlagFromAverage", () => {
     expect(decideFlagFromAverage(obj, "all", "all")).toBe(true);
   });
 
-  test("clientTarget が指定されればそのクライアントのみ参照", () => {
+  test("clientTarget が指定されればそのクライアントのみ参照（分母も対象に絞る）", () => {
     const obj = {
       c1: { S1: make(true), S2: make(true) },
       c2: { S1: make(false), S2: make(false) },
     };
-    // c1 のみ → sum=2, denom=4 (denomは全体), 2 > 2 false → true
-    expect(decideFlagFromAverage(obj, "c1", "all")).toBe(true);
+    // c1 のみ → sum=2, denom=2, 2 > 1 true → false
+    expect(decideFlagFromAverage(obj, "c1", "all")).toBe(false);
   });
 
-  test("streamTarget が指定されればそのストリームのみ参照", () => {
+  test("streamTarget が指定されればそのストリームのみ参照（分母も対象に絞る）", () => {
     const obj = {
       c1: { S1: make(true), S2: make(false) },
       c2: { S1: make(true), S2: make(false) },
     };
-    // S1 のみ → sum=2, denom=4, 2 > 2 false → true
-    expect(decideFlagFromAverage(obj, "all", "S1")).toBe(true);
+    // S1 のみ → sum=2, denom=2, 2 > 1 true → false
+    expect(decideFlagFromAverage(obj, "all", "S1")).toBe(false);
   });
 });

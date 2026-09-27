@@ -5,6 +5,7 @@ import {
   quantizeState,
   socketState,
   streamChunk,
+  loopChunk,
   streamFlagState,
   streamState,
   timelapseState,
@@ -17,50 +18,119 @@ import {
   filterStateType,
   wholeCmdOption
 } from "../../../types";
-import { emojiState, erasePrint, textPrint, showImage, flickering } from "./canvasEvent";
+import { emojiState, erasePrint, textPrint, showImage, flickering, drawTile, clearTiles } from "./canvasEvent";
+import { cinemaPlay, cinemaStop } from "./hls/cinemaPlayer";
 import { stopCmd, cmdFromServer } from "./cmd";
-import { quantizeFromServer } from "./quantize/quantizeFromServer";
-import { chatReq, recordReqFromServer, streamPlay } from "./stream";
+import { quantizeFromServer, playPendingQuantizeChunk } from "./quantize/quantizeFromServer";
+import { quantizeParamFromServer } from "./quantize/quantizeParamFromServer";
+import { chatReq, recordReqFromServer, streamPlay, playAudioStream } from "./stream";
 import { setGainUI } from "./ui/gainUI";
 import { wholeCmd } from "./cmd/wholeCmd";
 import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
-import { enableBlackMode, disableBlackMode, isBlackModeActive } from "./blackMode";
-import { muteMasterForNight, restoreMasterForNight } from "./nightAudio";
-
+import { recordAll, uploadRecording, playRecording } from "./mediaRecorder";
+import { bpmFromServer } from "./quantize/bpmFromServer";
+import { loopToggle } from "./stream/loop/loopToggle";
+import { streamReq } from "./stream/streamReq";
 
 export const socket = (): void => {
+
+  socketState.socket.on("accelarateFlagFromServer", () => {
+    if (flagState.isMobile) {
+      if (!flagState.accelarateFlag) {
+        flagState.accelarateFlag = true;
+      } else {
+        flagState.accelarateFlag = false;
+      }
+    } else {
+      textPrint("This device is not mobile");
+    }
+  });
+
   socketState.socket.on(
-    "stringsFromServer",
-    (data: { strings: string; timeout: boolean }) => {
-      erasePrint();
-      canvasState.stringsClient = data.strings;
-      textPrint(canvasState.stringsClient, { timeout: data.timeout });
+    "bpmFromServer",
+    (data: { bpm: number; source: string[] }) => {
+      bpmFromServer(data);
     },
   );
-  socketState.socket.on("erasePrintFromServer", () => {
-    // erasePrint(stx, strCnvs)
-    erasePrint();
+
+  // WebRTC 通話は /webrtc 端末のブラウザ (SyncClient) が chat_sync と直接やり取りする。
+  // 旧構成の MediaRecorder 中継 (bufferRecReqFromServer 等) / MSE 受信
+  // (mediaChunkFromServer 等) はバックエンド werift の撤去に伴い廃止した。
+
+  socketState.socket.on("bufferFromServer", (data) => {
+    const uint8Array = new Uint8Array(data);
+    const blob = new Blob([uint8Array]);
+    const url = URL.createObjectURL(blob);
+    // videoElement.src = url;
+    webRtcState.videoPlayer.src = webRtcState.videoPlayer !== null ? url : null;
+    textPrint("buffer");
   });
 
-  // BLACK コマンド: 画面全体を真っ黒にする。解除は文字入力(main.ts keydown)で行う。
-  socketState.socket.on("blackFromServer", () => {
-    enableBlackMode();
+
+  // CINEMA: 対象端末に通知された HLS プレイリスト URL を hls.js で再生する
+  socketState.socket.on(
+    "cinemaFromServer",
+    (data: { source: string; title: string; url: string; audio: boolean }) => {
+      cinemaPlay(data);
+    },
+  );
+
+  socketState.socket.on("chatReqFromServer", () => {
+    chatReq(String(socketState.socket.id));
+    setTimeout(() => {
+      erasePrint();
+    }, 1000);
   });
 
-  // ナイトモード解除時: BLACK モードをサーバーから明示的に解除する。
-  socketState.socket.on("blackOffFromServer", () => {
-    disableBlackMode();
-  });
 
-  // ナイトモード移行時: masterGain と glitchGain を 0 にして消音する。
-  socketState.socket.on("masterMuteFromServer", () => {
-    muteMasterForNight();
-  });
-
-  // ナイトモード解除時: masterGain と glitchGain を移行前の値へ戻す。
-  socketState.socket.on("masterUnmuteFromServer", () => {
-    restoreMasterForNight();
-  });
+  // CHATのみ向けにする
+  socketState.socket.on(
+    "chatFromServer",
+    (data: { video: string; audio: ArrayBuffer; source: string, bufferSize: number, sampleRate: number, glitch: boolean,duration?: number, tile?: boolean, key?: string, request?: boolean, mirror?: boolean, position?: { top: number; left: number; width: number; height: number } }) => {
+      const float32Array = new Float32Array(data.audio);
+      const streamData = {
+        audio: float32Array,
+        sampleRate: data.sampleRate,
+        glitch: data.glitch,
+        bufferSize: data.bufferSize,
+        video: data.video,
+        source: data.source,
+      };
+      // TILEモード: 投影先。音声は再生し、映像はタイルとして描画する。
+      // 通常の最大化描画 (showImage) や再要求 (streamReq) は行わない。
+      if (data.tile) {
+        // ミラー（宛先が通常端末）は映像のみ。音声は通常端末側で再生する。
+        if (!data.mirror) {
+          playAudioStream(
+            float32Array,
+            data.sampleRate,
+            data.glitch,
+            data.bufferSize,
+          );
+        }
+        if (data.video && data.position && data.key) {
+          drawTile(data.video, data.position, data.key);
+        }
+        // 投影先自身が送出先の場合は次フレームを要求してストリームを継続する。
+        if (data.request) {
+          streamReq(socketState.socket, "CHAT", streamData, data.source);
+        }
+        return;
+      }
+      const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
+      loopChunk[data.source] = streamData;
+      if(!quantizeState.stream.CHAT.flag || !Object.keys(quantizeState.stream).includes(data.source)) {
+        streamPlay(streamType, streamData);
+        streamReq(socketState.socket, streamType, streamData, data.source);
+      } else {
+        streamChunk[data.source] = streamData;
+        playPendingQuantizeChunk(data.source);
+        if (streamType === "CHAT") {
+          chatReq(String(socketState.socketId));
+        }
+      }
+    },
+  );
 
   socketState.socket.on(
     "cmdFromServer",
@@ -81,22 +151,82 @@ export const socket = (): void => {
     },
   );
 
+
   socketState.socket.on(
-    "stopFromServer",
-    (data: { fadeOutVal: number; target?: string }) => {
-      erasePrint();
-      if (data.target === undefined || data.target === "ALL") {
-        stopCmd(data.fadeOutVal);
-      }
-      textPrint("STOP", { timeout: true, timeoutDuration: 800 });
+    "emojiFromServer",
+    (data: { state: boolean; text: string }) => {
+      textPrint(data.text, { timeout: true });
+      // setTimeout(() => {
+      //   erasePrint();
+      // }, 500);
+      emojiState(data.state);
     },
   );
 
-  socketState.socket.on("chatReqFromServer", () => {
-    chatReq(String(socketState.socket.id));
-    setTimeout(() => {
-      erasePrint();
-    }, 1000);
+  socketState.socket.on("erasePrintFromServer", () => {
+    // erasePrint(stx, strCnvs)
+    erasePrint();
+  });
+
+  // TILEモード: 投影先の全タイルを消去する。
+  socketState.socket.on("tileClearFromServer", () => {
+    clearTiles();
+  });
+
+  // gainFromClient(スライダー操作)/ gainReqFromClient(UI を開く)への応答。
+  // 実際の音量(GainNode)には適用せず、入力欄の表示のみ更新する。
+  // スライダー操作時の発音は gainUI 側のローカル audition が担う。
+  socketState.socket.on("gainFromServer", (data) => {
+    setGainUI(data);
+  });
+
+  socketState.socket.on("gpsFlagFromServer", () => {
+    if (flagState.isMobile) {
+      if (!flagState.gpsFlag) {
+        flagState.gpsFlag = true;
+      } else {
+        flagState.gpsFlag = false;
+      }
+    } else {
+      textPrint("This device is not mobile", { timeout: false });
+    }
+  });
+
+  socketState.socket.on(
+    "loopToggleFromServer",
+    (data: { stream: string; target: string }) => {
+      console.log("loopToggleFromServer debug", data);
+      loopToggle(data.stream, data.target);
+    },
+  );
+
+
+  socketState.socket.on("mediaRecReqFromServer", async () => {
+    await recordAll(streamState.stream as MediaStream, 5000).then((recordings) => {
+      console.log(recordings);
+      recordings.forEach(async (recording) => {
+        await uploadRecording(recording, socketState.socket).then((result) => {
+          console.log(result);
+        });
+      });
+    });
+  });
+
+  socketState.socket.on(
+    "mediaRecFromServer",
+    (data: { container: string; mimeType: string; blob: ArrayBuffer }) => {
+      console.log(`mediaRecFromServer: container=${data.container} mimeType=${data.mimeType} size=${data.blob?.byteLength ?? 0}`);
+      playRecording(data);
+    },
+  );
+
+  socketState.socket.on("quantizeFromServer", (data: bpmStreamStateType) => {
+    quantizeFromServer(data);
+  });
+
+
+  socketState.socket.on("quantizeParamFromServer", (data: {data: bpmStreamStateType; stream: string[]}) => {
+    quantizeParamFromServer(data.data, data.stream);
   });
 
   socketState.socket.on(
@@ -113,63 +243,17 @@ export const socket = (): void => {
     },
   );
 
-  // CHATのみ向けにする
   socketState.socket.on(
-    "chatFromServer",
-    (data: { video: string; audio: ArrayBuffer; source: string, bufferSize: number, sampleRate: number, glitch: boolean,duration?: number }) => {
-      // (data: {
-      //   audio: Float32Array;
-      //   video?: string;
-      //   sampleRate: number;
-      //   source?: string;
-      //   glitch: boolean;
-      //   bufferSize: number;
-      //   duration: number;
-      //   floating?: boolean;
-      //   position?: { top: number; left: number; width: number; height: number };
-      //   target?: string;
-      // }) => {
-      // console.log("chatFromServer");
-      // console.log(data);
-      // data.bufferをfloat32Arrayに変換
-      const float32Array = new Float32Array(data.audio);
-      const streamData = {
-        audio: float32Array,
-        sampleRate: data.sampleRate,
-        glitch: data.glitch,
-        bufferSize: data.bufferSize,
-        video: data.video,
-        source: data.source,
-      };
-      const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
-      streamPlay(streamType, socketState.socket, streamData);
-      // audioWorkletState.chat.flag[data.source] = true;
-
-      // if (quantizeState.flag && quantizeState.stream.includes("CHAT")) {
-      //   const chunk = {
-      //     source: "CHAT",
-      //     audio: data.audio,
-      //     video: data.video,
-      //     sampleRate: data.sampleRate,
-      //     glitch: data.glitch,
-      //     bufferSize: data.bufferSize,
-      //     duration: data.duration,
-      //   };
-      //   // data.source = "CHAT";
-      //   streamChunk.CHAT = chunk;
-      // } else {
-      //   if (data.floating === undefined || !data.floating) {
-      //     streamPlay("CHAT", socketState.socket, data);
-      //   } else {
-      //     // const position = positionFloatingImage(data.target);
-      //     showImage(data.video, data.position);
-      //   }
-      // }
+    "stopFromServer",
+    (data: { fadeOutVal: number; target?: string }) => {
+      erasePrint();
+      cinemaStop();
+      if (data.target === undefined || data.target === "ALL") {
+        stopCmd(data.fadeOutVal);
+      }
+      textPrint("STOP", { timeout: true, timeoutDuration: 800 });
     },
   );
-  socketState.socket.on("quantizeFromServer", (data: bpmStreamStateType) => {
-    quantizeFromServer(data);
-  });
 
   // CHAT以外のSTREAM向け
   socketState.socket.on(
@@ -187,13 +271,43 @@ export const socket = (): void => {
       target?: string;
       filter?: filterStateType;
       index?: number;
+      tile?: boolean;
+      key?: string;
+      request?: boolean;
+      mirror?: boolean;
     }) => {
       streamFlagState[data.source] = true;
-      if (quantizeState.flag && quantizeState.stream.includes(data.source)) {
+      // TILEモード: 投影先。映像はタイルとして描画する。
+      // 通常の最大化描画 (showImage) は行わない。
+      if (data.tile) {
+        // ミラー（宛先が通常端末）は映像のみ。音声は通常端末側で再生する。
+        if (!data.mirror) {
+          playAudioStream(
+            data.audio,
+            data.sampleRate,
+            data.glitch,
+            data.bufferSize,
+            data.filter,
+          );
+        }
+        if (data.video && data.position && data.key) {
+          drawTile(data.video, data.position, data.key);
+        }
+        // 投影先自身が送出先の場合は次フレームを要求してストリームを継続する。
+        if (data.request) {
+          streamReq(socketState.socket, "STREAM", data, data.source);
+        }
+        return;
+      }
+      if (quantizeState.stream[data.source]?.flag) {
         streamChunk[data.source] = data;
+        loopChunk[data.source] = data;
+        playPendingQuantizeChunk(data.source);
       } else {
         if (data.floating === undefined || !data.floating) {
-          streamPlay("STREAM", socketState.socket, data /*, cinemaFlag*/);
+          loopChunk[data.source] = data;
+          streamPlay("STREAM", data /*, cinemaFlag*/);
+          streamReq(socketState.socket, "STREAM", data, data.source);
         } else {
           showImage(data.video, data.position);
         }
@@ -202,91 +316,13 @@ export const socket = (): void => {
   );
 
   socketState.socket.on(
-    "workletBufferFromServer",
-    (data: { video: string; audio: ArrayBuffer; source: string }) => {
-      console.log("workletBufferFromServer");
-      console.log(data);
-      // data.bufferをfloat32Arrayに変換
-      const float32Array = new Float32Array(data.audio);
-      const streamData = {
-        audio: float32Array,
-        sampleRate: 44100,
-        glitch: false,
-        bufferSize: 8192,
-        video: data.video,
-        source: data.source,
-      };
-      const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
-      streamPlay(streamType, socketState.socket, streamData);
-      audioWorkletState.chat.flag[data.source] = true;
-    },
-  );
-
-  // gainFromClient(スライダー操作)/ gainReqFromClient(UI を開く)への応答。
-  // 実際の音量(GainNode)には適用せず、入力欄の表示のみ更新する。
-  // スライダー操作時の発音は gainUI 側のローカル audition が担う。
-  socketState.socket.on("gainFromServer", (data) => {
-    setGainUI(data);
-  });
-
-  socketState.socket.on(
-    "voiceFromServer",
-    (data: { text: string; lang: string }) => {
-      // /counter 端末は BLACK モード中、サーバ駆動の音声も発声しない。
-      if (isBlackModeActive() && window.location.pathname === "/counter") {
-        return;
-      }
-      const uttr = new SpeechSynthesisUtterance();
-      uttr.lang = data.lang;
-      uttr.text = data.text;
-      // 英語に対応しているvoiceを設定
-      speechSynthesis.onvoiceschanged = () => {
-        const voices = speechSynthesis.getVoices();
-        for (let i = 0; i < voices.length; i++) {
-          console.log(voices[i]);
-          if (voices[i].lang === "en-US") {
-            console.log("hit");
-            console.log(voices[i]);
-            uttr.voice = voices[i];
-          }
-        }
-      };
-
-      speechSynthesis.speak(uttr);
-      // voiceState.lang = data.lang;
-      // voiceState.speechSynthesis.text = data.text;
-      // voiceState.speechSynthesis.lang = data.lang;
-      // if (voiceState.flag && voiceState.speechSynthesis.text.length > 0) {
-      //   speechVoice(voiceState.speechSynthesis);
-      // }
-    },
-  );
-
-  socketState.socket.on(
-    "emojiFromServer",
-    (data: { state: boolean; text: string }) => {
-      textPrint(data.text, { timeout: true });
-      // setTimeout(() => {
-      //   erasePrint();
-      // }, 500);
-      emojiState(data.state);
-    },
-  );
-
-  socketState.socket.on(
-    "bpmFromServer",
-    (data: { bpm: number; bar: number }) => {
-      console.log("bpmFromServer", data);
-      metronomeState.fournote = data.bar / 4;
-      // quantizeState.bar = data.bar;
-      if (quantizeState.flag) {
-        // setQuantize({
-        //   flag: true,
-        //   bar: data.bar,
-        //   stream: quantizeState.stream,
-        //   beat: quantizeState.beat,
-        // });
-      }
+    "stringsFromServer",
+    (data: { strings: string; timeout: boolean }) => {
+      // console.log("stringsFromServer", data.strings);
+      textPrint(data.strings + "debug", { timeout: data.timeout });
+      erasePrint();
+      canvasState.stringsClient = data.strings;
+      textPrint(canvasState.stringsClient, { timeout: data.timeout });
     },
   );
 
@@ -307,47 +343,55 @@ export const socket = (): void => {
       }
     }
     textPrint(`TIMELAPSE ${data.cmd}`, { timeout: true });
-    // setTimeout(() => {
-    //   erasePrint();
-    // }, 800);
   });
 
-  socketState.socket.on("gpsFlagFromServer", () => {
-    if (flagState.isMobile) {
-      if (!flagState.gpsFlag) {
-        flagState.gpsFlag = true;
-      } else {
-        flagState.gpsFlag = false;
-      }
-    } else {
-      textPrint("This device is not mobile", { timeout: false });
-    }
-  });
 
-  socketState.socket.on("accelarateFlagFromServer", () => {
-    if (flagState.isMobile) {
-      if (!flagState.accelarateFlag) {
-        flagState.accelarateFlag = true;
-      } else {
-        flagState.accelarateFlag = false;
-      }
-    } else {
-      textPrint("This device is not mobile");
-    }
-  });
+  socketState.socket.on(
+    "workletBufferFromServer",
+    (data: { video: string; audio: ArrayBuffer; source: string }) => {
+      console.log("workletBufferFromServer");
+      console.log(data);
+      // data.bufferをfloat32Arrayに変換
+      const float32Array = new Float32Array(data.audio);
+      const streamData = {
+        audio: float32Array,
+        sampleRate: 44100,
+        glitch: false,
+        bufferSize: 8192,
+        video: data.video,
+        source: data.source,
+      };
+      const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
+      loopChunk[data.source] = streamData;
+      streamPlay(streamType, streamData);
+      streamReq(socketState.socket, streamType, streamData, data.source);
+      audioWorkletState.chat.flag[data.source] = true;
+    },
+  );
 
-  // WebRTC 通話は /webrtc 端末のブラウザ (SyncClient) が chat_sync と直接やり取りする。
-  // 旧構成の MediaRecorder 中継 (bufferRecReqFromServer 等) / MSE 受信
-  // (mediaChunkFromServer 等) はバックエンド werift の撤去に伴い廃止した。
+  socketState.socket.on(
+    "voiceFromServer",
+    (data: { text: string; lang: string }) => {
 
-  socketState.socket.on("bufferFromServer", (data) => {
-    const uint8Array = new Uint8Array(data);
-    const blob = new Blob([uint8Array]);
-    const url = URL.createObjectURL(blob);
-    // videoElement.src = url;
-    webRtcState.videoPlayer.src = webRtcState.videoPlayer !== null ? url : null;
-    textPrint("buffer");
-  });
+      const uttr = new SpeechSynthesisUtterance();
+      uttr.lang = data.lang;
+      uttr.text = data.text;
+      // 英語に対応しているvoiceを設定
+      speechSynthesis.onvoiceschanged = () => {
+        const voices = speechSynthesis.getVoices();
+        for (let i = 0; i < voices.length; i++) {
+          console.log(voices[i]);
+          if (voices[i].lang === "en-US") {
+            console.log("hit");
+            console.log(voices[i]);
+            uttr.voice = voices[i];
+          }
+        }
+      };
+
+      speechSynthesis.speak(uttr);
+    },
+  );
 
   // whole
   socketState.socket.on("wholeCmdFromServer", (option: wholeCmdOption) => {

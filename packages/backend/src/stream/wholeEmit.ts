@@ -3,7 +3,7 @@ import { streamList, streamsRedis, chatsRedis } from "../data";
 import { wholeCmdOption } from "../../../../types";
 import { genEmptyBuff } from "./genEmptyBuff";
 import { clientState, cmdState, sampleRateState, glitchState, currentState } from "../state";
-import { ioState } from "../state/states/ioState";
+import { wholeCmdEmit } from "../socket/ioEmit";
 
 export const wholeEmit = async () => {
   if (!currentState.WHOLE) {
@@ -89,5 +89,6 @@ export const wholeEmit = async () => {
   }
 
   const targetClientArr = Object.keys(clientState.client);
-  ioState.io?.to(targetClientArr[Math.floor(Math.random() * targetClientArr.length)]).emit("wholeCmdFromServer", option);
+  const target = targetClientArr[Math.floor(Math.random() * targetClientArr.length)];
+  wholeCmdEmit(option, target);
 };

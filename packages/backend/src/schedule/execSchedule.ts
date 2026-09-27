@@ -1,7 +1,7 @@
-import { ioState } from "../state/states/ioState";
 import { receiveEnter } from "../cmd/receiveEnter";
-import { stopEmit } from "../cmd/stopEmit";
+import { execStop } from "../cmd/execStop";
 import { clientState, currentState } from "../state";
+import { stringEmit } from "../socket/ioEmit";
 
 export const execSchedule = (cmdString) => {
   // 歯抜けがあっても安全なように、現存する index の配列からランダム選択する
@@ -25,12 +25,12 @@ export const execSchedule = (cmdString) => {
     if (stringArr.length === 1) {
       console.log("stoop", stringArr);
       // const client = "all";
-      stopEmit("", "ALL");
+      execStop("", "ALL");
     }
   } else {
-    ioState?.io.emit("stringsFromServer", {
-      strings: cmdString,
-      timeout: false,
-    });
+    stringEmit(
+      cmdString,
+      false,
+    );
   }
 };

@@ -1,31 +1,33 @@
 import { streamList } from "../packages/backend/src/stream/streamList";
 
+export type bpmStateType = {
+  [client: string]: bpmClientStateType;
+}
+
 export type bpmClientStateType = {
-  METRONOME: {
     bpm: number;
-    beat: number;
-    flag: boolean;
-  };
-  MODULATION: {
-    flag: boolean;
-    bpm: number;
-    beat: number;
-  };
-  TORCH: {
-    flag: boolean;
-    type: "BLINK" | "STEADY";
-    bpm: number;
-  };
-  stream: bpmStreamStateType;
+    METRONOME: {
+      beat: number;
+      flag: boolean;
+    };
+    MODULATION: {
+      beat: number;
+      flag: boolean;
+    };
+    TORCH: {
+      flag: boolean;
+      type: "BLINK" | "STEADY";
+      beat: number;
+    };
+    stream: bpmStreamStateType;
 };
 
 export type bpmStreamStateType = {
   [stream: string]: {
-    bpm: number;
     beat: number;
     gridFlag: boolean;
     quantizeFlag: boolean;
-    latency: number;
+    // latency: number;
   };
 };
 

@@ -3,7 +3,7 @@ export const parameterList = {
   PORT: "PORTAMENT",
   SAMPLERATE: "SAMPLERATE",
   RATE: "SAMPLERATE",
-  BPM: "BPM",
+  // BPM: "BPM",
   GLITCH: "GLITCH", // 単体でも使える、引数もありうる
   GRID: "GRID", // ほぼ単体使いな気がするが、STREAM指定できたらそれはそれで
   VOICE: "VOICE", // 単体。引数にするとしたら1 VOICEのような形だと思う

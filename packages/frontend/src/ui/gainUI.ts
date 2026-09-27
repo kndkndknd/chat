@@ -140,7 +140,7 @@ export const initGainUI = (): void => {
     // ドラッグ中の連続発火を避けるため、値が確定する change 時に鳴らす。
     if (key === "CLICK") {
       input.addEventListener("change", () => {
-        click(parseFloat(input.value));
+        click(parseFloat(input.value), 440);
       });
     }
 

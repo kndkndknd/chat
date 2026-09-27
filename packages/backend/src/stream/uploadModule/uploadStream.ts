@@ -30,6 +30,7 @@ export const uploadStream = async (stringArr) => {
     "../../../../../..",
     uploadParams.mediaDir
   );
+  console.log("mediaDirPath", mediaDirPath);
 
   const f = <string>await getFilePath(stringArr[1], mediaDirPath);
   if (f === "") {

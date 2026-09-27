@@ -63,30 +63,30 @@ describe("connectFromClient", () => {
     expect(Object.keys(clientState.client).length).toBe(0);
   });
 
-  test("/1 は facedetection=true, hanged=false の client を登録し true を返す", () => {
+  test("/1 は facedetection=false, hanged=false の client を登録し true を返す", () => {
     const r = connectFromClient(
       { urlPathName: "/1", isMobile: false, width: 100, height: 200 },
       "idA",
       "10.0.0.1",
     );
     expect(r).toBe(true);
-    expect((clientState.client as any).idA.facedetection).toBe(true);
+    expect((clientState.client as any).idA.facedetection).toBe(false);
     expect((clientState.client as any).idA.hanged).toBe(false);
     expect(clientState.cmdClient).toContain("idA");
     expect(clientState.streamClient).toContain("idA");
     expect((streamState as any).timelapse).toBe(true);
-    expect((bpmState as any).idA.METRONOME.bpm).toBe(60);
+    expect((bpmState as any).idA.bpm).toBe(60);
     expect((bpmState as any).idA.stream.PLAYBACK).toBeDefined();
   });
 
-  test("/2 は facedetection=true, hanged=false の client を登録する", () => {
+  test("/2 は facedetection=false, hanged=false の client を登録する", () => {
     const r = connectFromClient(
       { urlPathName: "/2", isMobile: false, width: 100, height: 200 },
       "idB",
       "10.0.0.2",
     );
     expect(r).toBe(true);
-    expect((clientState.client as any).idB.facedetection).toBe(true);
+    expect((clientState.client as any).idB.facedetection).toBe(false);
     expect((clientState.client as any).idB.hanged).toBe(false);
   });
 

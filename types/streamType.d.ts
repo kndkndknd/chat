@@ -11,6 +11,7 @@ export type buffStateType = {
   filter?: filterStateType;
   timestamp?: number;
   recordIndex?: number;
+  id?: string;
 };
 
 export type buffArrayType = {

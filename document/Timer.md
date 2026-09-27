@@ -232,9 +232,9 @@
 - **動作**: `setInterval` で `latency` ごとにクリック音。flag 変化で旧 interval を `clearInterval` し再生成、`flag=false` で停止。
 
 ### 9.2 量子化グリッド tick
-- **ファイル**: `frontend/src/quantize/setQuantize.ts`
+- **ファイル**: `frontend/src/quantize/quantizeFromServer.ts`
 - **値**: `bar`（BPM から算出した1小節 ms）
-- **動作**: `bar` ごとに `streamFlagState`/`streamChunk` を確認し `quantizePlay()`。BPM 変化時は旧 interval を解除して再生成。`quantizeState.interval` で管理。
+- **動作**: 自己再スケジュール型の `setTimeout`（`scheduleQuantizeTick` → `quantizeTick`）で `bar` ごとに `streamFlagState`/`streamChunk` を確認し `quantizePlay()`。`quantizeState.interval` で管理。BPM 変化時（`reset=true`）は経過時間を差し引いて位相を保ったまま再アーム。QUANTIZE ON 直後の初回チャンクは `playPendingQuantizeChunk` が即再生（1小節の無音回避）。
 
 ### 9.3 量子化ビート遅延
 - **ファイル**: `frontend/src/quantize/quantizePlay.ts`

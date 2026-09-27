@@ -7,7 +7,6 @@ export const sinewave = (
   portament: number,
   gain: number
 ) => {
-  console.log("debug3");
   const currentTime = contextState.audioContext.currentTime;
   console.log("debug");
   oscState.osc.frequency.setTargetAtTime(frequency, currentTime, portament);

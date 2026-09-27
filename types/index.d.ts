@@ -19,7 +19,7 @@ import {
   m5StateType,
 } from "./stateType";
 import { LogType } from "./logType";
-import { quantizeObjType, frontQuantizeStateType } from "./quantizeType";
+import { quantizeObjType, frontQuantizeStateType, quantizeType } from "./quantizeType";
 import { newWindowReqType } from "./newWindowType";
 import {
   bpmClientStateType,
@@ -38,6 +38,7 @@ export {
   CmdType,
   LogType,
   quantizeObjType,
+  quantizeType,
   buffStateType,
   buffArrayType,
   StreamsType,

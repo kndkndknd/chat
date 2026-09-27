@@ -10,15 +10,15 @@ export const getLogCmd = (arrow: string) => {
   }
 
   if (cmdLog.length > 0 && cmdLogNum > 0) {
-    console.log("cmdLog.length", cmdLog.length);
-    console.log("cmdLogNum", cmdLogNum);
+    // console.log("cmdLog.length", cmdLog.length);
+    // console.log("cmdLogNum", cmdLogNum);
 
-    console.log("cmdLogNum % cmdLog.length", cmdLogNum % cmdLog.length);
+    // console.log("cmdLogNum % cmdLog.length", cmdLogNum % cmdLog.length);
     const arrNum =
       cmdLog.length >= cmdLogNum
         ? cmdLog.length - cmdLogNum
         : cmdLog.length - (cmdLogNum % cmdLog.length) - 1;
-    console.log("arrNum", arrNum);
+    // console.log("arrNum", arrNum);
     return cmdLog[arrNum].cmd;
   } else {
     return "";

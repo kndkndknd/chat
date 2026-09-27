@@ -8,7 +8,6 @@ import {
   arduinoState,
   bpmState,
 } from "../state";
-import { ioState } from "../state/states/ioState";
 
 import { chatsRedis, streamsRedis } from "../data";
 import { glitchStream } from "./glitchStream";
@@ -17,6 +16,8 @@ import { pickupPaStreamTarget, pickupStreamTarget } from "./pickupStreamTarget";
 import { switchCramp } from "../arduinoAccess/arduinoAccess";
 import { sampleRateRandomize } from "./sampleRateRandomize";
 import { gridTimeoutVal } from "./gridTimeoutVal";
+import { chatEmit, chatReqEmit, erasePrintEmit } from "../socket/ioEmit";
+import { tileMeta } from "../clientSetting/tileLayout";
 
 export const chatReceive = async (
   buffer?: buffStateType
@@ -29,9 +30,9 @@ export const chatReceive = async (
         console.log("chat length: ", await chatsRedis.length());
         console.log("chatReceive buffer from:", buffer.from);        
         if (buffer.from !== undefined) {
-          chatEmit(buffer.from);
+          execChat(buffer.from);
         } else {
-          chatEmit();
+          execChat();
         }
         break;
       case "PLAYBACK":
@@ -51,11 +52,11 @@ export const chatReceive = async (
         pushStateStream(buffer.source);
     }
   } else {
-    chatEmit();
+    execChat();
   }
 };
 
-export const chatEmit = async (from?) => {
+export const execChat = async (from?) => {
   console.log("chatEmit called to", currentState.stream.CHAT ? "specific target" : "all clients");
   if (currentState.stream.CHAT) {
     let targetId =
@@ -72,7 +73,7 @@ export const chatEmit = async (from?) => {
     if (chatsLen > 0) {
       const shifted = await chatsRedis.shift();
       if (!shifted) {
-        ioState?.io.to(targetId).emit("chatReqFromServer");
+        chatReqEmit(targetId);
         return;
       }
       const chunk = {
@@ -107,29 +108,36 @@ export const chatEmit = async (from?) => {
         ioEmitChatFromServer(chunk, targetId);
       }
     } else {
-      ioState?.io.to(targetId).emit("chatReqFromServer");
+      chatReqEmit(targetId);
     }
   } else {
-    ioState?.io.emit("erasePrintFromServer");
+    erasePrintEmit();
   }
 };
 
+const projectionTargetId = (): string | undefined =>
+  Object.keys(clientState.client).find(
+    (key) => clientState.client[key].projection,
+  );
+
 const ioEmitChatFromServer = async (chunk, targetId) => {
-  if (
-    streamState.floating &&
-    clientState.client[targetId] &&
-    !clientState.client[targetId].projection
-  ) {
-    const projectionChunk = {
-      ...chunk,
-      floating: true,
-      position: clientState.client[targetId].position,
-      target: targetId,
-    };
-    const projectionTargetId = Object.keys(clientState.client).find((key) => {
-      return clientState.client[key].projection;
-    });
-    ioState?.io.to(projectionTargetId).emit("chatFromServer", projectionChunk);
+  const tileEnabled = streamState.tile || streamState.floating;
+  const projectionId = projectionTargetId();
+  let emittedToTarget = false;
+
+  // TILEモード（旧 floating を統合）。CHATの映像フレームを投影先クライアントの
+  // タイルとして描画する。投影先自身が送出先の場合もタイル情報を付与して送る。
+  if (tileEnabled && projectionId !== undefined) {
+    const meta = tileMeta("CHAT", chunk.from ?? chunk.id);
+    if (targetId === projectionId) {
+      // 投影先自身が送出先。タイル描画後に投影先から次のフレームを
+      // 要求させるため request を付与する（ストリームを止めないため）。
+      chatEmit({ ...chunk, ...meta, request: true }, targetId);
+      emittedToTarget = true;
+    } else {
+      // 投影先へは映像のみのミラーを送る（音声は通常クライアントが担当）。
+      chatEmit({ ...chunk, ...meta, mirror: true }, projectionId);
+    }
   }
 
   if (
@@ -141,5 +149,7 @@ const ioEmitChatFromServer = async (chunk, targetId) => {
     console.log("switchCramp", result);
   }
   console.log("chunk sampleRate:", chunk.sampleRate);
-  ioState?.io.to(targetId).emit("chatFromServer", chunk);
+  if (!emittedToTarget) {
+    chatEmit(chunk, targetId);
+  }
 };

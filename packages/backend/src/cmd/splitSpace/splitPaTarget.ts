@@ -1,9 +1,9 @@
 import { clientState, currentState, streamState } from "../../state";
 import { cmdList, streamList } from "../../data";
-import { cmdEmit } from "../cmdEmit";
+import { execCmd } from "../execCmd";
 import { recordEmit } from "../../stream/recordEmit";
-import { sinewaveEmit } from "../sinewaveEmit";
-import { streamEmit } from "../../stream/streamEmit";
+import { execSinewave } from "../execSinewave";
+import { execStream } from "../../stream/execStream";
 import { parameterChange } from "../../parameterChange";
 import { notTargetEmit } from "../notTargetEmit";
 import { stringEmit } from "../../socket/ioEmit";
@@ -24,7 +24,7 @@ export const splitPaTarget = (
     const target = targetArr[Math.floor(Math.random() * targetArr.length)]
     if(clientState.paCmdClient.includes(target)) {
     const flag = !currentState.cmd[cmd].includes[target]
-    cmdEmit(cmd, target, flag)
+    execCmd(cmd, target, flag)
 
     } else {
       stringEmit("target is not PA client")
@@ -34,13 +34,13 @@ export const splitPaTarget = (
     const targetArr = pickupPaCmdTarget(cmd)
     const target = targetArr[Math.floor(Math.random() * targetArr.length)]
     if(clientState.paCmdClient.includes(target)) {
-    sinewaveEmit(Number(stringArr[1]), target)
+    execSinewave(Number(stringArr[1]), target)
     } else {
       stringEmit("target is not PA client")
     }
   } else if (streamList.includes(stringArr[1])) {
     streamState.pa[stringArr[1]] = true
-    streamEmit(stringArr[1])
+    execStream(stringArr[1])
   } else if (stringArr[1] === "CHAT") {
     streamState.pa.CHAT = true;
     chatPreparation();

@@ -3,6 +3,7 @@ import { flagState } from "./flagState";
 import { metronomeState } from "./metronomeState";
 import { streamFlagState } from "./stream/streamFlagState";
 import { streamChunk } from "./stream/streamChunk";
+import { loopChunk } from "./stream/loopChunk";
 import { bufferSizeState } from "./stream/bufferSizeState";
 import { quantizeState } from "./quantizeState";
 import { socketState } from "./socketState";
@@ -52,6 +53,7 @@ export {
   stereoPannerState,
   streamFlagState,
   streamChunk,
+  loopChunk,
   streamState,
   timelapseState,
   torchState,

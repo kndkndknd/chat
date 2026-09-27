@@ -27,6 +27,7 @@ export const initRedis = async () => {
   currentState.cmd.CLICK = [];
   currentState.cmd.BASS = [];
   currentState.cmd.METRONOME = [];
+  currentState.cmd.CINEMA = [];
   for (const key of Object.keys(currentState.stream)) {
     currentState.stream[key] = false;
   }
@@ -37,6 +38,11 @@ export const initRedis = async () => {
   }
   for (const key of Object.keys(streamState.pa)) {
     streamState.pa[key] = false;
+  }
+
+  // streamState の loop を初期化
+  for (const key of Object.keys(streamState.loop)) {
+    streamState.loop[key] = [];
   }
 
   // 現在接続しているクライアントに初期値を与える
@@ -54,30 +60,27 @@ export const initRedis = async () => {
   // bpmState を全接続クライアントに対して初期値で再設定
   for (const id of connectedIds) {
     bpmState[id] = {
+      bpm: bpmStateDefault.bpm,
       METRONOME: {
-        bpm: bpmStateDefault.bpm,
         beat: bpmStateDefault.beat,
         flag: bpmStateDefault.metronomeFlag,
       },
       MODULATION: {
-        bpm: bpmStateDefault.bpm,
         beat: bpmStateDefault.beat,
         flag: bpmStateDefault.modulationFlag,
       },
       TORCH: {
-        bpm: bpmStateDefault.bpm,
         flag: bpmStateDefault.torchBlinkFlag,
         type: bpmStateDefault.torchType,
+        beat: bpmStateDefault.beat,
       },
       stream: {},
     };
     ["CHAT", ...streamList].forEach((stream) => {
       bpmState[id].stream[stream] = {
-        bpm: bpmStateDefault.bpm,
         beat: bpmStateDefault.beat,
         gridFlag: bpmStateDefault.gridFlag,
         quantizeFlag: bpmStateDefault.quantizeFlag,
-        latency: bpmStateDefault.latency,
       };
     });
   }

@@ -3,13 +3,14 @@ import { textPrint } from "../../canvasEvent";
 import { click } from "./click";
 
 export const metronome = (flag: boolean, latency: number, gain: number) => {
+  metronomeState.bar = 4 * latency;
   if (!metronomeState.intervalId) {
     console.log("metronome init");
     textPrint("METRONOME");
     metronomeState.intervalId = window.setInterval(() => {
       console.log("metronome");
       console.log(gain);
-      click(gain);
+      click(gain, 440);
       textPrint("CLICK", { timeout: true });
       // setTimeout(() => {
       //   erasePrint();
@@ -20,7 +21,7 @@ export const metronome = (flag: boolean, latency: number, gain: number) => {
     console.log("metronome change");
     clearInterval(metronomeState.intervalId);
     metronomeState.intervalId = window.setInterval(() => {
-      click(gain);
+      click(gain, 440);
       textPrint("CLICK", { timeout: true });
       // setTimeout(() => {
       //   erasePrint();

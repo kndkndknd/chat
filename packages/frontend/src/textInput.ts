@@ -106,12 +106,10 @@ const processChar = (
 ): string => {
   if (character === "\\") {
     bassFlag = !bassFlag;
-    stringsClient = "BASS";
-    socket.emit("charFromClient", "BASS");
     if(!window.location.pathname.includes("nosound")){
       bass(bassFlag, 0.4);
       if (bassFlag) {
-        textPrint(stringsClient);
+        textPrint("BASS");
       } else {
         erasePrint(stx, strCnvs);
       }
@@ -127,7 +125,7 @@ const processChar = (
     character === "Control" ||
     character === "Alt"
   ) {
-    console.log(character + " pressed");
+    // console.log(character + " pressed");
   } else {
     if (character === " ") {
     }
@@ -138,7 +136,7 @@ const processChar = (
       socket.emit("charFromClient", character);
     }
 
-    console.log(character);
+    // console.log(character);
 
     if (character === "Enter" && stringsClient != "VOICE") stringsClient = "";
     //  erasePrint('strings', stx, strCnvs)

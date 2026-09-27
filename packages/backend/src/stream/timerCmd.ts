@@ -1,7 +1,6 @@
 import { receiveEnter } from "../cmd/receiveEnter";
-import { stopEmit } from "../cmd/stopEmit";
+import { stopEmit, stringEmit } from "../socket/ioEmit";
 import { clientState, currentState } from "../state";
-import { ioState } from "../state/states/ioState";
 
 export const timerCmd = (
   stringArr: string[],
@@ -26,10 +25,7 @@ export const timerCmd = (
   const cmdString =
     stringArr.length > 2 ? stringArr.slice(1).join(" ") : stringArr[1];
   const string = cmdString + " SCHEDULED " + String(timerVal) + "ms LATER";
-  ioState?.io.emit("stringsFromServer", {
-    strings: string,
-    timeout: true,
-  });
+  stringEmit(string, true)
   console.log(string);
 
   if (timerVal > 0) {
@@ -50,11 +46,11 @@ export const timerCmd = (
           stringArr[stringArr.length - 1]
         )
       ) {
-        receiveEnter(cmdString, targetId);
+        receiveEnter(cmdString, targetId as string);
       } else if (stringArr[1] === "STOP") {
         if (stringArr.length === 2) {
           const client = "all";
-          stopEmit("", "ALL", client);
+          stopEmit({ fadeOutVal: 0, target: "ALL", group: client });
           /*
         } else if(stringArr.length === 3) {
           if(stringArr[2] === 'SINEWAVECLIENT') {
@@ -67,10 +63,7 @@ export const timerCmd = (
           */
         }
       } else {
-        ioState?.io.emit("stringsFromServer", {
-          strings: cmdString,
-          timeout: false,
-        });
+        stringEmit(cmdString, false)
       }
     }, timerVal);
   }

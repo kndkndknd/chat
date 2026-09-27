@@ -1,11 +1,24 @@
-import { frontQuantizeStateType } from "../../../../types";
+import { frontQuantizeStateType, quantizeType } from "../../../../types";
 
-export const quantizeState: frontQuantizeStateType = {
-  flag: false,
-  bar: 0,
-  beat: 1,
+
+export const quantizeState: quantizeType = {
+  bar: 4000,
   interval: null,
   currentTime: 0,
   timeout: 0,
-  stream: [],
-};
+  intervalFlag: false,
+  stream: {
+    CHAT: {
+      flag: false,
+      beat: 1,
+    },
+    PLAYBACK: {
+      flag: false,
+      beat: 1,
+    },
+    TIMELAPSE: {
+      flag: false,
+      beat: 1,
+    }
+  }
+}

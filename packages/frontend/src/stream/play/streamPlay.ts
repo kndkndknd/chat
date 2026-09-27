@@ -4,12 +4,13 @@ import { showImage, textPrint, erasePrint } from "../../canvasEvent";
 import { flagState } from "../../state";
 import { SocketFacade } from "../../socket/SocketFacade";
 import { filterStateType } from "../../../../../types";
+import { streamReq } from "../streamReq";
 
 let debugCount = 0;
 
 export const streamPlay = async (
   type: "CHAT" | "STREAM",
-  socket: SocketFacade,
+  // socket: SocketFacade,
   stream: {
     audio: Float32Array;
     sampleRate: number;
@@ -24,7 +25,7 @@ export const streamPlay = async (
   },
   cinemaFlag?: boolean
 ) => {
-  const streamReq =
+  const streamReqBody =
     stream.index !== undefined
       ? { source: stream.source, index: stream.index }
       : stream.source;
@@ -50,22 +51,22 @@ export const streamPlay = async (
   } else if (stream.source !== undefined) {
     textPrint(stream.source.toLowerCase());
   }
-  if (flagState.recLatency) {
-    console.log("debugCount:", debugCount);
-    setTimeout(() => {
-      if (type !== "CHAT") {
-        socket.emit("streamReqFromClient", streamReq);
-      } else {
-        console.log("debugCount in setTimeout:", debugCount);
-        chatReq(socket.id);
-      }
-    }, (stream.bufferSize / stream.sampleRate) * 1000);
-    debugCount++;
-  } else {
-    if (type !== "CHAT") {
-      socket.emit("streamReqFromClient", stream.source);
-    } else {
-      chatReq(socket.id);
-    }
-  }
+  // if (flagState.recLatency) {
+  //   console.log("debugCount:", debugCount);
+  //   setTimeout(() => {
+  //     if (type !== "CHAT") {
+  //       socket.emit("streamReqFromClient", streamReq);
+  //     } else {
+  //       console.log("debugCount in setTimeout:", debugCount);
+  //       chatReq(socket.id);
+  //     }
+  //   }, (stream.bufferSize / stream.sampleRate) * 1000);
+  //   debugCount++;
+  // } else {
+  //   if (type !== "CHAT") {
+  //     socket.emit("streamReqFromClient", stream.source);
+  //   } else {
+  //     chatReq(socket.id);
+  //   }
+  // }
 };

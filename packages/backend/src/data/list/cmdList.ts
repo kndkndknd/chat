@@ -10,4 +10,13 @@ export const cmdList = {
   METRONOME: "METRONOME",
   PREVIOUS: "PREVIOUS",
   PREV: "PREVIOUS",
+  UP: "UP",
+  DOWN: "DOWN",
+  SAME: "SAME",
+  KEEP: "SAME",
+  CINEMA: "CINEMA",
+  VIDEO: "CINEMA",
+  VID: "CINEMA",
+  MOVIE: "CINEMA",
+  MOV: "CINEMA",
 };
