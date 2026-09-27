@@ -5,7 +5,8 @@ import { execSinewave } from "../execSinewave";
 import { parameterChange } from "../../parameterChange";
 
 import { cmdEmit } from "../../socket/ioEmit";
-import { stringEmit, voiceEmit, timelapseEmit } from "../../socket/ioEmit";
+import { stringEmit, voiceEmit, timelapseEmit, tileClearEmit } from "../../socket/ioEmit";
+import { clearTiles } from "../../clientSetting/tileLayout";
 // import { putString } from "./putString";
 
 // import { insertStream } from "../../mongoAccess/insertStream";
@@ -224,6 +225,11 @@ export const splitSpace = async (
     const input = Number(stringArr[1]);
     streamState.basisBufferSize = bufferSizeChange(input);
     stringEmit(`BufferSize: ${streamState.basisBufferSize}`);
+  } else if (stringArr[0] === "TILE" && stringArr[1] === "CLEAR") {
+    // TILEモード: タイル台帳を破棄し、投影先の全タイルを消去する。
+    clearTiles();
+    tileClearEmit();
+    stringEmit("TILE: CLEARED", true);
   } else if (stringArr[0] === "CLEAR" || stringArr[0] === "INIT") {
     if (stringArr[1] === "BUFFER" || stringArr[1] === "REDIS") {
       const allKeys = await streamsRedis.getAllKeys();

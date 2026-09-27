@@ -12,6 +12,7 @@ import { pickupStreamTarget, pickupPaStreamTarget } from "./pickupStreamTarget";
 import { glitchStream } from "./glitchStream";
 import { gridTimeoutVal } from "./gridTimeoutVal";
 import { streamEmit, stringEmit } from "../socket/ioEmit";
+import { tileMeta } from "../clientSetting/tileLayout";
 
 export const execStream = async (
   source: string,
@@ -188,27 +189,35 @@ export const execStream = async (
   }
 };
 
+const projectionTargetId = (): string | undefined =>
+  Object.keys(clientState.client).find(
+    (key) => clientState.client[key].projection,
+  );
+
 const ioEmitStreamFromServer = async (stream, targetId, source) => {
   console.log("targetId", targetId);
 
-  if (
-    stream.video &&
-    streamState.floating &&
-    clientState.client[targetId] &&
-    !clientState.client[targetId].projection
-  ) {
-    console.log("floating");
-    const projectionStream = {
-      ...stream,
-      floating: true,
-      position: clientState.client[targetId].position,
-      target: targetId,
-    };
-    const projectionTargetId = Object.keys(clientState.client).find((key) => {
-      return clientState.client[key].projection;
-    });
-    streamEmit(stream, projectionTargetId);
+  // TILEモード（旧 floating を統合）。映像フレームを投影先クライアントの
+  // タイルとして描画する。投影先自身が送出先の場合もタイル情報を付与して
+  // 送り、通常の最大化描画・消去パスに流れないようにする。
+  const tileEnabled = streamState.tile || streamState.floating;
+  const projectionId = projectionTargetId();
+
+  if (tileEnabled && projectionId !== undefined) {
+    const meta = tileMeta(source, stream.from ?? stream.id);
+    if (targetId === projectionId) {
+      // 投影先自身が送出先。タイル描画後に投影先から次のフレームを
+      // 要求させるため request を付与する（ストリームを止めないため）。
+      streamEmit({ ...stream, ...meta, request: true }, targetId);
+    } else {
+      // 通常クライアントへ送出（次フレームはこのクライアントが要求する）。
+      // 投影先へは映像のみのミラーを送る（音声は通常クライアントが担当）。
+      streamEmit(stream, targetId);
+      streamEmit({ ...stream, ...meta, mirror: true }, projectionId);
+    }
+    return;
   }
+
   streamEmit(stream, targetId);
 };
 

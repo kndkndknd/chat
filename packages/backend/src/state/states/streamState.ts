@@ -25,6 +25,7 @@ export const streamState = createPersistedState<streamStateType>("streamState", 
   },
   timelapse: false,
   floating: false,
+  tile: false,
   pa: {
     CHAT: false,
     PLAYBACK: false,
