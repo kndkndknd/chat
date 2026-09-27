@@ -70,7 +70,7 @@ export const socket = (): void => {
   // CINEMA: 対象端末に通知された HLS プレイリスト URL を hls.js で再生する
   socketState.socket.on(
     "cinemaFromServer",
-    (data: { source: string; title: string; url: string }) => {
+    (data: { source: string; title: string; url: string; audio: boolean }) => {
       cinemaPlay(data);
     },
   );

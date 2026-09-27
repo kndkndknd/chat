@@ -40,7 +40,7 @@ export const chatReqEmit = (target?: string) => {
 // CINEMA: 対象クライアントに HLS の再生 URL を通知する。
 // m3u8/ts の実体は backend の /hls 静的配信から hls.js が取得する。
 export const cinemaEmit = (
-  data: { source: string; title: string; url: string },
+  data: { source: string; title: string; url: string; audio: boolean },
   target?: string,
 ) => {
   if (target === undefined) {

@@ -1,20 +1,31 @@
 import Hls from "hls.js";
-import { canvasElement } from "../canvasEvent/canvasElement";
-import { erasePrint } from "../canvasEvent";
 
 let hls: Hls | null = null;
 let video: HTMLVideoElement | null = null;
+let cinemaCnvs: HTMLCanvasElement | null = null;
 let rafId = 0;
 let onEnded: (() => void) | null = null;
 
-// <video id="cinemaVideo"> の映像を、showImage と同じフィット計算で canvas に描画する。
+// <video id="cinemaVideo"> の映像を、showImage と同じフィット計算で
+// <canvas id="cinemaCnvs"> (cnvs の背面) に描画する。
+// cnvs とは別キャンバスに描くことで、cnvs 側の文字や画像を映像の手前に残せる。
 const drawFrame = () => {
   rafId = requestAnimationFrame(drawFrame);
   const v = video;
-  if (!v || v.readyState < 2 || v.videoWidth === 0 || v.videoHeight === 0) {
+  const cnvs = cinemaCnvs;
+  if (
+    !v ||
+    !cnvs ||
+    v.readyState < 2 ||
+    v.videoWidth === 0 ||
+    v.videoHeight === 0
+  ) {
     return;
   }
-  const ctx = canvasElement.ctx;
+  const ctx = cnvs.getContext("2d");
+  if (!ctx) {
+    return;
+  }
   const aspect = v.videoWidth / v.videoHeight;
   const windowAspect = window.innerWidth / window.innerHeight;
   const wdth =
@@ -23,21 +34,23 @@ const drawFrame = () => {
     aspect > windowAspect ? window.innerWidth / aspect : window.innerHeight;
   const x = window.innerWidth / 2 - wdth / 2;
   const y = window.innerHeight / 2 - hght / 2;
-  erasePrint();
+  ctx.clearRect(0, 0, cnvs.width, cnvs.height);
   ctx.drawImage(v, x, y, wdth, hght);
 };
 
-export const cinemaPlay = (data: { url: string }) => {
+export const cinemaPlay = (data: { url: string; audio: boolean }) => {
   cinemaStop();
   video = document.getElementById("cinemaVideo") as HTMLVideoElement;
-  if (!video) {
-    console.error("cinemaVideo element not found");
+  cinemaCnvs = document.getElementById("cinemaCnvs") as HTMLCanvasElement;
+  if (!video || !cinemaCnvs) {
+    console.error("cinemaVideo or cinemaCnvs element not found");
     return;
   }
   // ワンショット再生（末尾で停止し、先頭には戻らない）
   video.loop = false;
-  // 過去の自動再生ブロックで muted が残っていても、再生のたびに音声ありへ戻す
-  video.muted = false;
+  // 音声担当でなければミュートで映像のみ再生する。
+  // 担当端末は、過去の自動再生ブロックで muted が残っていても音声ありへ戻す。
+  video.muted = !data.audio;
 
   if (video.canPlayType("application/vnd.apple.mpegurl")) {
     video.src = data.url;
@@ -82,5 +95,11 @@ export const cinemaStop = () => {
     video.load();
     video = null;
   }
-  erasePrint();
+  if (cinemaCnvs !== null) {
+    const ctx = cinemaCnvs.getContext("2d");
+    if (ctx) {
+      ctx.clearRect(0, 0, cinemaCnvs.width, cinemaCnvs.height);
+    }
+    cinemaCnvs = null;
+  }
 };

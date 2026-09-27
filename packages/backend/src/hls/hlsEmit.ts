@@ -1,7 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import { cinemaEmit } from "../socket/ioEmit";
-import { currentState } from "../state";
+import { currentState, clientState } from "../state";
+import { cinemaAudio } from "./cinemaAudio";
 
 // HLS (m3u8/ts) の配置ルート。このファイルは src/hls にあるため、
 // app.ts (src) より1階層深い。__dirname から5階層上が /Users/knd/chat。
@@ -54,8 +55,12 @@ export const hlsEmit = (
   }
 
   currentState.cmd.CINEMA = [...new Set([...currentState.cmd.CINEMA, ...target])];
+  const audio = cinemaAudio(clientState.client, target);
   target.forEach((id) => {
-    console.log(`cinemaEmit ${entry.title} -> ${id}`);
-    cinemaEmit({ source: "CINEMA", title: entry.title, url: entry.url }, id);
+    console.log(`cinemaEmit ${entry.title} -> ${id} audio:${audio[id]}`);
+    cinemaEmit(
+      { source: "CINEMA", title: entry.title, url: entry.url, audio: audio[id] },
+      id,
+    );
   });
 };
