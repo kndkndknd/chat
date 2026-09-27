@@ -116,6 +116,15 @@ export const erasePrintEmit = (target?: string) => {
   }
 };
 
+// TILEモード: 投影先クライアントにタイルの消去を通知する。
+export const tileClearEmit = (target?: string) => {
+  if (target === undefined) {
+    ioState?.io.emit("tileClearFromServer");
+  } else {
+    ioState?.io.to(target).emit("tileClearFromServer");
+  }
+};
+
 export const loopToggleEmit = (stream: string, target: string) => {
   if (target === undefined) {
     ioState?.io.emit("loopToggleFromServer", { stream, target });

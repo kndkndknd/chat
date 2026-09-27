@@ -12,7 +12,8 @@ import { execStop } from "./execStop";
 import { splitSpace } from "./splitSpace";
 import { splitPlus } from "./splitPlus";
 import { voiceEmit } from "../socket/ioEmit";
-import { stringEmit, mediaRecReqEmit, voskCallEmit, cmdEmit } from "../socket/ioEmit";
+import { stringEmit, mediaRecReqEmit, voskCallEmit, cmdEmit, tileClearEmit } from "../socket/ioEmit";
+import { clearTiles } from "../clientSetting/tileLayout";
 import { loadScenario } from "../scenario/loadScenario";
 import { execScenario } from "../scenario/execScenario";
 import { cmdLogging } from "../logging/cmdLogging";
@@ -97,6 +98,15 @@ export const receiveEnter = async (
   } else if (strings === "FLOATING") {
     streamState.floating = !streamState.floating;
     stringEmit("FLOATING: " + streamState.floating, true);
+  } else if (strings === "TILE") {
+    // TILEモード: 投影先クライアントにソース別タイルを描画する。
+    // OFF時はタイル台帳と投影先の表示をクリアする。
+    streamState.tile = !streamState.tile;
+    if (!streamState.tile) {
+      clearTiles();
+      tileClearEmit();
+    }
+    stringEmit("TILE: " + streamState.tile, true);
   } else if (strings === "LATENCY") {
     cmdEmit(mergeStreamTarget(streamState), { cmd: "LATENCY" });
   } else if (strings === "MEDIARECORD") {

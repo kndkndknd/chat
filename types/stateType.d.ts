@@ -47,6 +47,7 @@ export type streamStateType = {
   };
   timelapse: boolean;
   floating: boolean;
+  tile: boolean;
   pa: {
     [key: string]: boolean;
   };

@@ -18,12 +18,12 @@ import {
   filterStateType,
   wholeCmdOption
 } from "../../../types";
-import { emojiState, erasePrint, textPrint, showImage, flickering } from "./canvasEvent";
+import { emojiState, erasePrint, textPrint, showImage, flickering, drawTile, clearTiles } from "./canvasEvent";
 import { cinemaPlay, cinemaStop } from "./hls/cinemaPlayer";
 import { stopCmd, cmdFromServer } from "./cmd";
 import { quantizeFromServer, playPendingQuantizeChunk } from "./quantize/quantizeFromServer";
 import { quantizeParamFromServer } from "./quantize/quantizeParamFromServer";
-import { chatReq, recordReqFromServer, streamPlay } from "./stream";
+import { chatReq, recordReqFromServer, streamPlay, playAudioStream } from "./stream";
 import { setGainUI } from "./ui/gainUI";
 import { wholeCmd } from "./cmd/wholeCmd";
 import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
@@ -86,7 +86,7 @@ export const socket = (): void => {
   // CHATのみ向けにする
   socketState.socket.on(
     "chatFromServer",
-    (data: { video: string; audio: ArrayBuffer; source: string, bufferSize: number, sampleRate: number, glitch: boolean,duration?: number }) => {
+    (data: { video: string; audio: ArrayBuffer; source: string, bufferSize: number, sampleRate: number, glitch: boolean,duration?: number, tile?: boolean, key?: string, request?: boolean, mirror?: boolean, position?: { top: number; left: number; width: number; height: number } }) => {
       const float32Array = new Float32Array(data.audio);
       const streamData = {
         audio: float32Array,
@@ -96,6 +96,27 @@ export const socket = (): void => {
         video: data.video,
         source: data.source,
       };
+      // TILEモード: 投影先。音声は再生し、映像はタイルとして描画する。
+      // 通常の最大化描画 (showImage) や再要求 (streamReq) は行わない。
+      if (data.tile) {
+        // ミラー（宛先が通常端末）は映像のみ。音声は通常端末側で再生する。
+        if (!data.mirror) {
+          playAudioStream(
+            float32Array,
+            data.sampleRate,
+            data.glitch,
+            data.bufferSize,
+          );
+        }
+        if (data.video && data.position && data.key) {
+          drawTile(data.video, data.position, data.key);
+        }
+        // 投影先自身が送出先の場合は次フレームを要求してストリームを継続する。
+        if (data.request) {
+          streamReq(socketState.socket, "CHAT", streamData, data.source);
+        }
+        return;
+      }
       const streamType = data.source === "CHAT" ? "CHAT" : "STREAM";
       loopChunk[data.source] = streamData;
       if(!quantizeState.stream.CHAT.flag || !Object.keys(quantizeState.stream).includes(data.source)) {
@@ -145,6 +166,11 @@ export const socket = (): void => {
   socketState.socket.on("erasePrintFromServer", () => {
     // erasePrint(stx, strCnvs)
     erasePrint();
+  });
+
+  // TILEモード: 投影先の全タイルを消去する。
+  socketState.socket.on("tileClearFromServer", () => {
+    clearTiles();
   });
 
   // gainFromClient(スライダー操作)/ gainReqFromClient(UI を開く)への応答。
@@ -245,8 +271,34 @@ export const socket = (): void => {
       target?: string;
       filter?: filterStateType;
       index?: number;
+      tile?: boolean;
+      key?: string;
+      request?: boolean;
+      mirror?: boolean;
     }) => {
       streamFlagState[data.source] = true;
+      // TILEモード: 投影先。映像はタイルとして描画する。
+      // 通常の最大化描画 (showImage) は行わない。
+      if (data.tile) {
+        // ミラー（宛先が通常端末）は映像のみ。音声は通常端末側で再生する。
+        if (!data.mirror) {
+          playAudioStream(
+            data.audio,
+            data.sampleRate,
+            data.glitch,
+            data.bufferSize,
+            data.filter,
+          );
+        }
+        if (data.video && data.position && data.key) {
+          drawTile(data.video, data.position, data.key);
+        }
+        // 投影先自身が送出先の場合は次フレームを要求してストリームを継続する。
+        if (data.request) {
+          streamReq(socketState.socket, "STREAM", data, data.source);
+        }
+        return;
+      }
       if (quantizeState.stream[data.source]?.flag) {
         streamChunk[data.source] = data;
         loopChunk[data.source] = data;
