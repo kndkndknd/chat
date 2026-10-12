@@ -1,13 +1,16 @@
 import { describe, expect, test, vi, beforeEach } from "vitest";
 
 vi.mock("../../../src/state", () => ({
-  clientState: { client: { c1: { index: 1 }, c2: { index: 2 } }, cmdClient: [] },
-  currentState: { cmd: {} },
+  clientState: {
+    client: { c1: { index: 1 }, c2: { index: 2 } },
+    cmdClient: ["c1"],
+  },
+  currentState: { cmd: { WHITENOISE: [] } },
   streamState: { target: {} },
 }));
 
 vi.mock("../../../src/data", () => ({
-  cmdList: {},
+  cmdList: { NOISE: "WHITENOISE", WHITENOISE: "WHITENOISE" },
   streamList: ["PLAYBACK", "TIMELAPSE", "EMPTY"],
 }));
 
@@ -33,6 +36,25 @@ import { numTarget } from "../../../src/cmd/splitSpace/numTarget";
 import { execChangeBPM } from "../../../src/bpm/changeBpm";
 import { splitBeat } from "../../../src/stream/quantize/splitBeat";
 import { stringEmit } from "../../../src/socket/ioEmit";
+import { execCmd } from "../../../src/cmd/execCmd";
+import { currentState } from "../../../src/state";
+
+describe("numTarget cmd alias", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    currentState.cmd.WHITENOISE = [];
+  });
+
+  test("NOISE は WHITENOISE に解決して execCmd を呼ぶ", () => {
+    numTarget(["c1"], ["NOISE"], ["string"]);
+    expect(execCmd).toHaveBeenCalledWith("WHITENOISE", "c1", true);
+  });
+
+  test("WHITENOISE はそのまま execCmd を呼ぶ", () => {
+    numTarget(["c1"], ["WHITENOISE"], ["string"]);
+    expect(execCmd).toHaveBeenCalledWith("WHITENOISE", "c1", true);
+  });
+});
 
 describe("numTarget BPM", () => {
   beforeEach(() => vi.clearAllMocks());

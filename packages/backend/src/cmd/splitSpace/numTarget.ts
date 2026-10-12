@@ -30,9 +30,9 @@ export const numTarget = (
     for (const target of targetArr) {
       if (clientState.cmdClient.includes(target)) {
         const cmd = cmdList[stringArr[0]];
-        console.log("currend cmd", currentState.cmd[stringArr[0]]);
+        console.log("currend cmd", currentState.cmd[cmd]);
         const flag = !currentState.cmd[cmd].includes(target);
-        execCmd(stringArr[0], target, flag);
+        execCmd(cmd, target, flag);
       } else {
         stringEmit("target is not cmd client", true, target);
       }
