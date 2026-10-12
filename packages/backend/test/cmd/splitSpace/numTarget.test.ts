@@ -10,7 +10,11 @@ vi.mock("../../../src/state", () => ({
 }));
 
 vi.mock("../../../src/data", () => ({
-  cmdList: { NOISE: "WHITENOISE", WHITENOISE: "WHITENOISE" },
+  cmdList: {
+    NOISE: "WHITENOISE",
+    WHITENOISE: "WHITENOISE",
+    SIMULATE: "SIMULATE",
+  },
   streamList: ["PLAYBACK", "TIMELAPSE", "EMPTY"],
 }));
 
@@ -53,6 +57,18 @@ describe("numTarget cmd alias", () => {
   test("WHITENOISE はそのまま execCmd を呼ぶ", () => {
     numTarget(["c1"], ["WHITENOISE"], ["string"]);
     expect(execCmd).toHaveBeenCalledWith("WHITENOISE", "c1", true);
+  });
+
+  test("SIMULATE は currentState.cmd に無くても対象端末のみに execCmd を呼ぶ", () => {
+    expect(() => numTarget(["c1"], ["SIMULATE"], ["string"])).not.toThrow();
+    expect(execCmd).toHaveBeenCalledWith("SIMULATE", "c1", true);
+    expect(stringEmit).not.toHaveBeenCalled();
+  });
+
+  test("未定義コマンドでもエラーにならず not cmd を返す", () => {
+    expect(() => numTarget(["c1"], ["UNKNOWN"], ["string"])).not.toThrow();
+    expect(stringEmit).toHaveBeenCalledWith("not cmd", true, "c1");
+    expect(execCmd).not.toHaveBeenCalled();
   });
 });
 
