@@ -123,7 +123,7 @@ pnpm install
 | --- | --- |
 | `PORTAMENT` / `PORT` | サイン波周波数変化を滑らかに（秒指定／単体で 0⇔5 切替）。 |
 | `SAMPLERATE` / `RATE` | サンプリングレート変更（約 4000〜132300Hz）。 |
-| `GLITCH` | カメラ画像のグリッチ（音声はリバーブ）。 |
+| `GLITCH` | カメラ画像のグリッチ（音声はリバーブ）。単体で全トグル、`ON`/`TRUE`・`OFF`/`FALSE` で全指定、`CHAT`/`PLAYBACK`/`TIMELAPSE` で個別トグル。 |
 | `GRID` | BPM グリッド再生。 |
 | `VOICE` | その端末の読み上げモードをトグル／ON/OFF。 |
 | `RANDOM` | PLAYBACK / UPLOAD の再生順をランダム化。 |

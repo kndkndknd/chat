@@ -1,4 +1,4 @@
-import { clientState, cmdState, streamState } from "../../state";
+import { clientState, cmdState, streamState, glitchState } from "../../state";
 import { streamList, parameterList, streamsRedis } from "../../data";
 import { execCmd } from "../execCmd";
 import { execSinewave } from "../execSinewave";
@@ -42,6 +42,7 @@ import { scheduleSplitCmd } from "../../schedule/scheduleSplitCmd";
 import { getScheduleFromSplitSpace } from "../../schedule/getScheduleFromSplitSpace";
 import { deleteLog } from "../../logging/deleteLog";
 import { getTypeArr } from "./getTypeArr";
+import { glitchParam } from "./glitchParam";
 
 import { initRedis } from "../../redis/initRedis";
 
@@ -124,7 +125,7 @@ export const splitSpace = async (
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
     // RANDOMのみRATEとSTREAMがあるので個別処理
     if (stringArr[0] === "GLITCH") {
-      glitchChange({value: stringArr[1] === "ON" || stringArr[1] === "TRUE" ? 1 : 0});
+      glitchChange(glitchParam(stringArr[1], Object.keys(glitchState.glitch)));
     } else if (stringArr[0] === "RANDOM") {
       splitRandomRate(stringArr);
     } else if (stringArr[0] === "VOICE") {
