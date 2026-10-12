@@ -23,7 +23,11 @@ export const splitPaTarget = (
     const targetArr = pickupPaCmdTarget(cmd)
     const target = targetArr[Math.floor(Math.random() * targetArr.length)]
     if(clientState.paCmdClient.includes(target)) {
-    const flag = !currentState.cmd[cmd].includes[target]
+    const currentTargetArr = currentState.cmd[cmd];
+    const flag =
+      currentTargetArr === undefined
+        ? true
+        : !currentTargetArr.includes(target);
     execCmd(cmd, target, flag)
 
     } else {
