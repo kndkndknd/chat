@@ -32,12 +32,16 @@ export function pickMimeType(container: Container): string | null {
   )
 }
 
+/**
+ * 録画するコンテナを優先順 (WebM → Ogg) で 1 つ返す。
+ * WebM が録画可能なら Ogg は録画しない（送信・base64 変換のコスト削減。
+ * 取得側 getVideoBuffer も WebM 優先のため実害はない）。
+ */
 export function supportedContainers(): { container: Container; mimeType: string }[] {
-  const containers: Container[] = ['webm', 'ogg']
-  return containers.flatMap((container) => {
-    const mimeType = pickMimeType(container)
-    return mimeType ? [{ container, mimeType }] : []
-  })
+  const webm = pickMimeType('webm')
+  if (webm) return [{ container: 'webm', mimeType: webm }]
+  const ogg = pickMimeType('ogg')
+  return ogg ? [{ container: 'ogg', mimeType: ogg }] : []
 }
 
 // export function requestMedia(): Promise<MediaStream> {
@@ -89,7 +93,8 @@ function recordOne(
 }
 
 /**
- * サポートされているコンテナすべてを同一ストリームから同時に録画する。
+ * 優先コンテナ (WebM → Ogg) のうち利用可能なものを、
+ * 同一ストリームから録画する。
  */
 export function recordAll(
   stream: MediaStream,
