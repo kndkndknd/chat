@@ -31,13 +31,13 @@ cmdEmit(["対象id"], { cmd: "VIDEOBUFFER" }) ── cmdFromServer ──► 対
                                                                   │ cmdFromServer.ts
                                                                   ▼ videoBuffer()
                                                             recordAll(streamState.stream, 10000)
-                                                             ├ webm (VP9 + Opus)
-                                                             └ ogg  (VP9 + Opus)
+                                                             └ webm (VP9 + Opus)
+                                                               ※WebM 非対応ブラウザのみ ogg
                                                                   │ uploadRecording()
                                                                   ▼ mediaUploadFromClient (blob: ArrayBuffer)
                                                             wsServer → storeVideoBuffer()
                                                                   ▼
-                                                            Redis videoBuffer:webm / videoBuffer:ogg
+                                                            Redis videoBuffer:webm (通常) / videoBuffer:ogg
 
 【再生】
 
@@ -82,6 +82,9 @@ cmdEmit(["対象id"], { cmd: "VIDEOBUFFER" }) ── cmdFromServer ──► 対
     あるため、`byteOffset` / `byteLength` で実データ範囲を切り出して返す
     （`streamsRedis` と同じ理由）。
 - `storeVideoBuffer(data)`: `videoBuffer:<container>` に保存（上書き）。
+  - `container` は `webm` / `ogg` のみ許可（`VIDEO_BUFFER_CONTAINERS` /
+    `isVideoBufferContainer`）。それ以外は throw して保存しない。
+  - `blob` が `MAX_VIDEO_BUFFER_BYTES`（32 MiB）を超える場合も throw して保存しない。
 - `getVideoBuffer()`: `webm` → `ogg` の順に探し、最初に見つかったものを返す。
   未保存なら `null`。Ogg はブラウザ対応が限られるため WebM を優先する。
 - `clearVideoBuffer()`: `videoBuffer:webm` / `videoBuffer:ogg` を削除。
@@ -97,8 +100,11 @@ cmdEmit(["対象id"], { cmd: "VIDEOBUFFER" }) ── cmdFromServer ──► 対
 ### `packages/backend/src/socket/wsServer.ts`
 
 - `mediaUploadFromClient` を `await` で処理する。
-- `videoBufferReqFromClient`: `getVideoBuffer()` を呼び、`null` ならログのみで
-  何も返さない。保持があれば `videoBufferEmit(videoBuffer, id)` で要求元だけに返す。
+- `videoBufferReqFromClient`: `getVideoBuffer()` を呼び、保持があれば
+  `videoBufferEmit(videoBuffer, id)` で要求元だけに返す。未保存 (`null`) なら
+  `stringEmit("NO VIDEOBUFFER", true, id)` で要求端末に表示する。
+- `mediaUploadFromClient` / `videoBufferReqFromClient` の await は try/catch で
+  囲み、Redis 障害や破損データの reject を未処理 rejection にしない。
 
 ### `packages/backend/src/socket/ioEmit.ts`
 
@@ -116,10 +122,12 @@ cmdEmit(["対象id"], { cmd: "VIDEOBUFFER" }) ── cmdFromServer ──► 対
 | キー | 値 | 説明 |
 |---|---|---|
 | `videoBuffer:webm` | `{ container, mimeType, blob }`（blob は base64） | 直近の WebM 録画 |
-| `videoBuffer:ogg` | 同上 | 直近の Ogg 録画 |
+| `videoBuffer:ogg` | 同上 | 直近の Ogg 録画（WebM 非対応ブラウザ時のみ） |
 
 - 保存はコンテナごとに 1 本で、次の `VIDEOBUFFER` で上書きされる。
   端末・時刻の区別はない（誰の録画かは保持しない）。
+- 通常は WebM のみ保存される。`videoBuffer:ogg` は WebM を録画できない
+  ブラウザのときだけ使われる（フロントは WebM 優先で 1 コンテナのみ録画する）。
 - 上限・TTL はなし。base64 のため Redis 上は実データの約 4/3 のサイズになる。
 - `INIT REDIS` で削除。Redis 側の永続化設定によってはサーバ再起動後も残る。
 
@@ -132,20 +140,25 @@ cmdEmit(["対象id"], { cmd: "VIDEOBUFFER" }) ── cmdFromServer ──► 対
 - `VIDEO_BUFFER_DURATION_MS = 10000`。
 - `videoBuffer()`
   - `initialize()` が取得済みの `streamState.stream` を再利用し、
-    `recordAll(stream, 10000)` で対応コンテナすべてを同時録画する。
+    `recordAll(stream, 10000)` で優先コンテナ (WebM → Ogg) を 1 つ録画する。
   - 各 `Recording` を `uploadRecording` で送信する。録画後もトラックは停止しない
     （他機能と共有しているため）。
+  - 録画中 (`isRecording`) に再度呼ばれた場合は warn して無視する
+    （MediaRecorder を多重起動しない）。
   - `streamState.stream` が `null` なら warn して何もしない。
 - `requestVideoBuffer()`
   - `socketState.socket.emit("videoBufferReqFromClient")` を送る。
 
 ### `packages/frontend/src/mediaRecorder/recorder.ts` / `upload.ts`（既存）
 
-- `recordAll` は WebM / Ogg のうち `MediaRecorder.isTypeSupported` が通る
-  コンテナだけを録画する（VP9 + Opus）。
+- `recordAll` は優先順 (WebM → Ogg) で利用可能なコンテナを 1 つだけ録画する
+  （VP9 + Opus）。WebM が使える環境では Ogg を録画しない
+  （`supportedContainers`）。
 - `uploadRecording` は Blob を `ArrayBuffer` に変換して
   `mediaUploadFromClient` を emit する。`SocketFacade` が
   `{ __type: "ArrayBuffer", data: base64 }` に変換して送る。
+- 送信前に `socket.isOpen` を確認し、切断中なら変換せず warn してスキップする
+  （`SocketFacade.emit` は非 OPEN 時に無言で破棄するため）。
 
 ### `packages/frontend/src/socket.ts`（既存）
 
@@ -180,9 +193,10 @@ cmdEmit(["対象id"], { cmd: "VIDEOBUFFER" }) ── cmdFromServer ──► 対
 - 型チェック:
   - `pnpm -F backend exec tsc --noEmit`
   - `pnpm -F frontend exec tsc --noEmit`
-- テスト: `packages/backend/test/media/videoBufferStore.test.ts`（5 ケース）
+- テスト: `packages/backend/test/media/videoBufferStore.test.ts`（7 ケース）
   - serialize → deserialize のラウンドトリップ / 空 blob
   - `videoBuffer:<container>` への保存
+  - webm / ogg 以外の container を拒否 / 上限 (32 MiB) 超過の blob を拒否
   - WebM 優先・Ogg フォールバック・未保存 `null`
   - `clearVideoBuffer` で両キー削除
 - 実行:
@@ -205,6 +219,8 @@ cmdEmit(["対象id"], { cmd: "VIDEOBUFFER" }) ── cmdFromServer ──► 対
   残るが、`#bckcnvs` よりは前面になる。
 - 同時に複数の再生が走ると同一 canvas に複数の描画ループが重なる
   （前の再生を止める仕組みはない）。
+- 保存できる blob は `MAX_VIDEO_BUFFER_BYTES`（32 MiB）まで。
+  それを超える録画は保存されない。
 
 ---
 
@@ -223,8 +239,9 @@ cmdEmit(["対象id"], { cmd: "VIDEOBUFFER" }) ── cmdFromServer ──► 対
 | `packages/frontend/src/mediaRecorder/videoBuffer.ts` | 10 秒録画・送信、再生要求 |
 | `packages/frontend/src/mediaRecorder/index.ts` | `videoBuffer` / `requestVideoBuffer` の export |
 | `packages/frontend/src/cmd/cmdFromServer.ts` | `VIDEOBUFFER` / `PLAYVIDEOBUFFER` の受信分岐 |
-| `packages/frontend/src/mediaRecorder/recorder.ts` | `recordAll`（WebM / Ogg 同時録画） |
-| `packages/frontend/src/mediaRecorder/upload.ts` | `mediaUploadFromClient` への送信 |
+| `packages/frontend/src/mediaRecorder/recorder.ts` | `recordAll` / `supportedContainers`（WebM 優先、不可時 Ogg） |
+| `packages/frontend/src/mediaRecorder/upload.ts` | `mediaUploadFromClient` への送信（`isOpen` チェック付き） |
+| `packages/frontend/src/socket/SocketFacade.ts` | `isOpen`（切断中の送信検知） |
 | `packages/frontend/html/index.html` / `snowleopard.html` | `#videoBufferCnvs` の定義 |
 | `packages/frontend/public/client.css` | `#videoBufferCnvs` の z-index（`#cnvs` の背面） |
 | `packages/frontend/src/canvasEvent/canvasSizing.ts` | `#videoBufferCnvs` のリサイズ |

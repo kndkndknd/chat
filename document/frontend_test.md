@@ -7,7 +7,7 @@
 - **テストランナー**: vitest 3.0.8（リポジトリルートの devDependency）
 - **対象**: `packages/frontend/src/**` 配下で「値を返す純粋関数」と「値を返す state 依存関数」（純粋に近い計算ロジック）
 - **対象外**: DOM / Web Audio API / Canvas / WebSocket / WebRTC / face-api.js / hls.js / vosk-browser / MediaStream など、ブラウザ API に深く結合した関数。これらは戻り値を持たない / `void` の関数も多く、本テストではスコープ外。
-- **テスト規模**: 7 ファイル / 37 ケース（すべて合格）
+- **テスト規模**: 8 ファイル / 41 ケース（すべて合格）
 
 実行コマンド:
 ```bash
@@ -57,6 +57,7 @@ pnpm -F frontend exec vitest run
 | `test/socket/SocketFacade/serialize.test.ts` | `serialize` | `src/socket/SocketFacade.ts` | { type, data } JSON 化 / ArrayBuffer マーカ変換 / ネスト ArrayBuffer / data=undefined / 8KB を超える ArrayBuffer (CHUNK 境界) |
 | `test/socket/SocketFacade/deserialize.test.ts` | `deserialize` | 同上 | 通常 JSON / __type=ArrayBuffer 復元（バイト一致） / ネスト ArrayBuffer / serialize→deserialize ラウンドトリップ |
 | `test/webaudio/sound/setBassNote.test.ts` | `setBassNote` | `src/webaudio/sound/bass.ts` | 確率テーブルの境界値（0/0.45/0.6/0.8/0.95）/ 戻り値が許容セットに含まれることを random 全範囲で確認 |
+| `test/mediaRecorder/supportedContainers.test.ts` | `supportedContainers` | `src/mediaRecorder/recorder.ts` | WebM が使えれば WebM のみ / WebM 不可で Ogg へフォールバック / 両方不可で空配列 / MediaRecorder 無しで空配列 |
 
 ### STATE_READ 関数（`vi.mock` で state を差し替え）
 

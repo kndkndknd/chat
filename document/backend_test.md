@@ -7,7 +7,7 @@
 - **テストランナー**: vitest 3.0.8（リポジトリルートの devDependency）
 - **対象**: `packages/backend/src/**` 配下で「値を返す純粋関数」と「値を返す state 依存関数」（純粋に近い計算ロジック）
 - **対象外**: 外部 I/O（Redis/Mongo/fs/sharp/spawn/werift/HTTP/socket等）に直接触れる関数。これらは `vi.mock` で差し替え不能なほど深く I/O と結合しているもの、または副作用が中心で戻り値を持たないものは除外。
-- **テスト規模**: 58 ファイル / 265 ケース（全合格）
+- **テスト規模**: 58 ファイル / 267 ケース（全合格）
 
 実行コマンド:
 ```bash
@@ -115,7 +115,7 @@ pnpm -F backend exec vitest run
 
 | テストファイル | 対象関数 | ソース | ケース内容 |
 |---|---|---|---|
-| `test/media/videoBufferStore.test.ts` | `serializeVideoBuffer` / `deserializeVideoBuffer` / `storeVideoBuffer` / `getVideoBuffer` / `clearVideoBuffer` | `src/media/videoBufferStore.ts` | base64 ラウンドトリップ / 空 blob / `videoBuffer:<container>` へ保存 / WebM 優先 / Ogg フォールバック / 未保存 null / clear で両キー削除 |
+| `test/media/videoBufferStore.test.ts` | `serializeVideoBuffer` / `deserializeVideoBuffer` / `storeVideoBuffer` / `getVideoBuffer` / `clearVideoBuffer` | `src/media/videoBufferStore.ts` | base64 ラウンドトリップ / 空 blob / `videoBuffer:<container>` へ保存 / webm・ogg 以外の container を拒否 / 上限超過 blob を拒否 / WebM 優先 / Ogg フォールバック / 未保存 null / clear で両キー削除 |
 
 ## 共通テクニック
 
