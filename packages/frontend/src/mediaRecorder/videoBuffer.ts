@@ -5,6 +5,10 @@ import { uploadRecording } from "./upload";
 // VIDEOBUFFER コマンド 1 回につき録画する固定長(ms)。
 const VIDEO_BUFFER_DURATION_MS = 10000;
 
+// 録画中フラグ。10 秒以内に VIDEOBUFFER が連続しても
+// MediaRecorder を多重起動しない。
+let isRecording = false;
+
 /**
  * 内蔵マイク + Web カメラの映像/音声を MediaRecorder で録画し、
  * WebSocket (mediaUploadFromClient) でサーバへ送信する。
@@ -17,6 +21,11 @@ export async function videoBuffer(): Promise<void> {
     console.warn("[videoBuffer] streamState.stream is not ready");
     return;
   }
+  if (isRecording) {
+    console.warn("[videoBuffer] already recording; ignored");
+    return;
+  }
+  isRecording = true;
   try {
     const recordings = await recordAll(stream, VIDEO_BUFFER_DURATION_MS);
     for (const recording of recordings) {
@@ -24,6 +33,8 @@ export async function videoBuffer(): Promise<void> {
     }
   } catch (err) {
     console.error("[videoBuffer] recording failed:", err);
+  } finally {
+    isRecording = false;
   }
 }
 

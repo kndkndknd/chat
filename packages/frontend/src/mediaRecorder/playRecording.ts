@@ -36,8 +36,11 @@ export function playRecording(data: {
   source.connect(gainState.chatGain!);
 
   let rafId: number | null = null;
+  let finished = false;
 
   const drawFrame = () => {
+    // cleanup 済みなら再スケジュールしない (実行中に cleanup された場合の保険)。
+    if (finished) return;
     const aspect = video.videoWidth / video.videoHeight;
     const targetAspect = window.innerWidth / window.innerHeight;
     const width = aspect > targetAspect ? window.innerWidth : window.innerHeight * aspect;
@@ -50,7 +53,12 @@ export function playRecording(data: {
   };
 
   const cleanup = () => {
-    if (rafId !== null) cancelAnimationFrame(rafId);
+    if (finished) return;
+    finished = true;
+    if (rafId !== null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
     source.disconnect();
     URL.revokeObjectURL(url);
     // 再生が終了 (ended / error) したら #videoBufferCnvs の描画内容を消す。
@@ -58,10 +66,21 @@ export function playRecording(data: {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
-  video.addEventListener("loadedmetadata", () => {
+  const startDraw = () => {
+    if (finished || rafId !== null) return;
     rafId = requestAnimationFrame(drawFrame);
-  });
+  };
+
+  video.addEventListener("loadedmetadata", startDraw);
   video.addEventListener("ended", cleanup);
   video.addEventListener("error", cleanup);
-  void video.play().catch((e) => console.warn("[playRecording] play blocked:", e));
+  video.play().catch(() => {
+    // 音声付き自動再生がブロックされた場合はミュートで再試行する。
+    video.muted = true;
+    video.play().catch((e) => {
+      console.error("[playRecording] play failed:", e);
+      // 再生できないまま RAF / ObjectURL / AudioNode を残さない。
+      cleanup();
+    });
+  });
 }

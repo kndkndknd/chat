@@ -17,6 +17,11 @@ export async function uploadRecording(
   recording: Recording,
   socket: SocketFacade,
 ): Promise<UploadResult> {
+  // 切断中は SocketFacade.emit が無言で破棄するため、事前に検知して警告する。
+  if (!socket.isOpen) {
+    console.warn("[uploadRecording] socket is not open; recording was not sent");
+    return { recording }
+  }
   const buffer = await recording.blob.arrayBuffer()
   socket.emit('mediaUploadFromClient', {
     container: recording.container,
