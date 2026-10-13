@@ -10,6 +10,11 @@ export function canvasSizing(socket?: SocketFacade) {
   const cnvsElement = <HTMLCanvasElement>document.getElementById("cnvs");
   cnvsElement.setAttribute("height", height + "px");
   cnvsElement.setAttribute("width", width + "px");
+  const videoBufferCnvsElement = <HTMLCanvasElement>(
+    document.getElementById("videoBufferCnvs")
+  );
+  videoBufferCnvsElement.setAttribute("height", height + "px");
+  videoBufferCnvsElement.setAttribute("width", width + "px");
   const bckcnvsElement = <HTMLCanvasElement>document.getElementById("bckcnvs");
   bckcnvsElement.setAttribute("height", height + "px");
   bckcnvsElement.setAttribute("width", width + "px");

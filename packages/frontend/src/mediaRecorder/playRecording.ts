@@ -1,10 +1,9 @@
-import { canvasElement } from "../canvasEvent/canvasElement";
 import { contextState, gainState } from "../state";
 
 /**
  * サーバから受信した録画 Blob を再生する。
  * <video> 要素はデコード用のオフスクリーン要素として使うだけで、
- * 表示は canvasElement.cnvs / ctx へのフレーム描画（showImage 相当）、
+ * 表示は #videoBufferCnvs（#cnvs の背面）へのフレーム描画、
  * 音声出力は createMediaElementSource で contextState.audioContext（chatGain 経由）へ
  * 接続することで賄う。
  */
@@ -13,6 +12,19 @@ export function playRecording(data: {
   mimeType: string;
   blob: ArrayBuffer;
 }): void {
+  const canvas = document.getElementById(
+    "videoBufferCnvs",
+  ) as HTMLCanvasElement | null;
+  if (!canvas) {
+    console.error("[playRecording] videoBufferCnvs element not found");
+    return;
+  }
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    console.error("[playRecording] 2d context not available");
+    return;
+  }
+
   const blob = new Blob([data.blob], { type: data.mimeType });
   const url = URL.createObjectURL(blob);
 
@@ -24,7 +36,6 @@ export function playRecording(data: {
   source.connect(gainState.chatGain!);
 
   let rafId: number | null = null;
-  const ctx = canvasElement.ctx;
 
   const drawFrame = () => {
     const aspect = video.videoWidth / video.videoHeight;
@@ -33,6 +44,7 @@ export function playRecording(data: {
     const height = aspect > targetAspect ? window.innerWidth / aspect : window.innerHeight;
     const x = window.innerWidth / 2 - width / 2;
     const y = window.innerHeight / 2 - height / 2;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(video, x, y, width, height);
     rafId = requestAnimationFrame(drawFrame);
   };
@@ -41,6 +53,9 @@ export function playRecording(data: {
     if (rafId !== null) cancelAnimationFrame(rafId);
     source.disconnect();
     URL.revokeObjectURL(url);
+    // 再生が終了 (ended / error) したら #videoBufferCnvs の描画内容を消す。
+    // #cnvs 上の文字・画像は消さない。
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   };
 
   video.addEventListener("loadedmetadata", () => {
