@@ -4,6 +4,7 @@ import {
   clearVideoBuffer,
   deserializeVideoBuffer,
   getVideoBuffer,
+  MAX_VIDEO_BUFFER_BYTES,
   serializeVideoBuffer,
   storeVideoBuffer,
 } from "../../src/media/videoBufferStore";
@@ -51,6 +52,28 @@ describe("videoBufferStore", () => {
       "videoBuffer:webm",
       expect.any(String),
     );
+  });
+
+  test("webm / ogg 以外の container は拒否し、保存しない", async () => {
+    await expect(
+      storeVideoBuffer({
+        container: "mp4",
+        mimeType: "video/mp4",
+        blob: new Uint8Array([1]).buffer,
+      }),
+    ).rejects.toThrow("invalid video buffer container");
+    expect(redis.set).not.toHaveBeenCalled();
+  });
+
+  test("上限を超える blob は拒否し、保存しない", async () => {
+    await expect(
+      storeVideoBuffer({
+        container: "webm",
+        mimeType: "video/webm",
+        blob: new ArrayBuffer(MAX_VIDEO_BUFFER_BYTES + 1),
+      }),
+    ).rejects.toThrow("too large");
+    expect(redis.set).not.toHaveBeenCalled();
   });
 
   test("getVideoBuffer は webm を優先する", async () => {

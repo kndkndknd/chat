@@ -26,7 +26,7 @@ import {
   handleRelayDisconnect,
 } from "../relay";
 import { IoFacade } from "./IoFacade";
-import { videoBufferEmit } from "./ioEmit";
+import { stringEmit, videoBufferEmit } from "./ioEmit";
 
 let strings = "";
 
@@ -116,20 +116,33 @@ export const wsServer = (
           break;
 
         case "mediaUploadFromClient":
-          await mediaUploadFromClient(
-            data as { container: string; mimeType: string; blob: ArrayBuffer },
-            id
-          );
+          // Redis 障害等で reject してもハンドラの未処理 rejection にしない。
+          try {
+            await mediaUploadFromClient(
+              data as { container: string; mimeType: string; blob: ArrayBuffer },
+              id
+            );
+          } catch (err) {
+            console.error("mediaUploadFromClient failed:", err);
+          }
           break;
 
         // PLAYVIDEOBUFFER: 保持している直近の録画を要求元クライアントへ返す。
         case "videoBufferReqFromClient": {
-          const videoBuffer = await getVideoBuffer();
-          if (videoBuffer === null) {
-            console.log("videoBufferReqFromClient: no recording stored");
-            break;
+          // Redis 障害や保持データの破損 (JSON.parse) で reject しても
+          // ハンドラの未処理 rejection にしない。
+          try {
+            const videoBuffer = await getVideoBuffer();
+            if (videoBuffer === null) {
+              console.log("videoBufferReqFromClient: no recording stored");
+              // 要求端末に「保持が無い」ことを表示する。
+              stringEmit("NO VIDEOBUFFER", true, id);
+              break;
+            }
+            videoBufferEmit(videoBuffer, id);
+          } catch (err) {
+            console.error("videoBufferReqFromClient failed:", err);
           }
-          videoBufferEmit(videoBuffer, id);
           break;
         }
 

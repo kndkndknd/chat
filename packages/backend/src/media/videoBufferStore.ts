@@ -6,6 +6,18 @@ export type videoBufferDataType = {
   blob: ArrayBuffer;
 };
 
+// 保存を許可するコンテナ。クライアントから届く container を Redis キーへ
+// そのまま使わないよう whitelist で検証する。
+export const VIDEO_BUFFER_CONTAINERS = ["webm", "ogg"] as const;
+
+export const isVideoBufferContainer = (
+  container: string,
+): container is (typeof VIDEO_BUFFER_CONTAINERS)[number] =>
+  (VIDEO_BUFFER_CONTAINERS as readonly string[]).includes(container);
+
+// 10 秒録画 (VP9) を想定した blob サイズ上限。これを超えるものは保存しない。
+export const MAX_VIDEO_BUFFER_BYTES = 32 * 1024 * 1024;
+
 const videoBufferKey = (container: string) => `videoBuffer:${container}`;
 
 export const serializeVideoBuffer = (data: videoBufferDataType): string => {
@@ -35,6 +47,14 @@ export const deserializeVideoBuffer = (raw: string): videoBufferDataType => {
 export const storeVideoBuffer = async (
   data: videoBufferDataType,
 ): Promise<void> => {
+  if (!isVideoBufferContainer(data.container)) {
+    throw new Error(`invalid video buffer container: ${data.container}`);
+  }
+  if (data.blob.byteLength > MAX_VIDEO_BUFFER_BYTES) {
+    throw new Error(
+      `video buffer too large: ${data.blob.byteLength} bytes (max ${MAX_VIDEO_BUFFER_BYTES})`,
+    );
+  }
   await redis.set(videoBufferKey(data.container), serializeVideoBuffer(data));
   console.log(
     `videoBufferStore: container=${data.container} mimeType=${data.mimeType} size=${data.blob?.byteLength ?? 0}`,
@@ -43,7 +63,7 @@ export const storeVideoBuffer = async (
 
 // 再生用に WebM を優先して返す (Ogg はブラウザ対応が限られるため)。
 export const getVideoBuffer = async (): Promise<videoBufferDataType | null> => {
-  for (const container of ["webm", "ogg"]) {
+  for (const container of VIDEO_BUFFER_CONTAINERS) {
     const raw = await redis.get(videoBufferKey(container));
     if (raw !== null) return deserializeVideoBuffer(raw);
   }
@@ -52,5 +72,5 @@ export const getVideoBuffer = async (): Promise<videoBufferDataType | null> => {
 
 // REDIS CLEAR 時に保持中の録画を破棄する。
 export const clearVideoBuffer = async (): Promise<void> => {
-  await redis.del(videoBufferKey("webm"), videoBufferKey("ogg"));
+  await redis.del(...VIDEO_BUFFER_CONTAINERS.map(videoBufferKey));
 };
