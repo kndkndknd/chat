@@ -7,7 +7,7 @@
 - **テストランナー**: vitest 3.0.8（リポジトリルートの devDependency）
 - **対象**: `packages/backend/src/**` 配下で「値を返す純粋関数」と「値を返す state 依存関数」（純粋に近い計算ロジック）
 - **対象外**: 外部 I/O（Redis/Mongo/fs/sharp/spawn/werift/HTTP/socket等）に直接触れる関数。これらは `vi.mock` で差し替え不能なほど深く I/O と結合しているもの、または副作用が中心で戻り値を持たないものは除外。
-- **テスト規模**: 42 ファイル / 156 ケース（全合格）
+- **テスト規模**: 58 ファイル / 265 ケース（全合格）
 
 実行コマンド:
 ```bash
@@ -110,6 +110,12 @@ pnpm -F backend exec vitest run
 | `test/cmd/splitSpace/splitQuantize.test.ts` | `splitQuantize` | `src/cmd/splitSpace/splitQuantize.ts` | target 指定時は対象のみ `emitQuantizeText` / stream 指定を渡す / target 未指定時は全 client / paramArr 空 + target |
 | `test/cmd/splitSpace/numTarget.test.ts` | `numTarget` | `src/cmd/splitSpace/numTarget.ts` | `BPM <number>` で対象 client の `execChangeBPM` を呼び、対象のみへ `stringEmit("BPM:<n>", true, target)` / 複数 target / `BEAT <number>`・`BEAT <number> <stream>` で `splitBeat` を呼ぶ / target undefined はどちらも呼ばない |
 | `test/bpm/changeBpm.test.ts` | `execChangeBPM` | `src/bpm/changeBpm.ts` | target 指定時は対象 client のみ bpm 変更・対象へ送信 / target 未指定時は全 client |
+
+### REDIS 関数（`test/setup.ts` の ioredis グローバルモックを利用）
+
+| テストファイル | 対象関数 | ソース | ケース内容 |
+|---|---|---|---|
+| `test/media/videoBufferStore.test.ts` | `serializeVideoBuffer` / `deserializeVideoBuffer` / `storeVideoBuffer` / `getVideoBuffer` / `clearVideoBuffer` | `src/media/videoBufferStore.ts` | base64 ラウンドトリップ / 空 blob / `videoBuffer:<container>` へ保存 / WebM 優先 / Ogg フォールバック / 未保存 null / clear で両キー削除 |
 
 ## 共通テクニック
 

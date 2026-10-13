@@ -86,6 +86,7 @@ redis.on("error", (err) => {
 | ストリームバッファ | `streams:<name>:buff` | list | `buffStateType` の JSON シリアライズを末尾追加 / 先頭取り出し |
 | ストリーム再生インデックス | `streams:<name>:index` | string (int) | 順次再生時の参照位置 |
 | チャットキュー | `chats` | list | CHAT 用バッファ FIFO |
+| VIDEOBUFFER 録画 | `videoBuffer:<container>` | string (JSON + base64) | `VIDEOBUFFER` の直近録画。`getVideoBuffer()` が webm → ogg 優先で取得し、`INIT REDIS` で削除 |
 | カウンタ | `counters:<name>` | string (int) | `visitor` / `leave` / `faceDetect` などのインクリメンタル数値 |
 
 既定で `streams:keys` に登録されるストリーム: `PLAYBACK`, `TIMELAPSE`, `INTERNET`, `EMPTY` (`streamsRedis.initDefaultKeys`)。

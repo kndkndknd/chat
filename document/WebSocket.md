@@ -116,6 +116,8 @@ ws.send({ type: "connected", data: { id } })  ← クライアントに ID を�
 | `chatFromClient` | `buffStateType` | `chatReceive()` でバッファをRedisにプッシュし、配信先に転送 |
 | `streamReqFromClient` | `string` (source名) | `streamEmit()` でストリームバッファを該当クライアントに送信 |
 | `workletBufferFromClient` | `{ video, audio: ArrayBuffer, source, bufferSize }` | `workletBufferFromClient()` でAudioWorkletバッファをRedisに保存 |
+| `mediaUploadFromClient` | `{ container, mimeType, blob: ArrayBuffer }` | `mediaUploadFromClient()` で Redis の `videoBuffer:<container>` に保存（`VIDEOBUFFER`） |
+| `videoBufferReqFromClient` | なし | `getVideoBuffer()` の保持録画を `mediaRecFromServer` で要求元へ返す（`PLAYVIDEOBUFFER`） |
 | `bufferRecFromClient` | `ArrayBuffer` | 録音WebMデータ受信（現状ログのみ） |
 | `bufferFromClient` | `ArrayBuffer` | `feedWebMChunk()` でweriftのWebRTCパイプラインに渡す |
 | `wholeReqFromClient` | `{ audio, video, source, bufferSize } \| undefined` | `receiveWholeReq()` でWHOLEストリーム処理 |
@@ -294,6 +296,8 @@ socketState.socket.on("connected", (data) => {
 | `accelarateFlagFromServer` | 加速度センサーフラグ切替 |
 | `bufferRecReqFromServer` | チャンク録画開始 |
 | `bufferFromServer` | WebM動画データを受信して再生 |
+| `mediaRecFromServer` | 保持した録画（`VIDEOBUFFER`）を受信して `playRecording` で再生 |
+| `cinemaFromServer` | CINEMA の HLS URL を受信して `cinemaPlay` で上映（`STOP` で `cinemaStop`） |
 | `wholeCmdFromServer` | WHOLEコマンド処理 |
 | `personDetectFromServer` | フリッカリング演出 |
 | `disconnect` | 1秒後に `connect()` で再接続 |
