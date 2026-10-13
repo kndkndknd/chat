@@ -1,5 +1,6 @@
 import { redis } from "./client";
 import { streamsRedis } from "./streamsRedis";
+import { clearVideoBuffer } from "../media/videoBufferStore";
 import {
   currentState,
   streamState,
@@ -17,6 +18,9 @@ export const initRedis = async () => {
     await streamsRedis.setIndex(key, 0);
   }
   await redis.del("chats");
+
+  // VIDEOBUFFER の録画を削除
+  await clearVideoBuffer();
 
   // currentState を初期化
   currentState.RECORD = false;

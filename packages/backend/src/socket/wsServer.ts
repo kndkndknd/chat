@@ -14,6 +14,7 @@ import { countersRedis } from "../redis/streamsRedis";
 import { faceDetectScenario } from "../scenario/faceDetectScenario";
 import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
 import { mediaUploadFromClient } from "../media/mediaUploadFromClient";
+import { getVideoBuffer } from "../media/videoBufferStore";
 import { receiveWholeReq } from "../stream/receiveWholeReq";
 import { gainFromClient, gainReqFromClient } from "../cmd/gainFromClient";
 import { m5Switch } from "../rotate/m5Access";
@@ -25,6 +26,7 @@ import {
   handleRelayDisconnect,
 } from "../relay";
 import { IoFacade } from "./IoFacade";
+import { videoBufferEmit } from "./ioEmit";
 
 let strings = "";
 
@@ -114,11 +116,22 @@ export const wsServer = (
           break;
 
         case "mediaUploadFromClient":
-          mediaUploadFromClient(
+          await mediaUploadFromClient(
             data as { container: string; mimeType: string; blob: ArrayBuffer },
             id
           );
           break;
+
+        // PLAYVIDEOBUFFER: 保持している直近の録画を要求元クライアントへ返す。
+        case "videoBufferReqFromClient": {
+          const videoBuffer = await getVideoBuffer();
+          if (videoBuffer === null) {
+            console.log("videoBufferReqFromClient: no recording stored");
+            break;
+          }
+          videoBufferEmit(videoBuffer, id);
+          break;
+        }
 
         case "gainFromClient":
           console.log("gainFromClient", data);

@@ -9,6 +9,7 @@ import {
 } from "../webaudio";
 import { textPrint, erasePrint } from "../canvasEvent";
 import { flagState } from "../state";
+import { videoBuffer, requestVideoBuffer } from "../mediaRecorder";
 import { stopCmd } from "./stopCmd";
 
 export const cmdFromServer = (cmd: {
@@ -85,6 +86,15 @@ export const cmdFromServer = (cmd: {
         timeout: true,
         timeoutDuration: 500,
       });
+      break;
+    case "VIDEOBUFFER":
+      // 受信ごとに 10 秒録画し、mediaUploadFromClient で送信する。
+      void videoBuffer();
+      break;
+    case "PLAYVIDEOBUFFER":
+      // バックエンドが保持する直近の録画を要求する。
+      // 応答 (mediaRecFromServer) は socket.ts が playRecording で再生する。
+      requestVideoBuffer();
       break;
     default:
       break;

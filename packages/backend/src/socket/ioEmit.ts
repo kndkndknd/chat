@@ -1,5 +1,6 @@
 import { ioState } from "../state/states/ioState";
 import { bpmStreamStateType } from "../../../../types";
+import { videoBufferDataType } from "../media/videoBufferStore";
 
 export const beatEmit = (option: any, target?: string) => {
   if (target === undefined) {
@@ -138,6 +139,19 @@ export const mediaRecReqEmit = (data?: {container: string; mimeType: string; blo
     ioState?.io.emit("mediaRecReqFromServer", data);
   } else {
     ioState?.io.to(target).emit("mediaRecReqFromServer", data);
+  }
+};
+
+// PLAYVIDEOBUFFER: バックエンドが保持した録画を対象クライアントへ送り返す。
+// フロントは mediaRecFromServer 受信時に playRecording で再生する。
+export const videoBufferEmit = (
+  data: videoBufferDataType,
+  target?: string,
+) => {
+  if (target === undefined) {
+    ioState?.io.emit("mediaRecFromServer", data);
+  } else {
+    ioState?.io.to(target).emit("mediaRecFromServer", data);
   }
 };
 
