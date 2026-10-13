@@ -8,7 +8,7 @@ upload
 
 .DS_Store
 
-
+packages/backend/static/html/snowleopard.html
 packages/backend/dist
 packages/backend/static/assets/*
 packages/backend/static/html/*
