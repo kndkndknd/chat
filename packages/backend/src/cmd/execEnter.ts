@@ -168,5 +168,4 @@ export const execEnter = async (
   } else if (strings === "TWICE" || strings === "HALF") {
     sinewaveChange(strings);
   }
-  
 };
