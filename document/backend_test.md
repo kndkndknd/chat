@@ -7,7 +7,7 @@
 - **テストランナー**: vitest 3.0.8（リポジトリルートの devDependency）
 - **対象**: `packages/backend/src/**` 配下で「値を返す純粋関数」と「値を返す state 依存関数」（純粋に近い計算ロジック）
 - **対象外**: 外部 I/O（Redis/Mongo/fs/sharp/spawn/werift/HTTP/socket等）に直接触れる関数。これらは `vi.mock` で差し替え不能なほど深く I/O と結合しているもの、または副作用が中心で戻り値を持たないものは除外。
-- **テスト規模**: 58 ファイル / 267 ケース（全合格）
+- **テスト規模**: 60 ファイル / 273 ケース（全合格）
 
 実行コマンド:
 ```bash
@@ -80,6 +80,7 @@ pnpm -F backend exec vitest run
 | `test/socket/IoFacade/generateId.test.ts` | `IoFacade.generateId` | 同上 | UUID v4 形式 / 呼ぶたび異なる ID |
 | `test/socket/IoFacade/to.test.ts` | `IoFacade.to` | 同上 | emit メソッド付きオブジェクト / OPEN な ws.send 呼び出し / 未登録 ID は no-op / CLOSED は send されない |
 | `test/socket/wsServer/deserialize.test.ts` | `deserialize` | `src/socket/wsServer.ts` | 通常 JSON / __type=ArrayBuffer 変換 / ネスト ArrayBuffer<br>※Node Buffer pool の仕様で返却 ArrayBuffer は実バイト長以上になり得る点に注意。バイト一致は検証していない |
+| `test/socket/ioEmit/voiceEmit.test.ts` | `voiceEmit` | `src/socket/ioEmit.ts` | VOICE モードなしは送信しない / 対象クライアントのみ / `all`・`ALL`・`scenario` は全員 / 非 VOICE クライアントは送らない |
 | `test/schedule/exchangeRelativeSchedule.test.ts` | `exchangeRelativeSchedule` | `src/schedule/exchangeRelativeSchedule.ts` | 先頭起点の相対時刻 ms / ms 付き日時 / 1 件のみ |
 | `test/schedule/getScheduleFromJson.test.ts` | `getScheduleFromJson` | `src/schedule/getScheduleFromJson.ts` | 通常日時 → 相対 ms / 0000-00-00 はじまり → getTime ベース / 1 件のみ |
 | `test/stream/quantize/decideQuantizeFromAverage.test.ts` | `decideQuantizeFromAverage` | `src/stream/quantize/decideQuantizeFromAverage.ts` | argParams 指定で beat/flag を固定 / argParams 未指定で beat は平均・quantizeFlag は多数決（`gridFlag = !quantizeFlag`） / flag のみ指定で beat は平均 |
@@ -110,6 +111,12 @@ pnpm -F backend exec vitest run
 | `test/cmd/splitSpace/splitQuantize.test.ts` | `splitQuantize` | `src/cmd/splitSpace/splitQuantize.ts` | target 指定時は対象のみ `emitQuantizeText` / stream 指定を渡す / target 未指定時は全 client / paramArr 空 + target |
 | `test/cmd/splitSpace/numTarget.test.ts` | `numTarget` | `src/cmd/splitSpace/numTarget.ts` | `BPM <number>` で対象 client の `execChangeBPM` を呼び、対象のみへ `stringEmit("BPM:<n>", true, target)` / 複数 target / `BEAT <number>`・`BEAT <number> <stream>` で `splitBeat` を呼ぶ / target undefined はどちらも呼ばない |
 | `test/bpm/changeBpm.test.ts` | `execChangeBPM` | `src/bpm/changeBpm.ts` | target 指定時は対象 client のみ bpm 変更・対象へ送信 / target 未指定時は全 client |
+
+### 入力検証のみ（外部 I/O を実行しない）
+
+| テストファイル | 対象関数 | ソース | ケース内容 |
+|---|---|---|---|
+| `test/voice/synthesizeVoice.test.ts` | `synthesizeVoice` | `src/voice/synthesizeVoice.ts` | 空文字 / 1000 文字超は `null`（`say` は実行しない） |
 
 ### REDIS 関数（`test/setup.ts` の ioredis グローバルモックを利用）
 

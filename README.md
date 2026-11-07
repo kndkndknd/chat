@@ -74,13 +74,15 @@ pnpm install
 | `pi` | 特定のマイク（`mics[2]`）を使用。 |
 | `nosound` | `\` キーの BASS 発音を抑制。 |
 | `noStream` / `nostream` | `clientMode: "noStream"` で接続（ストリームを送らない）。 |
-| `left` / `right` | マスターをステレオ左右に振る。 |
+| `left` / `right` | マスターと VOICE 読み上げをステレオ左右に振る。 |
 | `counter` | 入力文字を回転要求（`rotateReqFromClient`）に使い、一定文字数を超えると読み上げ・サイン波を出すカウンターモード。 |
 | `counterbalance` | 端末の加速度センサー値を feedbackGain に反映。 |
 | `webrtc` | 初期化を自動実行し、`chat_sync` へ直接 WebRTC 接続する送信端末。 |
 | `relay` | `/webrtc` 端末から `/ws` 経由で中継された映像・音声を受信する端末。 |
 
 `html/snowleopard.html` は Safari / WebKit 向けのフォールバック（AudioWorklet の代わりに ScriptProcessor、wasm を使わない）です。
+
+`left` / `right` の VOICE 読み上げは、バックエンドの `/api/voice` が macOS の `say` で生成した WAV を Web Audio の panner 経由で再生します。`say` が使えない環境では従来の speechSynthesis（パンなし）にフォールバックします。詳細は [document/voice.md](./document/voice.md) を参照してください。
 
 ## キーボード操作
 
@@ -128,7 +130,7 @@ pnpm install
 | `SAMPLERATE` / `RATE` | サンプリングレート変更（約 4000〜132300Hz）。 |
 | `GLITCH` | カメラ画像のグリッチ（音声はリバーブ）。単体で全トグル、`ON`/`TRUE`・`OFF`/`FALSE` で全指定、`CHAT`/`PLAYBACK`/`TIMELAPSE` で個別トグル。 |
 | `GRID` | BPM グリッド再生。 |
-| `VOICE` | その端末の読み上げモードをトグル／ON/OFF。 |
+| `VOICE` | その端末の読み上げモードをトグル（`<index> VOICE ON/OFF` で指定端末を設定）。詳細は [voice.md](./document/voice.md)。 |
 | `RANDOM` | PLAYBACK / UPLOAD の再生順をランダム化。 |
 | `TWICE` / `HALF` | 現在のサイン波周波数を 2 倍 / 1/2。 |
 | `FUSEJI` / `EMOJI` | emoji 表示フラグをトグル。 |
@@ -208,6 +210,7 @@ pnpm install
 | GET | `/` | `static/html/index.html` を返す。 |
 | GET | `/vosk` | `static/html/vosk.html` を返す。 |
 | GET | `/rotate` | `static/html/rotate.html` を返す。 |
+| GET | `/api/voice` | VOICE 読み上げ用の WAV を macOS の `say` で生成（`text` / `lang`）。 |
 | GET | `/:name` | 任意パスを `index.html` にフォールバック。 |
 | POST | `/api/scenario` | `scenarioItsuki` を起動（実行中なら停止して再起動）。 |
 | POST | `/api/clear-buffer` | Redis の streamBuffer をクリア（`body.stream` 省略時は `CHAT/EMPTY/KICK/SNARE/HAT` 以外）。 |
