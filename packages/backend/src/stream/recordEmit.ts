@@ -48,7 +48,7 @@ export const recordEmit = (target?: string, textPrint?: boolean) => {
   if (cmdState.VOICE.length > 0) {
     cmdState.VOICE.forEach((element) => {
       //          io.to(element).emit('voiceFromServer', 'RECORD')
-      voiceEmit("RECORD", cmdState.voiceLang, element);
+      voiceEmit("RECORD", element);
     });
   }
   //     setTimeout(() => {
@@ -79,7 +79,7 @@ export const recordAsOtherEmit = (
     if (cmdState.VOICE.length > 0) {
       cmdState.VOICE.forEach((element) => {
         //          io.to(element).emit('voiceFromServer', 'RECORD')
-        voiceEmit(source, cmdState.voiceLang, element);
+        voiceEmit(source, element);
       });
     }
   } else {

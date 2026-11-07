@@ -1,4 +1,5 @@
 import { ioState } from "../state/states/ioState";
+import { cmdState } from "../state";
 import { bpmStreamStateType } from "../../../../types";
 import { videoBufferDataType } from "../media/videoBufferStore";
 
@@ -300,10 +301,26 @@ export const wholeCmdEmit = (option: any, target?: string) => {
   }
 };
 
-export const voiceEmit = (text: string, lang: string, target?: string) => {
-  // if (target === undefined) {
-  //   ioState?.io.emit("voiceFromServer", { text: text, lang: lang });
-  // } else {
-  //   ioState?.io.to(target).emit("voiceFromServer", { text: text, lang: lang });
-  // }
+// VOICE モードのクライアントに読み上げテキストを送る。
+// target がクライアント ID の場合はその端末だけ、all/ALL/scenario/未指定は
+// VOICE モードの全クライアントに送る。
+export const voiceEmit = (text: string, target?: string) => {
+  if (text === undefined || text.trim() === "") return;
+  if (cmdState.VOICE.length === 0) return;
+
+  const broadcast =
+    target === undefined ||
+    target === "all" ||
+    target === "ALL" ||
+    target === "scenario";
+  const targets = broadcast
+    ? cmdState.VOICE
+    : cmdState.VOICE.filter((id) => id === target);
+
+  targets.forEach((id) => {
+    ioState?.io?.to(id)?.emit("voiceFromServer", {
+      text,
+      lang: cmdState.voiceLang,
+    });
+  });
 };

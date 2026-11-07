@@ -31,6 +31,7 @@ import { recordAll, uploadRecording, playRecording } from "./mediaRecorder";
 import { bpmFromServer } from "./quantize/bpmFromServer";
 import { loopToggle } from "./stream/loop/loopToggle";
 import { streamReq } from "./stream/streamReq";
+import { voice } from "./voice";
 
 export const socket = (): void => {
 
@@ -372,24 +373,9 @@ export const socket = (): void => {
   socketState.socket.on(
     "voiceFromServer",
     (data: { text: string; lang: string }) => {
-
-      const uttr = new SpeechSynthesisUtterance();
-      uttr.lang = data.lang;
-      uttr.text = data.text;
-      // 英語に対応しているvoiceを設定
-      speechSynthesis.onvoiceschanged = () => {
-        const voices = speechSynthesis.getVoices();
-        for (let i = 0; i < voices.length; i++) {
-          console.log(voices[i]);
-          if (voices[i].lang === "en-US") {
-            console.log("hit");
-            console.log(voices[i]);
-            uttr.voice = voices[i];
-          }
-        }
-      };
-
-      speechSynthesis.speak(uttr);
+      // left/right パスでは Web Audio 経由でパン付き再生し、
+      // それ以外や生成失敗時は speechSynthesis にフォールバックする。
+      void voice(data);
     },
   );
 

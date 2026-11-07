@@ -26,6 +26,7 @@ import {
   isScenarioItsukiActive,
   stopScenarioItsuki,
 } from "./scenario/scenarioItsuki";
+import { synthesizeVoice } from "./voice/synthesizeVoice";
 
 // import { cors } from "cors";
 // const corsOptions = {
@@ -131,6 +132,45 @@ app.get("/rotate", function (req, res, next) {
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Something went wrong" });
+  }
+});
+
+// VOICE 読み上げ用の WAV を macOS の say で生成する。
+// left/right パスのクライアントは、この音声を Web Audio の panner 経由で再生する。
+app.get("/api/voice", async function (req, res) {
+  try {
+    const text = typeof req.query.text === "string" ? req.query.text : "";
+    const lang = typeof req.query.lang === "string" ? req.query.lang : "en-US";
+    if (text.trim() === "") {
+      res.status(400).json({ success: false, message: "text is required" });
+      return;
+    }
+    if (text.length > 1000) {
+      res.status(413).json({ success: false, message: "text is too long" });
+      return;
+    }
+    if (process.platform !== "darwin") {
+      res.status(501).json({
+        success: false,
+        message: "voice synthesis is supported only on macOS",
+      });
+      return;
+    }
+
+    const data = await synthesizeVoice(text, lang);
+    if (!data) {
+      res
+        .status(502)
+        .json({ success: false, message: "voice synthesis failed" });
+      return;
+    }
+
+    res.setHeader("Content-Type", "audio/wav");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(data);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ success: false, message: "Something went wrong" });
   }
 });
 
