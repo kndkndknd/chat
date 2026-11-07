@@ -2,8 +2,9 @@ import { wholeParams } from "../data/list/wholeParams";
 import { streamList, streamsRedis, chatsRedis } from "../data";
 import { wholeCmdOption } from "../../../../types";
 import { genEmptyBuff } from "./genEmptyBuff";
-import { clientState, cmdState, sampleRateState, glitchState, currentState } from "../state";
+import { clientState, cmdState, sampleRateState, glitchState, currentState, bpmState } from "../state";
 import { wholeCmdEmit } from "../socket/ioEmit";
+import { gridTimeoutVal } from "./gridTimeoutVal";
 
 export const wholeEmit = async () => {
   if (!currentState.WHOLE) {
@@ -90,5 +91,15 @@ export const wholeEmit = async () => {
 
   const targetClientArr = Object.keys(clientState.client);
   const target = targetClientArr[Math.floor(Math.random() * targetClientArr.length)];
-  wholeCmdEmit(option, target);
+  const source = option.type === "stream" ? option.source : option.cmd;
+  if (!bpmState[target]?.stream?.[source]?.gridFlag) {
+    wholeCmdEmit(option, target);
+  } else {
+    const timeOutVal = gridTimeoutVal(source, target);
+    setTimeout(() => {
+      if (currentState.WHOLE) {
+        wholeCmdEmit(option, target);
+      }
+    }, timeOutVal);
+  }
 };
