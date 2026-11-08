@@ -2,10 +2,86 @@ import { contextState, stereoPannerState } from "./state";
 
 type VoiceData = { text: string; lang: string; volume?: number };
 
-// 10文字以上かつ半角スペースを含まない場合は、すべての文字の間にスペースを挿入する。
+// 標準的な女性の英語音声。ブラウザ / OS ごとに名前が異なるため、
+// 優先度の高い順に並べ、最初に見つかったものを使用する。
+const preferredEnglishVoices = [
+  "Samantha", // macOS / iOS (en-US)
+  "Google US English", // Chrome (en-US)
+  "Microsoft Aria Online (Natural) - English (United States)",
+  "Microsoft Jenny Online (Natural) - English (United States)",
+  "Microsoft Zira", // Windows (en-US)
+  "Serena", // macOS (en-GB)
+  "Kate", // macOS (en-GB)
+  "Google UK English Female", // Chrome (en-GB)
+  "Microsoft Hazel", // Windows (en-GB)
+  "Karen", // macOS (en-AU)
+  "Moira", // macOS (en-IE)
+  "Tessa", // macOS (en-ZA)
+  "Fiona", // macOS (en-GB, Scottish)
+  "Vicki",
+  "Victoria",
+  "Allison",
+  "Ava",
+  "Susan",
+];
+
+const normalizeLang = (lang: string): string =>
+  lang.replace("_", "-").toLowerCase();
+
+const findPreferredVoice = (
+  voices: SpeechSynthesisVoice[],
+  names: readonly string[]
+): SpeechSynthesisVoice | undefined => {
+  for (const name of names) {
+    const normalizedName = name.toLowerCase();
+    const matched = voices.find((voice) =>
+      voice.name.toLowerCase().startsWith(normalizedName)
+    );
+    if (matched) return matched;
+  }
+  return undefined;
+};
+
+// 英語は端末ごとに声の種類が大きく異なるため、標準的な女性音声を優先する。
+// 見つからない場合だけ、従来どおり言語が一致する先頭の voice にフォールバックする。
+const pickVoice = (
+  voices: SpeechSynthesisVoice[],
+  lang: string
+): SpeechSynthesisVoice | undefined => {
+  const normalizedLang = normalizeLang(lang);
+  const sameLang = voices.filter(
+    (voice) => normalizeLang(voice.lang) === normalizedLang
+  );
+
+  if (normalizedLang.startsWith("en")) {
+    const preferred = findPreferredVoice(sameLang, preferredEnglishVoices);
+    if (preferred) return preferred;
+
+    // en-GB など同一言語に候補がない場合も、英語の女性音声を使う。
+    const englishVoices = voices.filter((voice) =>
+      normalizeLang(voice.lang).startsWith("en")
+    );
+    const preferredEnglish = findPreferredVoice(
+      englishVoices,
+      preferredEnglishVoices
+    );
+    if (preferredEnglish) return preferredEnglish;
+  }
+
+  const langPrefix = normalizedLang.split("-")[0];
+  return (
+    sameLang[0] ??
+    voices.find((voice) =>
+      normalizeLang(voice.lang).startsWith(langPrefix)
+    ) ??
+    voices.find((voice) => normalizeLang(voice.lang) === "en-us")
+  );
+};
+
+// 20文字以上かつ半角スペースを含まない場合は、すべての文字の間にスペースを挿入する。
 // speechSynthesis とサーバー TTS で読み方を揃えるため、両方から使う。
 const formatSpeechText = (text: string): string =>
-  text.length >= 10 && !text.includes(" ")
+  text.length >= 20 && !text.includes(" ")
     ? text.split("").join(" ")
     : text;
 
@@ -30,14 +106,9 @@ const speakWithSpeechSynthesis = (data: VoiceData): void => {
 
   const uttr = createUtterance(data);
 
-  // 指定言語に一致する voice を優先し、なければ en-US にフォールバックする。
+  // 英語は標準的な女性音声を優先し、なければ言語一致の voice にフォールバックする。
   const applyVoice = () => {
-    const voices = speechSynthesis.getVoices();
-    const langPrefix = data.lang.split("-")[0];
-    const matched =
-      voices.find((v) => v.lang === data.lang) ??
-      voices.find((v) => v.lang.startsWith(langPrefix)) ??
-      voices.find((v) => v.lang === "en-US");
+    const matched = pickVoice(speechSynthesis.getVoices(), data.lang);
     if (matched) uttr.voice = matched;
   };
 
@@ -61,16 +132,19 @@ const decodeAudioData = (
 // サーバー TTS が使えない環境 (Linux など) で毎回リクエストしないためのフラグ。
 let serverVoiceUnavailable = false;
 
-// left/right パスでは、サーバー (macOS say) で生成した WAV を Web Audio の
-// masterPanner 経由で再生する。speechSynthesis の出力は Web Audio のグラフ外
-// なのでパンを適用できないための代替経路。
-const playPannedVoice = async (data: VoiceData): Promise<boolean> => {
+// サーバー (macOS say) で生成した WAV を Web Audio の masterPanner 経由で再生する。
+// speechSynthesis の出力は Web Audio のグラフ外なので、left/right パスでは
+// パンを適用できないための代替経路。allowCenter が true の場合は中央パンでも使う。
+const playServerVoice = async (
+  data: VoiceData,
+  allowCenter = false
+): Promise<boolean> => {
   const context = contextState.audioContext;
   const panner = stereoPannerState.masterPanner;
   if (!context || !panner) return false;
   if (typeof fetch !== "function") return false;
   if (serverVoiceUnavailable) return false;
-  if (stereoPannerState.masterPannerParam === 0) return false;
+  if (!allowCenter && stereoPannerState.masterPannerParam === 0) return false;
 
   try {
     const params = new URLSearchParams({
@@ -114,7 +188,10 @@ const playPannedVoice = async (data: VoiceData): Promise<boolean> => {
 };
 
 export const voice = async (data: VoiceData): Promise<void> => {
-  if (await playPannedVoice(data)) return;
+  // 英語はブラウザ既定の音声が日本語になる環境があるため、中央パンでも
+  // macOS サーバーの標準女性音声 (say: Samantha) を優先する。
+  const preferServerVoice = data.lang.toLowerCase().startsWith("en");
+  if (await playServerVoice(data, preferServerVoice)) return;
   try {
     speakWithSpeechSynthesis(data);
   } catch (error) {

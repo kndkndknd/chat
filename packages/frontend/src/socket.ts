@@ -373,8 +373,8 @@ export const socket = (): void => {
   socketState.socket.on(
     "voiceFromServer",
     (data: { text: string; lang: string }) => {
-      // left/right パスでは Web Audio 経由でパン付き再生し、
-      // それ以外や生成失敗時は speechSynthesis にフォールバックする。
+      // left/right パスと英語は Web Audio 経由でサーバー音声を再生し、
+      // 生成失敗時や日本語の通常パスは speechSynthesis にフォールバックする。
       void voice(data);
     },
   );
