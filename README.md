@@ -142,6 +142,7 @@ pnpm install
 | コマンド | 概要 |
 | --- | --- |
 | `SELF` | その端末のみで発音する self フラグをトグル。 |
+| `MUTE` / `UNMUTE` | 全端末の音声出力をミュート / 解除。`MUTE ON` / `MUTE OFF` も可。 |
 | `NO` / `NUMBER` | 各クライアントの index 番号を表示。 |
 | `TORCH` / `BLINK` | 端末の照明を点灯（STEADY）／点滅（BLINK）。 |
 | `SWITCH` / `ROTATE` | M5 の vibration / rotation リレーをトグル。 |
@@ -152,6 +153,8 @@ pnpm install
 | `VOSK` | クライアントに Vosk 呼び出しを送信。 |
 | `CHATASYNC` | 接続順に「chat」「(async)」を順次送信。 |
 | `START` / `SCENARIO` | シナリオを読み込んで実行。 |
+
+`MUTE` / `UNMUTE` は全端末共通の操作です。`MUTE` はトグルではなく常にミュートし、解除は `UNMUTE` または `MUTE OFF` で行います。`ALL MUTE` や `<index> MUTE` も受け付けますが、対象指定に関係なく全端末に適用されます。
 
 ### スペース区切りのサブコマンド
 

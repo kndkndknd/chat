@@ -143,6 +143,14 @@ export const mediaRecReqEmit = (data?: {container: string; mimeType: string; blo
   }
 };
 
+export const muteReqEmit = (flag: boolean, target?: string) => {
+  if (target === undefined) {
+    ioState?.io.emit("muteReqFromServer", { flag });
+  } else {
+    ioState?.io.to(target).emit("muteReqFromServer", { flag });
+  }
+};
+
 // PLAYVIDEOBUFFER: バックエンドが保持した録画を対象クライアントへ送り返す。
 // フロントは mediaRecFromServer 受信時に playRecording で再生する。
 export const videoBufferEmit = (

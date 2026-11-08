@@ -32,6 +32,7 @@ import { bpmFromServer } from "./quantize/bpmFromServer";
 import { loopToggle } from "./stream/loop/loopToggle";
 import { streamReq } from "./stream/streamReq";
 import { voice } from "./voice";
+import { mute } from "./webaudio";
 
 export const socket = (): void => {
 
@@ -220,6 +221,12 @@ export const socket = (): void => {
       playRecording(data);
     },
   );
+
+  socketState.socket.on("muteReqFromServer", (data: { flag: boolean }) => {
+    if (data.flag !== undefined) {
+      mute(data.flag);
+    }
+  });
 
   socketState.socket.on("quantizeFromServer", (data: bpmStreamStateType) => {
     quantizeFromServer(data);

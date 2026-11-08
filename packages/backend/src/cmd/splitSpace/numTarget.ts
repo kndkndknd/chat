@@ -12,6 +12,7 @@ import { numPaSwitch } from "./numPaSwitch";
 import { execStreamPreparation } from "../execStreamPreparation";
 import { splitBeat } from "../../stream/quantize/splitBeat";
 import { execChangeBPM } from "../../bpm/changeBpm";
+import { parseMuteFlag, setMute } from "../mute";
 
 export const numTarget = (
   targetArr: Array<string>,
@@ -119,6 +120,22 @@ export const numTarget = (
   //   for (const target of targetArr) {
   //     ioState?.io.to(target).emit("accelarateFlagFromServer");
   //   }
+  } else if (stringArr[0] === "MUTE" || stringArr[0] === "UNMUTE") {
+    // MUTE / UNMUTE は全端末共通。target 指定は受け付けるが、適用は全体。
+    const flag = parseMuteFlag(stringArr[0], stringArr[1]);
+    if (flag === undefined) {
+      for (const target of targetArr) {
+        if (target !== undefined) {
+          stringEmit(
+            `${stringArr[0]}: invalid argument ${stringArr[1]}`,
+            true,
+            target,
+          );
+        }
+      }
+    } else if (targetArr.some((target) => target !== undefined)) {
+      setMute(flag);
+    }
   } else {
     for (const target of targetArr) {
     stringEmit("not cmd", true, target);

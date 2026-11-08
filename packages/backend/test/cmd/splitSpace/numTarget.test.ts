@@ -7,6 +7,7 @@ vi.mock("../../../src/state", () => ({
   },
   currentState: { cmd: { WHITENOISE: [] } },
   streamState: { target: {} },
+  flagState: { mute: false },
 }));
 
 vi.mock("../../../src/data", () => ({
@@ -26,7 +27,10 @@ vi.mock("../../../src/stream/recordEmit", () => ({
 vi.mock("../../../src/cmd/execSinewave", () => ({ execSinewave: vi.fn() }));
 vi.mock("../../../src/parameterChange", () => ({ parameterChange: vi.fn() }));
 vi.mock("../../../src/cmd/notTargetEmit", () => ({ notTargetEmit: vi.fn() }));
-vi.mock("../../../src/socket/ioEmit", () => ({ stringEmit: vi.fn() }));
+vi.mock("../../../src/socket/ioEmit", () => ({
+  stringEmit: vi.fn(),
+  muteReqEmit: vi.fn(),
+}));
 vi.mock("../../../src/stream/chatPreparation", () => ({ chatPreparation: vi.fn() }));
 vi.mock("../../../src/cmd/splitSpace/splitQuantize", () => ({ splitQuantize: vi.fn() }));
 vi.mock("../../../src/cmd/splitSpace/numPaSwitch", () => ({ numPaSwitch: vi.fn() }));
@@ -39,7 +43,7 @@ vi.mock("../../../src/bpm/changeBpm", () => ({ execChangeBPM: vi.fn() }));
 import { numTarget } from "../../../src/cmd/splitSpace/numTarget";
 import { execChangeBPM } from "../../../src/bpm/changeBpm";
 import { splitBeat } from "../../../src/stream/quantize/splitBeat";
-import { stringEmit } from "../../../src/socket/ioEmit";
+import { muteReqEmit, stringEmit } from "../../../src/socket/ioEmit";
 import { execCmd } from "../../../src/cmd/execCmd";
 import { currentState } from "../../../src/state";
 
@@ -69,6 +73,32 @@ describe("numTarget cmd alias", () => {
     expect(() => numTarget(["c1"], ["UNKNOWN"], ["string"])).not.toThrow();
     expect(stringEmit).toHaveBeenCalledWith("not cmd", true, "c1");
     expect(execCmd).not.toHaveBeenCalled();
+  });
+
+  test("MUTE は対象指定に関係なく全体ミュートを1回送る", () => {
+    numTarget(["c1", "c2"], ["MUTE"], ["string"]);
+    expect(muteReqEmit).toHaveBeenCalledTimes(1);
+    expect(muteReqEmit).toHaveBeenCalledWith(true);
+  });
+
+  test("MUTE OFF は全体のミュート解除を送る", () => {
+    numTarget(["c1"], ["MUTE", "OFF"], ["string", "string"]);
+    expect(muteReqEmit).toHaveBeenCalledWith(false);
+  });
+
+  test("target が存在しない場合は MUTE を送信しない", () => {
+    numTarget([undefined as unknown as string], ["MUTE"], ["string"]);
+    expect(muteReqEmit).not.toHaveBeenCalled();
+  });
+
+  test("MUTE の不正な引数はエラー表示し、送信しない", () => {
+    numTarget(["c1"], ["MUTE", "FOO"], ["string", "string"]);
+    expect(muteReqEmit).not.toHaveBeenCalled();
+    expect(stringEmit).toHaveBeenCalledWith(
+      "MUTE: invalid argument FOO",
+      true,
+      "c1",
+    );
   });
 });
 

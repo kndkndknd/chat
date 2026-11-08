@@ -16,6 +16,8 @@ export const helpList = {
   GLITCH: "カメラで拾った画像をグリッチさせる。音声はリバーブ音のみになる",
   GRID: "CHAT、PLAYBACK等をBPMのグリッドに沿って再生する（マシンパワー等によってはずれる）",
   VOICE: "キーボード入力内容を喋るモードを切り替える",
+  MUTE: "全端末の音声出力をミュートする。MUTE OFF または UNMUTE で解除",
+  UNMUTE: "全端末の音声出力のミュートを解除する",
   RANDOM: "PLAYBACKやUPLOADコマンドで取得した音声・映像の順序をランダムにする",
   HELP: "このコマンド",
   PREVIOUS: "STOPする直前に再生されていた内容をまとめて再生する。PREVでも可",

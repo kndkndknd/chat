@@ -15,7 +15,14 @@ if (fs.existsSync(dotenvPath)) {
 
 import { cmdLogging } from "./logging/cmdLogging";
 import { initStreams } from "./data";
-import { loadAllStates, clientState, sampleRateState, cmdState } from "./state";
+import {
+  loadAllStates,
+  clientState,
+  sampleRateState,
+  cmdState,
+  flagState,
+} from "./state";
+import { muteReqEmit } from "./socket/ioEmit";
 import { streamsRedis } from "./redis/streamsRedis";
 import {
   isResettableParameter,
@@ -344,6 +351,8 @@ loadAllStates()
     // sampleRateState.randomrate.PLAYBACK = true;
     // sampleRateState.randomrate.TIMELAPSE = true;
     cmdState.CLICKFREQ = 440;
+    // Redis から復元したミュート状態を、起動直後に接続済みのクライアントへ同期する。
+    muteReqEmit(flagState.mute);
   })
   .then(() => initStreams())
   .catch((err) => console.error("Redis init error:", err));

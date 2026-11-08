@@ -8,6 +8,7 @@ export const flagState = {
   simulate: false,
   timelapse: false,
   emoji: false,
+  mute: false,
   socketId: "",
   gpsFlag: false,
   accelarateFlag: false,

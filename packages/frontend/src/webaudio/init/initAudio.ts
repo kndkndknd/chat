@@ -7,6 +7,7 @@ import {
   otherNodeState,
   stereoPannerState,
   audioWorkletState,
+  flagState,
 } from "../../state";
 import { initWhitenoiseWorklet } from "../../audioWorklet/whitenoiseWorklet";
 
@@ -30,13 +31,18 @@ export const initAudio = async (
   contextState.audioContext = new AudioContext();
   gainState.masterGain = contextState.audioContext.createGain();
   gainState.masterGain.gain.setValueAtTime(1, 0);
+  // グローバルミュート専用の GainNode。MASTER の音量設定を壊さずに
+  // 最終出力だけを 0 にできるよう、masterPanner の後段に置く。
+  gainState.muteGain = contextState.audioContext.createGain();
+  gainState.muteGain.gain.setValueAtTime(flagState.mute ? 0 : 1, 0);
   stereoPannerState.masterPanner = contextState.audioContext.createStereoPanner();
   stereoPannerState.masterPanner.pan.setValueAtTime(
     stereoPannerState.masterPannerParam,
     0,
   );
   gainState.masterGain.connect(stereoPannerState.masterPanner);
-  stereoPannerState.masterPanner.connect(contextState.audioContext.destination);
+  stereoPannerState.masterPanner.connect(gainState.muteGain);
+  gainState.muteGain.connect(contextState.audioContext.destination);
   // console.log(gainState.masterGain.gain.maxValue);
 
   //record/play
@@ -91,7 +97,7 @@ export const initAudio = async (
   gainState.glitchGain = contextState.audioContext.createGain();
   gainState.glitchGain.gain.setValueAtTime(glitchGainVal, 0);
   convolverState.convolver.connect(gainState.glitchGain);
-  gainState.glitchGain.connect(contextState.audioContext.destination);
+  gainState.glitchGain.connect(gainState.muteGain);
 
   gainState.feedbackGain = contextState.audioContext.createGain();
   gainState.feedbackGain.gain.setValueAtTime(0, 0);

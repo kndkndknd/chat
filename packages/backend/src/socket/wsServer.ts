@@ -3,7 +3,7 @@ import * as Https from "https";
 import * as Http from "http";
 
 import { buffStateType, gainStateType } from "../../../../types";
-import { clientState, currentState, bpmState } from "../state";
+import { clientState, currentState, bpmState, flagState } from "../state";
 import { chatReceive } from "../stream/chatReceive";
 import { charProcess } from "../cmd/charProcess";
 import { execStream } from "../stream/execStream";
@@ -26,7 +26,7 @@ import {
   handleRelayDisconnect,
 } from "../relay";
 import { IoFacade } from "./IoFacade";
-import { stringEmit, videoBufferEmit } from "./ioEmit";
+import { stringEmit, videoBufferEmit, muteReqEmit } from "./ioEmit";
 
 let strings = "";
 
@@ -61,6 +61,9 @@ export const wsServer = (
 
     facade.addClient(id, ws);
     ws.send(JSON.stringify({ type: "connected", data: { id } }));
+    // 接続直後（クライアントの初期化前を含む）に現在のミュート状態を送る。
+    // フロント側は初期化前でも flagState.mute に保持し、initAudio 時に反映する。
+    muteReqEmit(flagState.mute, id);
 
     ws.on("message", async (rawData: Buffer) => {
       let msg: { type: string; data: unknown };
@@ -78,6 +81,8 @@ export const wsServer = (
           if (result) {
             ws.send(JSON.stringify({ type: "debugFromServer" }));
             emitClientSettings(id);
+            // 接続直後の同期を取りこぼしても、初期化完了後の登録時に再送する。
+            muteReqEmit(flagState.mute, id);
           } else {
             console.log("connectFromClient failed");
           }

@@ -3,6 +3,7 @@ import { streamList, parameterList, streamsRedis } from "../../data";
 import { execCmd } from "../execCmd";
 import { execSinewave } from "../execSinewave";
 import { parameterChange } from "../../parameterChange";
+import { parseMuteFlag, setMute } from "../mute";
 
 import { cmdEmit } from "../../socket/ioEmit";
 import { stringEmit, voiceEmit, timelapseEmit, tileClearEmit } from "../../socket/ioEmit";
@@ -67,7 +68,15 @@ export const splitSpace = async (
   // console.log(arrTypeArr)
   // console.log(stringArr)
 
-  if (arrTypeArr[0] === "number") {
+  if (stringArr[0] === "MUTE" || stringArr[0] === "UNMUTE") {
+    // MUTE ON / MUTE OFF / UNMUTE のような引数付き指定。
+    const flag = parseMuteFlag(stringArr[0], stringArr[1]);
+    if (flag === undefined) {
+      stringEmit(`${stringArr[0]}: invalid argument ${stringArr[1]}`, true, source);
+    } else {
+      setMute(flag);
+    }
+  } else if (arrTypeArr[0] === "number") {
     const target = Object.keys(clientState.client).find(
       (key) => clientState.client[key].index === Number(stringArr[0])
     );
@@ -191,7 +200,14 @@ export const splitSpace = async (
   } else if (stringArr[0] === "ALL") {
     voiceEmit(stringArr.join(" "), source !== undefined ? source : "all");
 
-    if (arrTypeArr[1] === "string" && !streamList.includes(stringArr[1])) {
+    if (stringArr[1] === "MUTE" || stringArr[1] === "UNMUTE") {
+      const flag = parseMuteFlag(stringArr[1], stringArr[2]);
+      if (flag === undefined) {
+        stringEmit(`${stringArr[1]}: invalid argument ${stringArr[2]}`, true, source);
+      } else {
+        setMute(flag);
+      }
+    } else if (arrTypeArr[1] === "string" && !streamList.includes(stringArr[1])) {
       clientState.cmdClient.forEach((client, index) => {
         execCmd(stringArr[1], client);
       });

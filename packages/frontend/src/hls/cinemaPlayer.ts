@@ -1,4 +1,6 @@
 import Hls from "hls.js";
+import { flagState } from "../state";
+import { onMuteChange } from "../state/muteState";
 import { canvasElement } from "../canvasEvent/canvasElement";
 import { erasePrint } from "../canvasEvent";
 
@@ -6,6 +8,12 @@ let hls: Hls | null = null;
 let video: HTMLVideoElement | null = null;
 let rafId = 0;
 let onEnded: (() => void) | null = null;
+
+// HLS の音声は <video> 要素から直接出るため、WebAudio の muteGain では止まらない。
+// グローバルミュートの変更を再生中の要素にも反映する。
+onMuteChange((flag) => {
+  if (video) video.muted = flag;
+});
 
 // <video id="cinemaVideo"> の映像を、showImage と同じフィット計算で canvas に描画する。
 const drawFrame = () => {
@@ -36,8 +44,9 @@ export const cinemaPlay = (data: { url: string }) => {
   }
   // ワンショット再生（末尾で停止し、先頭には戻らない）
   video.loop = false;
-  // 過去の自動再生ブロックで muted が残っていても、再生のたびに音声ありへ戻す
-  video.muted = false;
+  // 過去の自動再生ブロックで muted が残っていても、再生のたびに
+  // 現在のグローバルミュート状態へ合わせる。
+  video.muted = flagState.mute;
 
   if (video.canPlayType("application/vnd.apple.mpegurl")) {
     video.src = data.url;

@@ -11,7 +11,8 @@
 //   4. sender 切断 (relaySenderGoneFromServer) / WS 切断で映像をクリアし待機。
 //      SocketFacade が自動再接続し connected で再登録するので接続は自動復帰する。
 
-import { socketState, webRtcState } from "../state";
+import { flagState, socketState, webRtcState } from "../state";
+import { onMuteChange } from "../state/muteState";
 import { ICE_SERVERS } from "./syncConfig";
 import {
   applyMaxVideoLayout,
@@ -35,6 +36,17 @@ export class RelayReceiver {
   private remoteStream = new MediaStream();
   private pendingCandidates: RTCIceCandidateInit[] = [];
   private started = false;
+  private active = false;
+
+  constructor() {
+    // リレー再生中だけ <video> の muted を切り替える。syncClient も同じ
+    // #remoteVideo を使うため、非アクティブ時は触らない。
+    onMuteChange((flag) => {
+      if (!this.active) return;
+      const el = webRtcState.videoPlayer;
+      if (el && el.srcObject === this.remoteStream) el.muted = flag;
+    });
+  }
 
   start(): void {
     if (this.started) return;
@@ -166,13 +178,16 @@ export class RelayReceiver {
       applyMaxVideoLayout(el);
     }
     // 中継映像は音声も鳴らす (sender 側で増幅済みの音声をそのまま再生)。
-    el.muted = false;
+    // グローバルミュート中は要素側もミュートする。
+    this.active = true;
+    el.muted = flagState.mute;
     void el.play().catch((e) =>
       console.warn("[relayReceiver] remote video autoplay blocked:", e)
     );
   }
 
   private teardown(): void {
+    this.active = false;
     this.pc?.close();
     this.pc = null;
     this.senderId = null;

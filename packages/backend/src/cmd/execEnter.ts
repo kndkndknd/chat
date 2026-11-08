@@ -10,6 +10,7 @@ import { cmdList } from "../data";
 import { clientState, bpmState, streamState, flagState } from "../state";
 import { quantizeCmd } from "../stream/quantize";
 import { stringEmit, emojiEmit, torchCmdEmit, voiceEmit } from "../socket/ioEmit";
+import { setMute } from "./mute";
 
 import { parameterList } from "../data";
 import { sinewaveChange } from "./sinewaveChange";
@@ -76,6 +77,8 @@ export const execEnter = async (
   } else if (strings === "LOOP") {
     console.log("LOOP");
     loopToggle();
+  } else if (strings === "MUTE" || strings === "UNMUTE") {
+    setMute(strings === "MUTE");
   } else if (strings === "NO" || strings === "NUMBER") {
     Object.keys(clientState.client).forEach((id) => {
       console.log(id);

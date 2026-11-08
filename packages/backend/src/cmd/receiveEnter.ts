@@ -76,7 +76,9 @@ export const receiveEnter = async (
     strings === "HALF" ||
     strings === "FUSEJI" ||
     strings === "EMOJI" ||
-    strings === "LOOP"
+    strings === "LOOP" ||
+    strings === "MUTE" ||
+    strings === "UNMUTE"
   ) {
     execEnter(strings, id);
   } else if (strings === "STOP") {
