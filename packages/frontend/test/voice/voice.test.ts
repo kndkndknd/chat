@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { contextState, stereoPannerState } from "../../src/state";
+import { contextState, flagState, stereoPannerState } from "../../src/state";
 import { voice } from "../../src/voice";
 
 class MockUtterance {
@@ -16,10 +16,12 @@ describe("voice", () => {
     (globalThis as any).SpeechSynthesisUtterance = MockUtterance;
     (globalThis as any).speechSynthesis = {
       speak,
+      cancel: vi.fn(),
       getVoices: () => [],
       onvoiceschanged: null,
     };
     speak.mockClear();
+    flagState.mute = false;
     stereoPannerState.masterPannerParam = 0;
     stereoPannerState.masterPanner = null;
     contextState.audioContext = null;
@@ -116,34 +118,26 @@ describe("voice", () => {
     expect(speak).not.toHaveBeenCalled();
   });
 
-  it("英語は中央パンでもサーバーTTSの女性音声を使う", async () => {
+  it("英語も中央パンではサーバーTTSを使わず speechSynthesis を使う", async () => {
     stereoPannerState.masterPannerParam = 0;
     stereoPannerState.masterPanner = { connect: vi.fn() } as any;
-    const start = vi.fn();
-    const source = { buffer: null as AudioBuffer | null, connect: vi.fn(), start };
-    const gain = { gain: { value: 1 }, connect: vi.fn() };
-    contextState.audioContext = {
-      state: "running",
-      resume: vi.fn(),
-      decodeAudioData: (_data: ArrayBuffer, success: (buffer: AudioBuffer) => void) => {
-        success({} as AudioBuffer);
-      },
-      createBufferSource: () => source,
-      createGain: () => gain,
-    } as any;
-
-    const fetchMock = vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      headers: { get: () => "audio/wav" },
-      arrayBuffer: async () => new ArrayBuffer(4),
-    }));
+    contextState.audioContext = {} as any;
+    const fetchMock = vi.fn();
     (globalThis as any).fetch = fetchMock;
 
     await voice({ text: "HELLO", lang: "en-US" });
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/voice?text=HELLO&lang=en-US");
-    expect(start).toHaveBeenCalledTimes(1);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(speak).toHaveBeenCalledTimes(1);
+    expect(speak.mock.calls[0][0].lang).toBe("en-US");
+  });
+
+  it("MUTE 中は中央パンの speechSynthesis を実行しない", async () => {
+    flagState.mute = true;
+    (globalThis as any).fetch = vi.fn();
+
+    await voice({ text: "HELLO", lang: "en-US" });
+
     expect(speak).not.toHaveBeenCalled();
   });
 

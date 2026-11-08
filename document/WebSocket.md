@@ -288,7 +288,7 @@ socketState.socket.on("connected", (data) => {
 | `quantizeFromServer` | クォンタイズ設定を適用 |
 | `quantizeParamFromServer` | 対象ストリームの beat を適用 |
 | `gainFromServer` | ゲイン変更 |
-| `voiceFromServer` | 音声読み上げ（日本語は SpeechSynthesis、英語と left/right パスは `/api/voice` の WAV を Web Audio で再生。詳細は [voice.md](./voice.md)） |
+| `voiceFromServer` | 音声読み上げ（中央パスは SpeechSynthesis、left/right パスは `/api/voice` の WAV を Web Audio で再生。詳細は [voice.md](./voice.md)） |
 | `emojiFromServer` | 絵文字表示 |
 | `bpmFromServer` | BPM・拍子情報を更新 |
 | `timelapseFromServer` | タイムラプスモード切替 |

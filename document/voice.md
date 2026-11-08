@@ -1,27 +1,25 @@
 # VOICE 読み上げ
 
 > 最終更新: 2026-11-08
-> 対象: `VOICE` コマンド、`voiceFromServer`、`/api/voice`、英語のサーバー音声再生、
-> `left` / `right` パスでのパン再生。
+> 対象: `VOICE` コマンド、`voiceFromServer`、`/api/voice`、`left` / `right` パスでの
+> パン再生。
 
 ## 概要
 
 `VOICE` は、コマンドやキーボード入力をクライアント端末に読み上げさせるモードです。
 読み上げ対象は `cmdState.VOICE` に入っているクライアントです。
-通常はブラウザの Web Speech API (`SpeechSynthesisUtterance`) を使いますが、
-英語 (`en-*`) はブラウザ既定の音声が日本語のままになる環境があるため、
-バックエンドの `/api/voice` が macOS の `say` で生成した WAV を優先します
-（英語の声は `Samantha`）。
+中央パスではブラウザの Web Speech API (`SpeechSynthesisUtterance`) を使います。
+英語 (`en-*`) も中央パスでは `speechSynthesis` を使い、`pickVoice()` で
+端末の標準的な英語音声（macOS なら `Samantha` など）を優先します。
 
-また `SpeechSynthesisUtterance` の音声出力は Web Audio のグラフを通らないため、
+`SpeechSynthesisUtterance` の音声出力は Web Audio のグラフを通らないため、
 `left` / `right` パスの `masterPanner` ではパンを適用できません。
-そこで `left` / `right` パスでも `/api/voice` の WAV を
+そこで `left` / `right` パスだけ、`/api/voice` が macOS の `say` で生成した WAV を
 `AudioBufferSourceNode -> GainNode -> masterPanner` で再生します。
 
 | パス | 読み上げ経路 | パン |
 | --- | --- | --- |
-| 通常パス（日本語） | `speechSynthesis` | なし（中央） |
-| 通常パス（英語） | `/api/voice` の WAV を Web Audio で再生 | なし（中央） |
+| 通常パス（日本語・英語） | `speechSynthesis` | なし（中央） |
 | `left` / `right` | `/api/voice` の WAV を Web Audio で再生 | 左 / 右 |
 | `/api/voice` 不可・生成失敗 | `speechSynthesis` にフォールバック | なし（中央） |
 
@@ -112,9 +110,9 @@ io.to(A).emit("voiceFromServer", { text, lang: cmdState.voiceLang })
         │  decodeAudioData
         │     │
         │     ▼
-        │  AudioBufferSourceNode → GainNode → masterPanner → destination
+        │  AudioBufferSourceNode → GainNode → masterPanner → muteGain → destination
         │
-        └─ それ以外 / 生成失敗
+        └─ 中央パン / 生成失敗
               │
               ▼
            speechSynthesis.speak(utterance)
@@ -230,10 +228,9 @@ say -v Kyoko -f <text.txt> -o <voice.wav> \
 type VoiceData = { text: string; lang: string; volume?: number };
 
 export const voice = async (data: VoiceData): Promise<void> => {
-  // 英語はブラウザ既定の音声が日本語になる環境があるため、中央パンでも
-  // macOS サーバーの標準女性音声 (say: Samantha) を優先する。
-  const preferServerVoice = data.lang.toLowerCase().startsWith("en");
-  if (await playServerVoice(data, preferServerVoice)) return;
+  // 中央パンは speechSynthesis で発話する。speechSynthesis の出力は Web Audio の
+  // グラフ外なので、left/right パスのパン付き再生だけ /api/voice を使う。
+  if (await playServerVoice(data)) return;
   try {
     speakWithSpeechSynthesis(data);
   } catch (error) {
@@ -258,12 +255,11 @@ export const voice = async (data: VoiceData): Promise<void> => {
 2. `stereoPannerState.masterPanner` がある
 3. `fetch` が使える
 4. `serverVoiceUnavailable` が `false`
-5. `stereoPannerState.masterPannerParam !== 0`、または `allowCenter` が `true`
+5. `stereoPannerState.masterPannerParam !== 0`（`left` / `right` パス）
 
-`allowCenter` は英語 (`en-*`) のとき `true` になります。ブラウザの既定音声が
-日本語のままになる環境があり、`VOICE EN` をしても英語にならないためです。
-macOS サーバーの `say` は英語で `Samantha`（標準的な女性音声）を使います。
-Linux など `/api/voice` が使えない環境では `speechSynthesis` にフォールバックします。
+中央パン (`masterPannerParam === 0`) は常に `speechSynthesis` を使うため、
+`/api/voice` は呼びません。Linux など `/api/voice` が使えない環境では
+`speechSynthesis` にフォールバックします（パンは適用されません）。
 
 処理:
 
@@ -277,7 +273,7 @@ Linux など `/api/voice` が使えない環境では `speechSynthesis` にフ�
 `masterPanner` に直接接続するため、`GAIN` UI の `MASTER` ゲインは VOICE 読み上げには
 影響しません（従来の `speechSynthesis` と同じ扱いです）。
 
-#### speechSynthesis フォールバック
+#### speechSynthesis（中央パス）
 
 `speechSynthesis` / `SpeechSynthesisUtterance` が使える場合、次の優先順で voice を選びます。
 
@@ -290,6 +286,13 @@ Linux など `/api/voice` が使えない環境では `speechSynthesis` にフ�
 
 優先する voice 名は `packages/frontend/src/voice.ts` の `preferredEnglishVoices` に
 定義しています。`onvoiceschanged` でも同じ選択を再適用します。
+`speechSynthesis.getVoices()` は初回空のことがあるため、モジュール読み込み時にも
+呼び出して voice 一覧を早めに読み込みます。
+
+`speechSynthesis` の出力は Web Audio の `muteGain` を通らないため、MUTE 中は
+新しい発話を開始せず、`onMuteChange` で再生中の発話を `cancel()` します。
+left/right のサーバーTTSは `masterPanner → muteGain` を通るため、MUTE は
+`muteGain` で適用されます。
 
 #### `voiceFromServer` ハンドラ
 
@@ -307,10 +310,10 @@ socketState.socket.on(
 ### 音声グラフ
 
 ```
-VOICE（left/right・英語・サーバーTTS）
-  AudioBufferSourceNode → GainNode → masterPanner → destination
+VOICE（left/right・サーバーTTS）
+  AudioBufferSourceNode → GainNode → masterPanner → muteGain → destination
 
-VOICE（日本語の通常パス・speechSynthesis）
+VOICE（中央パス・speechSynthesis）
   SpeechSynthesisUtterance → OS の音声出力（Web Audio の外）
 
 その他の Web Audio
@@ -341,7 +344,7 @@ VOICE（日本語の通常パス・speechSynthesis）
 | --- | --- |
 | `packages/backend/test/socket/ioEmit/voiceEmit.test.ts` | VOICE モードなしは送信しない / 対象クライアントだけに送る / `all`・`ALL`・`scenario` は全員 / 非 VOICE クライアントは送らない |
 | `packages/backend/test/voice/synthesizeVoice.test.ts` | 空文字・1000 文字超は生成しない |
-| `packages/frontend/test/voice/voice.test.ts` | パンなしは speechSynthesis / パンあり・英語は `/api/voice` を Web Audio で再生 / 英語の女性音声優先 / 失敗時は speechSynthesis にフォールバック |
+| `packages/frontend/test/voice/voice.test.ts` | 中央パンは speechSynthesis / パンありは `/api/voice` を Web Audio で再生 / 英語の女性音声優先 / MUTE 中は発話しない / 失敗時は speechSynthesis にフォールバック |
 
 実行:
 
@@ -354,19 +357,26 @@ pnpm -F frontend exec vitest run
 
 ## 既知の注意点
 
-- **macOS 限定**: 英語のサーバー音声再生とパン付き読み上げは、バックエンドが macOS の
+- **macOS 限定**: left/right のパン付き読み上げは、バックエンドが macOS の
   `say` を実行できる場合のみ動作します。Linux などでは `/api/voice` が 501 を返し、
   `speechSynthesis`（パンなし）になります。
-- **声質**: ブラウザの `speechSynthesis` ではなく macOS のシステム音声（`Kyoko` / `Samantha`）に
-  なります。声がインストールされていない場合は `say` の既定音声になります。
-- **遅延**: サーバーTTS読み上げは `say` の生成と HTTP 取得の分だけ、通常より開始が遅れます。
-- **順序**: 複数の読み上げを短時間に実行した場合、HTTP / デコードの完了順によっては
-  前後する可能性があります（現状は読み上げキューを持っていません）。
+- **声質**: 中央パスはブラウザ / OS の `speechSynthesis` 音声、left/right は
+  macOS のシステム音声（`Kyoko` / `Samantha`）になります。left/right で声が
+  インストールされていない場合は `say` の既定音声になります。
+- **遅延**: left/right のサーバーTTS読み上げは `say` の生成と HTTP 取得の分だけ、
+  中央パスより開始が遅れます。中央パスはローカル発話のため、この遅延はありません。
+- **順序**: left/right で複数の読み上げを短時間に実行した場合、HTTP / デコードの
+  完了順によっては前後する可能性があります（現状は読み上げキューを持っていません）。
+  中央パスの `speechSynthesis` はブラウザ側でキューされます。
+- **MUTE**: 中央パスの `speechSynthesis` は `muteGain` を通らないため、MUTE 中は
+  新しい発話を開始せず、再生中の発話を `cancel()` します。left/right のサーバーTTSは
+  `muteGain` でミュートされます。
 - **認証・レート制限**: `/api/voice` は認証なしで、テキスト 1000 文字・キャッシュ 20MiB の
   上限だけがあります。公開範囲が広い環境ではレート制限を検討してください。
 - **Vite dev**: `vite.config.ts` に `/api` の proxy がないため、Vite dev server 経由では
-  `/api/voice` が 404 または `audio/` 以外の応答になり、`speechSynthesis` にフォールバックします。
-  パン付き読み上げを確認する場合は `pnpm -F frontend build` 後に backend から配信してください。
+  left/right の `/api/voice` が 404 または `audio/` 以外の応答になり、`speechSynthesis` に
+  フォールバックします。中央パスの読み上げには影響しません。パン付き読み上げを確認する
+  場合は `pnpm -F frontend build` 後に backend から配信してください。
 - **旧 Safari / Web Audio 非対応環境**: `fetch` や `AudioContext` が使えない場合は
   `speechSynthesis` にフォールバックします。`html/snowleopard.html` も同じです。
 - **VOICE の復活**: `voiceEmit` は一時的に無効化されていました。現在は
@@ -387,7 +397,7 @@ pnpm -F frontend exec vitest run
 | `packages/backend/src/cmd/receiveEnter.ts` | コマンド入力から `voiceEmit` を呼ぶ |
 | `packages/backend/src/cmd/execEnter.ts` | `cmdList` の読み上げ |
 | `packages/backend/src/stream/recordEmit.ts` | `RECORD` の読み上げ |
-| `packages/frontend/src/voice.ts` | サーバー音声再生（パン / 英語）/ speechSynthesis フォールバック |
+| `packages/frontend/src/voice.ts` | 中央パスの speechSynthesis / left/right のサーバー音声再生 |
 | `packages/frontend/src/socket.ts` | `voiceFromServer` ハンドラ |
 | `packages/frontend/src/webaudio/init/initAudio.ts` | `left` / `right` のパン設定 |
 | `packages/frontend/src/state/webAudio/stereoPannerState.ts` | `masterPanner` / `masterPannerParam` |
@@ -400,4 +410,6 @@ pnpm -F frontend exec vitest run
   Web Audio パン再生、speechSynthesis フォールバック、テストを追加。
 - **2026-11-08 (2)**: 英語音声を標準的な女性音声に統一。英語は中央パンでも
   `/api/voice`（`Samantha`）を優先し、ブラウザ既定音声が日本語になる環境を回避。
+- **2026-11-08 (3)**: レイテンシー短縮のため、中央パンは英語を含めて `speechSynthesis` に
+  戻し、`/api/voice` は left/right パスのみで使うよう変更。MUTE 時の発話停止も追加。
 - **2026-09-20**: `voiceEmit` の送信処理がコメントアウトされ、VOICE 読み上げが無効化。

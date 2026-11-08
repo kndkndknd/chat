@@ -67,7 +67,7 @@ pnpm -F frontend exec vitest run
 | `test/quantize/quantizeFromServer.test.ts` | `quantizeFromServer` / `refreshQuantizeInterval` / `playPendingQuantizeChunk` | `src/quantize/quantizeFromServer.ts` | flag/beat 反映 / ON→OFF で streamChunk 破棄と CHAT の chatReq / 初回チャンク即再生（pending 消費・flag false 時は再生しない） / 稼働中は再アームしない / 全 false で停止 / BPM 変更の位相保持再アーム |
 | `test/quantize/bpmFromServer.test.ts` | `bpmFromServer` | `src/quantize/bpmFromServer.ts` | ストリーム指定で bar 更新と `refreshQuantizeInterval(true)` / METRONOME は metronome のみ / MODULATION は何もしない / source 非配列は return |
 | `test/quantize/quantizeParamFromServer.test.ts` | `quantizeParamFromServer` | `src/quantize/quantizeParamFromServer.ts` | 対象 stream の beat のみ反映（flag 不変） / streams 外・data なしは更新しない / CHAT beat の canvas 表示 |
-| `test/voice/voice.test.ts` | `voice` | `src/voice.ts` | パンなしは speechSynthesis / パンあり・英語は `/api/voice` を Web Audio で再生 / 英語の女性音声優先 / 失敗時は speechSynthesis にフォールバック |
+| `test/voice/voice.test.ts` | `voice` | `src/voice.ts` | 中央パンは speechSynthesis / パンありは `/api/voice` を Web Audio で再生 / 英語の女性音声優先 / MUTE 中は発話しない / 失敗時は speechSynthesis にフォールバック |
 
 ## 共通テクニック
 

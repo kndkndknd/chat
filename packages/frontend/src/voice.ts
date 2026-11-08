@@ -1,6 +1,27 @@
-import { contextState, stereoPannerState } from "./state";
+import { contextState, flagState, stereoPannerState } from "./state";
+import { onMuteChange } from "./state/muteState";
 
 type VoiceData = { text: string; lang: string; volume?: number };
+
+// speechSynthesis.getVoices() は初回空のことがあるため、早めに読み込んでおく。
+if (
+  typeof speechSynthesis !== "undefined" &&
+  typeof speechSynthesis.getVoices === "function"
+) {
+  speechSynthesis.getVoices();
+}
+
+// speechSynthesis の出力は Web Audio の muteGain を通らないため、MUTE 時は
+// 明示的に発話を停止する。
+onMuteChange((flag) => {
+  if (
+    flag &&
+    typeof speechSynthesis !== "undefined" &&
+    typeof speechSynthesis.cancel === "function"
+  ) {
+    speechSynthesis.cancel();
+  }
+});
 
 // 標準的な女性の英語音声。ブラウザ / OS ごとに名前が異なるため、
 // 優先度の高い順に並べ、最初に見つかったものを使用する。
@@ -97,6 +118,9 @@ const createUtterance = (data: VoiceData): SpeechSynthesisUtterance => {
 };
 
 const speakWithSpeechSynthesis = (data: VoiceData): void => {
+  // 中央パスの speechSynthesis は Web Audio の muteGain を通らない。
+  // MUTE 中は新しい発話を開始しない（再生中の停止は onMuteChange 側で行う）。
+  if (flagState.mute) return;
   if (
     typeof speechSynthesis === "undefined" ||
     typeof SpeechSynthesisUtterance === "undefined"
@@ -134,17 +158,14 @@ let serverVoiceUnavailable = false;
 
 // サーバー (macOS say) で生成した WAV を Web Audio の masterPanner 経由で再生する。
 // speechSynthesis の出力は Web Audio のグラフ外なので、left/right パスでは
-// パンを適用できないための代替経路。allowCenter が true の場合は中央パンでも使う。
-const playServerVoice = async (
-  data: VoiceData,
-  allowCenter = false
-): Promise<boolean> => {
+// パンを適用できないための代替経路。中央パンは speechSynthesis を使う。
+const playServerVoice = async (data: VoiceData): Promise<boolean> => {
   const context = contextState.audioContext;
   const panner = stereoPannerState.masterPanner;
   if (!context || !panner) return false;
   if (typeof fetch !== "function") return false;
   if (serverVoiceUnavailable) return false;
-  if (!allowCenter && stereoPannerState.masterPannerParam === 0) return false;
+  if (stereoPannerState.masterPannerParam === 0) return false;
 
   try {
     const params = new URLSearchParams({
@@ -188,10 +209,9 @@ const playServerVoice = async (
 };
 
 export const voice = async (data: VoiceData): Promise<void> => {
-  // 英語はブラウザ既定の音声が日本語になる環境があるため、中央パンでも
-  // macOS サーバーの標準女性音声 (say: Samantha) を優先する。
-  const preferServerVoice = data.lang.toLowerCase().startsWith("en");
-  if (await playServerVoice(data, preferServerVoice)) return;
+  // 中央パンは speechSynthesis で発話する。speechSynthesis の出力は Web Audio の
+  // グラフ外なので、left/right パスのパン付き再生だけ /api/voice を使う。
+  if (await playServerVoice(data)) return;
   try {
     speakWithSpeechSynthesis(data);
   } catch (error) {
