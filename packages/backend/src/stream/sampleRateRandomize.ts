@@ -1,14 +1,19 @@
 import { sampleRateState } from "../state";
 
+// 対数一様分布で min〜max の周波数を選ぶ。
+// 線形一様だと低い周波数に偏るため、桁（オクターブ）ごとに均等になるようにする。
+export const logUniformRandomRate = (min: number, max: number): number => {
+  if (min <= 0 || max <= min) {
+    return min;
+  }
+  return min * Math.pow(max / min, Math.random());
+};
+
 export const sampleRateRandomize = (stream: string) => {
   const max = sampleRateState.randomraterange[stream].max;
   const min = sampleRateState.randomraterange[stream].min;
   if (sampleRateState.randomratemode === "random") {
-    const freq =
-      sampleRateState.randomraterange[stream].min +
-      Math.random() *
-        (sampleRateState.randomraterange[stream].max -
-          sampleRateState.randomraterange[stream].min);
+    const freq = logUniformRandomRate(min, max);
     console.log("sampleRateRandomize: ", freq);
     return freq;
   } else if (sampleRateState.randomratemode === "diatonic") {

@@ -13,6 +13,7 @@ import { glitchStream } from "./glitchStream";
 import { gridTimeoutVal } from "./gridTimeoutVal";
 import { streamEmit, stringEmit } from "../socket/ioEmit";
 import { tileMeta } from "../clientSetting/tileLayout";
+import { logUniformRandomRate } from "./sampleRateRandomize";
 
 export const execStream = async (
   source: string,
@@ -160,13 +161,10 @@ export const execStream = async (
     }
 
     if (sampleRateState.randomrate[source]) {
-      stream.sampleRate =
-        sampleRateState.randomraterange[source].min +
-        Math.floor(
-          Math.random() *
-            (sampleRateState.randomraterange[source].max -
-              sampleRateState.randomraterange[source].min),
-        );
+      stream.sampleRate = logUniformRandomRate(
+        sampleRateState.randomraterange[source].min,
+        sampleRateState.randomraterange[source].max,
+      );
     }
     // console.log("sampleRateState", sampleRateState);
     if (!stream.video) console.log("not video");
@@ -295,13 +293,10 @@ export const paStreamEmit = async (
     }
 
     if (sampleRateState.randomrate[source]) {
-      stream.sampleRate =
-        sampleRateState.randomraterange[source].min +
-        Math.floor(
-          Math.random() *
-            (sampleRateState.randomraterange[source].max -
-              sampleRateState.randomraterange[source].min)
-        );
+      stream.sampleRate = logUniformRandomRate(
+        sampleRateState.randomraterange[source].min,
+        sampleRateState.randomraterange[source].max
+      );
     }
     console.log("sampleRateState", sampleRateState);
     if (!stream.video) console.log("not video");
