@@ -188,6 +188,7 @@ export type flagStateType = {
   timer: boolean;
   vosk: boolean;
   scenario: boolean;
+  mute: boolean;
 };
 
 export type arduinoStateType = {

@@ -1,4 +1,8 @@
 import Hls from "hls.js";
+import { flagState } from "../state";
+import { onMuteChange } from "../state/muteState";
+import { canvasElement } from "../canvasEvent/canvasElement";
+import { erasePrint } from "../canvasEvent";
 
 let hls: Hls | null = null;
 let video: HTMLVideoElement | null = null;
@@ -6,9 +10,13 @@ let cinemaCnvs: HTMLCanvasElement | null = null;
 let rafId = 0;
 let onEnded: (() => void) | null = null;
 
-// <video id="cinemaVideo"> の映像を、showImage と同じフィット計算で
-// <canvas id="cinemaCnvs"> (cnvs の背面) に描画する。
-// cnvs とは別キャンバスに描くことで、cnvs 側の文字や画像を映像の手前に残せる。
+// HLS の音声は <video> 要素から直接出るため、WebAudio の muteGain では止まらない。
+// グローバルミュートの変更を再生中の要素にも反映する。
+onMuteChange((flag) => {
+  if (video) video.muted = flag;
+});
+
+// <video id="cinemaVideo"> の映像を、showImage と同じフィット計算で canvas に描画する。
 const drawFrame = () => {
   rafId = requestAnimationFrame(drawFrame);
   const v = video;
@@ -48,9 +56,9 @@ export const cinemaPlay = (data: { url: string; audio: boolean }) => {
   }
   // ワンショット再生（末尾で停止し、先頭には戻らない）
   video.loop = false;
-  // 音声担当でなければミュートで映像のみ再生する。
-  // 担当端末は、過去の自動再生ブロックで muted が残っていても音声ありへ戻す。
-  video.muted = !data.audio;
+  // 過去の自動再生ブロックで muted が残っていても、再生のたびに
+  // 現在のグローバルミュート状態へ合わせる。
+  video.muted = flagState.mute;
 
   if (video.canPlayType("application/vnd.apple.mpegurl")) {
     video.src = data.url;

@@ -114,6 +114,11 @@ export class SocketFacade {
     }
   }
 
+  // 接続中 (OPEN) かどうか。切断中は emit が破棄されるため、呼び出し側の判定用。
+  get isOpen(): boolean {
+    return this.ws !== null && this.ws.readyState === WebSocket.OPEN;
+  }
+
   // 互換のため残置。明示的な再接続トリガとして利用可能だが、
   // 通常は close 後に SocketFacade が自動再接続するため呼ぶ必要はない。
   connect(): void {

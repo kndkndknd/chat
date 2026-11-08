@@ -6,6 +6,10 @@ const MODEL_URL = "/models";
 // 顔の向きの許容範囲。鼻先が顔の中心からこの割合以内なら「正面に近い」とみなす（正面±40%）。
 const FRONTAL_RATIO = 0.4;
 
+// 正面判定がこの時間（ms）以上継続したら「正面に入った」と確定する。
+// 検出ループが DETECT_INTERVAL_MS 間隔のため、実際の確定は次の検出サイクルで行われる。
+const FRONTAL_CONFIRM_MS = 200;
+
 // 検出ループの間隔。短いほど顔認識の反応は速いが、TF.js/WebGL 推論が頻繁に走り
 // メインスレッド/GPU を専有するため、同居する WebRTC リレー映像の消去ペイント等が
 // 遅れる。/1,/2 端末の表示終了の即時性を上げるため間引いている（旧 100ms）。
@@ -15,6 +19,8 @@ let overlayCanvas: HTMLCanvasElement | null = null;
 let active = false;
 let modelsLoaded = false;
 let wasFrontal = false;
+// 正面と判定され始めた時刻。正面が継続確認されるまで保持する。
+let frontalSince: number | null = null;
 
 // 正面から外れているときにウィンドウ全体を白黒点滅させるためのオーバーレイ。
 let flashOverlay: HTMLDivElement | null = null;
@@ -149,6 +155,7 @@ export async function initFaceDetection(): Promise<void> {
 export function stopFaceDetection(): void {
   active = false;
   wasFrontal = false;
+  frontalSince = null;
   stopFlashing();
   hideCapturedFrame();
   if (overlayCanvas) {
@@ -167,6 +174,7 @@ async function detectLoop(): Promise<void> {
     ctx?.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
     stopFlashing();
     wasFrontal = false;
+    frontalSince = null;
     setTimeout(() => detectLoop(), DETECT_INTERVAL_MS);
     return;
   }
@@ -206,21 +214,29 @@ async function detectLoop(): Promise<void> {
 
       if (Math.abs(frontalOffset) <= FRONTAL_RATIO) {
         if (!wasFrontal) {
-          socketState.socket?.emit("faceDetectFromClient", { x, width, height });
-          // 顔認識成立の瞬間に、カメラ映像を1フレームだけ1秒間表示する。
-          showCapturedFrame();
-          // faceDetectScenario が始まるので、90秒間は点滅を無効化する。
-          flashDisabledUntil = Date.now() + FLASH_DISABLE_MS;
+          if (frontalSince === null) {
+            // 正面に入った。FRONTAL_CONFIRM_MS 後も正面なら認識成立とする。
+            frontalSince = Date.now();
+          } else if (Date.now() - frontalSince >= FRONTAL_CONFIRM_MS) {
+            // 正面が FRONTAL_CONFIRM_MS 以上継続したので、認識成立の処理を実行する。
+            socketState.socket?.emit("faceDetectFromClient", { x, width, height });
+            // 顔認識成立の瞬間に、カメラ映像を1フレームだけ1秒間表示する。
+            showCapturedFrame();
+            // faceDetectScenario が始まるので、90秒間は点滅を無効化する。
+            flashDisabledUntil = Date.now() + FLASH_DISABLE_MS;
+            wasFrontal = true;
+          }
         }
-        wasFrontal = true;
         stopFlashing();
       } else {
         wasFrontal = false;
+        frontalSince = null;
         // 正面から外れている（オフセットが±0.4超）ので白黒点滅させる。
         startFlashing();
       }
     } else {
       wasFrontal = false;
+      frontalSince = null;
       stopFlashing();
     }
   } else {

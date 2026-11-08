@@ -3,7 +3,7 @@ import * as Https from "https";
 import * as Http from "http";
 
 import { buffStateType, gainStateType } from "../../../../types";
-import { clientState, currentState, bpmState } from "../state";
+import { clientState, currentState, bpmState, flagState } from "../state";
 import { chatReceive } from "../stream/chatReceive";
 import { charProcess } from "../cmd/charProcess";
 import { execStream } from "../stream/execStream";
@@ -14,6 +14,7 @@ import { countersRedis } from "../redis/streamsRedis";
 import { faceDetectScenario } from "../scenario/faceDetectScenario";
 import { workletBufferFromClient } from "../stream/audioWorklet/workletBufferFromClient";
 import { mediaUploadFromClient } from "../media/mediaUploadFromClient";
+import { getVideoBuffer } from "../media/videoBufferStore";
 import { receiveWholeReq } from "../stream/receiveWholeReq";
 import { gainFromClient, gainReqFromClient } from "../cmd/gainFromClient";
 import { m5Switch } from "../rotate/m5Access";
@@ -25,6 +26,7 @@ import {
   handleRelayDisconnect,
 } from "../relay";
 import { IoFacade } from "./IoFacade";
+import { stringEmit, videoBufferEmit, muteReqEmit } from "./ioEmit";
 
 let strings = "";
 
@@ -59,6 +61,9 @@ export const wsServer = (
 
     facade.addClient(id, ws);
     ws.send(JSON.stringify({ type: "connected", data: { id } }));
+    // 接続直後（クライアントの初期化前を含む）に現在のミュート状態を送る。
+    // フロント側は初期化前でも flagState.mute に保持し、initAudio 時に反映する。
+    muteReqEmit(flagState.mute, id);
 
     ws.on("message", async (rawData: Buffer) => {
       let msg: { type: string; data: unknown };
@@ -76,6 +81,8 @@ export const wsServer = (
           if (result) {
             ws.send(JSON.stringify({ type: "debugFromServer" }));
             emitClientSettings(id);
+            // 接続直後の同期を取りこぼしても、初期化完了後の登録時に再送する。
+            muteReqEmit(flagState.mute, id);
           } else {
             console.log("connectFromClient failed");
           }
@@ -114,11 +121,35 @@ export const wsServer = (
           break;
 
         case "mediaUploadFromClient":
-          mediaUploadFromClient(
-            data as { container: string; mimeType: string; blob: ArrayBuffer },
-            id
-          );
+          // Redis 障害等で reject してもハンドラの未処理 rejection にしない。
+          try {
+            await mediaUploadFromClient(
+              data as { container: string; mimeType: string; blob: ArrayBuffer },
+              id
+            );
+          } catch (err) {
+            console.error("mediaUploadFromClient failed:", err);
+          }
           break;
+
+        // PLAYVIDEOBUFFER: 保持している直近の録画を要求元クライアントへ返す。
+        case "videoBufferReqFromClient": {
+          // Redis 障害や保持データの破損 (JSON.parse) で reject しても
+          // ハンドラの未処理 rejection にしない。
+          try {
+            const videoBuffer = await getVideoBuffer();
+            if (videoBuffer === null) {
+              console.log("videoBufferReqFromClient: no recording stored");
+              // 要求端末に「保持が無い」ことを表示する。
+              stringEmit("NO VIDEOBUFFER", true, id);
+              break;
+            }
+            videoBufferEmit(videoBuffer, id);
+          } catch (err) {
+            console.error("videoBufferReqFromClient failed:", err);
+          }
+          break;
+        }
 
         case "gainFromClient":
           console.log("gainFromClient", data);

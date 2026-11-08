@@ -4,6 +4,7 @@ vi.mock("../../../src/state", () => ({
   clientState: { client: {}, streamClient: [], cmdClient: [] },
   currentState: { stream: {} },
   bpmState: {},
+  flagState: { mute: false },
   arduinoState: { host: "localhost", port: 5050, connected: false, relay: "off" },
 }));
 vi.mock("../../../src/state/states/ioState", () => ({
@@ -12,7 +13,10 @@ vi.mock("../../../src/state/states/ioState", () => ({
 vi.mock("../../../src/stream/chatReceive", () => ({ chatReceive: vi.fn() }));
 vi.mock("../../../src/cmd/charProcess", () => ({ charProcess: vi.fn() }));
 vi.mock("../../../src/stream/streamEmit", () => ({ streamEmit: vi.fn() }));
-vi.mock("../../../src/socket/ioEmit", () => ({ stringEmit: vi.fn() }));
+vi.mock("../../../src/socket/ioEmit", () => ({
+  stringEmit: vi.fn(),
+  muteReqEmit: vi.fn(),
+}));
 vi.mock("../../../src/clientSetting/connectFromClient", () => ({
   connectFromClient: vi.fn(),
 }));

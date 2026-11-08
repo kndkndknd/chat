@@ -7,7 +7,7 @@
 - **テストランナー**: vitest 3.0.8（リポジトリルートの devDependency）
 - **対象**: `packages/frontend/src/**` 配下で「値を返す純粋関数」と「値を返す state 依存関数」（純粋に近い計算ロジック）
 - **対象外**: DOM / Web Audio API / Canvas / WebSocket / WebRTC / face-api.js / hls.js / vosk-browser / MediaStream など、ブラウザ API に深く結合した関数。これらは戻り値を持たない / `void` の関数も多く、本テストではスコープ外。
-- **テスト規模**: 7 ファイル / 37 ケース（すべて合格）
+- **テスト規模**: 9 ファイル / 44 ケース（すべて合格）
 
 実行コマンド:
 ```bash
@@ -57,6 +57,7 @@ pnpm -F frontend exec vitest run
 | `test/socket/SocketFacade/serialize.test.ts` | `serialize` | `src/socket/SocketFacade.ts` | { type, data } JSON 化 / ArrayBuffer マーカ変換 / ネスト ArrayBuffer / data=undefined / 8KB を超える ArrayBuffer (CHUNK 境界) |
 | `test/socket/SocketFacade/deserialize.test.ts` | `deserialize` | 同上 | 通常 JSON / __type=ArrayBuffer 復元（バイト一致） / ネスト ArrayBuffer / serialize→deserialize ラウンドトリップ |
 | `test/webaudio/sound/setBassNote.test.ts` | `setBassNote` | `src/webaudio/sound/bass.ts` | 確率テーブルの境界値（0/0.45/0.6/0.8/0.95）/ 戻り値が許容セットに含まれることを random 全範囲で確認 |
+| `test/mediaRecorder/supportedContainers.test.ts` | `supportedContainers` | `src/mediaRecorder/recorder.ts` | WebM が使えれば WebM のみ / WebM 不可で Ogg へフォールバック / 両方不可で空配列 / MediaRecorder 無しで空配列 |
 
 ### STATE_READ 関数（`vi.mock` で state を差し替え）
 
@@ -66,6 +67,7 @@ pnpm -F frontend exec vitest run
 | `test/quantize/quantizeFromServer.test.ts` | `quantizeFromServer` / `refreshQuantizeInterval` / `playPendingQuantizeChunk` | `src/quantize/quantizeFromServer.ts` | flag/beat 反映 / ON→OFF で streamChunk 破棄と CHAT の chatReq / 初回チャンク即再生（pending 消費・flag false 時は再生しない） / 稼働中は再アームしない / 全 false で停止 / BPM 変更の位相保持再アーム |
 | `test/quantize/bpmFromServer.test.ts` | `bpmFromServer` | `src/quantize/bpmFromServer.ts` | ストリーム指定で bar 更新と `refreshQuantizeInterval(true)` / METRONOME は metronome のみ / MODULATION は何もしない / source 非配列は return |
 | `test/quantize/quantizeParamFromServer.test.ts` | `quantizeParamFromServer` | `src/quantize/quantizeParamFromServer.ts` | 対象 stream の beat のみ反映（flag 不変） / streams 外・data なしは更新しない / CHAT beat の canvas 表示 |
+| `test/voice/voice.test.ts` | `voice` | `src/voice.ts` | パンなしは speechSynthesis / パンあり・英語は `/api/voice` を Web Audio で再生 / 英語の女性音声優先 / 失敗時は speechSynthesis にフォールバック |
 
 ## 共通テクニック
 
@@ -116,6 +118,6 @@ beforeEach(async () => {
 - **MediaStream / Recording**: `recording/*` / `scriptProcessor/*` / `stream/init/initAudioStream` / `stream/play/playAudioStream` / `stream/play/streamPlay` / `stream/socketFromServer/*` / `stream/chatReq`
 - **WebRTC / face-api**: `faceApi/index` / `initialize.ts` / `initializeSnowleopard.ts`
 - **navigator API**: `gps/index`（Geolocation） / `sensor/index`（DeviceMotionEvent）
-- **その他**: `voice/index`（speechSynthesis） / `clientMode/clockMode` / `socket.ts` / `textInput.ts` の `keyDown` / `cmd/*` / `quantize/quantizePlay` / `quantize/old_setQuantize`
+- **その他**: `voice/index`（未使用の speechSynthesis ヘルパー。`voice.ts` 本体は `test/voice/voice.test.ts` でテスト） / `clientMode/clockMode` / `socket.ts` / `textInput.ts` の `keyDown` / `cmd/*` / `quantize/quantizePlay` / `quantize/old_setQuantize`
 
 これらは E2E もしくは結合テスト（実ブラウザを伴う）の対象とすることを推奨。

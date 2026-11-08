@@ -13,7 +13,7 @@ export const putLogFile = async () => {
     `${yyyy}${mm}${dd}${hh}${mi}${ss}.json`
   );
   try {
-    await fs.appendFileSync(logPath, JSON.stringify(cmdLog));
+    await fs.appendFileSync(logPath, JSON.stringify(cmdLog, null, 2) + "\n");
     return true;
   } catch (e) {
     console.log(e);

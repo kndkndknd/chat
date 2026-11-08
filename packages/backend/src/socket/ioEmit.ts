@@ -1,5 +1,7 @@
 import { ioState } from "../state/states/ioState";
+import { cmdState } from "../state";
 import { bpmStreamStateType } from "../../../../types";
+import { videoBufferDataType } from "../media/videoBufferStore";
 
 export const beatEmit = (option: any, target?: string) => {
   if (target === undefined) {
@@ -138,6 +140,27 @@ export const mediaRecReqEmit = (data?: {container: string; mimeType: string; blo
     ioState?.io.emit("mediaRecReqFromServer", data);
   } else {
     ioState?.io.to(target).emit("mediaRecReqFromServer", data);
+  }
+};
+
+export const muteReqEmit = (flag: boolean, target?: string) => {
+  if (target === undefined) {
+    ioState?.io.emit("muteReqFromServer", { flag });
+  } else {
+    ioState?.io.to(target).emit("muteReqFromServer", { flag });
+  }
+};
+
+// PLAYVIDEOBUFFER: バックエンドが保持した録画を対象クライアントへ送り返す。
+// フロントは mediaRecFromServer 受信時に playRecording で再生する。
+export const videoBufferEmit = (
+  data: videoBufferDataType,
+  target?: string,
+) => {
+  if (target === undefined) {
+    ioState?.io.emit("mediaRecFromServer", data);
+  } else {
+    ioState?.io.to(target).emit("mediaRecFromServer", data);
   }
 };
 
@@ -286,10 +309,26 @@ export const wholeCmdEmit = (option: any, target?: string) => {
   }
 };
 
-export const voiceEmit = (text: string, lang: string, target?: string) => {
-  // if (target === undefined) {
-  //   ioState?.io.emit("voiceFromServer", { text: text, lang: lang });
-  // } else {
-  //   ioState?.io.to(target).emit("voiceFromServer", { text: text, lang: lang });
-  // }
+// VOICE モードのクライアントに読み上げテキストを送る。
+// target がクライアント ID の場合はその端末だけ、all/ALL/scenario/未指定は
+// VOICE モードの全クライアントに送る。
+export const voiceEmit = (text: string, target?: string) => {
+  if (text === undefined || text.trim() === "") return;
+  if (cmdState.VOICE.length === 0) return;
+
+  const broadcast =
+    target === undefined ||
+    target === "all" ||
+    target === "ALL" ||
+    target === "scenario";
+  const targets = broadcast
+    ? cmdState.VOICE
+    : cmdState.VOICE.filter((id) => id === target);
+
+  targets.forEach((id) => {
+    ioState?.io?.to(id)?.emit("voiceFromServer", {
+      text,
+      lang: cmdState.voiceLang,
+    });
+  });
 };

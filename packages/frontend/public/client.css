@@ -17,6 +17,10 @@ body #cnvs {
   position: absolute;
   z-index: 2;
 }
+body #videoBufferCnvs {
+  position: absolute;
+  z-index: 1;
+}
 body #bckcnvs {
   position: absolute;
   z-index: 0;

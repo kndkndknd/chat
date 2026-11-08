@@ -7,4 +7,5 @@ export const flagState = createPersistedState<flagStateType>("flagState", {
   timer: true,
   vosk: true,
   scenario: true,
+  mute: false,
 });

@@ -8,6 +8,7 @@ import { whitenoise } from "./sound/whitenoise";
 import { initAudio } from "./init/initAudio";
 import { accelarateOsc } from "./sound/accelarateOsc";
 import { gpsOsc } from "./sound/gpsOsc";
+import { mute } from "./mute";
 
 export {
   bass,
@@ -20,4 +21,5 @@ export {
   initAudio,
   accelarateOsc,
   gpsOsc,
+  mute,
 };

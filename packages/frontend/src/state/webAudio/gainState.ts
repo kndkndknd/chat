@@ -2,6 +2,7 @@ import { accelarateOsc, gpsOsc } from "../../webaudio";
 
 export const gainState = {
   masterGain: null as GainNode | null,
+  muteGain: null as GainNode | null,
   chatGain: null as GainNode | null,
   oscGain: null as GainNode | null,
   feedbackGain: null as GainNode | null,

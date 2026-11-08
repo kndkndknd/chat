@@ -76,13 +76,17 @@ export const receiveEnter = async (
     strings === "HALF" ||
     strings === "FUSEJI" ||
     strings === "EMOJI" ||
-    strings === "LOOP"
+    strings === "LOOP" ||
+    strings === "MUTE" ||
+    strings === "UNMUTE"
   ) {
     execEnter(strings, id);
   } else if (strings === "STOP") {
     console.log("stop");
+    // STOP の読み上げは入力者だけに送る。source に "" を渡すことで
+    // execStop 側の voiceEmit を抑止する。
     voiceEmit(strings, id);
-    execStop("ALL");
+    execStop("", "ALL");
     // io.emit("quantizeFromServer", quantizeObj[client].stream);
   // } else if (
   //   Object.keys(parameterList).includes(strings) ||

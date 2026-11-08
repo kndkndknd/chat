@@ -1,8 +1,9 @@
-import { clientState, cmdState, streamState } from "../../state";
+import { clientState, cmdState, streamState, glitchState } from "../../state";
 import { streamList, parameterList, streamsRedis } from "../../data";
 import { execCmd } from "../execCmd";
 import { execSinewave } from "../execSinewave";
 import { parameterChange } from "../../parameterChange";
+import { parseMuteFlag, setMute } from "../mute";
 
 import { cmdEmit } from "../../socket/ioEmit";
 import { stringEmit, voiceEmit, timelapseEmit, tileClearEmit } from "../../socket/ioEmit";
@@ -42,6 +43,7 @@ import { scheduleSplitCmd } from "../../schedule/scheduleSplitCmd";
 import { getScheduleFromSplitSpace } from "../../schedule/getScheduleFromSplitSpace";
 import { deleteLog } from "../../logging/deleteLog";
 import { getTypeArr } from "./getTypeArr";
+import { glitchParam } from "./glitchParam";
 
 import { initRedis } from "../../redis/initRedis";
 
@@ -66,7 +68,15 @@ export const splitSpace = async (
   // console.log(arrTypeArr)
   // console.log(stringArr)
 
-  if (arrTypeArr[0] === "number") {
+  if (stringArr[0] === "MUTE" || stringArr[0] === "UNMUTE") {
+    // MUTE ON / MUTE OFF / UNMUTE のような引数付き指定。
+    const flag = parseMuteFlag(stringArr[0], stringArr[1]);
+    if (flag === undefined) {
+      stringEmit(`${stringArr[0]}: invalid argument ${stringArr[1]}`, true, source);
+    } else {
+      setMute(flag);
+    }
+  } else if (arrTypeArr[0] === "number") {
     const target = Object.keys(clientState.client).find(
       (key) => clientState.client[key].index === Number(stringArr[0])
     );
@@ -124,7 +134,7 @@ export const splitSpace = async (
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
     // RANDOMのみRATEとSTREAMがあるので個別処理
     if (stringArr[0] === "GLITCH") {
-      glitchChange({value: stringArr[1] === "ON" || stringArr[1] === "TRUE" ? 1 : 0});
+      glitchChange(glitchParam(stringArr[1], Object.keys(glitchState.glitch)));
     } else if (stringArr[0] === "RANDOM") {
       splitRandomRate(stringArr);
     } else if (stringArr[0] === "VOICE") {
@@ -190,7 +200,14 @@ export const splitSpace = async (
   } else if (stringArr[0] === "ALL") {
     voiceEmit(stringArr.join(" "), source !== undefined ? source : "all");
 
-    if (arrTypeArr[1] === "string" && !streamList.includes(stringArr[1])) {
+    if (stringArr[1] === "MUTE" || stringArr[1] === "UNMUTE") {
+      const flag = parseMuteFlag(stringArr[1], stringArr[2]);
+      if (flag === undefined) {
+        stringEmit(`${stringArr[1]}: invalid argument ${stringArr[2]}`, true, source);
+      } else {
+        setMute(flag);
+      }
+    } else if (arrTypeArr[1] === "string" && !streamList.includes(stringArr[1])) {
       clientState.cmdClient.forEach((client, index) => {
         execCmd(stringArr[1], client);
       });
@@ -225,11 +242,6 @@ export const splitSpace = async (
     const input = Number(stringArr[1]);
     streamState.basisBufferSize = bufferSizeChange(input);
     stringEmit(`BufferSize: ${streamState.basisBufferSize}`);
-  } else if (stringArr[0] === "TILE" && stringArr[1] === "CLEAR") {
-    // TILEモード: タイル台帳を破棄し、投影先の全タイルを消去する。
-    clearTiles();
-    tileClearEmit();
-    stringEmit("TILE: CLEARED", true);
   } else if (stringArr[0] === "CLEAR" || stringArr[0] === "INIT") {
     if (stringArr[1] === "BUFFER" || stringArr[1] === "REDIS") {
       const allKeys = await streamsRedis.getAllKeys();
@@ -364,6 +376,11 @@ export const splitSpace = async (
   } else if (stringArr[0] === "SWITCH" || stringArr[0] === "ARDUINO") {
     splitRotate("vibration", stringArr.splice(1));
     // splitArduino(stringArr);
+  } else if (stringArr[0] === "TILE" && stringArr[1] === "CLEAR") {
+    // TILEモード: タイル台帳を破棄し、投影先の全タイルを消去する。
+    clearTiles();
+    tileClearEmit();
+    stringEmit("TILE: CLEARED", true);
   } else if (stringArr[0] === "TIMELAPSE") {
     console.log("timelapse split", stringArr[1]);
     if (stringArr[1] === "FALSE" || stringArr[1] === "OFF") {

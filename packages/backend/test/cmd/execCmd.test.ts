@@ -174,9 +174,19 @@ describe("getCmd", () => {
     });
   });
 
-  test("METRONOME は target を返す", () => {
+  test("METRONOME は cmd を返し、target 未指定なら target は空になる", () => {
     const result = getCmd("METRONOME");
-    expect(result).toMatchObject({ type: "CMD", target: ["c1"] });
+    expect(result).toEqual({ type: "CMD", cmd: { cmd: "METRONOME" }, target: [] });
+  });
+
+  test("METRONOME は target 指定時にその target を返す", () => {
+    mockedPickup.mockReturnValue(["X"]);
+    const result = getCmd("METRONOME", "X");
+    expect(result).toEqual({
+      type: "CMD",
+      cmd: { cmd: "METRONOME" },
+      target: ["X"],
+    });
   });
 
   test("PREVIOUS / PREV は PREVIOUS 型を返す", () => {

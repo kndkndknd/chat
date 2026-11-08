@@ -1,13 +1,21 @@
 import { describe, expect, test, vi, beforeEach } from "vitest";
 
 vi.mock("../../../src/state", () => ({
-  clientState: { client: { c1: { index: 1 }, c2: { index: 2 } }, cmdClient: [] },
-  currentState: { cmd: {} },
+  clientState: {
+    client: { c1: { index: 1 }, c2: { index: 2 } },
+    cmdClient: ["c1"],
+  },
+  currentState: { cmd: { WHITENOISE: [] } },
   streamState: { target: {} },
+  flagState: { mute: false },
 }));
 
 vi.mock("../../../src/data", () => ({
-  cmdList: {},
+  cmdList: {
+    NOISE: "WHITENOISE",
+    WHITENOISE: "WHITENOISE",
+    SIMULATE: "SIMULATE",
+  },
   streamList: ["PLAYBACK", "TIMELAPSE", "EMPTY"],
 }));
 
@@ -19,7 +27,10 @@ vi.mock("../../../src/stream/recordEmit", () => ({
 vi.mock("../../../src/cmd/execSinewave", () => ({ execSinewave: vi.fn() }));
 vi.mock("../../../src/parameterChange", () => ({ parameterChange: vi.fn() }));
 vi.mock("../../../src/cmd/notTargetEmit", () => ({ notTargetEmit: vi.fn() }));
-vi.mock("../../../src/socket/ioEmit", () => ({ stringEmit: vi.fn() }));
+vi.mock("../../../src/socket/ioEmit", () => ({
+  stringEmit: vi.fn(),
+  muteReqEmit: vi.fn(),
+}));
 vi.mock("../../../src/stream/chatPreparation", () => ({ chatPreparation: vi.fn() }));
 vi.mock("../../../src/cmd/splitSpace/splitQuantize", () => ({ splitQuantize: vi.fn() }));
 vi.mock("../../../src/cmd/splitSpace/numPaSwitch", () => ({ numPaSwitch: vi.fn() }));
@@ -32,7 +43,64 @@ vi.mock("../../../src/bpm/changeBpm", () => ({ execChangeBPM: vi.fn() }));
 import { numTarget } from "../../../src/cmd/splitSpace/numTarget";
 import { execChangeBPM } from "../../../src/bpm/changeBpm";
 import { splitBeat } from "../../../src/stream/quantize/splitBeat";
-import { stringEmit } from "../../../src/socket/ioEmit";
+import { muteReqEmit, stringEmit } from "../../../src/socket/ioEmit";
+import { execCmd } from "../../../src/cmd/execCmd";
+import { currentState } from "../../../src/state";
+
+describe("numTarget cmd alias", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    currentState.cmd.WHITENOISE = [];
+  });
+
+  test("NOISE は WHITENOISE に解決して execCmd を呼ぶ", () => {
+    numTarget(["c1"], ["NOISE"], ["string"]);
+    expect(execCmd).toHaveBeenCalledWith("WHITENOISE", "c1", true);
+  });
+
+  test("WHITENOISE はそのまま execCmd を呼ぶ", () => {
+    numTarget(["c1"], ["WHITENOISE"], ["string"]);
+    expect(execCmd).toHaveBeenCalledWith("WHITENOISE", "c1", true);
+  });
+
+  test("SIMULATE は currentState.cmd に無くても対象端末のみに execCmd を呼ぶ", () => {
+    expect(() => numTarget(["c1"], ["SIMULATE"], ["string"])).not.toThrow();
+    expect(execCmd).toHaveBeenCalledWith("SIMULATE", "c1", true);
+    expect(stringEmit).not.toHaveBeenCalled();
+  });
+
+  test("未定義コマンドでもエラーにならず not cmd を返す", () => {
+    expect(() => numTarget(["c1"], ["UNKNOWN"], ["string"])).not.toThrow();
+    expect(stringEmit).toHaveBeenCalledWith("not cmd", true, "c1");
+    expect(execCmd).not.toHaveBeenCalled();
+  });
+
+  test("MUTE は対象指定に関係なく全体ミュートを1回送る", () => {
+    numTarget(["c1", "c2"], ["MUTE"], ["string"]);
+    expect(muteReqEmit).toHaveBeenCalledTimes(1);
+    expect(muteReqEmit).toHaveBeenCalledWith(true);
+  });
+
+  test("MUTE OFF は全体のミュート解除を送る", () => {
+    numTarget(["c1"], ["MUTE", "OFF"], ["string", "string"]);
+    expect(muteReqEmit).toHaveBeenCalledWith(false);
+  });
+
+  test("target が存在しない場合は MUTE を送信しない", () => {
+    numTarget([undefined as unknown as string], ["MUTE"], ["string"]);
+    expect(muteReqEmit).not.toHaveBeenCalled();
+  });
+
+  test("MUTE の不正な引数はエラー表示し、送信しない", () => {
+    numTarget(["c1"], ["MUTE", "FOO"], ["string", "string"]);
+    expect(muteReqEmit).not.toHaveBeenCalled();
+    expect(stringEmit).toHaveBeenCalledWith(
+      "MUTE: invalid argument FOO",
+      true,
+      "c1",
+    );
+  });
+});
 
 describe("numTarget BPM", () => {
   beforeEach(() => vi.clearAllMocks());

@@ -11,7 +11,8 @@
 //   - 受信は ontrack の MediaStream をそのまま <video remoteVideo> に流す (MSE 不要)。
 //   - 無人運用のため WS 切断 / peer-left で自動再接続・再 join する。
 
-import { streamState, webRtcState } from "../state";
+import { flagState, streamState, webRtcState } from "../state";
+import { onMuteChange } from "../state/muteState";
 import {
   CHAT_SYNC_WS_URL,
   ICE_SERVERS,
@@ -99,6 +100,8 @@ export class SyncClient {
   private remoteAudioSource: MediaStreamAudioSourceNode | null = null;
   private remoteGain: GainNode | null = null;
   private remoteCompressor: DynamicsCompressorNode | null = null;
+  // グローバルミュート中は受信音声のゲインを 0 にする。
+  private muted = flagState.mute;
 
   // 再接続制御
   private stopRequested = false;
@@ -110,6 +113,7 @@ export class SyncClient {
   constructor() {
     // chat_sync のログでブラウザクライアントと区別できるよう itsuki- を前置する。
     this.peerId = ITSUKI_PEER_PREFIX + Math.random().toString(36).slice(2, 8);
+    onMuteChange((flag) => this.setMuted(flag));
   }
 
   // ロード時に呼ぶ。streamState.stream が用意できるまで待ってから接続する。
@@ -414,7 +418,7 @@ export class SyncClient {
 
     const source = this.audioCtx.createMediaStreamSource(this.remoteStream);
     const gain = this.audioCtx.createGain();
-    gain.gain.value = REMOTE_AUDIO_GAIN;
+    gain.gain.value = this.muted ? 0 : REMOTE_AUDIO_GAIN;
 
     // 増幅で飽和したピークを抑えるリミッター設定のコンプレッサー。
     // threshold 付近から強い ratio で圧縮し、knee=0 でハードに頭打ちさせる。
@@ -434,6 +438,17 @@ export class SyncClient {
     void this.audioCtx.resume().catch(() => {
       /* gesture 待ちなどの一時失敗は無視 */
     });
+  }
+
+  private setMuted(flag: boolean): void {
+    this.muted = flag;
+    if (this.remoteGain && this.audioCtx) {
+      this.remoteGain.gain.setTargetAtTime(
+        flag ? 0 : REMOTE_AUDIO_GAIN,
+        this.audioCtx.currentTime,
+        0.01,
+      );
+    }
   }
 
   private teardownAmplifiedAudio(): void {

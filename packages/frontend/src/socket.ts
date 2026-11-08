@@ -31,6 +31,8 @@ import { recordAll, uploadRecording, playRecording } from "./mediaRecorder";
 import { bpmFromServer } from "./quantize/bpmFromServer";
 import { loopToggle } from "./stream/loop/loopToggle";
 import { streamReq } from "./stream/streamReq";
+import { voice } from "./voice";
+import { mute } from "./webaudio";
 
 export const socket = (): void => {
 
@@ -220,6 +222,12 @@ export const socket = (): void => {
     },
   );
 
+  socketState.socket.on("muteReqFromServer", (data: { flag: boolean }) => {
+    if (data.flag !== undefined) {
+      mute(data.flag);
+    }
+  });
+
   socketState.socket.on("quantizeFromServer", (data: bpmStreamStateType) => {
     quantizeFromServer(data);
   });
@@ -372,24 +380,9 @@ export const socket = (): void => {
   socketState.socket.on(
     "voiceFromServer",
     (data: { text: string; lang: string }) => {
-
-      const uttr = new SpeechSynthesisUtterance();
-      uttr.lang = data.lang;
-      uttr.text = data.text;
-      // 英語に対応しているvoiceを設定
-      speechSynthesis.onvoiceschanged = () => {
-        const voices = speechSynthesis.getVoices();
-        for (let i = 0; i < voices.length; i++) {
-          console.log(voices[i]);
-          if (voices[i].lang === "en-US") {
-            console.log("hit");
-            console.log(voices[i]);
-            uttr.voice = voices[i];
-          }
-        }
-      };
-
-      speechSynthesis.speak(uttr);
+      // left/right パスと英語は Web Audio 経由でサーバー音声を再生し、
+      // 生成失敗時や日本語の通常パスは speechSynthesis にフォールバックする。
+      void voice(data);
     },
   );
 

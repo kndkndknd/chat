@@ -90,9 +90,11 @@ export const getCmd = (cmdStrings: string,
       };
       return { type: "CMD", cmd, target: targetIdArr };
     case "METRONOME":
-      return { type: "CMD", cmd, target: targetIdArr };
-      // metronomeEmit(cmd, target);
-      // break;
+      cmd = {
+        cmd: "METRONOME",
+      };
+      // target 未指定時は metronomeEmit 側で対象を選ばせる
+      return { type: "CMD", cmd, target: target ? targetIdArr : [] };
     case "PREVIOUS":
     case "PREV":
       console.log("previous");
@@ -117,6 +119,16 @@ export const getCmd = (cmdStrings: string,
         cmd: "CLICK",
         gain: cmdState.GAIN.CLICK,
         value: clickFreqValue,
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
+    case "VIDEOBUFFER":
+      cmd = {
+        cmd: "VIDEOBUFFER",
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
+    case "PLAYVIDEOBUFFER":
+      cmd = {
+        cmd: "PLAYVIDEOBUFFER",
       };
       return { type: "CMD", cmd, target: targetIdArr };
     case "WHITENOISE":

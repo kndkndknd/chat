@@ -74,13 +74,15 @@ pnpm install
 | `pi` | 特定のマイク（`mics[2]`）を使用。 |
 | `nosound` | `\` キーの BASS 発音を抑制。 |
 | `noStream` / `nostream` | `clientMode: "noStream"` で接続（ストリームを送らない）。 |
-| `left` / `right` | マスターをステレオ左右に振る。 |
+| `left` / `right` | マスターと VOICE 読み上げをステレオ左右に振る。 |
 | `counter` | 入力文字を回転要求（`rotateReqFromClient`）に使い、一定文字数を超えると読み上げ・サイン波を出すカウンターモード。 |
 | `counterbalance` | 端末の加速度センサー値を feedbackGain に反映。 |
 | `webrtc` | 初期化を自動実行し、`chat_sync` へ直接 WebRTC 接続する送信端末。 |
 | `relay` | `/webrtc` 端末から `/ws` 経由で中継された映像・音声を受信する端末。 |
 
 `html/snowleopard.html` は Safari / WebKit 向けのフォールバック（AudioWorklet の代わりに ScriptProcessor、wasm を使わない）です。
+
+`left` / `right` の VOICE 読み上げは、バックエンドの `/api/voice` が macOS の `say` で生成した WAV を Web Audio の panner 経由で再生します。`say` が使えない環境では従来の speechSynthesis（パンなし）にフォールバックします。詳細は [document/voice.md](./document/voice.md) を参照してください。
 
 ## キーボード操作
 
@@ -113,8 +115,11 @@ pnpm install
 | `PREVIOUS` / `PREV` | 直前の再生内容を再実行。 |
 | `RECORD` / `REC` | クライアント側で映像・音声を保持（録画要求）。 |
 | `PLAYBACK` | 保持した映像・音声を再生。 |
+| `VIDEOBUFFER` | 対象端末で 10 秒録画し、バックエンド (Redis) に直近 1 本を保持。 |
+| `PLAYVIDEOBUFFER` | 保持した録画を対象端末で再生。 |
 | `TIMELAPSE` | クライアントが定期送信している映像・音声を受信して再生。 |
 | `EMPTY` | 空バッファを再生（無音の再生枠）。 |
+| `CINEMA` / `VIDEO` / `VID` / `MOVIE` / `MOV` | `<repo>/../hls` の HLS をランダムに選び、対象端末で上映。番号指定なしは全ストリーム端末。 |
 | `STOP` | 全停止（`Escape` も同じ）。 |
 
 ### パラメータ
@@ -123,9 +128,9 @@ pnpm install
 | --- | --- |
 | `PORTAMENT` / `PORT` | サイン波周波数変化を滑らかに（秒指定／単体で 0⇔5 切替）。 |
 | `SAMPLERATE` / `RATE` | サンプリングレート変更（約 4000〜132300Hz）。 |
-| `GLITCH` | カメラ画像のグリッチ（音声はリバーブ）。 |
+| `GLITCH` | カメラ画像のグリッチ（音声はリバーブ）。単体で全トグル、`ON`/`TRUE`・`OFF`/`FALSE` で全指定、`CHAT`/`PLAYBACK`/`TIMELAPSE` で個別トグル。 |
 | `GRID` | BPM グリッド再生。 |
-| `VOICE` | その端末の読み上げモードをトグル／ON/OFF。 |
+| `VOICE` | その端末の読み上げモードをトグル（`<index> VOICE ON/OFF` で指定端末を設定）。詳細は [voice.md](./document/voice.md)。 |
 | `RANDOM` | PLAYBACK / UPLOAD の再生順をランダム化。 |
 | `TWICE` / `HALF` | 現在のサイン波周波数を 2 倍 / 1/2。 |
 | `FUSEJI` / `EMOJI` | emoji 表示フラグをトグル。 |
@@ -137,6 +142,7 @@ pnpm install
 | コマンド | 概要 |
 | --- | --- |
 | `SELF` | その端末のみで発音する self フラグをトグル。 |
+| `MUTE` / `UNMUTE` | 全端末の音声出力をミュート / 解除。`MUTE ON` / `MUTE OFF` も可。 |
 | `NO` / `NUMBER` | 各クライアントの index 番号を表示。 |
 | `TORCH` / `BLINK` | 端末の照明を点灯（STEADY）／点滅（BLINK）。 |
 | `SWITCH` / `ROTATE` | M5 の vibration / rotation リレーをトグル。 |
@@ -147,6 +153,8 @@ pnpm install
 | `VOSK` | クライアントに Vosk 呼び出しを送信。 |
 | `CHATASYNC` | 接続順に「chat」「(async)」を順次送信。 |
 | `START` / `SCENARIO` | シナリオを読み込んで実行。 |
+
+`MUTE` / `UNMUTE` は全端末共通の操作です。`MUTE` はトグルではなく常にミュートし、解除は `UNMUTE` または `MUTE OFF` で行います。`ALL MUTE` や `<index> MUTE` も受け付けますが、対象指定に関係なく全端末に適用されます。
 
 ### スペース区切りのサブコマンド
 
@@ -169,6 +177,7 @@ pnpm install
 | `PA ...` | PA ターゲット制御。 |
 | `PLAYBACK <index>` | 指定 index から再生。 |
 | `QUANTIZE ...` | クオンタイズパラメータ設定。 |
+| `RANDOM RATE ...` | サンプルレートのランダマイズ設定。詳細は [splitRandomRate.md](./document/splitRandomRate.md)。 |
 | `RECORD AS <name>` | 別名で録音。 |
 | `ROTATE ...` / `SWITCH` | rotation / vibration リレー制御。 |
 | `STOP ...` | 部分停止。 |
@@ -205,6 +214,7 @@ pnpm install
 | GET | `/` | `static/html/index.html` を返す。 |
 | GET | `/vosk` | `static/html/vosk.html` を返す。 |
 | GET | `/rotate` | `static/html/rotate.html` を返す。 |
+| GET | `/api/voice` | VOICE 読み上げ用の WAV を macOS の `say` で生成（`text` / `lang`）。 |
 | GET | `/:name` | 任意パスを `index.html` にフォールバック。 |
 | POST | `/api/scenario` | `scenarioItsuki` を起動（実行中なら停止して再起動）。 |
 | POST | `/api/clear-buffer` | Redis の streamBuffer をクリア（`body.stream` 省略時は `CHAT/EMPTY/KICK/SNARE/HAT` 以外）。 |
