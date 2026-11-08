@@ -226,11 +226,6 @@ export const splitSpace = async (
     const input = Number(stringArr[1]);
     streamState.basisBufferSize = bufferSizeChange(input);
     stringEmit(`BufferSize: ${streamState.basisBufferSize}`);
-  } else if (stringArr[0] === "TILE" && stringArr[1] === "CLEAR") {
-    // TILEモード: タイル台帳を破棄し、投影先の全タイルを消去する。
-    clearTiles();
-    tileClearEmit();
-    stringEmit("TILE: CLEARED", true);
   } else if (stringArr[0] === "CLEAR" || stringArr[0] === "INIT") {
     if (stringArr[1] === "BUFFER" || stringArr[1] === "REDIS") {
       const allKeys = await streamsRedis.getAllKeys();
@@ -365,6 +360,11 @@ export const splitSpace = async (
   } else if (stringArr[0] === "SWITCH" || stringArr[0] === "ARDUINO") {
     splitRotate("vibration", stringArr.splice(1));
     // splitArduino(stringArr);
+  } else if (stringArr[0] === "TILE" && stringArr[1] === "CLEAR") {
+    // TILEモード: タイル台帳を破棄し、投影先の全タイルを消去する。
+    clearTiles();
+    tileClearEmit();
+    stringEmit("TILE: CLEARED", true);
   } else if (stringArr[0] === "TIMELAPSE") {
     console.log("timelapse split", stringArr[1]);
     if (stringArr[1] === "FALSE" || stringArr[1] === "OFF") {
