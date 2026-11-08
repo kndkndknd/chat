@@ -174,6 +174,7 @@ pnpm install
 | `PA ...` | PA ターゲット制御。 |
 | `PLAYBACK <index>` | 指定 index から再生。 |
 | `QUANTIZE ...` | クオンタイズパラメータ設定。 |
+| `RANDOM RATE ...` | サンプルレートのランダマイズ設定。詳細は [splitRandomRate.md](./document/splitRandomRate.md)。 |
 | `RECORD AS <name>` | 別名で録音。 |
 | `ROTATE ...` / `SWITCH` | rotation / vibration リレー制御。 |
 | `STOP ...` | 部分停止。 |
