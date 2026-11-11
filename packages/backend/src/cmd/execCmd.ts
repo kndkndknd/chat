@@ -17,6 +17,12 @@ export const execCmd = (
   flag?: boolean,
 ) => {
   const command = getCmd(cmdStrings, target, flag);
+  // ALL QUANTIZE など、getCmd が対応していないコマンドは何もしない。
+  // ここで return しないと command.type 参照で TypeError になり、
+  // 呼び出し元が await していないため未処理 rejection になる。
+  if (!command) {
+    return;
+  }
   switch (command.type) {
     case "CMD":
       if(command.cmd.cmd === "METRONOME") {
