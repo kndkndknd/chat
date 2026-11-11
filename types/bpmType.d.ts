@@ -35,7 +35,7 @@ type Stream = (typeof streamList)[number];
 
 export type quantizeParamClass = Partial<{
   flag: boolean; // 要素① "TRUE"/"FALSE" -> boolean
-  stream: Stream; // 要素② streamListのいずれか
+  stream: Stream; // 要素② streamList / CHAT / ALL
   beat: number; // 要素③ 数値文字列かつ <= 32
   bpm: number; // 要素④ 数値文字列かつ >= 33
 }>;

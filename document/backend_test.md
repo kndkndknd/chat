@@ -61,7 +61,7 @@ pnpm -F backend exec vitest run
 | `test/cmd/splitSpace/getTypeArr.test.ts` | `getTypeArr` | `src/cmd/splitSpace/getTypeArr.ts` | 数字/英字/空文字/混在/空配列/混在配列を分類 |
 | `test/cmd/splitSpace/modulationByBPM.test.ts` | `modulationByBPM` | `src/cmd/splitSpace/modulationByBPM.ts` | 先頭は baseFrequency / index 別の周波数計算 / 空配列 / BPM<=0 はエラー |
 | `test/cmd/splitSpace/calculateModulationFrequency.test.ts` | `calculateModulationFrequency` | 同上 | plusminus=true/false / period<=0 でエラー / 非整数 period |
-| `test/cmd/splitSpace/classifyArgs.test.ts` | `classifyArgs` | `src/cmd/splitSpace/splitQuantize.ts` | 空 / TRUE-FALSE / stream / beat<=32 / bpm>=33 / 4 要素混在 / 不正値破棄 / 重複は最初優先 / trim |
+| `test/cmd/splitSpace/classifyArgs.test.ts` | `classifyArgs` | `src/cmd/splitSpace/splitQuantize.ts` | 空 / TRUE-FALSE / stream（CHAT/ALL 含む） / streamList 追加 stream / beat<=32 / bpm>=33 / 4 要素混在 / 不正値破棄 / 重複は最初優先 / trim |
 | `test/route/selectOtherClient.test.ts` | `selectOtherClient` | `src/route.ts` | 空 rooms / 単一キー / 複数キー（source 除外） |
 | `test/route/pickupTarget.test.ts` | `pickupTarget` | 同上 | adapter.rooms 未定義 / list キーマッチ / list 空 / undefined 値スキップ |
 | `test/route/pickCmdTarget.test.ts` | `pickCmdTarget` | 同上 | duplicate 経路 / none 経路 / 最小 timestamp 経路 / room フィルタ |
@@ -104,11 +104,12 @@ pnpm -F backend exec vitest run
 | `test/stream/pickupStreamTarget/pickupPaStreamTarget.test.ts` | `pickupPaStreamTarget` | 同上 | paStreamClient 空 → 空文字 / 非空からランダム |
 | `test/stream/sampleRateRandomize.test.ts` | `sampleRateRandomize` | `src/stream/sampleRateRandomize.ts` | random / diatonic / diatonic で min>max エラー / serial |
 | `test/stream/genEmptyBuff.test.ts` | `genEmptyBuff` | `src/stream/genEmptyBuff.ts` | basisBufferSize 個の Float32 で全て 1.0 |
+| `test/stream/pushStateStream.test.ts` | `pushStateStream` | `src/stream/pushStateStream.ts` | 新規 stream を streamList と bpmState に追加 / 既存 stream の QUANTIZE・BEAT 設定を保持し重複追加しない |
 | `test/stream/quantize/quantize.test.ts` | `quantize` | `src/stream/quantize/quantize.ts` | splited=false で多数決（true 1 件 → 全 true 化） / splited=true は state 透過 / 過半数 true で全 false 化 |
-| `test/stream/quantize/setParamsSplitQuantize.test.ts` | `setParamsSplitQuantize` | `src/stream/quantize/setParamsSplitQuantize.ts` | 全 true なら true 維持 / 1 つでも false なら全 false / params.flag=true で対象更新（gridFlag=false） / params.beat を反映 / params.stream で部分更新 / target 未指定で全 client |
+| `test/stream/quantize/setParamsSplitQuantize.test.ts` | `setParamsSplitQuantize` | `src/stream/quantize/setParamsSplitQuantize.ts` | 全 true なら true 維持 / 1 つでも false なら全 false / params.flag=true で対象更新（gridFlag=false） / params.beat を反映 / params.stream で部分更新（CHAT 含む） / params.stream=ALL で CHAT・動的 stream を含む全更新 / target 未指定で全 client / 対象外 client の flag に引きずられない / streamList 追加 UPLOAD stream |
 | `test/stream/quantize/splitBeat.test.ts` | `splitBeat` / `emitSplitBeat` | `src/stream/quantize/splitBeat.ts` | target 指定時は対象のみ変更し `io.to(target)` で送信（`io.emit` しない） / stream 指定 / target 未指定時は各 client へ個別送信 / RANDOM は beat 0 |
-| `test/stream/quantize/emitQuantizeText.test.ts` | `emitQuantizeText` | `src/stream/quantize/emitQuantizeText.ts` | 対象 client のみ `QUANTIZE:<flag>` を timeout=true で送る / 複数 client / stream 指定時はその stream の flag / client undefined・不在は送らない / clients 空 |
-| `test/cmd/splitSpace/splitQuantize.test.ts` | `splitQuantize` | `src/cmd/splitSpace/splitQuantize.ts` | target 指定時は対象のみ `emitQuantizeText` / stream 指定を渡す / target 未指定時は全 client / paramArr 空 + target |
+| `test/stream/quantize/emitQuantizeText.test.ts` | `emitQuantizeText` | `src/stream/quantize/emitQuantizeText.ts` | 対象 client のみ `QUANTIZE:<flag>` を timeout=true で送る / 複数 client / stream 指定時はその stream の flag / stream=ALL は既定 stream (PLAYBACK) の flag / client undefined・不在は送らない / clients 空 |
+| `test/cmd/splitSpace/splitQuantize.test.ts` | `splitQuantize` | `src/cmd/splitSpace/splitQuantize.ts` | target 指定時は対象のみ `emitQuantizeText` / stream 指定を渡す（CHAT/ALL 含む） / target 未指定時は全 client / paramArr 空 + target |
 | `test/cmd/splitSpace/numTarget.test.ts` | `numTarget` | `src/cmd/splitSpace/numTarget.ts` | `BPM <number>` で対象 client の `execChangeBPM` を呼び、対象のみへ `stringEmit("BPM:<n>", true, target)` / 複数 target / `BEAT <number>`・`BEAT <number> <stream>` で `splitBeat` を呼ぶ / target undefined はどちらも呼ばない |
 | `test/bpm/changeBpm.test.ts` | `execChangeBPM` | `src/bpm/changeBpm.ts` | target 指定時は対象 client のみ bpm 変更・対象へ送信 / target 未指定時は全 client |
 

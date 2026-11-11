@@ -57,6 +57,18 @@ describe("emitQuantizeText", () => {
     expect(stringEmit).toHaveBeenCalledWith("QUANTIZE:false", true, "c1");
   });
 
+  test("stream が ALL のときは既定の stream (PLAYBACK) の flag を使う", () => {
+    const obj = {
+      c1: {
+        PLAYBACK: streamState(true),
+        TIMELAPSE: streamState(true),
+        EMPTY: streamState(true),
+      },
+    };
+    emitQuantizeText(obj, ["c1"], "ALL");
+    expect(stringEmit).toHaveBeenCalledWith("QUANTIZE:true", true, "c1");
+  });
+
   test("client が undefined / obj に無い場合は送らない", () => {
     emitQuantizeText(makeObj({ c1: true }), [undefined as unknown as string]);
     expect(stringEmit).not.toHaveBeenCalled();

@@ -135,7 +135,7 @@ pnpm install
 | `TWICE` / `HALF` | 現在のサイン波周波数を 2 倍 / 1/2。 |
 | `FUSEJI` / `EMOJI` | emoji 表示フラグをトグル。 |
 | `FILTER` | 全ストリームの filter フラグをトグル。 |
-| `QUANTIZE` | クオンタイズを実行。 |
+| `QUANTIZE` | クオンタイズを実行。`EMPTY` や `UPLOAD` で追加されたストリームも対象。 |
 
 ### 端末・状態制御
 
@@ -176,7 +176,7 @@ pnpm install
 | `LOG FILE\|PUT\|EXPORT\|IMPORT\|CLEAR` | コマンドログの保存・読込・削除。 |
 | `PA ...` | PA ターゲット制御。 |
 | `PLAYBACK <index>` | 指定 index から再生。 |
-| `QUANTIZE ...` | クオンタイズパラメータ設定。 |
+| `QUANTIZE ...` | クオンタイズパラメータ設定。`CHAT` / `EMPTY` / `UPLOAD` 追加ストリームも指定可。`ALL` は `CHAT` を含む全ストリーム。 |
 | `RANDOM RATE ...` | サンプルレートのランダマイズ設定。詳細は [splitRandomRate.md](./document/splitRandomRate.md)。 |
 | `RECORD AS <name>` | 別名で録音。 |
 | `ROTATE ...` / `SWITCH` | rotation / vibration リレー制御。 |

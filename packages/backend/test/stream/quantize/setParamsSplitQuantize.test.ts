@@ -20,6 +20,7 @@ vi.mock("../../../src/data", () => ({
 
 import { setParamsSplitQuantize } from "../../../src/stream/quantize/setParamsSplitQuantize";
 import { bpmState } from "../../../src/state";
+import { streamList } from "../../../src/data";
 
 const baseStream = (q: boolean) => ({
   beat: 4,
@@ -32,6 +33,7 @@ const setupBpmState = (clients: string[]) => {
   for (const c of clients) {
     (bpmState as any)[c] = {
       stream: {
+        CHAT: baseStream(false),
         PLAYBACK: baseStream(false),
         TIMELAPSE: baseStream(false),
         EMPTY: baseStream(false),
@@ -90,6 +92,81 @@ describe("setParamsSplitQuantize", () => {
     expect(result.c1.PLAYBACK.quantizeFlag).toBe(true);
     expect(result.c1.TIMELAPSE.quantizeFlag).toBe(false);
     expect(result.c1.EMPTY.quantizeFlag).toBe(false);
+  });
+
+  test("params.stream に CHAT を指定できる", () => {
+    const result = setParamsSplitQuantize(
+      { flag: true, stream: "CHAT" as any, beat: 8 },
+      ["c1"],
+    );
+
+    expect(result.c1.CHAT.quantizeFlag).toBe(true);
+    expect(result.c1.CHAT.gridFlag).toBe(false);
+    expect(result.c1.CHAT.beat).toBe(8);
+    expect(result.c1.PLAYBACK.quantizeFlag).toBe(false);
+    expect(result.c2.CHAT.quantizeFlag).toBe(false);
+  });
+
+  test("params.stream に ALL を指定すると CHAT と動的 stream を含む全ストリームを更新", () => {
+    (streamList as string[]).push("UPLOADED");
+    (bpmState as any).c1.stream.UPLOADED = baseStream(false);
+    (bpmState as any).c2.stream.UPLOADED = baseStream(false);
+
+    try {
+      const result = setParamsSplitQuantize(
+        { flag: true, stream: "ALL" as any },
+        ["c1"],
+      );
+
+      for (const stream of [
+        "CHAT",
+        "PLAYBACK",
+        "TIMELAPSE",
+        "EMPTY",
+        "UPLOADED",
+      ]) {
+        expect(result.c1[stream].quantizeFlag).toBe(true);
+        expect(result.c2[stream].quantizeFlag).toBe(false);
+      }
+    } finally {
+      const index = streamList.indexOf("UPLOADED");
+      if (index >= 0) streamList.splice(index, 1);
+      delete (bpmState as any).c1.stream.UPLOADED;
+      delete (bpmState as any).c2.stream.UPLOADED;
+    }
+  });
+
+  test("対象クライアントがすべて ON なら、対象外クライアントの OFF に引きずられない", () => {
+    for (const stream of ["PLAYBACK", "TIMELAPSE", "EMPTY"]) {
+      (bpmState as any).c1.stream[stream].quantizeFlag = true;
+    }
+
+    const result = setParamsSplitQuantize({}, ["c1"]);
+
+    for (const stream of ["PLAYBACK", "TIMELAPSE", "EMPTY"]) {
+      expect(result.c1[stream].quantizeFlag).toBe(true);
+      expect(result.c2[stream].quantizeFlag).toBe(false);
+    }
+  });
+
+  test("streamList に追加された UPLOAD stream も対象になる", () => {
+    (streamList as string[]).push("UPLOADED");
+    (bpmState as any).c1.stream.UPLOADED = baseStream(false);
+    (bpmState as any).c2.stream.UPLOADED = baseStream(false);
+
+    try {
+      const result = setParamsSplitQuantize(
+        { flag: true, stream: "UPLOADED" as any },
+        ["c1"],
+      );
+      expect(result.c1.UPLOADED.quantizeFlag).toBe(true);
+      expect(result.c2.UPLOADED.quantizeFlag).toBe(false);
+    } finally {
+      const index = streamList.indexOf("UPLOADED");
+      if (index >= 0) streamList.splice(index, 1);
+      delete (bpmState as any).c1.stream.UPLOADED;
+      delete (bpmState as any).c2.stream.UPLOADED;
+    }
   });
 
   test("target が undefined または 'all' なら全クライアントが対象", () => {

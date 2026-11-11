@@ -9,6 +9,7 @@ import {
 } from "../state";
 import { quantizeType } from "../../../../types";
 import { quantizePlay } from "./quantizePlay";
+import { ensureQuantizeStream } from "./quantizeStream";
 import { chatReq } from "../stream";
 
 // 直近のtick時刻(ms)。BPM変更時に経過時間を考慮して次tickを再アームするために使う。
@@ -25,13 +26,17 @@ export const quantizeFromServer = (
   }
 
   for (const stream in data) {
-    if (quantizeState.stream[stream] === undefined) {
+    const streamData = data[stream];
+    if (streamData === undefined) {
       continue;
     }
-    const wasQuantize = quantizeState.stream[stream].flag;
-    const nextQuantize = data[stream].quantizeFlag;
-    quantizeState.stream[stream].flag = nextQuantize;
-    quantizeState.stream[stream].beat = data[stream].beat;
+    // EMPTY や UPLOAD 等で後から追加された stream も扱えるように、
+    // 未知の stream はここで quantizeState に登録する。
+    const streamState = ensureQuantizeStream(stream, streamData.beat);
+    const wasQuantize = streamState.flag;
+    const nextQuantize = streamData.quantizeFlag;
+    streamState.flag = nextQuantize;
+    streamState.beat = streamData.beat;
 
     // quantizeがOFFになったら未再生のチャンクを破棄し、CHATなら録音リレーを再開させる。
     // ONの間は受信チャンクを再生せずバッファするだけでchatReqが呼ばれないため、
