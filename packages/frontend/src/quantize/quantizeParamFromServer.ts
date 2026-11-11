@@ -1,12 +1,15 @@
 import type { bpmStreamStateType } from "../../../../types";
-import { quantizeState } from "../state";
+import { ensureQuantizeStream } from "./quantizeStream";
 import { textPrint } from "../canvasEvent";
 
 export const quantizeParamFromServer = (data:bpmStreamStateType, streams: string[]): void => { 
-  for ( const stream in quantizeState.stream) {
-    if(streams.includes(stream) && data[stream] !== undefined) {
-      quantizeState.stream[stream].beat = data[stream].beat;
+  for (const stream of streams) {
+    const streamData = data[stream];
+    if (streamData === undefined) {
+      continue;
     }
+    // BEAT で指定された stream がまだ quantizeState に無い場合も登録する。
+    ensureQuantizeStream(stream, streamData.beat).beat = streamData.beat;
   }
   textPrint(`BEAT: ${data['CHAT']?.beat ?? ''}`, { timeout: true })
 };
