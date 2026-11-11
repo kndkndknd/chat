@@ -4,6 +4,7 @@ import { feedback } from "./sound/feedback";
 import { metronome } from "./sound/metronome";
 import { simulate } from "./sound/simulate";
 import { sinewave } from "./sound/sinewave";
+import { synth, stopSynth } from "./sound/synth";
 import { whitenoise } from "./sound/whitenoise";
 import { initAudio } from "./init/initAudio";
 import { accelarateOsc } from "./sound/accelarateOsc";
@@ -17,6 +18,8 @@ export {
   metronome,
   simulate,
   sinewave,
+  synth,
+  stopSynth,
   whitenoise,
   initAudio,
   accelarateOsc,

@@ -46,6 +46,9 @@ export const commonPickupCmdTarget = (
       case "SIMULATE":
         console.log("SIMULATE:", clientArr);
         return clientArr;
+      case "SYNTH":
+        // SYNTH は指定が無ければ接続中の全クライアントで鳴らす。
+        return clientArr;
       case "SINEWAVE":
         if (Object.keys(currentState.sinewave).length === 0) {
           //どの端末も音を出していない場合

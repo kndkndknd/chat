@@ -57,6 +57,7 @@ pnpm -F frontend exec vitest run
 | `test/socket/SocketFacade/serialize.test.ts` | `serialize` | `src/socket/SocketFacade.ts` | { type, data } JSON 化 / ArrayBuffer マーカ変換 / ネスト ArrayBuffer / data=undefined / 8KB を超える ArrayBuffer (CHUNK 境界) |
 | `test/socket/SocketFacade/deserialize.test.ts` | `deserialize` | 同上 | 通常 JSON / __type=ArrayBuffer 復元（バイト一致） / ネスト ArrayBuffer / serialize→deserialize ラウンドトリップ |
 | `test/webaudio/sound/setBassNote.test.ts` | `setBassNote` | `src/webaudio/sound/bass.ts` | 確率テーブルの境界値（0/0.45/0.6/0.8/0.95）/ 戻り値が許容セットに含まれることを random 全範囲で確認 |
+| `test/webaudio/sound/synth.test.ts` | `pickSynthFrequency` / `resolveSynthFrequency` / `synth` / `stopSynth` | `src/webaudio/sound/synth.ts` | SYNTH_NOTES からの選択 / 20〜20000Hz の周波数検証 / 指定周波数のオシレータ反映 / AudioContext 未初期化時に例外を投げない |
 | `test/mediaRecorder/supportedContainers.test.ts` | `supportedContainers` | `src/mediaRecorder/recorder.ts` | WebM が使えれば WebM のみ / WebM 不可で Ogg へフォールバック / 両方不可で空配列 / MediaRecorder 無しで空配列 |
 
 ### STATE_READ 関数（`vi.mock` で state を差し替え）
@@ -113,7 +114,7 @@ beforeEach(async () => {
 戻り値を持たない（`void`）か、ブラウザ API に深く結合しているため未テスト:
 
 - **DOM / Canvas**: `canvasEvent/*`（`canvasSizing` / `flickering` / `initVideo` / `showImage` / `textPrint` / `eraseText` / `print` / `toBase64` 他）
-- **Web Audio API**: `webaudio/sound/*`（`bass` 本体 / `click` / `feedback` / `metronome` / `simulate` / `sinewave` / `whitenoise` / `accelarateOsc` / `gpsOsc`） / `webaudio/init/initAudio` / `webaudio/params/gainChange`
+- **Web Audio API**: `webaudio/sound/*`（`bass` 本体 / `click` / `feedback` / `metronome` / `simulate` / `sinewave` / `synth` / `whitenoise` / `accelarateOsc` / `gpsOsc`） / `webaudio/init/initAudio` / `webaudio/params/gainChange`
 - **WebSocket / SocketFacade**: `connectWebSocket` / `keyDown` / `cmdMessage` / `SocketFacade.{constructor,_connect,emit,connect}`（クラスメソッド）
 - **MediaStream / Recording**: `recording/*` / `scriptProcessor/*` / `stream/init/initAudioStream` / `stream/play/playAudioStream` / `stream/play/streamPlay` / `stream/socketFromServer/*` / `stream/chatReq`
 - **WebRTC / face-api**: `faceApi/index` / `initialize.ts` / `initializeSnowleopard.ts`

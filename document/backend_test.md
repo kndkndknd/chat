@@ -95,7 +95,8 @@ pnpm -F backend exec vitest run
 | `test/clientSetting/connectFromClient.test.ts` | `connectFromClient` | `src/clientSetting/connectFromClient.ts` | /nosound 早期 return / /1 で facedetection client 登録 / /3 で hanged / clientMode='client' /project / clientMode='noStream' / clientMode='arduinoClient' / urlPathName 'pi' で arduinoState.host 設定 |
 | `test/clientSetting/floatingPosition.test.ts` | `floatingPosition` | `src/clientSetting/floatingPosition.ts` | 既存 client は自分の position / projection 0 件 default / 非 projection 1 件 case 1 / projection あり時の基準 |
 | `test/cmd/charProcess.test.ts` | `charProcess` | `src/cmd/charProcess.ts` | Enter で空文字 / ArrowUp で getLogCmd 戻り値 / Backspace で末尾削除 / Tab・ArrowRight で空文字 / Escape / 通常文字連結 / BASS で previousState 更新 / Shift で変化なし |
-| `test/cmd/pickupCmdTarget/commonPickupCmdTarget.test.ts` | `commonPickupCmdTarget` | `src/cmd/pickupCmdTarget.ts` | option.target 優先 / CLICK ランダム / BASS の既存・空ケース / SIMULATE 全件 / SINEWAVE 未発音/同周波数/未発音端末優先 / default ケース |
+| `test/cmd/pickupCmdTarget/commonPickupCmdTarget.test.ts` | `commonPickupCmdTarget` | `src/cmd/pickupCmdTarget.ts` | option.target 優先 / CLICK ランダム / BASS の既存・空ケース / SIMULATE・SYNTH 全件 / SINEWAVE 未発音/同周波数/未発音端末優先 / default ケース |
+| `test/cmd/execSynth.test.ts` | `execSynth` | `src/cmd/execSynth.ts` | target 未指定で全 client / target 指定で対象のみ / 周波数付き `value` / 未指定・不正時は value なし |
 | `test/cmd/pickupCmdTarget/pickupCmdTarget.test.ts` | `pickupCmdTarget` | 同上 | CLICK ランダム / option.target |
 | `test/cmd/pickupCmdTarget/pickupPaCmdTarget.test.ts` | `pickupPaCmdTarget` | 同上 | CLICK で paCmdClient ランダム / option.target |
 | `test/logging/getLogCmd.test.ts` | `getLogCmd` | `src/logging/getLogCmd.ts` | ArrowUp で 1 つ前 / ArrowUp 連打 / ArrowDown で 0 まで戻すと空 / 不一致キー＋num=0 で空文字 |
@@ -110,7 +111,7 @@ pnpm -F backend exec vitest run
 | `test/stream/quantize/splitBeat.test.ts` | `splitBeat` / `emitSplitBeat` | `src/stream/quantize/splitBeat.ts` | target 指定時は対象のみ変更し `io.to(target)` で送信（`io.emit` しない） / stream 指定 / target 未指定時は各 client へ個別送信 / RANDOM は beat 0 |
 | `test/stream/quantize/emitQuantizeText.test.ts` | `emitQuantizeText` | `src/stream/quantize/emitQuantizeText.ts` | 対象 client のみ `QUANTIZE:<flag>` を timeout=true で送る / 複数 client / stream 指定時はその stream の flag / stream=ALL は既定 stream (PLAYBACK) の flag / client undefined・不在は送らない / clients 空 |
 | `test/cmd/splitSpace/splitQuantize.test.ts` | `splitQuantize` | `src/cmd/splitSpace/splitQuantize.ts` | target 指定時は対象のみ `emitQuantizeText` / stream 指定を渡す（CHAT/ALL 含む） / target 未指定時は全 client / paramArr 空 + target |
-| `test/cmd/splitSpace/numTarget.test.ts` | `numTarget` | `src/cmd/splitSpace/numTarget.ts` | `BPM <number>` で対象 client の `execChangeBPM` を呼び、対象のみへ `stringEmit("BPM:<n>", true, target)` / 複数 target / `BEAT <number>`・`BEAT <number> <stream>` で `splitBeat` を呼ぶ / target undefined はどちらも呼ばない |
+| `test/cmd/splitSpace/numTarget.test.ts` | `numTarget` | `src/cmd/splitSpace/numTarget.ts` | `BPM <number>` で対象 client の `execChangeBPM` を呼び、対象のみへ `stringEmit("BPM:<n>", true, target)` / 複数 target / `BEAT <number>`・`BEAT <number> <stream>` で `splitBeat` を呼ぶ / `SYNTH` は対象端末のみに `execCmd` / `SYNTH <Hz>` は対象端末に `execSynth` / target undefined はどちらも呼ばない |
 | `test/bpm/changeBpm.test.ts` | `execChangeBPM` | `src/bpm/changeBpm.ts` | target 指定時は対象 client のみ bpm 変更・対象へ送信 / target 未指定時は全 client |
 
 ### 入力検証のみ（外部 I/O を実行しない）

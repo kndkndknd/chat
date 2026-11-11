@@ -1,6 +1,7 @@
 import { clientState, cmdState, streamState, glitchState } from "../../state";
 import { streamList, parameterList, streamsRedis } from "../../data";
 import { execCmd } from "../execCmd";
+import { execSynth } from "../execSynth";
 import { execSinewave } from "../execSinewave";
 import { parameterChange } from "../../parameterChange";
 import { parseMuteFlag, setMute } from "../mute";
@@ -131,6 +132,20 @@ export const splitSpace = async (
   //       streamEmit(stringArr[1]);
   //     }
     // }
+  } else if (
+    stringArr[0] === "SYNTH" &&
+    arrTypeArr[1] === "number" &&
+    stringArr.length === 2
+  ) {
+    // SYNTH <Hz>: 周波数を指定して発音する。SELF 中は入力端末のみ。
+    const selfTarget =
+      source !== undefined &&
+      source !== "all" &&
+      clientState.client[source] !== undefined &&
+      clientState.client[source].self
+        ? source
+        : undefined;
+    execSynth(Number(stringArr[1]), selfTarget);
   } else if (Object.keys(parameterList).includes(stringArr[0])) {
     // RANDOMのみRATEとSTREAMがあるので個別処理
     if (stringArr[0] === "GLITCH") {
@@ -207,6 +222,11 @@ export const splitSpace = async (
       } else {
         setMute(flag);
       }
+    } else if (stringArr[1] === "SYNTH" && arrTypeArr[2] === "number") {
+      // ALL SYNTH <Hz>
+      clientState.cmdClient.forEach((client) => {
+        execSynth(Number(stringArr[2]), client);
+      });
     } else if (arrTypeArr[1] === "string" && !streamList.includes(stringArr[1])) {
       clientState.cmdClient.forEach((client, index) => {
         execCmd(stringArr[1], client);

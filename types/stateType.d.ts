@@ -138,6 +138,7 @@ export type currentStateType = {
     BASS: Array<string>;
     METRONOME: Array<string>;
     CINEMA: Array<string>;
+    SYNTH: Array<string>;
   };
   sinewave: {
     [key: string]: number;
@@ -158,6 +159,7 @@ export type previousStateType = {
     BASS: Array<string>;
     METRONOME: Array<string>;
     CINEMA: Array<string>;
+    SYNTH: Array<string>;
   };
   sinewave: {
     [key: string]: number;

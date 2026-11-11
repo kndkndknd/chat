@@ -1,6 +1,7 @@
 import { clientState, currentState, streamState } from "../../state";
 import { cmdList, streamList } from "../../data";
 import { execCmd } from "../execCmd";
+import { execSynth } from "../execSynth";
 import { recordEmit } from "../../stream/recordEmit";
 import { execSinewave } from "../execSinewave";
 import { parameterChange } from "../../parameterChange";
@@ -25,6 +26,22 @@ export const numTarget = (
   // const target = Object.keys(clientState.client)[Number(stringArr[0])];
 
   if (
+    arrTypeArr[0] === "string" &&
+    stringArr[0] === "SYNTH" &&
+    arrTypeArr[1] === "number"
+  ) {
+    // <index> SYNTH <Hz>
+    for (const target of targetArr) {
+      if (target === undefined) {
+        continue;
+      }
+      if (clientState.cmdClient.includes(target)) {
+        execSynth(Number(stringArr[1]), target);
+      } else {
+        stringEmit("target is not cmd client", true, target);
+      }
+    }
+  } else if (
     arrTypeArr[0] === "string" &&
     Object.keys(cmdList).includes(stringArr[0])
   ) {

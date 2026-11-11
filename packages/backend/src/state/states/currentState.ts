@@ -9,6 +9,7 @@ export const currentState = createPersistedState<currentStateType>("currentState
     BASS: [],
     METRONOME: [],
     CINEMA: [],
+    SYNTH: [],
   },
   sinewave: {},
   stream: {

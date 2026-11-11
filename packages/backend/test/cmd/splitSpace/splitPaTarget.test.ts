@@ -11,11 +11,13 @@ vi.mock("../../../src/data", () => ({
     NOISE: "WHITENOISE",
     WHITENOISE: "WHITENOISE",
     SIMULATE: "SIMULATE",
+    SYNTH: "SYNTH",
   },
   streamList: ["PLAYBACK", "TIMELAPSE", "EMPTY"],
 }));
 
 vi.mock("../../../src/cmd/execCmd", () => ({ execCmd: vi.fn() }));
+vi.mock("../../../src/cmd/execSynth", () => ({ execSynth: vi.fn() }));
 vi.mock("../../../src/stream/recordEmit", () => ({
   recordEmit: vi.fn(),
   recordAsOtherEmit: vi.fn(),
@@ -40,6 +42,7 @@ vi.mock("../../../src/cmd/pickupCmdTarget", () => ({
 
 import { splitPaTarget } from "../../../src/cmd/splitSpace/splitPaTarget";
 import { execCmd } from "../../../src/cmd/execCmd";
+import { execSynth } from "../../../src/cmd/execSynth";
 import { stringEmit } from "../../../src/socket/ioEmit";
 import { pickupPaCmdTarget } from "../../../src/cmd/pickupCmdTarget";
 import { currentState } from "../../../src/state";
@@ -63,6 +66,11 @@ describe("splitPaTarget", () => {
     ).not.toThrow();
     expect(execCmd).toHaveBeenCalledWith("SIMULATE", "p1", true);
     expect(stringEmit).not.toHaveBeenCalled();
+  });
+
+  test("PA SYNTH <Hz> は対象 PA クライアントに周波数を渡す", () => {
+    splitPaTarget(["PA", "SYNTH", "440"], ["string", "string", "number"]);
+    expect(execSynth).toHaveBeenCalledWith(440, "p1");
   });
 
   test("発音中の対象なら flag=false を渡す", () => {

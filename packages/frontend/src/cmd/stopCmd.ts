@@ -6,6 +6,7 @@ import {
   streamFlagState,
   audioWorkletState,
 } from "../state";
+import { stopSynth } from "../webaudio/sound/synth";
 
 export const stopCmd = (fade: number, except?: string) => {
   const currentTime = contextState.audioContext.currentTime;
@@ -23,6 +24,9 @@ export const stopCmd = (fade: number, except?: string) => {
   }
   if (except !== "SIMULATE") {
     gainState.simulateGain.gain.setTargetAtTime(0, currentTime, fade);
+  }
+  if (except !== "SYNTH") {
+    stopSynth(fade);
   }
   if (metronomeState.intervalId && except !== "METRONOME") {
     clearInterval(metronomeState.intervalId);

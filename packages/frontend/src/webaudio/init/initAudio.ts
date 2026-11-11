@@ -8,6 +8,9 @@ import {
   stereoPannerState,
   audioWorkletState,
   flagState,
+  synthState,
+  SYNTH_BUS_GAIN,
+  SYNTH_WET_GAIN,
 } from "../../state";
 import { initWhitenoiseWorklet } from "../../audioWorklet/whitenoiseWorklet";
 
@@ -132,6 +135,37 @@ export const initAudio = async (
   otherNodeState.simFilter = contextState.audioContext.createBiquadFilter();
   otherNodeState.simFilter.type = "lowpass";
   otherNodeState.simFilter.frequency.setValueAtTime(1000, 0);
+
+  // SYNTH
+  // ワンショットのボイスをまとめる入力バス。コンプレッサーで音量を整え、
+  // ローパス入りのフィードバックディレイでモジュラーシンセらしい残響を付ける。
+  synthState.input = contextState.audioContext.createGain();
+  synthState.input.gain.setValueAtTime(SYNTH_BUS_GAIN, 0);
+  synthState.compressor = contextState.audioContext.createDynamicsCompressor();
+  synthState.compressor.threshold.setValueAtTime(-20, 0);
+  synthState.compressor.knee.setValueAtTime(24, 0);
+  synthState.compressor.ratio.setValueAtTime(4, 0);
+  synthState.compressor.attack.setValueAtTime(0.003, 0);
+  synthState.compressor.release.setValueAtTime(0.25, 0);
+  synthState.delay = contextState.audioContext.createDelay(1.0);
+  synthState.delay.delayTime.setValueAtTime(0.27, 0);
+  synthState.delayFilter = contextState.audioContext.createBiquadFilter();
+  synthState.delayFilter.type = "lowpass";
+  synthState.delayFilter.frequency.setValueAtTime(2200, 0);
+  synthState.delayFilter.Q.setValueAtTime(0.7, 0);
+  synthState.feedback = contextState.audioContext.createGain();
+  synthState.feedback.gain.setValueAtTime(0.32, 0);
+  synthState.wet = contextState.audioContext.createGain();
+  synthState.wet.gain.setValueAtTime(SYNTH_WET_GAIN, 0);
+
+  synthState.input.connect(synthState.compressor);
+  synthState.compressor.connect(gainState.masterGain);
+  synthState.compressor.connect(synthState.delay);
+  synthState.delay.connect(synthState.delayFilter);
+  synthState.delayFilter.connect(synthState.feedback);
+  synthState.feedback.connect(synthState.delay);
+  synthState.delayFilter.connect(synthState.wet);
+  synthState.wet.connect(gainState.masterGain);
 
   // THREE
   oscState.threeOsc = contextState.audioContext.createOscillator();

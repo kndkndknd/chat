@@ -1,6 +1,7 @@
 import { clientState, currentState, streamState } from "../../state";
 import { cmdList, streamList } from "../../data";
 import { execCmd } from "../execCmd";
+import { execSynth } from "../execSynth";
 import { recordEmit } from "../../stream/recordEmit";
 import { execSinewave } from "../execSinewave";
 import { execStream } from "../../stream/execStream";
@@ -18,7 +19,16 @@ export const splitPaTarget = (
   stringArr: Array<string>,
   arrTypeArr: Array<string>,
 ) => {
-  if(Object.keys(cmdList).includes(stringArr[1])) {
+  if (stringArr[1] === "SYNTH" && arrTypeArr[2] === "number") {
+    // PA SYNTH <Hz>
+    const targetArr = pickupPaCmdTarget("SYNTH");
+    const target = targetArr[Math.floor(Math.random() * targetArr.length)];
+    if (clientState.paCmdClient.includes(target)) {
+      execSynth(Number(stringArr[2]), target);
+    } else {
+      stringEmit("target is not PA client");
+    }
+  } else if(Object.keys(cmdList).includes(stringArr[1])) {
     const cmd = cmdList[stringArr[1]];
     const targetArr = pickupPaCmdTarget(cmd)
     const target = targetArr[Math.floor(Math.random() * targetArr.length)]

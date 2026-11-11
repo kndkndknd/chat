@@ -7,6 +7,7 @@ export const cmdList = {
   BASS: "BASS",
   SIMULATE: "SIMULATE",
   SIMS: "SIMULATE",
+  SYNTH: "SYNTH",
   METRONOME: "METRONOME",
   PREVIOUS: "PREVIOUS",
   PREV: "PREVIOUS",

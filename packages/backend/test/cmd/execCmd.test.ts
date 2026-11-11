@@ -37,6 +37,7 @@ vi.mock("../../src/data", () => ({
     FEEDBACK: "FEEDBACK",
     CLICK: "CLICK",
     SIMULATE: "SIMULATE",
+    SYNTH: "SYNTH",
     METRONOME: "METRONOME",
     PREVIOUS: "PREVIOUS",
     PREV: "PREVIOUS",
@@ -176,6 +177,14 @@ describe("getCmd", () => {
     expect(getCmd("SIMULATE")).toEqual({
       type: "CMD",
       cmd: { cmd: "SIMULATE", gain: 1.0 },
+      target: ["c1"],
+    });
+  });
+
+  test("SYNTH は CMD 型で返す", () => {
+    expect(getCmd("SYNTH")).toEqual({
+      type: "CMD",
+      cmd: { cmd: "SYNTH" },
       target: ["c1"],
     });
   });

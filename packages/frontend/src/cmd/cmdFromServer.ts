@@ -5,6 +5,8 @@ import {
   bass,
   click,
   simulate,
+  synth,
+  stopSynth,
   metronome,
 } from "../webaudio";
 import { textPrint, erasePrint } from "../canvasEvent";
@@ -75,6 +77,19 @@ export const cmdFromServer = (cmd: {
       break;
     case "SIMULATE":
       simulate(cmd.gain);
+      break;
+    case "SYNTH":
+      if (cmd.flag === false) {
+        stopSynth();
+      } else {
+        synth(cmd.value, cmd.gain);
+        erasePrint();
+        const label =
+          cmd.value !== undefined && Number.isFinite(cmd.value)
+            ? `SYNTH ${Math.round(cmd.value)}Hz`
+            : "SYNTH";
+        textPrint(label, { timeout: true, timeoutDuration: 700 });
+      }
       break;
     case "METRONOME":
       console.log("METRONOME");

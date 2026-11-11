@@ -18,6 +18,7 @@ vi.mock("../../../src/data", () => ({
     FEEDBACK: "FEEDBACK",
     CLICK: "CLICK",
     SIMULATE: "SIMULATE",
+    SYNTH: "SYNTH",
   },
 }));
 
@@ -60,6 +61,10 @@ describe("commonPickupCmdTarget", () => {
       "c1",
       "c2",
     ]);
+  });
+
+  test("SYNTH は clientArr 全体を返す", () => {
+    expect(commonPickupCmdTarget("SYNTH", ["c1", "c2"])).toEqual(["c1", "c2"]);
   });
 
   test("SINEWAVE で誰も発音していなければランダム 1 件", () => {

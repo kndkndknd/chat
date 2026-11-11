@@ -112,6 +112,12 @@ export const getCmd = (cmdStrings: string,
         gain: cmdState.GAIN.SIMULATE,
       };
       return { type: "CMD", cmd, target: targetIdArr };
+    case "SYNTH":
+      // ワンショットのモジュラーシンセ風音源。ゲインはフロント側の既定値を使う。
+      cmd = {
+        cmd: "SYNTH",
+      };
+      return { type: "CMD", cmd, target: targetIdArr };
     case "STOP":
       const client = "all";
       return { type: "STOP", source: "", target: "ALL", group: client };

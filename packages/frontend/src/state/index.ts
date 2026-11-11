@@ -29,6 +29,11 @@ import { voiceState } from "./voiceState";
 
 // audioWorklet
 import { audioWorkletState } from "./webAudio/audioWorkletState";
+import {
+  synthState,
+  SYNTH_BUS_GAIN,
+  SYNTH_WET_GAIN,
+} from "./webAudio/synthState";
 
 import { wholeState } from "./wholeState";
 
@@ -55,6 +60,9 @@ export {
   streamChunk,
   loopChunk,
   streamState,
+  synthState,
+  SYNTH_BUS_GAIN,
+  SYNTH_WET_GAIN,
   timelapseState,
   torchState,
   // webAudioState,

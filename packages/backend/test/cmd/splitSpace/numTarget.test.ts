@@ -15,11 +15,13 @@ vi.mock("../../../src/data", () => ({
     NOISE: "WHITENOISE",
     WHITENOISE: "WHITENOISE",
     SIMULATE: "SIMULATE",
+    SYNTH: "SYNTH",
   },
   streamList: ["PLAYBACK", "TIMELAPSE", "EMPTY"],
 }));
 
 vi.mock("../../../src/cmd/execCmd", () => ({ execCmd: vi.fn() }));
+vi.mock("../../../src/cmd/execSynth", () => ({ execSynth: vi.fn() }));
 vi.mock("../../../src/stream/recordEmit", () => ({
   recordEmit: vi.fn(),
   recordAsOtherEmit: vi.fn(),
@@ -45,6 +47,7 @@ import { execChangeBPM } from "../../../src/bpm/changeBpm";
 import { splitBeat } from "../../../src/stream/quantize/splitBeat";
 import { muteReqEmit, stringEmit } from "../../../src/socket/ioEmit";
 import { execCmd } from "../../../src/cmd/execCmd";
+import { execSynth } from "../../../src/cmd/execSynth";
 import { currentState } from "../../../src/state";
 
 describe("numTarget cmd alias", () => {
@@ -67,6 +70,18 @@ describe("numTarget cmd alias", () => {
     expect(() => numTarget(["c1"], ["SIMULATE"], ["string"])).not.toThrow();
     expect(execCmd).toHaveBeenCalledWith("SIMULATE", "c1", true);
     expect(stringEmit).not.toHaveBeenCalled();
+  });
+
+  test("SYNTH は対象端末のみに execCmd を呼ぶ", () => {
+    expect(() => numTarget(["c1"], ["SYNTH"], ["string"])).not.toThrow();
+    expect(execCmd).toHaveBeenCalledWith("SYNTH", "c1", true);
+  });
+
+  test("SYNTH <Hz> は対象端末に周波数を渡して execSynth を呼ぶ", () => {
+    numTarget(["c1"], ["SYNTH", "440"], ["string", "number"]);
+
+    expect(execSynth).toHaveBeenCalledWith(440, "c1");
+    expect(execCmd).not.toHaveBeenCalled();
   });
 
   test("未定義コマンドでもエラーにならず not cmd を返す", () => {
