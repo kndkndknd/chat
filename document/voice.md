@@ -57,6 +57,8 @@
 
 `cmdState.voiceLang` が読み上げ言語です（既定 `en-US`）。
 `VOICE JA` / `VOICE EN` で変更され、`voiceFromServer` の `lang` として送られます。
+`/api/parameter/reset` で `VOICE` をリセットすると、`cmdState.VOICE` と一緒に
+`voiceLang` も既定の `en-US` に戻ります。
 
 ### 読み上げ対象の決定
 
@@ -406,6 +408,7 @@ pnpm -F frontend exec vitest run
 
 ## 変更履歴
 
+- **2026-11-11**: `/api/parameter/reset` の `VOICE` リセットで `voiceLang` も `en-US` に戻すよう変更。
 - **2026-11-08**: `voiceEmit` を復活。`left` / `right` 用の `/api/voice`（macOS `say`）と
   Web Audio パン再生、speechSynthesis フォールバック、テストを追加。
 - **2026-11-08 (2)**: 英語音声を標準的な女性音声に統一。英語は中央パンでも

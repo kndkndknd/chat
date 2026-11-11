@@ -286,6 +286,7 @@ app.post("/api/clear-buffer", async function (req, res) {
 // body.targets を省略（または空配列）すると全パラメータをリセットする。
 // 指定する場合は PORTAMENT / SAMPLERATE / GLITCH / GRID / QUANTIZE / RANDOM /
 // VOICE / FILTER / GAIN / FADE / BPM / CLICKFREQ のいずれか（別名 PORT, RATE も可）。
+// VOICE は VOICE モードのクライアント一覧と voiceLang をまとめて初期化する。
 app.post("/api/parameter/reset", function (req, res) {
   const rawTargets = req.body?.targets;
   if (rawTargets !== undefined && !Array.isArray(rawTargets)) {
