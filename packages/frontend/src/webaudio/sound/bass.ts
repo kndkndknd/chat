@@ -5,14 +5,15 @@ export const bass = (flag: boolean, gain: number) => {
     const freq = setBassNote();
     console.log(freq);
     oscState.bassOsc.frequency.setValueAtTime(freq, 0);
-    gainState.bassGain.gain.setValueAtTime(gain, 0);
+    // 音量は bassMixGain が担当する。
+    gainState.bassGain.gain.setValueAtTime(1, 0);
   } else {
     if(gainState.bassGain.gain.value !== 0) {
       gainState.bassGain.gain.setValueAtTime(0, 0);
     } else {
       const freq = setBassNote();
       oscState.bassOsc.frequency.setValueAtTime(freq, 0);
-      gainState.bassGain.gain.setValueAtTime(gain, 0);
+      gainState.bassGain.gain.setValueAtTime(1, 0);
     }
   }
 };

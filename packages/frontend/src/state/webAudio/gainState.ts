@@ -1,9 +1,12 @@
-import { accelarateOsc, gpsOsc } from "../../webaudio";
-
 export const gainState = {
   masterGain: null as GainNode | null,
   muteGain: null as GainNode | null,
   chatGain: null as GainNode | null,
+  sinewaveMixGain: null as GainNode | null,
+  feedbackMixGain: null as GainNode | null,
+  whitenoiseMixGain: null as GainNode | null,
+  bassMixGain: null as GainNode | null,
+  simulateMixGain: null as GainNode | null,
   oscGain: null as GainNode | null,
   feedbackGain: null as GainNode | null,
   whitenoiseGain: null as GainNode | null,

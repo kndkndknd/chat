@@ -14,7 +14,7 @@ export const initAudioStream = (stream) => {
   // mediastreamsource.connect(scriptProcessorState.javascriptnode);
   mediastreamsource.connect(gainState.feedbackGain);
   mediastreamsource.connect(gainState.feedbackReverveGain);
-  gainState.feedbackGain.connect(gainState.masterGain);
+  // feedbackGain -> feedbackMixGain -> masterGain は initAudio で接続済み。
   // scriptProcessorState.javascriptnode.onaudioprocess = onAudioProcess;
   // scriptProcessorState.javascriptnode.connect(gainState.masterGain);
   //rec

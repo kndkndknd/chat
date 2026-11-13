@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { contextState, gainState } from "../../../src/state";
 import {
+  GAIN_DEFAULTS,
   applyGlobalGain,
   applyGlobalGainValue,
   clampGainValue,
+  getGlobalGainValue,
   isGlobalGainKey,
   normalizeGainValue,
 } from "../../../src/webaudio/params/applyGlobalGain";
@@ -27,34 +29,62 @@ const GAIN_STATE: gainStateType = {
 
 describe("applyGlobalGain", () => {
   let master: GainNode;
+  let sinewave: GainNode;
+  let feedback: GainNode;
+  let whitenoise: GainNode;
+  let bass: GainNode;
   let chat: GainNode;
   let glitch: GainNode;
-  let other: GainNode;
+  let simulate: GainNode;
+  let active: GainNode;
 
   beforeEach(() => {
     master = makeNode();
+    sinewave = makeNode();
+    feedback = makeNode();
+    whitenoise = makeNode();
+    bass = makeNode();
     chat = makeNode();
     glitch = makeNode();
-    other = makeNode();
+    simulate = makeNode();
+    active = makeNode();
     gainState.masterGain = master;
+    gainState.sinewaveMixGain = sinewave;
+    gainState.feedbackMixGain = feedback;
+    gainState.whitenoiseMixGain = whitenoise;
+    gainState.bassMixGain = bass;
     gainState.chatGain = chat;
     gainState.glitchGain = glitch;
-    gainState.oscGain = other;
+    gainState.simulateMixGain = simulate;
+    gainState.oscGain = active;
     contextState.audioContext = { currentTime: 1.5 } as AudioContext;
   });
 
-  it("MASTER / CHAT / GLITCH だけを即時適用する", () => {
+  it("グローバル対象のミックスバスへ即時適用する", () => {
     applyGlobalGain({
       ...GAIN_STATE,
       MASTER: 0.5,
-      CHAT: 1.2,
+      SINEWAVE: 0.3,
+      FEEDBACK: 0.4,
+      WHITENOISE: 0.5,
+      BASS: 1.2,
+      CHAT: 1.1,
       GLITCH: 0,
+      SIMULATE: 0.8,
+      METRONOME: 0.7,
     });
 
     expect(master.gain.setTargetAtTime).toHaveBeenCalledWith(0.5, 1.5, 0.01);
-    expect(chat.gain.setTargetAtTime).toHaveBeenCalledWith(1.2, 1.5, 0.01);
+    expect(sinewave.gain.setTargetAtTime).toHaveBeenCalledWith(0.3, 1.5, 0.01);
+    expect(feedback.gain.setTargetAtTime).toHaveBeenCalledWith(0.4, 1.5, 0.01);
+    expect(whitenoise.gain.setTargetAtTime).toHaveBeenCalledWith(0.5, 1.5, 0.01);
+    expect(bass.gain.setTargetAtTime).toHaveBeenCalledWith(1.2, 1.5, 0.01);
+    expect(chat.gain.setTargetAtTime).toHaveBeenCalledWith(1.1, 1.5, 0.01);
     expect(glitch.gain.setTargetAtTime).toHaveBeenCalledWith(0, 1.5, 0.01);
-    expect(other.gain.setTargetAtTime).not.toHaveBeenCalled();
+    expect(simulate.gain.setTargetAtTime).toHaveBeenCalledWith(0.8, 1.5, 0.01);
+    expect(getGlobalGainValue("METRONOME")).toBe(0.7);
+    // 発音中/停止を制御する active GainNode は触らない。
+    expect(active.gain.setTargetAtTime).not.toHaveBeenCalled();
   });
 
   it("範囲外の値は 0〜2 にクランプする", () => {
@@ -89,6 +119,12 @@ describe("applyGlobalGain", () => {
     expect(glitch.gain.setTargetAtTime).not.toHaveBeenCalled();
   });
 
+  it("METRONOME は GainNode を持たず、最新値を保持する", () => {
+    applyGlobalGainValue("METRONOME", 0.75);
+
+    expect(getGlobalGainValue("METRONOME")).toBe(0.75);
+  });
+
   it("個別キーの範囲外値もクランプする", () => {
     applyGlobalGainValue("CHAT", 3);
 
@@ -113,9 +149,19 @@ describe("applyGlobalGain", () => {
 
   it("グローバル適用キーだけを識別する", () => {
     expect(isGlobalGainKey("MASTER")).toBe(true);
+    expect(isGlobalGainKey("SINEWAVE")).toBe(true);
+    expect(isGlobalGainKey("FEEDBACK")).toBe(true);
+    expect(isGlobalGainKey("WHITENOISE")).toBe(true);
+    expect(isGlobalGainKey("BASS")).toBe(true);
     expect(isGlobalGainKey("CHAT")).toBe(true);
     expect(isGlobalGainKey("GLITCH")).toBe(true);
-    expect(isGlobalGainKey("SINEWAVE")).toBe(false);
-    expect(isGlobalGainKey("SIMULATE")).toBe(false);
+    expect(isGlobalGainKey("SIMULATE")).toBe(true);
+    expect(isGlobalGainKey("METRONOME")).toBe(true);
+    expect(isGlobalGainKey("CLICK")).toBe(false);
+  });
+
+  it("既定値を持つ", () => {
+    expect(GAIN_DEFAULTS.SINEWAVE).toBe(0.2);
+    expect(GAIN_DEFAULTS.METRONOME).toBe(0.9);
   });
 });

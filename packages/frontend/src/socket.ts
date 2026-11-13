@@ -175,7 +175,7 @@ export const socket = (): void => {
   });
 
   // gainFromClient(スライダー操作)/ gainReqFromClient(UI を開く)への応答。
-  // 表示を更新し、MASTER / CHAT / GLITCH は全クライアントの音声へ即時適用する。
+  // 表示を更新し、グローバル音量を発音中の音声へ即時適用する。
   socketState.socket.on("gainFromServer", (data) => {
     const normalized = setGainUI(data);
     applyGlobalGain(normalized);
