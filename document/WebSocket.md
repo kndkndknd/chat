@@ -124,6 +124,8 @@ ws.send({ type: "connected", data: { id } })  ← クライアントに ID を�
 | `wholeReqFromClient` | `{ audio, video, source, bufferSize } \| undefined` | `receiveWholeReq()` でWHOLEストリーム処理 |
 | `faceDetectFromClient` | `{ x, width, height }` | 顔検出カウンタをインクリメント、PAYBACKバッファをタイムスタンプ検索して送信 |
 
+受信データは `packages/backend/src/socket/validateMessage.ts` で検証し、不正なデータは処理しない。`workletBufferFromClient` / `chatFromClient` の `source` は `CHAT` または `streamList` に含まれる値だけを許可する。WebSocket の `maxPayload` は 48MB。
+
 **切断処理:**
 ```
 ws.on("close")

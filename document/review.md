@@ -1,6 +1,6 @@
 # コードレビュー結果
 
-- 基準コミット: `dev` @ `ba549fe`（切断 cleanup 修正は未コミット）
+- 基準コミット: `dev` @ `177324d`（WebSocket 検証修正は未コミット）
 - レビュー日: 2026-11-13
 - 対象: リポジトリ全体（主要モジュール）
 - 方法: 静的レビュー + ビルド / テスト実行
@@ -14,16 +14,17 @@
 - `45a8328` AudioWorklet のバッファサイズを 8192 frames に統一
 - `3910efb` `GET LIVESTREAM` の音声抽出を完了まで待つよう修正
 - `edfdb3b` 60秒超 UPLOAD を連続20秒区間の逐次処理へ変更
-- 未コミット: 切断時のクリーンアップ・重複登録・resize 分離を修正
+- `d44c4cf` 切断時のクリーンアップ・重複登録・resize 分離を修正
+- 未コミット: WebSocket 入力の検証・例外処理・source 制限を追加
 
-ビルドと全テストは成功しています。一方で、**再起動時の `currentState.stream` 残留**、**環境変数・依存宣言**、**WebSocket 入力の堅牢性**は未対応です。これらは運用開始後に再現しやすいため、優先して確認することを推奨します。
+ビルドと全テストは成功しています。一方で、**再起動時の `currentState.stream` 残留**、**環境変数・依存宣言**は未対応です。これらは運用開始後に再現しやすいため、優先して確認することを推奨します。
 
 ## 2. 確認結果
 
 | 項目 | 結果 |
 |---|---|
 | `pnpm -F backend build` | 成功 |
-| backend テスト | 67 files / 312 tests 成功 |
+| backend テスト | 68 files / 318 tests 成功 |
 | `pnpm -F frontend exec tsc --noEmit` | 成功 |
 | frontend テスト | 10 files / 57 tests 成功 |
 | `pnpm -F frontend build` | 成功（preload chunk 約893KB） |
@@ -75,7 +76,7 @@
 - 画像の一時ディレクトリを区間ごとに分離し、古い JPG の混入を防止
 - 65秒の生成動画で、音声・映像とも351チャンク（65秒 × 5.4fps）になることを確認
 
-### 3.5 切断時のクリーンアップと重複登録（未コミット）
+### 3.5 切断時のクリーンアップと重複登録（`d44c4cf`）
 
 - `removeClientState(id)` を新設し、切断時に全クライアント配列・target・loop・cmd・sinewave・VOICE から ID を除去
 - 起動時に `sanitizeClientReferences()` で Redis 復元後の stale ID を除去
@@ -83,6 +84,16 @@
 - resize を `resizeFromClient` に分離し、登録処理の再送を廃止
 - `pickupStreamTarget` / `pickupPaStreamTarget` / `pickupCmdTarget` で切断済み ID を除外
 - 同一 ID の再登録、切断後 cleanup、stale target のテストを追加
+
+### 3.6 WebSocket 入力の検証と例外処理（未コミット）
+
+- `socket/validateMessage.ts` を追加し、受信データの型・必須項目を検証
+- `ws.on("message")` の非同期処理全体を catch し、未処理 rejection を防止
+- `WebSocket.Server` に `maxPayload: 48MB` を設定
+- `connectFromClient` / `chatFromClient` / `streamReqFromClient` / `workletBufferFromClient` などの入力を検証
+- `source` を `CHAT` と `streamList` に限定し、任意ストリーム生成を防止
+- `SELF` が未登録クライアントで参照されないようガード
+- 入力検証の単体テストを追加
 
 ## 4. 優先度: 高
 
@@ -147,25 +158,6 @@
 
 - `execStream` で `target` が指定されたらその ID を優先する
 - または `streamState.target[source] = [detectedClientId]` を明示的に設定する
-
-### 4.4 WebSocket 入力の検証と例外処理
-
-対象:
-
-- `packages/backend/src/socket/wsServer.ts:68-215`
-- `packages/backend/src/cmd/execEnter.ts:106-109`
-
-`ws.on("message", async ...)` 全体に try/catch がありません。たとえば未初期化クライアントが `SELF` を送ると、`clientState.client[id]` が undefined のため TypeError になり、未処理 rejection になります。
-
-また、`chatFromClient` / `streamReqFromClient` / `connectFromClient` などは `data` の形を検証していません。`maxPayload` の設定もなく、`workletBufferFromClient` は任意の `source` 名で新しいストリームを作れます。
-
-推奨:
-
-- メッセージハンドラ全体を try/catch で囲む
-- 受信データの必須フィールドと型を検証する
-- `WebSocket.Server` に `maxPayload` を設定する
-- `source` をサーバ側で許可した値に限定する
-- `SELF` などクライアント状態を参照するコマンドにガードを入れる
 
 ## 5. 優先度: 中
 
@@ -244,7 +236,7 @@
 ## 8. テスト / CI
 
 - テストは純粋関数・state 依存関数が中心で、WebSocket ハンドラ、`execStream`、CINEMA の DOM、UPLOAD の ffmpeg パイプライン、環境変数 bootstrap の統合テストはありません。
-- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 67 files / 312 tests、frontend 10 files / 57 tests）。
+- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 68 files / 318 tests、frontend 10 files / 57 tests）。
 - CI は Dependabot のみで、テスト・ビルドを実行する workflow がありません。
 - 今回の CINEMA 回帰のような問題は、DOM ID の存在チェックや最小のスモークテストでも検出できます。
 
@@ -252,14 +244,13 @@
 
 1. 起動時の `currentState.stream` / `RECORD` / `WHOLE` 初期化と動的 streamList 復元
 2. `.env` bootstrap と backend 依存宣言の修正
-3. WebSocket 入力検証
-4. `execStream` の target 指定
-5. STOP / LOOP、録画タイマー、FADE / QUANTIZE / PREVIOUS
-6. セキュリティ（認証・公開範囲・Redis bind・秘密鍵）
-7. ログ整理、LRANGE 最適化、CI 追加
+3. `execStream` の target 指定
+4. STOP / LOOP、録画タイマー、FADE / QUANTIZE / PREVIOUS
+5. セキュリティ（認証・公開範囲・Redis bind・秘密鍵）
+6. ログ整理、LRANGE 最適化、CI 追加
 
 ## 10. 補足
 
 - `scenario/scenario.json` と `log/20261012122223.json` には `CINEMA` 文字列が残っています。git 管理外のユーザーデータのため未変更です。CINEMA は未対応コマンドとして無視されます。
 - `packages/backend/static` の古い生成物（`assets/preload-helper-*` など）には旧 CINEMA コードが含まれます。現在の `main.js` からは参照されていません。クリーンビルドまたは古い生成物の削除で解消できます。
-- 本レポートは `ba549fe` 時点のコードに、未コミットの切断 cleanup 修正を加えた状態を基準にしています。
+- 本レポートは `177324d` 時点のコードに、未コミットの WebSocket 検証修正を加えた状態を基準にしています。
