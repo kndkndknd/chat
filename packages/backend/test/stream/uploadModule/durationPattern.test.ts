@@ -1,48 +1,66 @@
-import { describe, expect, test, vi, beforeEach, afterEach } from "vitest";
-import { durationPattern } from "../../../src/stream/uploadModule/durationPattern";
+import { describe, expect, test } from "vitest";
+import {
+  durationPattern,
+  UPLOAD_CHUNK_SECONDS,
+} from "../../../src/stream/uploadModule/durationPattern";
 
 describe("durationPattern", () => {
-  beforeEach(() => {
-    vi.spyOn(Math, "random").mockReturnValue(0);
-  });
-  afterEach(() => {
-    vi.restoreAllMocks();
+  test("20秒未満は1区間で全長を返す", () => {
+    expect(durationPattern(10, [])).toEqual([{ ss: "0", t: "10" }]);
   });
 
-  test("duration < 20 のとき t を duration 文字列に上書き", () => {
-    const result = durationPattern(10, []);
-    expect(result.length).toBe(1);
-    expect(result[0].t).toBe("10");
-  });
-
-  test("duration > 60 のとき配列が長さ floor(duration/20)-1 になる", () => {
-    // duration=100 → arrLength = 100/20 - 1 = 4
+  test("60秒超も20秒ごとの連続区間で全長をカバーする", () => {
     const result = durationPattern(100, []);
-    expect(result.length).toBe(4);
-    // Math.random=0 → ss = i*20, t = 0
-    expect(result[0]).toEqual({ ss: "0", t: "0" });
-    expect(result[1]).toEqual({ ss: "20", t: "0" });
+    expect(result).toHaveLength(5);
+    expect(result).toEqual([
+      { ss: "0", t: "20" },
+      { ss: "20", t: "20" },
+      { ss: "40", t: "20" },
+      { ss: "60", t: "20" },
+      { ss: "80", t: "20" },
+    ]);
   });
 
-  test("stringArr[2] が HH:MM:SS の場合は ss に直接設定", () => {
-    const result = durationPattern(40, ["a", "b", "01:02:03"]);
-    expect(result[0].ss).toBe("01:02:03");
+  test("端数は最後の区間の長さになる", () => {
+    const result = durationPattern(65, []);
+    expect(result).toEqual([
+      { ss: "0", t: "20" },
+      { ss: "20", t: "20" },
+      { ss: "40", t: "20" },
+      { ss: "60", t: "5" },
+    ]);
   });
 
-  test("stringArr[2] が MM:SS の場合は 00: を前置", () => {
-    const result = durationPattern(40, ["a", "b", "02:30"]);
-    expect(result[0].ss).toBe("00:02:30");
+  test("stringArr[2] が HH:MM:SS の場合は開始時刻として扱う", () => {
+    const result = durationPattern(3730, ["a", "b", "01:02:03"]);
+    expect(result).toEqual([{ ss: "3723", t: "7" }]);
   });
 
-  test('stringArr[2] === "FULL" のとき ss と t が更新される', () => {
+  test("stringArr[2] が MM:SS の場合は開始時刻として扱う", () => {
+    const result = durationPattern(200, ["a", "b", "02:30"]);
+    expect(result[0]).toEqual({ ss: "150", t: "20" });
+    expect(result.at(-1)).toEqual({ ss: "190", t: "10" });
+  });
+
+  test('stringArr[2] === "FULL" は全長を連続区間で返す', () => {
     const result = durationPattern(45, ["a", "b", "FULL"]);
-    expect(result[0].ss).toBe("0:00:00");
-    expect(result[0].t).toBe("45");
+    expect(result).toEqual([
+      { ss: "0", t: "20" },
+      { ss: "20", t: "20" },
+      { ss: "40", t: "5" },
+    ]);
   });
 
-  test("stringArr.length===4 で時刻指定があれば t も更新", () => {
+  test("開始時刻と長さの指定はその範囲だけを返す", () => {
     const result = durationPattern(50, ["a", "b", "00:30", "00:10"]);
-    expect(result[0].t).toBe("00:00:10");
-    expect(result[0].ss).toBe("00:00:30");
+    expect(result).toEqual([{ ss: "30", t: "10" }]);
+  });
+
+  test("開始時刻が動画長を超える場合は空配列", () => {
+    expect(durationPattern(40, ["a", "b", "00:50"])).toEqual([]);
+  });
+
+  test("チャンク長は20秒", () => {
+    expect(UPLOAD_CHUNK_SECONDS).toBe(20);
   });
 });

@@ -1,66 +1,77 @@
 import * as fs from "fs";
+import * as path from "path";
 import { spawn } from "child_process";
-import { resolve } from "path";
 
-export const promiseGetImageData = (f: string, filePath: string, options) => {
+export const promiseGetImageData = (
+  f: string,
+  mediaDirPath: string,
+  options: { ss?: string; t?: string },
+  outputDir: string = path.join(mediaDirPath, "tmp"),
+): Promise<string[]> => {
   return new Promise((resolve, reject) => {
     const fileName = f.split(".")[0];
-    const ffmpegPath = "ffmpeg";
+    fs.mkdirSync(outputDir, { recursive: true });
+    const outputPattern = path.join(outputDir, `${fileName}_%06d.jpg`);
+
+    // -ss は入力前、-t は出力前に置く。出力パターンの後ろに置くと無視される。
     const ffmpegOption = [
+      ...(typeof options.ss !== "undefined"
+        ? ["-ss", String(options.ss)]
+        : []),
       "-i",
-      `${filePath}/${f}`,
+      path.join(mediaDirPath, f),
       "-r",
       "5.4",
+      ...(typeof options.t !== "undefined" ? ["-t", String(options.t)] : []),
       "-f",
       "image2",
-      `${filePath}/tmp/${fileName}%06d.jpg`,
+      outputPattern,
     ];
-    if (typeof options.ss !== "undefined") {
-      ffmpegOption.push("-ss");
-      ffmpegOption.push(options.ss);
-    }
-    if (typeof options.t !== "undefined") {
-      ffmpegOption.push("-t");
-      ffmpegOption.push(options.t);
-    }
 
-    try {
+    const proc = spawn("ffmpeg", ffmpegOption);
+    let stderr = "";
+    proc.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
 
-      const proc = spawn("ffmpeg", ffmpegOption);
-      proc.stdout.on("end", async (buff) => {
-        let jpgs = <Array<string>>[];
-        try {
-          const files = await fs.readdirSync(filePath + "/tmp");
-          const base64Arr: string[] = [];
-          files.forEach((file) => {
-            if (file.includes(fileName) && file.includes(".jpg")) {
-              jpgs.push(file);
-            }
-          });
-          jpgs.forEach((element) => {
-            const img = fs.readFileSync(filePath + "/tmp/" + element);
-            const base64str = new Buffer(img).toString("base64");
-            // console.log(base64str)
-            base64Arr.push("data:image/jpeg;base64," + String(base64str));
-          });
-          resolve(base64Arr);
-        } catch (e) {
-          console.error(e);
-          reject(["error", String(e)]);
-        } finally {
-          jpgs.forEach((element) => {
-            fs.unlinkSync(filePath + "/tmp/" + element);
-          });
+    proc.on("error", (err) => {
+      reject(err);
+    });
+
+    proc.on("close", (code) => {
+      if (code !== 0) {
+        reject(
+          new Error(
+            `ffmpeg exited with code ${code}: ${stderr.slice(-500)}`,
+          ),
+        );
+        return;
+      }
+
+      let files: string[] = [];
+      try {
+        files = fs
+          .readdirSync(outputDir)
+          .filter((file) => file.endsWith(".jpg"))
+          .sort((a, b) =>
+            a.localeCompare(b, undefined, { numeric: true }),
+          );
+        const base64Arr = files.map((file) => {
+          const img = fs.readFileSync(path.join(outputDir, file));
+          return "data:image/jpeg;base64," + img.toString("base64");
+        });
+        resolve(base64Arr);
+      } catch (err) {
+        reject(err);
+      } finally {
+        for (const file of files) {
+          try {
+            fs.unlinkSync(path.join(outputDir, file));
+          } catch {
+            // 後続のファイル削除を止めない
+          }
         }
-      });
-
-      proc.stdout.on("error", (err) => {
-        console.error(err);
-        reject(["error", String(err)]);
-      });
-    } catch (err) {
-      console.error(err);
-      reject(["promiseGetImageData error", String(err)]);
-    }
+      }
+    });
   });
 };

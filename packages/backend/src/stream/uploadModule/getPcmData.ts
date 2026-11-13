@@ -2,39 +2,36 @@ import { spawn } from "child_process";
 
 // https://github.com/jhurliman/node-pcmを自分のに合わせて作成
 
-import { streamState } from "../../state";
-
 export const promiseGetPcmData = (
   filePath: string,
   bufferSize: number,
-  options,
+  options: {
+    stereo?: boolean;
+    sampleRate?: number;
+    ss?: string | number;
+    t?: string | number;
+  } = {},
 ): Promise<ArrayBuffer[]> => {
   return new Promise((resolve, reject) => {
-    var outputStr = "";
     var oddByte = null;
     var channel = 0;
-    var gotData = false;
 
-    let channels = 2;
-    let sampleRate = 22050;
-    const ffmpegPath = "ffmpeg";
+    const channels = options.stereo === false ? 1 : 2;
+    const sampleRate = Number(options.sampleRate) || 22050;
     let value;
     let i = 0;
 
-    // options = options || {};
-    // if (typeof options.stereo !== "undefined") channels = options.stereo ? 2 : 1;
-    // if (typeof options.sampleRate !== "undefined")
-    //   sampleRate = options.sampleRate;
-    // if (typeof options.ffmpegPath !== "undefined")
-    //   ffmpegPath = options.ffmpegPath;
-
     let tmpBuff = new Float32Array(bufferSize);
-    // let buffIndex = 0;
     let chunkIndex = 0;
 
+    // -ss は入力前、-t は出力前に置く。出力URLの後ろに置くと無視される。
     const ffmpegOption: string[] = [
+      ...(typeof options.ss !== "undefined"
+        ? ["-ss", String(options.ss)]
+        : []),
       "-i",
       filePath,
+      ...(typeof options.t !== "undefined" ? ["-t", String(options.t)] : []),
       "-f",
       "s16le",
       "-ac",
@@ -47,17 +44,12 @@ export const promiseGetPcmData = (
       "pipe:1",
     ];
 
-    if (typeof options.ss !== "undefined") {
-      ffmpegOption.push("-ss");
-      ffmpegOption.push(options.ss);
-    }
-    if (typeof options.t !== "undefined") {
-      ffmpegOption.push("-t");
-      ffmpegOption.push(options.t);
-    }
-
     const proc = spawn("ffmpeg", ffmpegOption);
     const buffArr: ArrayBuffer[] = [];
+    let stderr = "";
+    proc.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
     proc.stdout.on("data", (buff) => {
       // const { stdout } = await execa(ffmpegPath, [
       // await execa(ffmpegPath, ffmpegOption).then((execaReturnData) => {
@@ -115,11 +107,23 @@ export const promiseGetPcmData = (
       // return await buffArr;
     });
 
-    proc.stdout.on("end", () => {
-      resolve(buffArr);
-    });
-    proc.stdout.on("error", (err) => {
+    proc.on("error", (err) => {
       reject(err);
+    });
+    proc.on("close", (code) => {
+      if (code !== 0) {
+        reject(
+          new Error(
+            `ffmpeg exited with code ${code}: ${stderr.slice(-500)}`,
+          ),
+        );
+        return;
+      }
+      // 区間末尾の端数も 1 チャンクとして残す（残りは 0 埋め）。
+      if (chunkIndex > 0) {
+        buffArr.push(tmpBuff.buffer);
+      }
+      resolve(buffArr);
     });
   });
 };
