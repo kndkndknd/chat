@@ -13,7 +13,7 @@ pnpm workspace（`packages/*`）です。
 | `packages/frontend` | Vite アプリ。ビルド成果物は `packages/backend/static` に出力され、backend が配信する。 |
 | `types/` | backend / frontend 共有の `.d.ts`。相対 import（例: backend から `../../../../types`）で参照する。 |
 | `crate/`, `packages/frontend/crate/` | wasm-bindgen の Rust クレート（`simulate` / `tuner`）。ビルドは手動（wasm-pack は package script に無い）。生成 glue `packages/frontend/src/wasm/simulate.js` は追跡対象。 |
-| `document/` | 設計・検証ドキュメント（`redis.md`, `WebSocket.md`, `WebRTC.md`, `WebRTC-E2E.md`, `faceDetect.md`, `Timer.md`, `snowleopard.md`, `backend_test.md`, `frontend_test.md`）。 |
+| `document/` | 設計・検証ドキュメント（`redis.md`, `WebSocket.md`, `WebRTC.md`, `WebRTC-E2E.md`, `faceDetect.md`, `Timer.md`, `snowleopard.md`, `gainController.md`, `backend_test.md`, `frontend_test.md`）。 |
 | `docker/` | Redis / nginx の docker-compose。 |
 
 補足: `packages/arduino` / `packages/snowleopard` はこのリポジトリの root `package.json` から参照されていますが、このチェックアウトには存在しません。
@@ -92,7 +92,7 @@ pnpm install
 - `ArrowLeft` / `Backspace`: 1 文字削除。`Tab` / `ArrowRight`: 入力を消去。
 - `Escape`: 全停止（STOP 相当）。GAIN UI表示中はUIも閉じる。
 - `\`: BASS のトグル（`nosound` 以外）。
-- `GAIN` + Enter: ゲイン UI の表示切替。入力文字列はクリアされます。`MASTER` / `SINEWAVE` / `FEEDBACK` / `WHITENOISE` / `BASS` / `CHAT` / `GLITCH` / `SIMULATE` / `METRONOME` は発音中の音量へ即時反映され、`CLICK` は次回のクリック発音時に反映されます。
+- `GAIN` + Enter: ゲイン UI の表示切替。入力文字列はクリアされます。`MASTER` / `SINEWAVE` / `FEEDBACK` / `WHITENOISE` / `BASS` / `CHAT` / `GLITCH` / `SIMULATE` / `METRONOME` は発音中の音量へ即時反映され、`CLICK` は次回のクリック発音時に反映されます。詳細は [gainController.md](./document/gainController.md) を参照してください。
 - 入力が空の状態でスペース: タップで BPM を計測（メトロノーム）。
 - `BASSS`: 高音プロパティ付きの BASS。
 
@@ -168,7 +168,7 @@ pnpm install
 | `BUFFER` / `BUFFERSIZE <数値>` | basisBufferSize を変更。 |
 | `CLEAR` / `INIT <BUFFER\|REDIS\|stream\|INDEX>` | Redis のバッファ / index を初期化。 |
 | `FADE ...` | フェード制御（`FADE IN/OUT [秒]`, `FADE OFF`, `FADE <cmd>`）。 |
-| `GAIN <key> [値]` | ゲイン値の設定・表示。値は 0〜2 にクランプ。`gainFromClient` の未知キー・範囲外値は拒否。`CLICK` 以外のゲインは発音中の音量へ即時反映。 |
+| `GAIN <key> [値]` | ゲイン値の設定・表示。値は 0〜2 にクランプ。`gainFromClient` の未知キー・範囲外値は拒否。`CLICK` 以外のゲインは発音中の音量へ即時反映。詳細は [gainController.md](./document/gainController.md)。 |
 | `GET` / `YOUTUBE ...` | ライブストリーム取得（`GET LIVESTREAM [query]`）。 |
 | `HELP [cmd]` | ヘルプ表示。 |
 | `INSERT` / `FIND ...` | Postgres 系へのストリーム保存・検索。 |
