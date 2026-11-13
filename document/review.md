@@ -8,20 +8,21 @@
 
 ## 1. 結論
 
-直近の3コミットで、大きな機能不整合は解消されています。
+直近の3コミットと未コミットの追加修正で、大きな機能不整合は解消されています。
 
 - `e2fa019` CINEMA 機能を削除
 - `45a8328` AudioWorklet のバッファサイズを 8192 frames に統一
 - `3910efb` `GET LIVESTREAM` の音声抽出を完了まで待つよう修正
+- 未コミット: 60秒超 UPLOAD を連続20秒区間の逐次処理へ変更
 
-ビルドと全テストは成功しています。一方で、**再起動時のクライアント依存 state 残留**、**60秒超 UPLOAD のデータ欠落**、**環境変数・依存宣言**、**WebSocket 入力の堅牢性**は未対応です。これらは運用開始後に再現しやすいため、優先して確認することを推奨します。
+ビルドと全テストは成功しています。一方で、**再起動時のクライアント依存 state 残留**、**環境変数・依存宣言**、**WebSocket 入力の堅牢性**は未対応です。これらは運用開始後に再現しやすいため、優先して確認することを推奨します。
 
 ## 2. 確認結果
 
 | 項目 | 結果 |
 |---|---|
 | `pnpm -F backend build` | 成功 |
-| backend テスト | 65 files / 300 tests 成功 |
+| backend テスト | 66 files / 305 tests 成功 |
 | `pnpm -F frontend exec tsc --noEmit` | 成功 |
 | frontend テスト | 10 files / 57 tests 成功 |
 | `pnpm -F frontend build` | 成功（preload chunk 約893KB） |
@@ -62,6 +63,17 @@
 
 `getLiveStream` は音声バッファが揃うまで `pushBatch` しないため、映像だけが登録されて無音になる問題は解消されています。44100Hz モノラルで抽出し、再生側のサンプルレートも明示的に揃えたため、速度・音程も一致します。
 
+### 3.4 60秒超の `UPLOAD`（未コミット）
+
+- `durationPattern` を、全長を連続20秒区間でカバーする実装へ変更
+- 60秒超のランダム分割を廃止
+- `uploadVideo` を `for...of` + `await` の逐次処理へ変更
+- `clear` を各反復で行わず、一時 Redis キーへ積んで最後に `RENAME` で置換
+- 音声・映像のどちらかが欠けた場合は無音・空映像で補完
+- `-ss` / `-t` を ffmpeg の正しい位置へ移動（従来は出力URLの後ろで無視されていた）
+- 画像の一時ディレクトリを区間ごとに分離し、古い JPG の混入を防止
+- 65秒の生成動画で、音声・映像とも351チャンク（65秒 × 5.4fps）になることを確認
+
 ## 4. 優先度: 高
 
 ### 4.1 再起動後にクライアント依存 state が残留する
@@ -91,26 +103,7 @@
 - もしくはクライアント依存フィールドを永続化対象から外す
 - 動的ストリームを `streams:keys` から `streamList` へ復元する
 
-### 4.2 60秒超の `UPLOAD` でデータが欠落する
-
-対象:
-
-- `packages/backend/src/stream/uploadModule/uploadVideo.ts:19-54`
-- `packages/backend/src/stream/uploadModule/durationPattern.ts:40-50`
-- `packages/backend/src/stream/uploadModule/durationPattern.ts:33`
-
-`durationArr.forEach(async ...)` を await せず、各反復で `streamsRedis.clear(fName)` しています。セグメント同士が競合し、最後の1セグメント以外が消えます。
-
-また `durationPattern` は60秒超で先頭セグメントを `shift()` し、`floor(duration / 20) - 1` 個しか生成しないため、末尾が切り捨てられます。33行目は `===` になっており、`ss` の既定値代入が機能していません。
-
-推奨:
-
-- `for...of` + `await` に変更
-- `clear` は全セグメント生成前に1回だけ実行
-- 末尾の `duration % 20` セグメントも含める
-- 33行目を `lengthArr[0].ss = "0:00:00"` に修正
-
-### 4.3 `.env` の `REDIS_URL` が反映されない / 依存宣言の不足
+### 4.2 `.env` の `REDIS_URL` が反映されない / 依存宣言の不足
 
 対象:
 
@@ -131,7 +124,7 @@
 - `dotenv` を `dependencies` へ移動
 - `express` / `@types/express` を backend に宣言
 
-### 4.4 `execStream` の target 指定が無視される
+### 4.3 `execStream` の target 指定が無視される
 
 対象:
 
@@ -146,7 +139,7 @@
 - `execStream` で `target` が指定されたらその ID を優先する
 - または `streamState.target[source] = [detectedClientId]` を明示的に設定する
 
-### 4.5 切断時のクリーンアップと重複登録
+### 4.4 切断時のクリーンアップと重複登録
 
 対象:
 
@@ -172,7 +165,7 @@ Object.keys(clientState.cmdClient).includes(sockId)
 - close 時に全クライアント配列・target・loop から削除する
 - `canvasSizing` の送信を debounce する
 
-### 4.6 WebSocket 入力の検証と例外処理
+### 4.5 WebSocket 入力の検証と例外処理
 
 対象:
 
@@ -268,23 +261,22 @@ Object.keys(clientState.cmdClient).includes(sockId)
 ## 8. テスト / CI
 
 - テストは純粋関数・state 依存関数が中心で、WebSocket ハンドラ、`execStream`、CINEMA の DOM、UPLOAD の ffmpeg パイプライン、環境変数 bootstrap の統合テストはありません。
-- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 65 files / 300 tests、frontend 10 files / 57 tests）。
+- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 66 files / 305 tests、frontend 10 files / 57 tests）。
 - CI は Dependabot のみで、テスト・ビルドを実行する workflow がありません。
 - 今回の CINEMA 回帰のような問題は、DOM ID の存在チェックや最小のスモークテストでも検出できます。
 
 ## 9. 推奨する修正順
 
 1. 起動時のクライアント依存 state 初期化
-2. 60秒超 `UPLOAD` の修正
-3. `.env` bootstrap と backend 依存宣言の修正
-4. 切断クリーンアップ・重複登録・WebSocket 入力検証
-5. `execStream` の target 指定
-6. STOP / LOOP、録画タイマー、FADE / QUANTIZE / PREVIOUS
-7. セキュリティ（認証・公開範囲・Redis bind・秘密鍵）
-8. ログ整理、LRANGE 最適化、CI 追加
+2. `.env` bootstrap と backend 依存宣言の修正
+3. 切断クリーンアップ・重複登録・WebSocket 入力検証
+4. `execStream` の target 指定
+5. STOP / LOOP、録画タイマー、FADE / QUANTIZE / PREVIOUS
+6. セキュリティ（認証・公開範囲・Redis bind・秘密鍵）
+7. ログ整理、LRANGE 最適化、CI 追加
 
 ## 10. 補足
 
 - `scenario/scenario.json` と `log/20261012122223.json` には `CINEMA` 文字列が残っています。git 管理外のユーザーデータのため未変更です。CINEMA は未対応コマンドとして無視されます。
 - `packages/backend/static` の古い生成物（`assets/preload-helper-*` など）には旧 CINEMA コードが含まれます。現在の `main.js` からは参照されていません。クリーンビルドまたは古い生成物の削除で解消できます。
-- 本レポートは `3910efb` 時点のコードを基準にしています。
+- 本レポートは `3910efb` 時点のコードに、未コミットの60秒超 UPLOAD 修正を加えた状態を基準にしています。
