@@ -1,6 +1,6 @@
 # コードレビュー結果
 
-- 基準コミット: `dev` @ `fbdc25e`（STOP 後 LOOP 修正は未コミット）
+- 基準コミット: `dev` @ `01eabae`（録画タイマー修正は未コミット）
 - レビュー日: 2026-11-13
 - 対象: リポジトリ全体（主要モジュール）
 - 方法: 静的レビュー + ビルド / テスト実行
@@ -16,7 +16,8 @@
 - `edfdb3b` 60秒超 UPLOAD を連続20秒区間の逐次処理へ変更
 - `d44c4cf` 切断時のクリーンアップ・重複登録・resize 分離を修正
 - `7f2f922` WebSocket 入力の検証・例外処理・source 制限を追加
-- 未コミット: STOP 時の LOOP 解除を追加
+- `69ef1e9` STOP 時の LOOP 解除を追加
+- 未コミット: 録画リクエストのタイマー競合を修正
 
 ビルドと全テストは成功しています。一方で、**再起動時の `currentState.stream` 残留**、**環境変数・依存宣言**は未対応です。これらは運用開始後に再現しやすいため、優先して確認することを推奨します。
 
@@ -25,9 +26,9 @@
 | 項目 | 結果 |
 |---|---|
 | `pnpm -F backend build` | 成功 |
-| backend テスト | 69 files / 321 tests 成功 |
+| backend テスト | 70 files / 323 tests 成功 |
 | `pnpm -F frontend exec tsc --noEmit` | 成功 |
-| frontend テスト | 11 files / 59 tests 成功 |
+| frontend テスト | 12 files / 61 tests 成功 |
 | `pnpm -F frontend build` | 成功（preload chunk 約893KB） |
 | `git diff --check` | 問題なし |
 
@@ -96,7 +97,7 @@
 - `SELF` が未登録クライアントで参照されないようガード
 - 入力検証の単体テストを追加
 
-### 3.7 STOP 時の LOOP 解除（未コミット）
+### 3.7 STOP 時の LOOP 解除（`69ef1e9`）
 
 - `clearLoop` を追加し、`STOP` / `STOP STREAM` / `STOP <stream>` で `streamState.loop` を解除
 - 解除対象端末へ `loopClearFromServer` を送信（`loopToggleFromServer` のトグルを流用しない）
@@ -104,6 +105,14 @@
 - `stopCmd` でローカルの `streamState.loop` と `loopChunk` も破棄
 - `loopPlay` は `streamFlagState` が false の場合に再生しない
 - `clearLoop` / `loopPlay` のテストを追加
+
+### 3.8 録画リクエストのタイマー競合（未コミット）
+
+- backend の `recordEmit` に録画世代を追加し、古いタイマーを破棄
+- 最新の録画終了時だけ `currentState.RECORD` を false にする
+- `recordAsOtherEmit` も開始時にタイマーを設定し、停止時に解除
+- frontend の `recordReqFromServer` を source ごとの世代管理に変更
+- 連続リクエストで古いタイマーが新しい録画フラグを落とさないことをテスト
 
 ## 4. 優先度: 高
 
@@ -179,18 +188,7 @@
 - **数値指定コマンドの読み上げが空**: `splitSpace/index.ts:84,100` で `stringArr.splice(1)` した後に `stringArr.slice(1)` を読むため、読み上げ文字列が空になります。
 - **`1-3` の範囲指定が動かない**: 条件では `-` を許容していますが、実際の展開は `split(",")` のみです。
 
-### 5.2 録画リクエストのタイマー競合
-
-対象:
-
-- `packages/backend/src/stream/recordEmit.ts:45-47`
-- `packages/frontend/src/stream/socketFromServer/recordReqFromServer.ts:17-30`
-
-10秒後に `RECORD = false` にするタイマーが、後から始まった録画を途中で停止します。顔検出の連続実行で発生しやすいです。録画ごとにトークンを持たせ、最新の録画だけがフラグを落とすようにしてください。
-
-`recordAsOtherEmit` はタイムアウトで `RECORD` を戻さないため、一度呼ぶと true のまま残ります。
-
-### 5.3 `sensorState.isMobile` が常に false
+### 5.2 `sensorState.isMobile` が常に false
 
 対象:
 
@@ -200,7 +198,7 @@
 
 `main.ts` は `flagState.isMobile` だけを設定し、`initialize` は `sensorState.isMobile` を見ています。モバイルの加速度・GPS 処理が開始されません。
 
-### 5.4 その他
+### 5.3 その他
 
 - `wholeEmit.ts:17` の先頭 duration だけ `* 1000` が抜けており、秒とミリ秒が混在しています。
 - `m5Access.ts` の `RELAY_HOST` は `m5SetIpAddress` で共有されるため、rotation / vibration の切替先が混ざる可能性があります。
@@ -237,7 +235,7 @@
 ## 8. テスト / CI
 
 - テストは純粋関数・state 依存関数が中心で、WebSocket ハンドラ、`execStream`、CINEMA の DOM、UPLOAD の ffmpeg パイプライン、環境変数 bootstrap の統合テストはありません。
-- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 69 files / 321 tests、frontend 11 files / 59 tests）。
+- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 70 files / 323 tests、frontend 12 files / 61 tests）。
 - CI は Dependabot のみで、テスト・ビルドを実行する workflow がありません。
 - 今回の CINEMA 回帰のような問題は、DOM ID の存在チェックや最小のスモークテストでも検出できます。
 
@@ -246,7 +244,7 @@
 1. 起動時の `currentState.stream` / `RECORD` / `WHOLE` 初期化と動的 streamList 復元
 2. `.env` bootstrap と backend 依存宣言の修正
 3. `execStream` の target 指定
-4. 録画タイマー、FADE / QUANTIZE / PREVIOUS
+4. FADE / QUANTIZE / PREVIOUS
 5. セキュリティ（認証・公開範囲・Redis bind・秘密鍵）
 6. ログ整理、LRANGE 最適化、CI 追加
 
@@ -254,4 +252,4 @@
 
 - `scenario/scenario.json` と `log/20261012122223.json` には `CINEMA` 文字列が残っています。git 管理外のユーザーデータのため未変更です。CINEMA は未対応コマンドとして無視されます。
 - `packages/backend/static` の古い生成物（`assets/preload-helper-*` など）には旧 CINEMA コードが含まれます。現在の `main.js` からは参照されていません。クリーンビルドまたは古い生成物の削除で解消できます。
-- 本レポートは `fbdc25e` 時点のコードに、未コミットの STOP 時 LOOP 解除を加えた状態を基準にしています。
+- 本レポートは `01eabae` 時点のコードに、未コミットの録画タイマー修正を加えた状態を基準にしています。
