@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { contextState, flagState, stereoPannerState } from "../../src/state";
+import {
+  contextState,
+  flagState,
+  gainState,
+  stereoPannerState,
+} from "../../src/state";
 import { voice } from "../../src/voice";
 
 class MockUtterance {
@@ -22,6 +27,7 @@ describe("voice", () => {
     };
     speak.mockClear();
     flagState.mute = false;
+    gainState.masterGain = { gain: { value: 1 } } as any;
     stereoPannerState.masterPannerParam = 0;
     stereoPannerState.masterPanner = null;
     contextState.audioContext = null;
@@ -115,6 +121,25 @@ describe("voice", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/voice?text=HELLO&lang=en-US");
     expect(start).toHaveBeenCalledTimes(1);
     expect(gain.gain.value).toBe(0.5);
+    expect(gain.connect).toHaveBeenCalledWith(gainState.masterGain);
+    expect(speak).not.toHaveBeenCalled();
+  });
+
+  it("speechSynthesis の音量に MASTER を掛ける", async () => {
+    (globalThis as any).fetch = vi.fn();
+    gainState.masterGain = { gain: { value: 0.5 } } as any;
+
+    await voice({ text: "HELLO", lang: "en-US", volume: 0.5 });
+
+    expect(speak.mock.calls[0][0].volume).toBe(0.25);
+  });
+
+  it("MASTER が 0 なら speechSynthesis を開始しない", async () => {
+    (globalThis as any).fetch = vi.fn();
+    gainState.masterGain = { gain: { value: 0 } } as any;
+
+    await voice({ text: "HELLO", lang: "en-US" });
+
     expect(speak).not.toHaveBeenCalled();
   });
 

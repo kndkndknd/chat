@@ -100,7 +100,11 @@ describe("validateMessage", () => {
     expect(isResizeData({ width: 100, height: 200 })).toBe(true);
     expect(isResizeData({ width: "100" })).toBe(false);
     expect(isGainData({ MASTER: 1, CHAT: 0.5 })).toBe(true);
+    expect(isGainData({ MASTER: 0, GLITCH: 2 })).toBe(true);
     expect(isGainData({ MASTER: "1" })).toBe(false);
+    expect(isGainData({ MASTER: 3 })).toBe(false);
+    expect(isGainData({ MASTER: -0.1 })).toBe(false);
+    expect(isGainData({ UNKNOWN: 1 })).toBe(false);
     expect(
       isMediaUploadData({
         container: "webm",
