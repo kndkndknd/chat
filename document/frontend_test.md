@@ -7,7 +7,7 @@
 - **テストランナー**: vitest 4.1.12（リポジトリルートの devDependency）
 - **対象**: `packages/frontend/src/**` 配下で「値を返す純粋関数」と「値を返す state 依存関数」（純粋に近い計算ロジック）。GAIN UI は最小のDOMスタブで初期化・イベント・送信内容を検証します。
 - **対象外**: 実ブラウザのDOM描画 / Web Audio API / Canvas / WebSocket / WebRTC / face-api.js / vosk-browser / MediaStream など、ブラウザ API に深く結合した関数。これらは戻り値を持たない / `void` の関数も多く、本テストではスコープ外。
-- **テスト規模**: 15 ファイル / 82 ケース（すべて合格）
+- **テスト規模**: 17 ファイル / 91 ケース（すべて合格）
 
 実行コマンド:
 ```bash
@@ -69,6 +69,8 @@ pnpm -F frontend exec vitest run
 | `test/quantize/quantizeParamFromServer.test.ts` | `quantizeParamFromServer` | `src/quantize/quantizeParamFromServer.ts` | 対象 stream の beat のみ反映（flag 不変） / 未知 stream は flag=false で追加 / streams 外・data なしは更新しない / CHAT beat の canvas 表示 |
 | `test/ui/gainUI.test.ts` | `initGainUI` / `toggleGainUI` / `hideGainUI` / `setGainUI` | `src/ui/gainUI.ts` | 10項目の初期化 / 同期前の無効化 / 値の反映 / 変更キーだけの部分送信 / 範囲外クランプ / CLICK の change 発音 / 表示トグル / 非表示 / 不正値のフォールバック |
 | `test/ui/textInput.test.ts` | `keyDown` | `src/textInput.ts` | GAIN + Enter でUIトグルと入力クリア / Escape でUI非表示と入力クリア |
+| `test/webaudio/sound/globalGainChannels.test.ts` | `sinewave` / `feedback` / `feedbackLevel` / `whitenoise` / `bass` / `simulate` | `src/webaudio/sound/*` | 発音中/停止の切り替えが active GainNode のみを変更 / counterbalance の相対値変換 |
+| `test/webaudio/sound/metronome.test.ts` | `metronome` | `src/webaudio/sound/metronome.ts` | 各tickで最新のグローバル音量を使用 |
 | `test/voice/voice.test.ts` | `voice` | `src/voice.ts` | 中央パンは speechSynthesis / パンありは `/api/voice` を Web Audio で再生 / 英語の女性音声優先 / MUTE 中は発話しない / MASTER を音量へ反映 / 失敗時は speechSynthesis にフォールバック |
 
 ## 共通テクニック
@@ -115,11 +117,11 @@ beforeEach(async () => {
 戻り値を持たない（`void`）か、ブラウザ API に深く結合しているため未テスト:
 
 - **DOM / Canvas**: `canvasEvent/*`（`canvasSizing` / `flickering` / `initVideo` / `showImage` / `textPrint` / `eraseText` / `print` / `toBase64` 他）
-- **Web Audio API**: `webaudio/sound/*`（`bass` 本体 / `click` / `feedback` / `metronome` / `simulate` / `sinewave` / `whitenoise` / `accelarateOsc` / `gpsOsc`） / `webaudio/init/initAudio` / `webaudio/params/gainChange`
-- **WebSocket / SocketFacade**: `connectWebSocket` / `keyDown` / `cmdMessage` / `SocketFacade.{constructor,_connect,emit,connect}`（クラスメソッド）
+- **Web Audio API**: `webaudio/sound/click` / `accelarateOsc` / `gpsOsc` / `webaudio/init/initAudio`（実AudioContext接続）。`bass` / `feedback` / `metronome` / `simulate` / `sinewave` / `whitenoise` / `applyGlobalGain` は state とモックノードで検証済み。
+- **WebSocket / SocketFacade**: `connectWebSocket` / `cmdMessage` / `SocketFacade.{constructor,_connect,emit,connect}`（クラスメソッド）
 - **MediaStream / Recording**: `recording/*` / `scriptProcessor/*` / `stream/init/initAudioStream` / `stream/play/playAudioStream` / `stream/play/streamPlay` / `stream/socketFromServer/*` / `stream/chatReq`
 - **WebRTC / face-api**: `faceApi/index` / `initialize.ts` / `initializeSnowleopard.ts`
 - **navigator API**: `gps/index`（Geolocation） / `sensor/index`（DeviceMotionEvent）
-- **その他**: `voice/index`（未使用の speechSynthesis ヘルパー。`voice.ts` 本体は `test/voice/voice.test.ts` でテスト） / `clientMode/clockMode` / `socket.ts` / `textInput.ts` の `keyDown` / `cmd/*` / `quantize/quantizePlay` / `quantize/old_setQuantize`
+- **その他**: `voice/index`（未使用の speechSynthesis ヘルパー。`voice.ts` 本体は `test/voice/voice.test.ts` でテスト） / `clientMode/clockMode` / `socket.ts` / `cmd/*` / `quantize/quantizePlay` / `quantize/old_setQuantize`
 
 これらは E2E もしくは結合テスト（実ブラウザを伴う）の対象とすることを推奨。

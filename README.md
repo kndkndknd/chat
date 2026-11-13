@@ -92,7 +92,7 @@ pnpm install
 - `ArrowLeft` / `Backspace`: 1 文字削除。`Tab` / `ArrowRight`: 入力を消去。
 - `Escape`: 全停止（STOP 相当）。GAIN UI表示中はUIも閉じる。
 - `\`: BASS のトグル（`nosound` 以外）。
-- `GAIN` + Enter: ゲイン UI の表示切替。入力文字列はクリアされます。`MASTER` / `CHAT` / `GLITCH` は全クライアントへ即時反映され、それ以外は次回の発音コマンド実行時に反映されます。
+- `GAIN` + Enter: ゲイン UI の表示切替。入力文字列はクリアされます。`MASTER` / `SINEWAVE` / `FEEDBACK` / `WHITENOISE` / `BASS` / `CHAT` / `GLITCH` / `SIMULATE` / `METRONOME` は発音中の音量へ即時反映され、`CLICK` は次回のクリック発音時に反映されます。
 - 入力が空の状態でスペース: タップで BPM を計測（メトロノーム）。
 - `BASSS`: 高音プロパティ付きの BASS。
 
@@ -168,7 +168,7 @@ pnpm install
 | `BUFFER` / `BUFFERSIZE <数値>` | basisBufferSize を変更。 |
 | `CLEAR` / `INIT <BUFFER\|REDIS\|stream\|INDEX>` | Redis のバッファ / index を初期化。 |
 | `FADE ...` | フェード制御（`FADE IN/OUT [秒]`, `FADE OFF`, `FADE <cmd>`）。 |
-| `GAIN <key> [値]` | ゲイン値の設定・表示。値は 0〜2 にクランプ。`gainFromClient` の未知キー・範囲外値は拒否。`MASTER` / `CHAT` / `GLITCH` は全クライアントへ即時反映。 |
+| `GAIN <key> [値]` | ゲイン値の設定・表示。値は 0〜2 にクランプ。`gainFromClient` の未知キー・範囲外値は拒否。`CLICK` 以外のゲインは発音中の音量へ即時反映。 |
 | `GET` / `YOUTUBE ...` | ライブストリーム取得（`GET LIVESTREAM [query]`）。 |
 | `HELP [cmd]` | ヘルプ表示。 |
 | `INSERT` / `FIND ...` | Postgres 系へのストリーム保存・検索。 |
