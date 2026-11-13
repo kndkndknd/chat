@@ -7,7 +7,8 @@ export const whitenoise = (flag: boolean, fade: number, gain: number) => {
   console.log("fade", fade);
   console.log("gain", gain);
   if (flag) {
-    gainState.whitenoiseGain.gain.setTargetAtTime(gain, currentTime, fade);
+    // 音量は whitenoiseMixGain が担当する。
+    gainState.whitenoiseGain.gain.setTargetAtTime(1, currentTime, fade);
   } else {
     gainState.whitenoiseGain.gain.setTargetAtTime(0, currentTime, fade);
   }

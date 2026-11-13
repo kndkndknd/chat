@@ -17,7 +17,7 @@ import {
 import { initAudioStream } from "./stream";
 import { getAcceleration } from "./sensor";
 import { getGPSPosition } from "./gps";
-import { accelarateOsc, gpsOsc, feedback } from "./webaudio";
+import { accelarateOsc, gpsOsc, feedbackLevel } from "./webaudio";
 import { chatWorklet } from "./audioWorklet/chatWorklet";
 import { initGainUI } from "./ui/gainUI";
 
@@ -148,7 +148,10 @@ export const initialize = async (
                   Math.pow(acceleration.z, 2)) /
                   3,
               );
-              feedback(true, COUNTERBALANCE_FADE, rms * COUNTERBALANCE_GAIN_SCALE);
+              feedbackLevel(
+                rms * COUNTERBALANCE_GAIN_SCALE,
+                COUNTERBALANCE_FADE,
+              );
             })
             .catch((error) => {
               console.error("counterbalance加速度の取得に失敗:", error);

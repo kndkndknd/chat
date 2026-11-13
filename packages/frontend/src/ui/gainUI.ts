@@ -84,7 +84,7 @@ export const initGainUI = (): void => {
       if (!Number.isFinite(raw)) return;
       const value = clampGainValue(raw);
       span.textContent = value.toFixed(2);
-      // MASTER / CHAT / GLITCH は全クライアント共通のミックスバス。
+      // グローバル音量は全クライアント共通のミックスバス。
       // ローカルでも即時反映し、バックエンドからの再配信で確定する。
       if (isGlobalGainKey(key)) {
         applyGlobalGainValue(key, value);
