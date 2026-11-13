@@ -23,7 +23,7 @@ export const streamPlay = async (
     filter?: filterStateType;
     index?: number;
   },
-  cinemaFlag?: boolean
+  eraseAfterPlayback?: boolean
 ) => {
   const streamReqBody =
     stream.index !== undefined
@@ -43,7 +43,7 @@ export const streamPlay = async (
   );
   if (stream.video) {
     showImage(stream.video);
-    if (type === "STREAM" && cinemaFlag !== undefined && cinemaFlag) {
+    if (type === "STREAM" && eraseAfterPlayback) {
       setTimeout(() => {
         erasePrint();
       }, 300);

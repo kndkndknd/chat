@@ -2,7 +2,7 @@ type MuteListener = (flag: boolean) => void;
 
 const listeners = new Set<MuteListener>();
 
-// グローバルミュートの変更を、WebAudio 以外の音声出力（HLS / WebRTC など）へ伝える。
+// グローバルミュートの変更を、WebAudio 以外の音声出力（WebRTC など）へ伝える。
 export const onMuteChange = (listener: MuteListener): (() => void) => {
   listeners.add(listener);
   return () => {

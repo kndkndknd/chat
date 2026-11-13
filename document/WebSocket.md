@@ -297,7 +297,6 @@ socketState.socket.on("connected", (data) => {
 | `bufferRecReqFromServer` | チャンク録画開始 |
 | `bufferFromServer` | WebM動画データを受信して再生 |
 | `mediaRecFromServer` | 保持した録画（`VIDEOBUFFER`）を受信して `playRecording` で再生 |
-| `cinemaFromServer` | CINEMA の HLS URL を受信して `cinemaPlay` で上映（`STOP` で `cinemaStop`） |
 | `wholeCmdFromServer` | WHOLEコマンド処理 |
 | `personDetectFromServer` | フリッカリング演出 |
 | `disconnect` | 1秒後に `connect()` で再接続 |

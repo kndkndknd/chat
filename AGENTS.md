@@ -55,7 +55,6 @@ Root `arduino`/`snowleopard` filters point to missing packages; frontend
   endpoints: `POST /api/scenario`, `/api/clear-buffer`, `/api/parameter/reset`.
 - TLS keys are read from `<repo>/../keys/chat/` (`private.key` + `selfsigned.crt`,
   passphrase `chat`). Missing certs crash startup; they are outside the repo.
-  CINEMA HLS is served from `<repo>/../hls`.
 - Redis (ioredis) holds live state/buffers (`state:*`). Mongo helpers exist under
   `src/mongo/`, but the night-mode archive/restore path is absent/commented out.
   `docker/docker-compose.yml` runs Redis + an nginx TLS proxy to backend `:8888`.
@@ -78,4 +77,4 @@ Root `arduino`/`snowleopard` filters point to missing packages; frontend
   not package scripts.
 - Deep-dive docs in `document/` (e.g. `backend_test.md`, `frontend_test.md`,
   `redis.md`, `WebSocket.md`, `WebRTC.md`, `snowleopard.md`, `faceDetect.md`,
-  `videoBuffer.md`, `cinema.md`); quantize notes in `document/frontend/`.
+  `videoBuffer.md`); quantize notes in `document/frontend/`.

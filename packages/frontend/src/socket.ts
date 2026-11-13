@@ -19,7 +19,6 @@ import {
   wholeCmdOption
 } from "../../../types";
 import { emojiState, erasePrint, textPrint, showImage, flickering, drawTile, clearTiles } from "./canvasEvent";
-import { cinemaPlay, cinemaStop } from "./hls/cinemaPlayer";
 import { stopCmd, cmdFromServer } from "./cmd";
 import { quantizeFromServer, playPendingQuantizeChunk } from "./quantize/quantizeFromServer";
 import { quantizeParamFromServer } from "./quantize/quantizeParamFromServer";
@@ -68,14 +67,6 @@ export const socket = (): void => {
     textPrint("buffer");
   });
 
-
-  // CINEMA: 対象端末に通知された HLS プレイリスト URL を hls.js で再生する
-  socketState.socket.on(
-    "cinemaFromServer",
-    (data: { source: string; title: string; url: string; audio: boolean }) => {
-      cinemaPlay(data);
-    },
-  );
 
   socketState.socket.on("chatReqFromServer", () => {
     chatReq(String(socketState.socket.id));
@@ -255,7 +246,6 @@ export const socket = (): void => {
     "stopFromServer",
     (data: { fadeOutVal: number; target?: string }) => {
       erasePrint();
-      cinemaStop();
       if (data.target === undefined || data.target === "ALL") {
         stopCmd(data.fadeOutVal);
       }
@@ -314,7 +304,7 @@ export const socket = (): void => {
       } else {
         if (data.floating === undefined || !data.floating) {
           loopChunk[data.source] = data;
-          streamPlay("STREAM", data /*, cinemaFlag*/);
+          streamPlay("STREAM", data);
           streamReq(socketState.socket, "STREAM", data, data.source);
         } else {
           showImage(data.video, data.position);

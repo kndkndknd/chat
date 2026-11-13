@@ -119,7 +119,6 @@ pnpm install
 | `PLAYVIDEOBUFFER` | 保持した録画を対象端末で再生。 |
 | `TIMELAPSE` | クライアントが定期送信している映像・音声を受信して再生。 |
 | `EMPTY` | 空バッファを再生（無音の再生枠）。 |
-| `CINEMA` / `VIDEO` / `VID` / `MOVIE` / `MOV` | `<repo>/../hls` の HLS をランダムに選び、対象端末で上映。番号指定なしは全ストリーム端末。 |
 | `STOP` | 全停止（`Escape` も同じ）。 |
 
 ### パラメータ
