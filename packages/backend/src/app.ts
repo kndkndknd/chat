@@ -24,6 +24,7 @@ import {
 } from "./state";
 import { muteReqEmit } from "./socket/ioEmit";
 import { sanitizeClientReferences } from "./clientSetting/disconnectFromClient";
+import { normalizeGainState } from "./cmd/gainValue";
 import { streamsRedis } from "./redis/streamsRedis";
 import {
   isResettableParameter,
@@ -347,6 +348,8 @@ loadAllStates()
   .then(() => {
     // 再起動前に永続化された切断済みクライアント ID を除去する。
     sanitizeClientReferences();
+    // Redis から復元したゲインが古い範囲外値でも 0〜2 に正規化する。
+    normalizeGainState(cmdState.GAIN);
     // サーバ起動時は randomrate を CHAT/PLAYBACK/TIMELAPSE について必ず true にする
     // sampleRateState.randomrate.CHAT = true;
     // sampleRateState.randomrate.PLAYBACK = true;

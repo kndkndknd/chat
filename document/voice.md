@@ -1,6 +1,6 @@
 # VOICE 読み上げ
 
-> 最終更新: 2026-11-08
+> 最終更新: 2026-11-13
 > 対象: `VOICE` コマンド、`voiceFromServer`、`/api/voice`、`left` / `right` パスでの
 > パン再生。
 
@@ -15,7 +15,7 @@
 `SpeechSynthesisUtterance` の音声出力は Web Audio のグラフを通らないため、
 `left` / `right` パスの `masterPanner` ではパンを適用できません。
 そこで `left` / `right` パスだけ、`/api/voice` が macOS の `say` で生成した WAV を
-`AudioBufferSourceNode -> GainNode -> masterPanner` で再生します。
+`AudioBufferSourceNode -> GainNode -> masterGain -> masterPanner` で再生します。
 
 | パス | 読み上げ経路 | パン |
 | --- | --- | --- |
@@ -112,7 +112,7 @@ io.to(A).emit("voiceFromServer", { text, lang: cmdState.voiceLang })
         │  decodeAudioData
         │     │
         │     ▼
-        │  AudioBufferSourceNode → GainNode → masterPanner → muteGain → destination
+        │  AudioBufferSourceNode → GainNode → masterGain → masterPanner → muteGain → destination
         │
         └─ 中央パン / 生成失敗
               │
@@ -269,11 +269,11 @@ export const voice = async (data: VoiceData): Promise<void> => {
 2. `404` / `501` の場合は `serverVoiceUnavailable = true` にして以後フォールバック。
 3. `Content-Type` が `audio/` で始まることを確認。
 4. `arrayBuffer()` → `decodeAudioData()`。
-5. `AudioBufferSourceNode → GainNode → masterPanner` で再生。
+5. `AudioBufferSourceNode → GainNode → masterGain → masterPanner → muteGain` で再生。
 6. `data.volume` があれば `GainNode.gain.value` に反映（未指定は 1）。
 
-`masterPanner` に直接接続するため、`GAIN` UI の `MASTER` ゲインは VOICE 読み上げには
-影響しません（従来の `speechSynthesis` と同じ扱いです）。
+`masterGain` を経由するため、`GAIN` UI の `MASTER` ゲインは VOICE 読み上げにも
+適用されます。`MASTER` の変更は再生中のサーバーTTSにも即時反映されます。
 
 #### speechSynthesis（中央パス）
 
@@ -293,8 +293,10 @@ export const voice = async (data: VoiceData): Promise<void> => {
 
 `speechSynthesis` の出力は Web Audio の `muteGain` を通らないため、MUTE 中は
 新しい発話を開始せず、`onMuteChange` で再生中の発話を `cancel()` します。
-left/right のサーバーTTSは `masterPanner → muteGain` を通るため、MUTE は
-`muteGain` で適用されます。
+`SpeechSynthesisUtterance.volume` には `MASTER` と `data.volume` を掛けた値を
+設定します（0〜1にクランプ）。`MASTER` の変更は次回の発話から反映されます。
+left/right のサーバーTTSは `masterGain → masterPanner → muteGain` を通るため、
+`MASTER` と MUTE の両方が適用されます。
 
 #### `voiceFromServer` ハンドラ
 
@@ -313,13 +315,14 @@ socketState.socket.on(
 
 ```
 VOICE（left/right・サーバーTTS）
-  AudioBufferSourceNode → GainNode → masterPanner → muteGain → destination
+  AudioBufferSourceNode → GainNode → masterGain → masterPanner → muteGain → destination
 
 VOICE（中央パス・speechSynthesis）
   SpeechSynthesisUtterance → OS の音声出力（Web Audio の外）
+  volume = MASTER × data.volume（0〜1）
 
 その他の Web Audio
-  masterGain → masterPanner → destination
+  source → channel GainNode → masterGain → masterPanner → muteGain → destination
 ```
 
 ---
@@ -336,7 +339,7 @@ VOICE（中央パス・speechSynthesis）
 | それ以外 | `0` | 中央 |
 
 `left` が `right` より先に判定されます。`masterPanner` は
-`masterGain` の後段として `destination` に接続されます。
+`masterGain` の後段、`muteGain` の前段に接続されます。
 
 ---
 
@@ -346,7 +349,7 @@ VOICE（中央パス・speechSynthesis）
 | --- | --- |
 | `packages/backend/test/socket/ioEmit/voiceEmit.test.ts` | VOICE モードなしは送信しない / 対象クライアントだけに送る / `all`・`ALL`・`scenario` は全員 / 非 VOICE クライアントは送らない |
 | `packages/backend/test/voice/synthesizeVoice.test.ts` | 空文字・1000 文字超は生成しない |
-| `packages/frontend/test/voice/voice.test.ts` | 中央パンは speechSynthesis / パンありは `/api/voice` を Web Audio で再生 / 英語の女性音声優先 / MUTE 中は発話しない / 失敗時は speechSynthesis にフォールバック |
+| `packages/frontend/test/voice/voice.test.ts` | 中央パンは speechSynthesis / パンありは `/api/voice` を Web Audio で再生 / 英語の女性音声優先 / MUTE 中は発話しない / MASTER を音量へ反映 / 失敗時は speechSynthesis にフォールバック |
 
 実行:
 
@@ -372,7 +375,10 @@ pnpm -F frontend exec vitest run
   中央パスの `speechSynthesis` はブラウザ側でキューされます。
 - **MUTE**: 中央パスの `speechSynthesis` は `muteGain` を通らないため、MUTE 中は
   新しい発話を開始せず、再生中の発話を `cancel()` します。left/right のサーバーTTSは
-  `muteGain` でミュートされます。
+  `masterGain → masterPanner → muteGain` を通るため、MASTER と MUTE が適用されます。
+- **MASTER**: サーバーTTSは再生中も `masterGain` の変更が即時反映されます。
+  `speechSynthesis` は Web Audio 外のため、`utterance.volume` に `MASTER × data.volume`
+  を設定します。再生中に `MASTER` を変更した場合、次回の発話から反映されます。
 - **認証・レート制限**: `/api/voice` は認証なしで、テキスト 1000 文字・キャッシュ 20MiB の
   上限だけがあります。公開範囲が広い環境ではレート制限を検討してください。
 - **Vite dev**: `vite.config.ts` に `/api` の proxy がないため、Vite dev server 経由では

@@ -4,10 +4,10 @@
 
 `packages/frontend/` に対する vitest ベースの単体テスト。
 
-- **テストランナー**: vitest 3.0.8（リポジトリルートの devDependency）
-- **対象**: `packages/frontend/src/**` 配下で「値を返す純粋関数」と「値を返す state 依存関数」（純粋に近い計算ロジック）
-- **対象外**: DOM / Web Audio API / Canvas / WebSocket / WebRTC / face-api.js / vosk-browser / MediaStream など、ブラウザ API に深く結合した関数。これらは戻り値を持たない / `void` の関数も多く、本テストではスコープ外。
-- **テスト規模**: 9 ファイル / 44 ケース（すべて合格）
+- **テストランナー**: vitest 4.1.12（リポジトリルートの devDependency）
+- **対象**: `packages/frontend/src/**` 配下で「値を返す純粋関数」と「値を返す state 依存関数」（純粋に近い計算ロジック）。GAIN UI は最小のDOMスタブで初期化・イベント・送信内容を検証します。
+- **対象外**: 実ブラウザのDOM描画 / Web Audio API / Canvas / WebSocket / WebRTC / face-api.js / vosk-browser / MediaStream など、ブラウザ API に深く結合した関数。これらは戻り値を持たない / `void` の関数も多く、本テストではスコープ外。
+- **テスト規模**: 15 ファイル / 82 ケース（すべて合格）
 
 実行コマンド:
 ```bash
@@ -67,7 +67,9 @@ pnpm -F frontend exec vitest run
 | `test/quantize/quantizeFromServer.test.ts` | `quantizeFromServer` / `refreshQuantizeInterval` / `playPendingQuantizeChunk` | `src/quantize/quantizeFromServer.ts` | flag/beat 反映 / EMPTY・UPLOAD 追加の未知 stream を登録 / ON→OFF で streamChunk 破棄と CHAT の chatReq / 初回チャンク即再生（pending 消費・flag false 時は再生しない） / 稼働中は再アームしない / 全 false で停止 / BPM 変更の位相保持再アーム |
 | `test/quantize/bpmFromServer.test.ts` | `bpmFromServer` | `src/quantize/bpmFromServer.ts` | ストリーム指定で bar 更新と `refreshQuantizeInterval(true)` / METRONOME は metronome のみ / MODULATION は何もしない / source 非配列は return |
 | `test/quantize/quantizeParamFromServer.test.ts` | `quantizeParamFromServer` | `src/quantize/quantizeParamFromServer.ts` | 対象 stream の beat のみ反映（flag 不変） / 未知 stream は flag=false で追加 / streams 外・data なしは更新しない / CHAT beat の canvas 表示 |
-| `test/voice/voice.test.ts` | `voice` | `src/voice.ts` | 中央パンは speechSynthesis / パンありは `/api/voice` を Web Audio で再生 / 英語の女性音声優先 / MUTE 中は発話しない / 失敗時は speechSynthesis にフォールバック |
+| `test/ui/gainUI.test.ts` | `initGainUI` / `toggleGainUI` / `hideGainUI` / `setGainUI` | `src/ui/gainUI.ts` | 10項目の初期化 / 同期前の無効化 / 値の反映 / 変更キーだけの部分送信 / 範囲外クランプ / CLICK の change 発音 / 表示トグル / 非表示 / 不正値のフォールバック |
+| `test/ui/textInput.test.ts` | `keyDown` | `src/textInput.ts` | GAIN + Enter でUIトグルと入力クリア / Escape でUI非表示と入力クリア |
+| `test/voice/voice.test.ts` | `voice` | `src/voice.ts` | 中央パンは speechSynthesis / パンありは `/api/voice` を Web Audio で再生 / 英語の女性音声優先 / MUTE 中は発話しない / MASTER を音量へ反映 / 失敗時は speechSynthesis にフォールバック |
 
 ## 共通テクニック
 
