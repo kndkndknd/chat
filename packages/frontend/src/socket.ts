@@ -28,7 +28,10 @@ import { wholeCmd } from "./cmd/wholeCmd";
 import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
 import { recordAll, uploadRecording, playRecording } from "./mediaRecorder";
 import { bpmFromServer } from "./quantize/bpmFromServer";
-import { loopToggle } from "./stream/loop/loopToggle";
+import {
+  loopClear,
+  loopToggle,
+} from "./stream/loop/loopToggle";
 import { streamReq } from "./stream/streamReq";
 import { voice } from "./voice";
 import { mute } from "./webaudio";
@@ -190,6 +193,13 @@ export const socket = (): void => {
     (data: { stream: string; target: string }) => {
       console.log("loopToggleFromServer debug", data);
       loopToggle(data.stream, data.target);
+    },
+  );
+
+  socketState.socket.on(
+    "loopClearFromServer",
+    (data: { stream: string; target: string }) => {
+      loopClear(data.stream, data.target);
     },
   );
 

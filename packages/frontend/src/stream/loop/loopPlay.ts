@@ -1,4 +1,4 @@
-import { loopChunk, streamState } from "../../state";
+import { loopChunk, streamFlagState, streamState } from "../../state";
 import { streamPlay } from "../play/streamPlay";
 
 export const hasLoop = (): boolean =>
@@ -7,6 +7,9 @@ export const hasLoop = (): boolean =>
 export const loopPlay = (): void => {
   Object.keys(streamState.loop).forEach((stream) => {
     if (streamState.loop[stream].length === 0) {
+      return;
+    }
+    if (!streamFlagState[stream]) {
       return;
     }
     const chunk = loopChunk[stream];

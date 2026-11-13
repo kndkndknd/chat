@@ -122,6 +122,11 @@ export const loopToggleEmit = (stream: string, target: string) => {
   }
 }
 
+// STOP 時の LOOP 解除。トグルではなく明示的な解除として送る。
+export const loopClearEmit = (stream: string, target: string) => {
+  ioState?.io.to(target).emit("loopClearFromServer", { stream, target });
+}
+
 export const mediaRecReqEmit = (data?: {container: string; mimeType: string; blob: ArrayBuffer }, target?: string) => {
   if (target === undefined) {
     ioState?.io.emit("mediaRecReqFromServer", data);

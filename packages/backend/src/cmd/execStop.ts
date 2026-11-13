@@ -7,6 +7,7 @@ import {
   previousState,
 } from "../state";
 import { wholeParams } from "../data/list/wholeParams";
+import { clearLoop } from "../stream/loop/clearLoop";
 
 
 export const execStop = (
@@ -72,6 +73,7 @@ export const execStop = (
     previousState.stream[stream] = currentState.stream[stream];
     currentState.stream[stream] = false;
   }
+  clearLoop();
   Object.keys(streamState.target).forEach((element) => {
     streamState.target[element] = [];
   });
