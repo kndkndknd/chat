@@ -45,7 +45,7 @@ import {
   handleRelayDisconnect,
 } from "../relay";
 import { IoFacade } from "./IoFacade";
-import { stringEmit, videoBufferEmit, muteReqEmit } from "./ioEmit";
+import { stringEmit, videoBufferEmit, muteReqEmit, erasePrintEmit } from "./ioEmit";
 
 let strings = "";
 
@@ -128,6 +128,13 @@ export const wsServer = (
           }
           console.log("id: " + id);
           strings = charProcess(data, strings, id);
+          break;
+        }
+
+        // GAIN UI を開いたときなど、入力途中の文字列だけを破棄する。
+        case "clearStringFromClient": {
+          strings = "";
+          erasePrintEmit();
           break;
         }
 

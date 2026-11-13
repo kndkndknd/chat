@@ -15,6 +15,4 @@ export const gainState = {
   glitchGain: null as GainNode | null,
   feedbackReverveGain: null as GainNode | null,
   threeGain: null as GainNode | null,
-  simulateMaxGain: 0,
-  simulateBassGain: 1,
 };

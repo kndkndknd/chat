@@ -24,6 +24,7 @@ import { quantizeFromServer, playPendingQuantizeChunk } from "./quantize/quantiz
 import { quantizeParamFromServer } from "./quantize/quantizeParamFromServer";
 import { chatReq, recordReqFromServer, streamPlay, playAudioStream } from "./stream";
 import { setGainUI } from "./ui/gainUI";
+import { applyGlobalGain } from "./webaudio/params/applyGlobalGain";
 import { wholeCmd } from "./cmd/wholeCmd";
 import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
 import { recordAll, uploadRecording, playRecording } from "./mediaRecorder";
@@ -37,6 +38,10 @@ import { voice } from "./voice";
 import { mute } from "./webaudio";
 
 export const socket = (): void => {
+  // 再接続時も最新のグローバルゲインを取得する。
+  socketState.socket.on("connected", () => {
+    socketState.socket.emit("gainReqFromClient");
+  });
 
   socketState.socket.on("accelarateFlagFromServer", () => {
     if (flagState.isMobile) {
@@ -170,10 +175,10 @@ export const socket = (): void => {
   });
 
   // gainFromClient(スライダー操作)/ gainReqFromClient(UI を開く)への応答。
-  // 実際の音量(GainNode)には適用せず、入力欄の表示のみ更新する。
-  // スライダー操作時の発音は gainUI 側のローカル audition が担う。
+  // 表示を更新し、MASTER / CHAT / GLITCH は全クライアントの音声へ即時適用する。
   socketState.socket.on("gainFromServer", (data) => {
-    setGainUI(data);
+    const normalized = setGainUI(data);
+    applyGlobalGain(normalized);
   });
 
   socketState.socket.on("gpsFlagFromServer", () => {

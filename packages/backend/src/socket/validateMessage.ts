@@ -1,4 +1,5 @@
 import { streamList } from "../data";
+import { GAIN_MAX, GAIN_MIN, isGainKey } from "../cmd/gainValue";
 
 const MAX_SOURCE_LENGTH = 128;
 const MAX_AUDIO_BYTES = 4 * 1024 * 1024;
@@ -99,7 +100,13 @@ export const isResizeData = (
 
 export const isGainData = (value: unknown): value is Record<string, number> =>
   isRecord(value) &&
-  Object.values(value).every((item) => isFiniteNumber(item));
+  Object.keys(value).every((key) => isGainKey(key)) &&
+  Object.values(value).every(
+    (item) =>
+      isFiniteNumber(item) &&
+      item >= GAIN_MIN &&
+      item <= GAIN_MAX,
+  );
 
 export const isMediaUploadData = (value: unknown): boolean =>
   isRecord(value) &&

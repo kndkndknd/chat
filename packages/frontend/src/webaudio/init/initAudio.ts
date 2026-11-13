@@ -11,8 +11,10 @@ import {
 } from "../../state";
 import { initWhitenoiseWorklet } from "../../audioWorklet/whitenoiseWorklet";
 
-const chatGainVal = 2.0;
-const glitchGainVal = 1.5;
+// backend の cmdState.GAIN 既定値と一致させる。
+// 実際の値は接続後に gainFromServer で上書きされる。
+const chatGainVal = 1.5;
+const glitchGainVal = 2.0;
 
 export const initAudio = async (
   initWhitenoise: () => Promise<void> = initWhitenoiseWorklet,
@@ -97,7 +99,8 @@ export const initAudio = async (
   gainState.glitchGain = contextState.audioContext.createGain();
   gainState.glitchGain.gain.setValueAtTime(glitchGainVal, 0);
   convolverState.convolver.connect(gainState.glitchGain);
-  gainState.glitchGain.connect(gainState.muteGain);
+  // GLITCH も MASTER の配下に置く。
+  gainState.glitchGain.connect(gainState.masterGain);
 
   gainState.feedbackGain = contextState.audioContext.createGain();
   gainState.feedbackGain.gain.setValueAtTime(0, 0);
@@ -116,10 +119,8 @@ export const initAudio = async (
   filterState.chatFilter.frequency.setValueAtTime(1000, 0);
   filterState.chatFilter.Q.setValueAtTime(2.5, 0);
   filterState.chatFilter.gain.setValueAtTime(chatGainVal, 0);
-  filterState.chatFilter.connect(gainState.masterGain);
-  // gainState.chatGain.disconnect();
-  // gainState.chatGain.connect(filterState.chatFilter);
-  // filterNodeState.chatFilter.connect(gainState.masterGain);
+  // フィルタ付き CHAT も chatGain を経由させ、GAIN CHAT を全域に効かせる。
+  filterState.chatFilter.connect(gainState.chatGain);
 
   // SIMULATE
   oscState.simulateOsc = contextState.audioContext.createOscillator();
