@@ -23,6 +23,7 @@ import {
   flagState,
 } from "./state";
 import { muteReqEmit } from "./socket/ioEmit";
+import { sanitizeClientReferences } from "./clientSetting/disconnectFromClient";
 import { streamsRedis } from "./redis/streamsRedis";
 import {
   isResettableParameter,
@@ -344,6 +345,8 @@ app.post("/api/parameter/reset", function (req, res) {
 
 loadAllStates()
   .then(() => {
+    // 再起動前に永続化された切断済みクライアント ID を除去する。
+    sanitizeClientReferences();
     // サーバ起動時は randomrate を CHAT/PLAYBACK/TIMELAPSE について必ず true にする
     // sampleRateState.randomrate.CHAT = true;
     // sampleRateState.randomrate.PLAYBACK = true;

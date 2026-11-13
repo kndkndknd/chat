@@ -10,21 +10,41 @@ import {
 import { streamList } from "../data";
 import { floatingPosition } from "./floatingPosition";
 
-const currentIndices = (): number[] =>
-  Object.keys(clientState.client).map((id) => clientState.client[id].index);
+const currentIndices = (excludeId?: string): number[] =>
+  Object.keys(clientState.client)
+    .filter((id) => id !== excludeId)
+    .map((id) => clientState.client[id].index);
 
 // 0 から順に未使用の最小 index を返す
-const smallestUnusedIndex = (): number => {
-  const used = new Set(currentIndices());
+const smallestUnusedIndex = (excludeId?: string): number => {
+  const used = new Set(currentIndices(excludeId));
   let i = 0;
   while (used.has(i)) i++;
   return i;
 };
 
 // 衝突した既存クライアントを末尾へ退避させる際の index（現在の最大 + 1）
-const evictedIndex = (): number => {
-  const indices = currentIndices();
+const evictedIndex = (excludeId?: string): number => {
+  const indices = currentIndices(excludeId);
   return indices.length === 0 ? 0 : Math.max(...indices) + 1;
+};
+
+const addUnique = (list: string[], id: string): void => {
+  if (!list.includes(id)) list.push(id);
+};
+
+export const updateClientSize = (
+  id: string,
+  data: { width?: number; height?: number },
+): void => {
+  const client = clientState.client[id];
+  if (!client || !data) return;
+  if (typeof data.width === "number" && Number.isFinite(data.width)) {
+    client.position.width = data.width;
+  }
+  if (typeof data.height === "number" && Number.isFinite(data.height)) {
+    client.position.height = data.height;
+  }
 };
 
 export const connectFromClient = (data, id: string, ipAddress: string) => {
@@ -37,10 +57,12 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
   if(data.urlPathName === "/1" || data.urlPathName === "/2" || data.urlPathName === "/3"){
     // 1: Macbook Pro, facedetection client(20260530-0610)
     const desiredIndex = Number(data.urlPathName.slice(-1));
-    // 既に同じ index を持つクライアントがいれば末尾へ退避
+    const existing = clientState.client[id];
+    // 既に同じ index を持つ「別の」クライアントがいれば末尾へ退避
     Object.keys(clientState.client).forEach((existingId) => {
+      if (existingId === id) return;
       if (clientState.client[existingId].index === desiredIndex) {
-        clientState.client[existingId].index = evictedIndex();
+        clientState.client[existingId].index = evictedIndex(id);
       }
     });
 
@@ -62,7 +84,7 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
         width: data.width,
         height: data.height,
       },
-      self: false,
+      self: existing?.self ?? false,
       snowLeopard: false,
       index: desiredIndex,
       facedetection: facedetection,
@@ -71,8 +93,8 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
 
     if (!streamState.timelapse) streamState.timelapse = true;
 
-    clientState.cmdClient.push(id);
-    clientState.streamClient.push(id);
+    addUnique(clientState.cmdClient, id);
+    addUnique(clientState.streamClient, id);
 
     if (bpmState[id] === undefined) {
       bpmState[id] = {
@@ -126,8 +148,8 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
 
     if (!streamState.timelapse) streamState.timelapse = true;
 
-    if (!Object.keys(clientState.client).includes(sockId)) {
-      const index = smallestUnusedIndex();
+    if (clientState.client[sockId] === undefined) {
+      const index = smallestUnusedIndex(sockId);
       if (data.urlPathName.includes("project")) {
         clientState.client[sockId] = {
           ipAddress,
@@ -172,12 +194,8 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
       }
     }
     if (!data.urlPathName.includes("exc")) {
-      if (!Object.keys(clientState.cmdClient).includes(sockId)) {
-        clientState.cmdClient.push(sockId);
-      }
-      if (!Object.keys(clientState.streamClient).includes(sockId)) {
-        clientState.streamClient.push(sockId);
-      }
+      addUnique(clientState.cmdClient, sockId);
+      addUnique(clientState.streamClient, sockId);
     }
 
     if (bpmState[sockId] === undefined) {
@@ -236,18 +254,20 @@ export const connectFromClient = (data, id: string, ipAddress: string) => {
       };
     }
     console.log(sockId + " is noStream Client");
-    const position = floatingPosition(sockId);
+    const existing = clientState.client[sockId];
+    const position = existing?.position ?? floatingPosition(sockId);
 
     clientState.client[sockId] = {
+      ...existing,
       ipAddress,
       stream: false,
       urlPathName: data.urlPathName,
       projection: false,
       position,
       mobile: data.isMobile,
-      self: false,
+      self: existing?.self ?? false,
       snowLeopard,
-      index: smallestUnusedIndex(),
+      index: existing?.index ?? smallestUnusedIndex(sockId),
       facedetection: false,
       hanged: false,
     };

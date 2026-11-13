@@ -3,12 +3,16 @@ import * as Https from "https";
 import * as Http from "http";
 
 import { buffStateType, gainStateType } from "../../../../types";
-import { clientState, currentState, bpmState, flagState } from "../state";
+import { currentState, flagState } from "../state";
 import { chatReceive } from "../stream/chatReceive";
 import { charProcess } from "../cmd/charProcess";
 import { execStream } from "../stream/execStream";
 import { ioState } from "../state/states/ioState";
-import { connectFromClient } from "../clientSetting/connectFromClient";
+import {
+  connectFromClient,
+  updateClientSize,
+} from "../clientSetting/connectFromClient";
+import { removeClientState } from "../clientSetting/disconnectFromClient";
 import { emitClientSettings } from "../clientSetting/clientSettingsEmit";
 import { countersRedis } from "../redis/streamsRedis";
 import { faceDetectScenario } from "../scenario/faceDetectScenario";
@@ -209,6 +213,14 @@ export const wsServer = (
           break;
         }
 
+        case "resizeFromClient": {
+          updateClientSize(
+            id,
+            data as { width?: number; height?: number },
+          );
+          break;
+        }
+
         default:
           console.log("unknown message type:", type);
       }
@@ -218,20 +230,7 @@ export const wsServer = (
       console.log("disconnect:", id);
       facade.removeClient(id);
       handleRelayDisconnect(id);
-      if (clientState.client[id]) delete clientState.client[id];
-      if (clientState.streamClient.includes(id)) {
-        clientState.streamClient = clientState.streamClient.filter((el) => el !== id);
-      }
-      if (clientState.cmdClient.includes(id)) {
-        clientState.cmdClient = clientState.cmdClient.filter((el) => el !== id);
-      }
-      if (bpmState[id] !== undefined) {
-        delete bpmState[id];
-      }
-      console.log("clients:", clientState.client);
-      console.log("streamClient:", clientState.streamClient);
-      console.log("cmdClient:", clientState.cmdClient);
-      console.log("bpm", bpmState);
+      removeClientState(id);
     });
   });
 

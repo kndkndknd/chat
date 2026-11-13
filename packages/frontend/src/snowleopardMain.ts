@@ -41,6 +41,7 @@ flagState.isMobile = /iphone|ipad|ipod|android/.test(ua);
 voiceState.speechSynthesis = new SpeechSynthesisUtterance();
 
 let stringsClient = "";
+let resizeTimer: ReturnType<typeof setTimeout> | null = null;
 
 let eListener = <HTMLElement>document.getElementById("wrapper");
 eListener.addEventListener(
@@ -64,8 +65,11 @@ eListener.addEventListener(
 );
 
 window.addEventListener("resize", (e) => {
-  console.log("resizing");
-  canvasSizing(socketState.socket);
+  if (resizeTimer !== null) clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    resizeTimer = null;
+    canvasSizing(socketState.socket);
+  }, 200);
 });
 canvasSizing();
 

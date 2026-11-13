@@ -4,7 +4,7 @@ vi.mock("../../../src/state", () => ({
   clientState: {
     cmdClient: ["c1"],
     paCmdClient: ["p1", "p2"],
-    client: { p1: {}, p2: {} } as Record<string, any>,
+    client: { p1: {}, p2: {}, X: {} } as Record<string, any>,
   },
   currentState: {
     cmd: { BASS: [], WHITENOISE: [], FEEDBACK: [] },

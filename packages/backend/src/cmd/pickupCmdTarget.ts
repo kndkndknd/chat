@@ -10,6 +10,12 @@ interface Cmd {
   gain?: number;
 }
 
+const isActiveClient = (id: string): boolean =>
+  clientState.client[id] !== undefined;
+
+const pickRandom = (arr: string[]): string =>
+  arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : "";
+
 export const commonPickupCmdTarget = (
   cmdString: string,
   clientArr: string[],
@@ -20,74 +26,82 @@ export const commonPickupCmdTarget = (
 ): string[] => {
   const cmd =
     cmdString === "SINEWAVE" ? "SINEWAVE" : (cmdString as keyof typeof cmdList);
+  const activeClients = clientArr.filter(isActiveClient);
 
-  if (option !== undefined && option.target !== undefined && option.target) {
+  if (
+    option !== undefined &&
+    option.target !== undefined &&
+    option.target &&
+    isActiveClient(option.target)
+  ) {
     return [option.target];
-  } else {
-    switch (cmd) {
-      case "CLICK":
-        return [
-          clientArr[
-            Math.floor(Math.random() * clientState.cmdClient.length)
-          ],
-        ];
-      case "BASS":
-      case "WHITENOISE":
-      case "FEEDBACK":
-        if (currentState.cmd[cmd].length === 0) {
-          return [
-            clientArr[
-              Math.floor(Math.random() * clientState.cmdClient.length)
-            ],
-          ];
-        } else {
-          return currentState.cmd[cmd];
-        }
-      case "SIMULATE":
-        console.log("SIMULATE:", clientArr);
-        return clientArr;
-      case "SINEWAVE":
-        if (Object.keys(currentState.sinewave).length === 0) {
-          //どの端末も音を出していない場合
-          return [
-            clientArr[
-              Math.floor(Math.random() * clientState.cmdClient.length)
-            ],
-          ];
-        } else {
-          if (option.value !== undefined) {
-            // 同じ周波数の音を出している端末がある場合 （同じ音を出している全部が対象になるべきでは？）
-            let sameFreqArr: string[] = [];
-            for (let id in currentState.sinewave) {
-              if (option.value === currentState.sinewave[id]) {
-                sameFreqArr.push(id);
-                delete currentState.sinewave[id];
-              }
-            }
-            if (sameFreqArr.length > 0) {
-              return sameFreqArr;
-            }
+  }
 
-            // 同じ周波数の音を出している端末がない場合（上記でreturnされなかった場合）
-            // 音が出ていない端末があれば、その中からランダムに発音、全部音が出てたら完全にランダム
-            const unsoundArr = clientArr.filter(
-              (client) => !Object.keys(currentState.sinewave).includes(client)
-            );
-            return unsoundArr.length > 0
-              ? [unsoundArr[Math.floor(Math.random() * unsoundArr.length)]]
-              : [
-                  clientArr[
-                    Math.floor(Math.random() * clientState.cmdClient.length)
-                  ],
-                ];
-          } else {
-            return ["target is undefined"];
-          }
+  switch (cmd) {
+    case "CLICK": {
+      const target = pickRandom(activeClients);
+      return target ? [target] : [];
+    }
+    case "BASS":
+    case "WHITENOISE":
+    case "FEEDBACK": {
+      const currentTargets = (currentState.cmd[cmd] ?? []).filter(
+        isActiveClient,
+      );
+      if (currentTargets.length === 0) {
+        const target = pickRandom(activeClients);
+        return target ? [target] : [];
+      }
+      return currentTargets;
+    }
+    case "SIMULATE":
+      console.log("SIMULATE:", activeClients);
+      return activeClients;
+    case "SINEWAVE": {
+      const activeSinewave = Object.keys(currentState.sinewave).filter(
+        isActiveClient,
+      );
+      if (activeSinewave.length === 0) {
+        //どの端末も音を出していない場合
+        const target = pickRandom(activeClients);
+        return target ? [target] : [];
+      }
+      if (option?.value === undefined) {
+        return ["target is undefined"];
+      }
+
+      // 同じ周波数の音を出している端末がある場合
+      const sameFreqArr: string[] = [];
+      for (const id of activeSinewave) {
+        if (option.value === currentState.sinewave[id]) {
+          sameFreqArr.push(id);
+          delete currentState.sinewave[id];
         }
-      default:
-        return [Object.keys(clientState.client)[
-          Math.floor(Math.random() * clientState.cmdClient.length)
-        ]];
+      }
+      if (sameFreqArr.length > 0) {
+        return sameFreqArr;
+      }
+
+      // 音が出ていない端末があれば、その中からランダムに発音する。
+      const remaining = Object.keys(currentState.sinewave).filter(
+        isActiveClient,
+      );
+      const unsoundArr = activeClients.filter(
+        (client) => !remaining.includes(client),
+      );
+      if (unsoundArr.length > 0) {
+        return [pickRandom(unsoundArr)];
+      }
+      const target = pickRandom(activeClients);
+      return target ? [target] : [];
+    }
+    default: {
+      const target = pickRandom(
+        Object.keys(clientState.client).filter((id) =>
+          activeClients.includes(id),
+        ),
+      );
+      return target ? [target] : [];
     }
   }
 };
