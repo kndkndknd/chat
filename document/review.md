@@ -1,6 +1,6 @@
 # コードレビュー結果
 
-- 基準コミット: `dev` @ `177324d`（WebSocket 検証修正は未コミット）
+- 基準コミット: `dev` @ `fbdc25e`（STOP 後 LOOP 修正は未コミット）
 - レビュー日: 2026-11-13
 - 対象: リポジトリ全体（主要モジュール）
 - 方法: 静的レビュー + ビルド / テスト実行
@@ -15,7 +15,8 @@
 - `3910efb` `GET LIVESTREAM` の音声抽出を完了まで待つよう修正
 - `edfdb3b` 60秒超 UPLOAD を連続20秒区間の逐次処理へ変更
 - `d44c4cf` 切断時のクリーンアップ・重複登録・resize 分離を修正
-- 未コミット: WebSocket 入力の検証・例外処理・source 制限を追加
+- `7f2f922` WebSocket 入力の検証・例外処理・source 制限を追加
+- 未コミット: STOP 時の LOOP 解除を追加
 
 ビルドと全テストは成功しています。一方で、**再起動時の `currentState.stream` 残留**、**環境変数・依存宣言**は未対応です。これらは運用開始後に再現しやすいため、優先して確認することを推奨します。
 
@@ -24,9 +25,9 @@
 | 項目 | 結果 |
 |---|---|
 | `pnpm -F backend build` | 成功 |
-| backend テスト | 68 files / 318 tests 成功 |
+| backend テスト | 69 files / 321 tests 成功 |
 | `pnpm -F frontend exec tsc --noEmit` | 成功 |
-| frontend テスト | 10 files / 57 tests 成功 |
+| frontend テスト | 11 files / 59 tests 成功 |
 | `pnpm -F frontend build` | 成功（preload chunk 約893KB） |
 | `git diff --check` | 問題なし |
 
@@ -85,7 +86,7 @@
 - `pickupStreamTarget` / `pickupPaStreamTarget` / `pickupCmdTarget` で切断済み ID を除外
 - 同一 ID の再登録、切断後 cleanup、stale target のテストを追加
 
-### 3.6 WebSocket 入力の検証と例外処理（未コミット）
+### 3.6 WebSocket 入力の検証と例外処理（`7f2f922`）
 
 - `socket/validateMessage.ts` を追加し、受信データの型・必須項目を検証
 - `ws.on("message")` の非同期処理全体を catch し、未処理 rejection を防止
@@ -94,6 +95,15 @@
 - `source` を `CHAT` と `streamList` に限定し、任意ストリーム生成を防止
 - `SELF` が未登録クライアントで参照されないようガード
 - 入力検証の単体テストを追加
+
+### 3.7 STOP 時の LOOP 解除（未コミット）
+
+- `clearLoop` を追加し、`STOP` / `STOP STREAM` / `STOP <stream>` で `streamState.loop` を解除
+- 解除対象端末へ `loopClearFromServer` を送信（`loopToggleFromServer` のトグルを流用しない）
+- フロントの `loopClearFromServer` ハンドラで対象を削除
+- `stopCmd` でローカルの `streamState.loop` と `loopChunk` も破棄
+- `loopPlay` は `streamFlagState` が false の場合に再生しない
+- `clearLoop` / `loopPlay` のテストを追加
 
 ## 4. 優先度: 高
 
@@ -169,16 +179,7 @@
 - **数値指定コマンドの読み上げが空**: `splitSpace/index.ts:84,100` で `stringArr.splice(1)` した後に `stringArr.slice(1)` を読むため、読み上げ文字列が空になります。
 - **`1-3` の範囲指定が動かない**: 条件では `-` を許容していますが、実際の展開は `split(",")` のみです。
 
-### 5.2 STOP 後も LOOP が鳴り続ける
-
-対象:
-
-- `packages/backend/src/cmd/execStop.ts:70-80`
-- `packages/frontend/src/stream/loop/loopPlay.ts`
-
-`execStop` は `streamState.loop` を消さず、`loopPlay` も `streamFlagState` を見ていません。STOP 後もループ再生が継続します。
-
-### 5.3 録画リクエストのタイマー競合
+### 5.2 録画リクエストのタイマー競合
 
 対象:
 
@@ -189,7 +190,7 @@
 
 `recordAsOtherEmit` はタイムアウトで `RECORD` を戻さないため、一度呼ぶと true のまま残ります。
 
-### 5.4 `sensorState.isMobile` が常に false
+### 5.3 `sensorState.isMobile` が常に false
 
 対象:
 
@@ -199,7 +200,7 @@
 
 `main.ts` は `flagState.isMobile` だけを設定し、`initialize` は `sensorState.isMobile` を見ています。モバイルの加速度・GPS 処理が開始されません。
 
-### 5.5 その他
+### 5.4 その他
 
 - `wholeEmit.ts:17` の先頭 duration だけ `* 1000` が抜けており、秒とミリ秒が混在しています。
 - `m5Access.ts` の `RELAY_HOST` は `m5SetIpAddress` で共有されるため、rotation / vibration の切替先が混ざる可能性があります。
@@ -236,7 +237,7 @@
 ## 8. テスト / CI
 
 - テストは純粋関数・state 依存関数が中心で、WebSocket ハンドラ、`execStream`、CINEMA の DOM、UPLOAD の ffmpeg パイプライン、環境変数 bootstrap の統合テストはありません。
-- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 68 files / 318 tests、frontend 10 files / 57 tests）。
+- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 69 files / 321 tests、frontend 11 files / 59 tests）。
 - CI は Dependabot のみで、テスト・ビルドを実行する workflow がありません。
 - 今回の CINEMA 回帰のような問題は、DOM ID の存在チェックや最小のスモークテストでも検出できます。
 
@@ -245,7 +246,7 @@
 1. 起動時の `currentState.stream` / `RECORD` / `WHOLE` 初期化と動的 streamList 復元
 2. `.env` bootstrap と backend 依存宣言の修正
 3. `execStream` の target 指定
-4. STOP / LOOP、録画タイマー、FADE / QUANTIZE / PREVIOUS
+4. 録画タイマー、FADE / QUANTIZE / PREVIOUS
 5. セキュリティ（認証・公開範囲・Redis bind・秘密鍵）
 6. ログ整理、LRANGE 最適化、CI 追加
 
@@ -253,4 +254,4 @@
 
 - `scenario/scenario.json` と `log/20261012122223.json` には `CINEMA` 文字列が残っています。git 管理外のユーザーデータのため未変更です。CINEMA は未対応コマンドとして無視されます。
 - `packages/backend/static` の古い生成物（`assets/preload-helper-*` など）には旧 CINEMA コードが含まれます。現在の `main.js` からは参照されていません。クリーンビルドまたは古い生成物の削除で解消できます。
-- 本レポートは `177324d` 時点のコードに、未コミットの WebSocket 検証修正を加えた状態を基準にしています。
+- 本レポートは `fbdc25e` 時点のコードに、未コミットの STOP 時 LOOP 解除を加えた状態を基準にしています。

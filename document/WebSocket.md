@@ -286,6 +286,8 @@ socketState.socket.on("connected", (data) => {
 | `erasePrintFromServer` | キャンバスのテキストを消去 |
 | `cmdFromServer` | BPM・ストリーム等のコマンドを適用 |
 | `stopFromServer` | 音声フェードアウト・停止 |
+| `loopToggleFromServer` | 対象ストリームの LOOP 状態を切り替える |
+| `loopClearFromServer` | STOP 時に LOOP を明示的に解除する（トグルしない） |
 | `chatReqFromServer` | 次のCHATバッファを要求 (`chatReq`) |
 | `recordReqFromServer` | 録音開始 |
 | `chatFromServer` | 音声+映像チャンクを受信して再生 |
