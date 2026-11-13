@@ -15,12 +15,14 @@ export const workletBufferFromClient = async (
   id: string
 ) => {
   if (data.source === "CHAT") {
+    // ArrayBuffer の byteLength ではなく Float32 の frames 数で扱う。
+    const bufferSize = data.audio.byteLength / Float32Array.BYTES_PER_ELEMENT;
     const buff: buffStateType = {
       source: data.source,
       video: data.video,
       audio: data.audio,
-      bufferSize: data.audio.byteLength,
-      duration: data.audio.byteLength / 44100 / 4,
+      bufferSize,
+      duration: bufferSize / 44100,
     };
     console.log("debug: Received buffer from client for CHAT");
     chatReceive(buff);

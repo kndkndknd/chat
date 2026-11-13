@@ -5,6 +5,8 @@ import { bufferSizeState, wholeState } from "../state";
 import { hasLoop, loopPlay } from "../stream/loop/loopPlay";
 
 let messageCount = 0; // CHAT/TIMELAPSE 以外の送信を間引くためのカウンタ
+// 8192 frames × 2 ≒ 371ms。旧 2048 frames × 8 と同じ間隔を維持する。
+const SEND_INTERVAL_BUFFERS = 2;
 
 export async function chatWorklet(stream: MediaStream, socket: SocketFacade) {
   await contextState.audioContext.audioWorklet.addModule("chat-processor.js");
@@ -35,17 +37,25 @@ export async function chatWorklet(stream: MediaStream, socket: SocketFacade) {
 
     messageCount++;
     // AudioWorklet のバッファ周期で定期的に LOOP 再生する（録音フラグには依存しない）
-    if (messageCount % 8 === 0 && hasLoop()) {
+    if (messageCount % SEND_INTERVAL_BUFFERS === 0 && hasLoop()) {
       loopPlay();
     }
 
     // console.log("audioWorkletState.chat.flag:", audioWorkletState.chat.flag);
-    if (
-      Object.values(audioWorkletState.chat.flag).every((flag) => flag === false)
-    ) {
+    const activeStreams = Object.keys(audioWorkletState.chat.flag).filter(
+      (streamSource) => audioWorkletState.chat.flag[streamSource],
+    );
+    if (activeStreams.length === 0) {
       return;
     }
-    if (messageCount % 8 !== 0) {
+    // CHAT/TIMELAPSE が有効なら毎バッファ、それ以外だけなら
+    // SEND_INTERVAL_BUFFERS に 1 回送信する。
+    // 送信しないバッファでは video の base64 化も行わない。
+    const shouldSend =
+      activeStreams.includes("CHAT") ||
+      activeStreams.includes("TIMELAPSE") ||
+      messageCount % SEND_INTERVAL_BUFFERS === 0;
+    if (!shouldSend) {
       return;
     }
     // payload は Transfer された ArrayBuffer（Float32Array の中身）
@@ -57,7 +67,14 @@ export async function chatWorklet(stream: MediaStream, socket: SocketFacade) {
       Object.keys(audioWorkletState.chat.flag).forEach((streamSource) => {
         const isChatOrTimelapse =
           streamSource === "CHAT" || streamSource === "TIMELAPSE";
-        // CHAT/TIMELAPSE 以外はフラグが立ち続けて毎回送信されるため、5回に1回だけ送信する
+        // CHAT/TIMELAPSE は毎バッファ送信する。それ以外は負荷軽減のため
+        // SEND_INTERVAL_BUFFERS に1回だけ送信する。
+        if (
+          !isChatOrTimelapse &&
+          messageCount % SEND_INTERVAL_BUFFERS !== 0
+        ) {
+          return;
+        }
         if (audioWorkletState.chat.flag[streamSource]) {
           // socket.emit("audiobufferFromClient", {
           //   buffer: ab,
