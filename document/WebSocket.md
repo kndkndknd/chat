@@ -112,6 +112,7 @@ ws.send({ type: "connected", data: { id } })  ← クライアントに ID を�
 | イベント | データ型 | 処理 |
 |---|---|---|
 | `connectFromClient` | `{ clientMode, urlPathName, width, height, isMobile }` | `connectFromClient()` でクライアント状態を初期化、成功時 `debugFromServer` を返す |
+| `resizeFromClient` | `{ width, height }` | `updateClientSize()` で既存クライアントの position を更新（登録は行わない） |
 | `charFromClient` | `string` | `charProcess()` でコマンド文字を蓄積・解析 |
 | `chatFromClient` | `buffStateType` | `chatReceive()` でバッファをRedisにプッシュし、配信先に転送 |
 | `streamReqFromClient` | `string` (source名) | `streamEmit()` でストリームバッファを該当クライアントに送信 |
@@ -128,9 +129,12 @@ ws.send({ type: "connected", data: { id } })  ← クライアントに ID を�
 ws.on("close")
   ↓
 facade.removeClient(id)
-clientState.client[id] を削除
-clientState.streamClient, cmdClient から除去
-bpmState[id] を削除
+handleRelayDisconnect(id)
+removeClientState(id)
+  ├ clientState.client / cmdClient / streamClient / pa* / sinewaveClient
+  ├ bpmState / arduinoClient
+  ├ streamState.target / loop
+  └ currentState.cmd / sinewave, previousState.cmd, cmdState.VOICE
 ```
 
 **`deserialize` (内部関数):**  

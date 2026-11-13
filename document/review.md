@@ -1,6 +1,6 @@
 # コードレビュー結果
 
-- 基準コミット: `dev` @ `3910efb`
+- 基準コミット: `dev` @ `ba549fe`（切断 cleanup 修正は未コミット）
 - レビュー日: 2026-11-13
 - 対象: リポジトリ全体（主要モジュール）
 - 方法: 静的レビュー + ビルド / テスト実行
@@ -8,21 +8,22 @@
 
 ## 1. 結論
 
-直近の3コミットと未コミットの追加修正で、大きな機能不整合は解消されています。
+直近のコミットと未コミットの追加修正で、大きな機能不整合は解消されています。
 
 - `e2fa019` CINEMA 機能を削除
 - `45a8328` AudioWorklet のバッファサイズを 8192 frames に統一
 - `3910efb` `GET LIVESTREAM` の音声抽出を完了まで待つよう修正
-- 未コミット: 60秒超 UPLOAD を連続20秒区間の逐次処理へ変更
+- `edfdb3b` 60秒超 UPLOAD を連続20秒区間の逐次処理へ変更
+- 未コミット: 切断時のクリーンアップ・重複登録・resize 分離を修正
 
-ビルドと全テストは成功しています。一方で、**再起動時のクライアント依存 state 残留**、**環境変数・依存宣言**、**WebSocket 入力の堅牢性**は未対応です。これらは運用開始後に再現しやすいため、優先して確認することを推奨します。
+ビルドと全テストは成功しています。一方で、**再起動時の `currentState.stream` 残留**、**環境変数・依存宣言**、**WebSocket 入力の堅牢性**は未対応です。これらは運用開始後に再現しやすいため、優先して確認することを推奨します。
 
 ## 2. 確認結果
 
 | 項目 | 結果 |
 |---|---|
 | `pnpm -F backend build` | 成功 |
-| backend テスト | 66 files / 305 tests 成功 |
+| backend テスト | 67 files / 312 tests 成功 |
 | `pnpm -F frontend exec tsc --noEmit` | 成功 |
 | frontend テスト | 10 files / 57 tests 成功 |
 | `pnpm -F frontend build` | 成功（preload chunk 約893KB） |
@@ -63,7 +64,7 @@
 
 `getLiveStream` は音声バッファが揃うまで `pushBatch` しないため、映像だけが登録されて無音になる問題は解消されています。44100Hz モノラルで抽出し、再生側のサンプルレートも明示的に揃えたため、速度・音程も一致します。
 
-### 3.4 60秒超の `UPLOAD`（未コミット）
+### 3.4 60秒超の `UPLOAD`（`edfdb3b`）
 
 - `durationPattern` を、全長を連続20秒区間でカバーする実装へ変更
 - 60秒超のランダム分割を廃止
@@ -73,6 +74,15 @@
 - `-ss` / `-t` を ffmpeg の正しい位置へ移動（従来は出力URLの後ろで無視されていた）
 - 画像の一時ディレクトリを区間ごとに分離し、古い JPG の混入を防止
 - 65秒の生成動画で、音声・映像とも351チャンク（65秒 × 5.4fps）になることを確認
+
+### 3.5 切断時のクリーンアップと重複登録（未コミット）
+
+- `removeClientState(id)` を新設し、切断時に全クライアント配列・target・loop・cmd・sinewave・VOICE から ID を除去
+- 起動時に `sanitizeClientReferences()` で Redis 復元後の stale ID を除去
+- `connectFromClient` を冪等化し、配列の重複チェックと `/1` `/2` `/3` の index 衝突処理を修正
+- resize を `resizeFromClient` に分離し、登録処理の再送を廃止
+- `pickupStreamTarget` / `pickupPaStreamTarget` / `pickupCmdTarget` で切断済み ID を除外
+- 同一 ID の再登録、切断後 cleanup、stale target のテストを追加
 
 ## 4. 優先度: 高
 
@@ -93,14 +103,13 @@
 - `cmdState.VOICE`
 - `currentState.cmd` / `currentState.sinewave`
 
-再起動後はこれらの ID がすべて無効になります。`streamState.target` に古い ID が残ると、`pickupStreamTarget` が切断済み ID を選び、`currentState.stream` が true のまま再生が止まります。`currentState.stream.CHAT` が true で復元されると、最初の CHAT が「開始」ではなく「停止」になります。
+再起動後はこれらの ID がすべて無効になります。今回の修正で `sanitizeClientReferences()` が起動時に target / loop / cmd / sinewave / VOICE から stale ID を除去するようになりました。
 
-`initStreams()` は `streams:keys` と recordIndex の初期化だけを行い、`initRedis()` はどこからも呼ばれていません。動的に追加されたストリーム名も `streamList` に復元されません。
+残る問題は、`currentState.stream.CHAT` などが true のまま復元されることと、動的に追加されたストリーム名が `streamList` に復元されないことです。`currentState.stream.CHAT` が true で復元されると、最初の CHAT が「開始」ではなく「停止」になります。
 
 推奨:
 
-- 起動時に `target` / `loop` / `VOICE` / `currentState.cmd` / `sinewave` / `RECORD` / `WHOLE` を初期化する
-- もしくはクライアント依存フィールドを永続化対象から外す
+- 起動時に `currentState.stream` / `RECORD` / `WHOLE` を初期化する
 - 動的ストリームを `streams:keys` から `streamList` へ復元する
 
 ### 4.2 `.env` の `REDIS_URL` が反映されない / 依存宣言の不足
@@ -139,33 +148,7 @@
 - `execStream` で `target` が指定されたらその ID を優先する
 - または `streamState.target[source] = [detectedClientId]` を明示的に設定する
 
-### 4.4 切断時のクリーンアップと重複登録
-
-対象:
-
-- `packages/backend/src/socket/wsServer.ts:217-235`
-- `packages/backend/src/clientSetting/connectFromClient.ts:74-75`
-- `packages/backend/src/clientSetting/connectFromClient.ts:174-180`
-- `packages/frontend/src/canvasEvent/canvasSizing.ts:21-27`
-
-`ws.on("close")` は `client` / `streamClient` / `cmdClient` / `bpmState` しか削除しません。`paCmdClient` / `paStreamClient` / `sinewaveClient` / `arduinoClient`、`streamState.target` / `loop` に ID が残ります。
-
-また、配列に対して
-
-```ts
-Object.keys(clientState.cmdClient).includes(sockId)
-```
-
-を使っているため、重複チェックがほぼ機能しません。`/1` `/2` `/3` 分岐には重複チェック自体がありません。`canvasSizing` は resize のたびに `connectFromClient` を送るため、リサイズで重複登録が増えます。
-
-推奨:
-
-- `cmdClient.includes(sockId)` / `streamClient.includes(sockId)` を使う
-- `/1` 分岐にも重複チェックを入れる
-- close 時に全クライアント配列・target・loop から削除する
-- `canvasSizing` の送信を debounce する
-
-### 4.5 WebSocket 入力の検証と例外処理
+### 4.4 WebSocket 入力の検証と例外処理
 
 対象:
 
@@ -261,15 +244,15 @@ Object.keys(clientState.cmdClient).includes(sockId)
 ## 8. テスト / CI
 
 - テストは純粋関数・state 依存関数が中心で、WebSocket ハンドラ、`execStream`、CINEMA の DOM、UPLOAD の ffmpeg パイプライン、環境変数 bootstrap の統合テストはありません。
-- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 66 files / 305 tests、frontend 10 files / 57 tests）。
+- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 67 files / 312 tests、frontend 10 files / 57 tests）。
 - CI は Dependabot のみで、テスト・ビルドを実行する workflow がありません。
 - 今回の CINEMA 回帰のような問題は、DOM ID の存在チェックや最小のスモークテストでも検出できます。
 
 ## 9. 推奨する修正順
 
-1. 起動時のクライアント依存 state 初期化
+1. 起動時の `currentState.stream` / `RECORD` / `WHOLE` 初期化と動的 streamList 復元
 2. `.env` bootstrap と backend 依存宣言の修正
-3. 切断クリーンアップ・重複登録・WebSocket 入力検証
+3. WebSocket 入力検証
 4. `execStream` の target 指定
 5. STOP / LOOP、録画タイマー、FADE / QUANTIZE / PREVIOUS
 6. セキュリティ（認証・公開範囲・Redis bind・秘密鍵）
@@ -279,4 +262,4 @@ Object.keys(clientState.cmdClient).includes(sockId)
 
 - `scenario/scenario.json` と `log/20261012122223.json` には `CINEMA` 文字列が残っています。git 管理外のユーザーデータのため未変更です。CINEMA は未対応コマンドとして無視されます。
 - `packages/backend/static` の古い生成物（`assets/preload-helper-*` など）には旧 CINEMA コードが含まれます。現在の `main.js` からは参照されていません。クリーンビルドまたは古い生成物の削除で解消できます。
-- 本レポートは `3910efb` 時点のコードに、未コミットの60秒超 UPLOAD 修正を加えた状態を基準にしています。
+- 本レポートは `ba549fe` 時点のコードに、未コミットの切断 cleanup 修正を加えた状態を基準にしています。
