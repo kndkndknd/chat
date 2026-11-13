@@ -1,4 +1,4 @@
-import { streamsRedis } from "../../data/chunk/streams";
+import { streamsRedis, streamList } from "../../data";
 import { chatReceive } from "../chatReceive";
 import { buffStateType } from "../../../../../types";
 import { pushStateStream } from "../pushStateStream";
@@ -14,6 +14,11 @@ export const workletBufferFromClient = async (
   },
   id: string
 ) => {
+  if (data.source !== "CHAT" && !streamList.includes(data.source)) {
+    console.warn("rejected unknown stream source:", data.source);
+    return;
+  }
+
   if (data.source === "CHAT") {
     // ArrayBuffer の byteLength ではなく Float32 の frames 数で扱う。
     const bufferSize = data.audio.byteLength / Float32Array.BYTES_PER_ELEMENT;

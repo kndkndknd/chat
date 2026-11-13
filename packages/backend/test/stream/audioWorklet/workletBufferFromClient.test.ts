@@ -7,7 +7,8 @@ const { chatReceiveMock } = vi.hoisted(() => ({
 vi.mock("../../../src/stream/chatReceive", () => ({
   chatReceive: chatReceiveMock,
 }));
-vi.mock("../../../src/data/chunk/streams", () => ({
+vi.mock("../../../src/data", () => ({
+  streamList: ["PLAYBACK", "TIMELAPSE", "EMPTY"],
   streamsRedis: {
     push: vi.fn(),
     incrementIndex: vi.fn(),
@@ -42,5 +43,19 @@ describe("workletBufferFromClient", () => {
     const buff = chatReceiveMock.mock.calls[0][0];
     expect(buff.bufferSize).toBe(frames);
     expect(buff.duration).toBeCloseTo(frames / 44100);
+  });
+
+  test("許可されていない source は拒否する", async () => {
+    await workletBufferFromClient(
+      {
+        video: "",
+        audio: new Float32Array(8192).buffer,
+        source: "UNKNOWN",
+        bufferSize: 8192,
+      },
+      "client-1",
+    );
+
+    expect(chatReceiveMock).not.toHaveBeenCalled();
   });
 });

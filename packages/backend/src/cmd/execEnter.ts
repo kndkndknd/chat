@@ -104,9 +104,14 @@ export const execEnter = async (
     m5Switch("rotation", switchState);
     m5State.rotation.relay = switchState ? "on" : "off";
   } else if (strings === "SELF") {
-    clientState.client[id].self = !clientState.client[id].self;
-    console.log("SELF: ", clientState.client[id].self);
-    stringEmit("SELF " + clientState.client[id].self, true, id);
+    const client = clientState.client[id];
+    if (!client) {
+      stringEmit("SELF: client is not registered", true, id);
+      return;
+    }
+    client.self = !client.self;
+    console.log("SELF: ", client.self);
+    stringEmit("SELF " + client.self, true, id);
   } else if (strings === "SINEWAVE") {
     const frequency = 20 + Math.random() * 19980;
     voiceEmit(frequency + "Hz", id);
