@@ -1,6 +1,6 @@
 # コードレビュー結果
 
-- 基準コミット: `dev` @ `863310e`（起動時 state 修正は未コミット）
+- 基準コミット: `dev` @ `31afa45`（env bootstrap 修正は未コミット）
 - レビュー日: 2026-11-14
 - 対象: リポジトリ全体（主要モジュール）
 - 方法: 静的レビュー + ビルド / テスト実行
@@ -19,16 +19,17 @@
 - `69ef1e9` STOP 時の LOOP 解除を追加
 - `0365cc9` 録画リクエストのタイマー競合を修正
 - `dea78c7` `execStream` の明示 target を優先するよう修正
-- 未コミット: 起動時の再生状態リセットと動的ストリーム復元を修正
+- `66224c7` 起動時の再生状態リセットと動的ストリーム復元を修正
+- 未コミット: `.env` bootstrap と backend の依存宣言を修正
 
-ビルドと全テストは成功しています。一方で、**環境変数・依存宣言**は未対応です。運用開始後に再現しやすいため、優先して確認することを推奨します。
+ビルドと全テストは成功しており、優先度: 高の未解決項目はありません。残るのは中優先度のコマンド不具合と、セキュリティ・運用面の整理です。
 
 ## 2. 確認結果
 
 | 項目 | 結果 |
 |---|---|
 | `pnpm -F backend build` | 成功 |
-| backend テスト | 76 files / 343 tests 成功 |
+| backend テスト | 77 files / 345 tests 成功 |
 | `pnpm -F frontend exec tsc --noEmit` | 成功 |
 | frontend テスト | 17 files / 91 tests 成功 |
 | `pnpm -F frontend build` | 成功（preload chunk 約893KB） |
@@ -126,7 +127,7 @@
 - `splitPlaybackWithIndex` も選択した端末を強制宛先にする
 - 宛先解決と preparation のテストを追加
 
-### 3.10 起動時の再生状態リセットと動的ストリーム復元（未コミット）
+### 3.10 起動時の再生状態リセットと動的ストリーム復元（`66224c7`）
 
 - `resetRuntimeStreamState` で `currentState.stream` / `RECORD` / `WHOLE` を初期化
 - `previousState.stream` / `RECORD` も初期化し、PREVIOUS で再起動前の再生を再開しない
@@ -135,28 +136,19 @@
 - Redis から復元済みの値は上書きしない
 - 起動処理と復元処理のテストを追加
 
+### 3.11 `.env` bootstrap と backend 依存宣言（未コミット）
+
+- `src/env.ts` を追加し、`app.ts` の最初の import で `.env` を読み込む
+- `dist/app.js` で `require("./env")` が `wsServer` より先に実行されることを確認
+- `dotenv` を backend の `dependencies` へ移動
+- `express` を backend の `dependencies`、`@types/express` を `devDependencies` へ追加
+- ルートの `express` / `@types/express` 宣言を削除
+- `pnpm-lock.yaml` を更新
+- `loadEnv` の単体テストを追加
+
 ## 4. 優先度: 高
 
-### 4.2 `.env` の `REDIS_URL` が反映されない / 依存宣言の不足
-
-対象:
-
-- `packages/backend/src/app.ts:10-14`
-- `packages/backend/src/redis/client.ts:3`
-- `packages/backend/package.json`
-
-`dotenv.config()` は import 評価後に実行されます。CommonJS に変換された `dist/app.js` でも `require("./socket/wsServer")` などが先に走り、`redis/client.ts` は import 時に `process.env.REDIS_URL` を読みます。そのため **`.env` の `REDIS_URL` は無視され、シェルで export した場合だけ有効**です。
-
-また:
-
-- `dotenv` は backend の `devDependencies` ですが、`app.ts` が実行時に使います
-- `express` は backend の依存に含まれず、root の依存で偶然解決されています
-
-推奨:
-
-- `.env` を読み込む bootstrap を最初に実行する、または Redis 接続を遅延初期化する
-- `dotenv` を `dependencies` へ移動
-- `express` / `@types/express` を backend に宣言
+現在、未解決の高優先度項目はありません。
 
 ## 5. 優先度: 中
 
@@ -214,20 +206,19 @@
 
 ## 8. テスト / CI
 
-- テストは純粋関数・state 依存関数が中心で、WebSocket ハンドラ、`execStream`、CINEMA の DOM、UPLOAD の ffmpeg パイプライン、環境変数 bootstrap の統合テストはありません。
-- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 76 files / 343 tests、frontend 17 files / 91 tests）。
+- テストは純粋関数・state 依存関数が中心で、WebSocket ハンドラ、`execStream`、CINEMA の DOM、UPLOAD の ffmpeg パイプライン、実 `.env` を使った起動の統合テストはありません。
+- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 77 files / 345 tests、frontend 17 files / 91 tests）。
 - CI は Dependabot のみで、テスト・ビルドを実行する workflow がありません。
 - 今回の CINEMA 回帰のような問題は、DOM ID の存在チェックや最小のスモークテストでも検出できます。
 
 ## 9. 推奨する修正順
 
-1. `.env` bootstrap と backend 依存宣言の修正
-2. FADE / QUANTIZE / PREVIOUS
-3. セキュリティ（認証・公開範囲・Redis bind・秘密鍵）
-4. ログ整理、LRANGE 最適化、CI 追加
+1. FADE / QUANTIZE / PREVIOUS
+2. セキュリティ（認証・公開範囲・Redis bind・秘密鍵）
+3. ログ整理、LRANGE 最適化、CI 追加
 
 ## 10. 補足
 
 - `scenario/scenario.json` と `log/20261012122223.json` には `CINEMA` 文字列が残っています。git 管理外のユーザーデータのため未変更です。CINEMA は未対応コマンドとして無視されます。
 - `packages/backend/static` の古い生成物（`assets/preload-helper-*` など）には旧 CINEMA コードが含まれます。現在の `main.js` からは参照されていません。クリーンビルドまたは古い生成物の削除で解消できます。
-- 本レポートは `863310e` 時点のコードに、未コミットの起動時 state 修正を加えた状態を基準にしています。
+- 本レポートは `31afa45` 時点のコードに、未コミットの env bootstrap 修正を加えた状態を基準にしています。

@@ -72,6 +72,7 @@ redis.on("error", (err) => {
 
 - `ioredis` の単一クライアントをモジュールスコープでシングルトンとしてエクスポート。
 - 接続先は環境変数 `REDIS_URL` を優先、未設定なら `redis://localhost:6379`。
+- `app.ts` は最初に `./env` を import し、`redis/client.ts` の評価より先に `.env` を読み込む。
 - エラーは `console.error` でログするのみで、再接続は ioredis のデフォルト挙動に委ねる。
 - アプリケーションコードは `import { redis } from "../redis/client"` で同じ接続を共有する。
 
@@ -343,6 +344,7 @@ cmdLogging("START");
 ```
 packages/backend/src/
 ├── app.ts                            ── 起動 (loadAllStates → initStreams) と POST /api/persondetect
+├── env.ts                            ── .env bootstrap (app.ts の最初に import)
 ├── redis/
 │   ├── client.ts                     ── ioredis インスタンス
 │   ├── stateRedis.ts                 ── createPersistedState / loadAllStates / Proxy + debounce
