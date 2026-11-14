@@ -8,7 +8,8 @@ import {
   bpmState,
 } from "../state";
 import { streamsRedis } from "../data";
-import { pickupStreamTarget, pickupPaStreamTarget } from "./pickupStreamTarget";
+import { resolveStreamTarget } from "./resolveStreamTarget";
+import { pickupPaStreamTarget } from "./pickupStreamTarget";
 import { glitchStream } from "./glitchStream";
 import { gridTimeoutVal } from "./gridTimeoutVal";
 import { streamEmit, stringEmit } from "../socket/ioEmit";
@@ -22,19 +23,14 @@ export const execStream = async (
   index?: number,
   target?: string,
 ) => {
-  currentState.stream[source] = true;
-  
-  console.log(`debug ${source} targetArr`, streamState.target[source]);
-  let targetId =
-    from === undefined
-      ? pickupStreamTarget(source)
-      : pickupStreamTarget(source, from);
-  if (streamState.pa[source]) {
-    targetId = pickupPaStreamTarget();
-  }
+  const targetId = resolveStreamTarget(source, from, target);
   if (targetId === "") {
+    console.log("no target", source, "from:", from, "target:", target);
     return;
   }
+  currentState.stream[source] = true;
+
+  console.log(`debug ${source} targetArr`, streamState.target[source]);
   console.log("from:", from);
   console.log("targetId", targetId);
 

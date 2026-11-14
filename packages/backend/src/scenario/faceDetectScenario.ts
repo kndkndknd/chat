@@ -128,7 +128,14 @@ const runBuffer = (candidate: Candidate, fixedId?: string) => {
     return;
   }
   const source = candidate.buffer === "yesterday" ? "YESTERDAY" : "PLAYBACK";
-  execStreamPreparation(source, id, candidate.index ?? undefined, fixedId);
+  execStreamPreparation(
+    source,
+    id,
+    candidate.index ?? undefined,
+    fixedId,
+    undefined,
+    fixedId,
+  );
   console.log("[faceDetectScenario] execStream", source, candidate.index, "->", id);
 };
 

@@ -11,14 +11,26 @@ export const execStreamPreparation = async (
   index?: number,
   from?: string,
   targetId?: string[],
+  forcedTarget?: string,
 ): Promise<void> => {
-  // targetId が指定されていればその端末のみを再生範囲にする
-  if (targetId && source !== "RECORD" && source !== "REC") {
-    streamState.target[source] = targetId;
-  } else if (!targetId) {
-    for(const id in clientState.client) {
-      if(clientState.client[id].stream && !streamState.target[source]?.includes(id)) {
-        streamState.target[source]?.push(id);
+  // 強制宛先は target 配列にも反映し、2チャンク目以降の request でも
+  // 同じ端末へ送り続けられるようにする。
+  if (source !== "RECORD" && source !== "REC") {
+    if (forcedTarget !== undefined && forcedTarget !== "") {
+      streamState.target[source] = [forcedTarget];
+    } else if (targetId) {
+      streamState.target[source] = targetId;
+    } else {
+      if (!streamState.target[source]) {
+        streamState.target[source] = [];
+      }
+      for (const clientId in clientState.client) {
+        if (
+          clientState.client[clientId].stream &&
+          !streamState.target[source].includes(clientId)
+        ) {
+          streamState.target[source].push(clientId);
+        }
       }
     }
   }
@@ -32,8 +44,20 @@ export const execStreamPreparation = async (
   } else if (streamList.includes(source)) {
     console.log("in stream");
 
-    // from が指定されていればその端末を起点に再生する
-    execStream(source, from ?? undefined, undefined, index);
+    // targetId が1件だけならその端末を強制宛先にする。
+    // scenario などからは forcedTarget で明示的に指定できる。
+    const resolvedTarget =
+      forcedTarget ??
+      (targetId !== undefined && targetId.length === 1
+        ? targetId[0]
+        : undefined);
+    execStream(
+      source,
+      from ?? undefined,
+      undefined,
+      index,
+      resolvedTarget,
+    );
     voiceEmit(source, id);
   }
 };
