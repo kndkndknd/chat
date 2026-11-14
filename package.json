@@ -13,11 +13,7 @@
     "arduino": "pnpm -F \"arduino\"",
     "snowleopard": "pnpm -F \"snowleopard\""
   },
-  "dependencies": {
-    "express": "4.22.3"
-  },
   "devDependencies": {
-    "@types/express": "4.17.18",
     "@types/node": "20.8.0",
     "tsx": "^4.23.15",
     "typescript": "5.2.2",

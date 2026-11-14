@@ -168,14 +168,7 @@ overrides:
 importers:
 
   .:
-    dependencies:
-      express:
-        specifier: 4.22.3
-        version: 4.22.3(supports-color@8.1.1)
     devDependencies:
-      '@types/express':
-        specifier: 4.17.18
-        version: 4.17.18
       '@types/node':
         specifier: 20.8.0
         version: 20.8.0
@@ -194,6 +187,12 @@ importers:
       axios:
         specifier: 1.21.0
         version: 1.21.0(debug@4.4.0(supports-color@8.1.1))(supports-color@8.1.1)
+      dotenv:
+        specifier: 16.3.1
+        version: 16.3.1
+      express:
+        specifier: 4.22.3
+        version: 4.22.3(supports-color@8.1.1)
       ioredis:
         specifier: 5.10.1
         version: 5.10.1(supports-color@8.1.1)
@@ -213,9 +212,9 @@ importers:
         specifier: 8.22.0
         version: 8.22.0(bufferutil@4.0.8)
     devDependencies:
-      dotenv:
-        specifier: 16.3.1
-        version: 16.3.1
+      '@types/express':
+        specifier: 4.17.18
+        version: 4.17.18
     optionalDependencies:
       bufferutil:
         specifier: 4.0.8
@@ -1260,10 +1259,6 @@ packages:
     resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
 
-  http-errors@2.0.0:
-    resolution: {integrity: sha512-FtwrG/euBzaEjYeRqOgly7G0qviiXoJWnvEH2Z1plBdXgbyjv34pHTSb9zoeHMyDy33+DWy5Wt9Wo+TURtOYSQ==}
-    engines: {node: '>= 0.8'}
-
   http-errors@2.0.1:
     resolution: {integrity: sha512-4FbRdAX+bSdmo4AUFuS0WNiPz8NgFt+r8ThgNWmlrjQjt1Q7ZR9+zTlce2859x4KSXrwIsaeTqDoKQmtP8pLmQ==}
     engines: {node: '>= 0.8'}
@@ -1548,10 +1543,6 @@ packages:
 
   standard-as-callback@2.1.0:
     resolution: {integrity: sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==}
-
-  statuses@2.0.1:
-    resolution: {integrity: sha512-RwNA9Z/7PrK06rYLIzFMlaF+l73iwpzsqRIFgbMLbTcLD6cOao82TaWefPXQvB2fOC4AjuYSEndS7N/mTCbkdQ==}
-    engines: {node: '>= 0.8'}
 
   statuses@2.0.2:
     resolution: {integrity: sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==}
@@ -2482,7 +2473,7 @@ snapshots:
       etag: 1.8.1
       finalhandler: 1.3.2(supports-color@8.1.1)
       fresh: 0.5.2
-      http-errors: 2.0.0
+      http-errors: 2.0.1
       merge-descriptors: 1.0.3
       methods: 1.1.2
       on-finished: 2.4.1
@@ -2495,7 +2486,7 @@ snapshots:
       send: 0.19.2(supports-color@8.1.1)
       serve-static: 1.16.3(supports-color@8.1.1)
       setprototypeof: 1.2.0
-      statuses: 2.0.1
+      statuses: 2.0.2
       type-is: 1.6.18
       utils-merge: 1.0.1
       vary: 1.1.2
@@ -2582,14 +2573,6 @@ snapshots:
   hasown@2.0.4:
     dependencies:
       function-bind: 1.1.2
-
-  http-errors@2.0.0:
-    dependencies:
-      depd: 2.0.0
-      inherits: 2.0.4
-      setprototypeof: 1.2.0
-      statuses: 2.0.1
-      toidentifier: 1.0.1
 
   http-errors@2.0.1:
     dependencies:
@@ -2908,8 +2891,6 @@ snapshots:
   stackback@0.0.2: {}
 
   standard-as-callback@2.1.0: {}
-
-  statuses@2.0.1: {}
 
   statuses@2.0.2: {}
 

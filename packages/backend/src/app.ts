@@ -1,3 +1,4 @@
+import "./env";
 import * as fs from "fs";
 import { default as Express } from "express";
 import * as path from "path";
@@ -5,13 +6,6 @@ import { default as favicon } from "serve-favicon";
 import * as Https from "https";
 import { wsServer } from "./socket/wsServer";
 import { networkInterfaces } from "os";
-import dotenv from "dotenv";
-
-const dotenvPath = path.join(__dirname, "../../..", ".env");
-if (fs.existsSync(dotenvPath)) {
-  console.log("Loading .env file from:", dotenvPath);
-  dotenv.config({ path: dotenvPath });
-}
 
 import { cmdLogging } from "./logging/cmdLogging";
 import { initStreams } from "./data";
