@@ -1,7 +1,7 @@
 # コードレビュー結果
 
-- 基準コミット: `dev` @ `01eabae`（録画タイマー修正は未コミット）
-- レビュー日: 2026-11-13
+- 基準コミット: `dev` @ `612ecc5`（execStream の target 修正は未コミット）
+- レビュー日: 2026-11-14
 - 対象: リポジトリ全体（主要モジュール）
 - 方法: 静的レビュー + ビルド / テスト実行
 - 未確認: 実機ブラウザ、Redis / Mongo 実接続、M5Stack / Raspberry Pi、WebRTC 実接続
@@ -17,7 +17,8 @@
 - `d44c4cf` 切断時のクリーンアップ・重複登録・resize 分離を修正
 - `7f2f922` WebSocket 入力の検証・例外処理・source 制限を追加
 - `69ef1e9` STOP 時の LOOP 解除を追加
-- 未コミット: 録画リクエストのタイマー競合を修正
+- `0365cc9` 録画リクエストのタイマー競合を修正
+- 未コミット: `execStream` の明示 target を優先するよう修正
 
 ビルドと全テストは成功しています。一方で、**再起動時の `currentState.stream` 残留**、**環境変数・依存宣言**は未対応です。これらは運用開始後に再現しやすいため、優先して確認することを推奨します。
 
@@ -26,7 +27,7 @@
 | 項目 | 結果 |
 |---|---|
 | `pnpm -F backend build` | 成功 |
-| backend テスト | 70 files / 323 tests 成功 |
+| backend テスト | 73 files / 337 tests 成功 |
 | `pnpm -F frontend exec tsc --noEmit` | 成功 |
 | frontend テスト | 12 files / 61 tests 成功 |
 | `pnpm -F frontend build` | 成功（preload chunk 約893KB） |
@@ -106,13 +107,23 @@
 - `loopPlay` は `streamFlagState` が false の場合に再生しない
 - `clearLoop` / `loopPlay` のテストを追加
 
-### 3.8 録画リクエストのタイマー競合（未コミット）
+### 3.8 録画リクエストのタイマー競合（`0365cc9`）
 
 - backend の `recordEmit` に録画世代を追加し、古いタイマーを破棄
 - 最新の録画終了時だけ `currentState.RECORD` を false にする
 - `recordAsOtherEmit` も開始時にタイマーを設定し、停止時に解除
 - frontend の `recordReqFromServer` を source ごとの世代管理に変更
 - 連続リクエストで古いタイマーが新しい録画フラグを落とさないことをテスト
+
+### 3.9 `execStream` の target 指定（未コミット）
+
+- `resolveStreamTarget` を追加し、明示 target を最優先にした
+- target が切断済みの場合は別端末へフォールバックしない
+- `execStreamPreparation` に `forcedTarget` を追加
+- targetId が1件なら自動的に強制宛先にする
+- `faceDetectScenario` の検出端末再生に固定 target を渡す
+- `splitPlaybackWithIndex` も選択した端末を強制宛先にする
+- 宛先解決と preparation のテストを追加
 
 ## 4. 優先度: 高
 
@@ -162,21 +173,6 @@
 - `.env` を読み込む bootstrap を最初に実行する、または Redis 接続を遅延初期化する
 - `dotenv` を `dependencies` へ移動
 - `express` / `@types/express` を backend に宣言
-
-### 4.3 `execStream` の target 指定が無視される
-
-対象:
-
-- `packages/backend/src/stream/execStream.ts:18-31`
-- `packages/backend/src/stream/execStreamPreparation.ts`
-- `packages/backend/src/scenario/faceDetectScenario.ts`
-
-`execStream` の `target?: string` は宣言だけで未使用です。`faceDetectScenario` は検出端末に固定したつもりで `execStreamPreparation(..., detectedClientId)` を呼びますが、実際には全ストリームクライアントからランダムに選ばれます。
-
-推奨:
-
-- `execStream` で `target` が指定されたらその ID を優先する
-- または `streamState.target[source] = [detectedClientId]` を明示的に設定する
 
 ## 5. 優先度: 中
 
@@ -235,7 +231,7 @@
 ## 8. テスト / CI
 
 - テストは純粋関数・state 依存関数が中心で、WebSocket ハンドラ、`execStream`、CINEMA の DOM、UPLOAD の ffmpeg パイプライン、環境変数 bootstrap の統合テストはありません。
-- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 70 files / 323 tests、frontend 12 files / 61 tests）。
+- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 73 files / 337 tests、frontend 12 files / 61 tests）。
 - CI は Dependabot のみで、テスト・ビルドを実行する workflow がありません。
 - 今回の CINEMA 回帰のような問題は、DOM ID の存在チェックや最小のスモークテストでも検出できます。
 
@@ -243,13 +239,12 @@
 
 1. 起動時の `currentState.stream` / `RECORD` / `WHOLE` 初期化と動的 streamList 復元
 2. `.env` bootstrap と backend 依存宣言の修正
-3. `execStream` の target 指定
-4. FADE / QUANTIZE / PREVIOUS
-5. セキュリティ（認証・公開範囲・Redis bind・秘密鍵）
-6. ログ整理、LRANGE 最適化、CI 追加
+3. FADE / QUANTIZE / PREVIOUS
+4. セキュリティ（認証・公開範囲・Redis bind・秘密鍵）
+5. ログ整理、LRANGE 最適化、CI 追加
 
 ## 10. 補足
 
 - `scenario/scenario.json` と `log/20261012122223.json` には `CINEMA` 文字列が残っています。git 管理外のユーザーデータのため未変更です。CINEMA は未対応コマンドとして無視されます。
 - `packages/backend/static` の古い生成物（`assets/preload-helper-*` など）には旧 CINEMA コードが含まれます。現在の `main.js` からは参照されていません。クリーンビルドまたは古い生成物の削除で解消できます。
-- 本レポートは `01eabae` 時点のコードに、未コミットの録画タイマー修正を加えた状態を基準にしています。
+- 本レポートは `612ecc5` 時点のコードに、未コミットの `execStream` target 修正を加えた状態を基準にしています。
