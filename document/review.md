@@ -1,6 +1,6 @@
 # コードレビュー結果
 
-- 基準コミット: `dev` @ `612ecc5`（execStream の target 修正は未コミット）
+- 基準コミット: `dev` @ `863310e`（起動時 state 修正は未コミット）
 - レビュー日: 2026-11-14
 - 対象: リポジトリ全体（主要モジュール）
 - 方法: 静的レビュー + ビルド / テスト実行
@@ -18,18 +18,19 @@
 - `7f2f922` WebSocket 入力の検証・例外処理・source 制限を追加
 - `69ef1e9` STOP 時の LOOP 解除を追加
 - `0365cc9` 録画リクエストのタイマー競合を修正
-- 未コミット: `execStream` の明示 target を優先するよう修正
+- `dea78c7` `execStream` の明示 target を優先するよう修正
+- 未コミット: 起動時の再生状態リセットと動的ストリーム復元を修正
 
-ビルドと全テストは成功しています。一方で、**再起動時の `currentState.stream` 残留**、**環境変数・依存宣言**は未対応です。これらは運用開始後に再現しやすいため、優先して確認することを推奨します。
+ビルドと全テストは成功しています。一方で、**環境変数・依存宣言**は未対応です。運用開始後に再現しやすいため、優先して確認することを推奨します。
 
 ## 2. 確認結果
 
 | 項目 | 結果 |
 |---|---|
 | `pnpm -F backend build` | 成功 |
-| backend テスト | 73 files / 337 tests 成功 |
+| backend テスト | 76 files / 343 tests 成功 |
 | `pnpm -F frontend exec tsc --noEmit` | 成功 |
-| frontend テスト | 12 files / 61 tests 成功 |
+| frontend テスト | 17 files / 91 tests 成功 |
 | `pnpm -F frontend build` | 成功（preload chunk 約893KB） |
 | `git diff --check` | 問題なし |
 
@@ -115,7 +116,7 @@
 - frontend の `recordReqFromServer` を source ごとの世代管理に変更
 - 連続リクエストで古いタイマーが新しい録画フラグを落とさないことをテスト
 
-### 3.9 `execStream` の target 指定（未コミット）
+### 3.9 `execStream` の target 指定（`dea78c7`）
 
 - `resolveStreamTarget` を追加し、明示 target を最優先にした
 - target が切断済みの場合は別端末へフォールバックしない
@@ -125,33 +126,16 @@
 - `splitPlaybackWithIndex` も選択した端末を強制宛先にする
 - 宛先解決と preparation のテストを追加
 
+### 3.10 起動時の再生状態リセットと動的ストリーム復元（未コミット）
+
+- `resetRuntimeStreamState` で `currentState.stream` / `RECORD` / `WHOLE` を初期化
+- `previousState.stream` / `RECORD` も初期化し、PREVIOUS で再起動前の再生を再開しない
+- `streams:keys` から動的ストリームを `streamList` へ復元
+- 復元時に不足する sampleRate / filter / target / loop / bpmState を初期化
+- Redis から復元済みの値は上書きしない
+- 起動処理と復元処理のテストを追加
+
 ## 4. 優先度: 高
-
-### 4.1 再起動後にクライアント依存 state が残留する
-
-対象:
-
-- `packages/backend/src/state/states/currentState.ts`
-- `packages/backend/src/state/states/streamState.ts`
-- `packages/backend/src/state/states/cmdState.ts`
-- `packages/backend/src/redis/stateRedis.ts:65-98`
-- `packages/backend/src/app.ts:345-356`
-
-`currentState` / `streamState` / `cmdState` は Redis に永続化されますが、以下には接続ごとの UUID が入ります。
-
-- `streamState.target`
-- `streamState.loop`
-- `cmdState.VOICE`
-- `currentState.cmd` / `currentState.sinewave`
-
-再起動後はこれらの ID がすべて無効になります。今回の修正で `sanitizeClientReferences()` が起動時に target / loop / cmd / sinewave / VOICE から stale ID を除去するようになりました。
-
-残る問題は、`currentState.stream.CHAT` などが true のまま復元されることと、動的に追加されたストリーム名が `streamList` に復元されないことです。`currentState.stream.CHAT` が true で復元されると、最初の CHAT が「開始」ではなく「停止」になります。
-
-推奨:
-
-- 起動時に `currentState.stream` / `RECORD` / `WHOLE` を初期化する
-- 動的ストリームを `streams:keys` から `streamList` へ復元する
 
 ### 4.2 `.env` の `REDIS_URL` が反映されない / 依存宣言の不足
 
@@ -231,20 +215,19 @@
 ## 8. テスト / CI
 
 - テストは純粋関数・state 依存関数が中心で、WebSocket ハンドラ、`execStream`、CINEMA の DOM、UPLOAD の ffmpeg パイプライン、環境変数 bootstrap の統合テストはありません。
-- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 73 files / 337 tests、frontend 12 files / 61 tests）。
+- `document/backend_test.md` / `document/frontend_test.md` のテスト規模は現状と一致していません（実測: backend 76 files / 343 tests、frontend 17 files / 91 tests）。
 - CI は Dependabot のみで、テスト・ビルドを実行する workflow がありません。
 - 今回の CINEMA 回帰のような問題は、DOM ID の存在チェックや最小のスモークテストでも検出できます。
 
 ## 9. 推奨する修正順
 
-1. 起動時の `currentState.stream` / `RECORD` / `WHOLE` 初期化と動的 streamList 復元
-2. `.env` bootstrap と backend 依存宣言の修正
-3. FADE / QUANTIZE / PREVIOUS
-4. セキュリティ（認証・公開範囲・Redis bind・秘密鍵）
-5. ログ整理、LRANGE 最適化、CI 追加
+1. `.env` bootstrap と backend 依存宣言の修正
+2. FADE / QUANTIZE / PREVIOUS
+3. セキュリティ（認証・公開範囲・Redis bind・秘密鍵）
+4. ログ整理、LRANGE 最適化、CI 追加
 
 ## 10. 補足
 
 - `scenario/scenario.json` と `log/20261012122223.json` には `CINEMA` 文字列が残っています。git 管理外のユーザーデータのため未変更です。CINEMA は未対応コマンドとして無視されます。
 - `packages/backend/static` の古い生成物（`assets/preload-helper-*` など）には旧 CINEMA コードが含まれます。現在の `main.js` からは参照されていません。クリーンビルドまたは古い生成物の削除で解消できます。
-- 本レポートは `612ecc5` 時点のコードに、未コミットの `execStream` target 修正を加えた状態を基準にしています。
+- 本レポートは `863310e` 時点のコードに、未コミットの起動時 state 修正を加えた状態を基準にしています。
