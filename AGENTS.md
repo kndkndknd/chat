@@ -25,14 +25,13 @@ runtime details against the source.
   - one-shot / single file: `pnpm -F <pkg> exec vitest run test/<path>.test.ts`.
 
 Root aliases forward a script name: `pnpm backend dev` == `pnpm -F backend dev`.
-Root `arduino`/`snowleopard` filters point to missing packages; frontend
-`snow`/`snowleopard` scripts call webpack with no config/dependency. Use Vite.
+Frontend `snow`/`snowleopard` scripts call webpack with no config/dependency. Use Vite.
 
 ## Architecture
 
 - Backend entry `packages/backend/src/app.ts`: HTTPS server + `socket/wsServer.ts`
-  mounting a raw `ws` server at `/ws`. There is no socket.io (root
-  `socket.io-client` and the Vite `/socket.io` proxy are legacy). In-memory state
+  mounting a raw `ws` server at `/ws`. There is no socket.io (the Vite
+  `/socket.io` proxy is legacy). In-memory state
   under `state/` persists to Redis as `state:*`; `data/` defines default streams
   `PLAYBACK`, `TIMELAPSE`, `EMPTY` (plus `CHAT`).
 - Frontend entry `packages/frontend/src/main.ts`; `snowleopardMain.ts` +

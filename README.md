@@ -13,10 +13,8 @@ pnpm workspace（`packages/*`）です。
 | `packages/frontend` | Vite アプリ。ビルド成果物は `packages/backend/static` に出力され、backend が配信する。 |
 | `types/` | backend / frontend 共有の `.d.ts`。相対 import（例: backend から `../../../../types`）で参照する。 |
 | `crate/`, `packages/frontend/crate/` | wasm-bindgen の Rust クレート（`simulate` / `tuner`）。ビルドは手動（wasm-pack は package script に無い）。生成 glue `packages/frontend/src/wasm/simulate.js` は追跡対象。 |
-| `document/` | 設計・検証ドキュメント（`redis.md`, `WebSocket.md`, `WebRTC.md`, `WebRTC-E2E.md`, `faceDetect.md`, `Timer.md`, `snowleopard.md`, `gainController.md`, `backend_test.md`, `frontend_test.md`）。 |
+| `document/` | 設計・検証ドキュメント（`redis.md`, `WebSocket.md`, `WebRTC.md`, `WebRTC-E2E.md`, `voice.md`, `videoBuffer.md`, `faceDetect.md`, `gainController.md`, `tile.md`, `Timer.md`, `snowleopard.md`, `splitRandomRate.md`, `generateScenario.md`, `review.md`, `backend_test.md`, `frontend_test.md`, `frontend/quantize.md`）。 |
 | `docker/` | Redis / nginx の docker-compose。 |
-
-補足: `packages/arduino` / `packages/snowleopard` はこのリポジトリの root `package.json` から参照されていますが、このチェックアウトには存在しません。
 
 ## 動作環境とセットアップ
 
@@ -35,7 +33,7 @@ pnpm workspace（`packages/*`）です。
 | --- | --- | --- |
 | `REDIS_URL` | `redis://localhost:6379` | Redis 接続先（state 永続化・streamBuffer）。 |
 | `LOCAL_SERVER_PORT` | `8888` | HTTPS / WebSocket の待受ポート。 |
-| `SCENARIO` | 未設定 | `"true"` のとき夜間スケジュール（`startNightSchedule`）を有効化。 |
+| `SCENARIO` | 未設定 | 現状は未使用。`app.ts` が `"true"` かどうかを読み取るが、その値はどこからも参照されない。 |
 | `DB_HOST` | 未設定 | Postgres 系外部 API（`http://<DB_HOST>:3030/...`）のホスト。 |
 | `MONGO_URL` | `mongodb://localhost:27017` | MongoDB 接続先。 |
 | `MONGO_DB` | `itsuki` | MongoDB データベース名。 |
@@ -110,7 +108,7 @@ pnpm install
 | `SIMULATE` / `SIMS` | マイク入力の音程を模したサイン波を再生（wasm で基本周波数を解析）。 |
 | `METRONOME` | BPM 同期のメトロノームを再生。 |
 | `(数値)` | 指定 Hz のサイン波を再生（`SINEWAVE` は 20〜20000Hz のランダム）。 |
-| `SOLFEGGIO` | ソルフェジオ周波数からランダムに再生（現状は綴り不一致で未動作。既知の注意点を参照）。 |
+| `SOLFEGGIO` | ソルフェジオ周波数からランダムに再生。 |
 | `UP` / `DOWN` / `SAME`(`KEEP`) | クリック周波数を上げる / 下げる / 維持。 |
 | `PREVIOUS` / `PREV` | 直前の再生内容を再実行。 |
 | `RECORD` / `REC` | クライアント側で映像・音声を保持（録画要求）。 |
@@ -191,11 +189,11 @@ pnpm install
 
 ## 通信プロトコル
 
-- WebSocket は socket.io ではなく raw `ws` です（`package.json` の socket.io 依存と vite proxy は旧構成の名残）。
+- WebSocket は socket.io ではなく raw `ws` です（`vite.config.ts` の `/socket.io` proxy は旧構成の名残）。
 - backend: `src/socket/IoFacade.ts` の `IoFacade`（`emit` / `to(id).emit` 風 API）が `src/socket/wsServer.ts` の `new WebSocket.Server({ path: "/ws" })` をラップします。
 - frontend: `src/socket/SocketFacade.ts`。指数バックオフ（1〜30 秒）で自動再接続します。
 - 双方向のメッセージ形式は JSON `{ "type": <event>, "data": <payload> }`。`ArrayBuffer` は `{ "__type": "ArrayBuffer", "data": "<base64>" }` に変換して送ります。
-- backend → client の主なイベント: `connected`, `cmdFromServer`, `chatFromServer`, `streamFromServer`, `workletBufferFromServer`, `stringsFromServer`, `voiceFromServer`, `clientSettingsFromServer`, `faceDetectBlockFromServer`, `stopFromServer` など。
+- backend → client の主なイベント: `connected`, `cmdFromServer`, `chatFromServer`, `streamFromServer`, `stringsFromServer`, `voiceFromServer`, `clientSettingsFromServer`, `faceDetectBlockFromServer`, `stopFromServer` など。
 - client → backend の主なイベント: `connectFromClient`, `charFromClient`, `chatFromClient`, `streamReqFromClient`, `workletBufferFromClient`, `gainFromClient` など。
 
 ## 状態の永続化
@@ -219,7 +217,7 @@ pnpm install
 | POST | `/api/clear-buffer` | Redis の streamBuffer をクリア（`body.stream` 省略時は `CHAT/EMPTY/KICK/SNARE/HAT` 以外）。 |
 | POST | `/api/parameter/reset` | パラメータを初期化（`body.targets` 省略時は全パラメータ。対象は `PORTAMENT/SAMPLERATE/GLITCH/GRID/QUANTIZE/RANDOM/VOICE/FILTER/GAIN/FADE/BPM/CLICKFREQ`。`VOICE` は `voiceLang` も `en-US` に戻す）。 |
 
-静的ファイルは `packages/backend/static` から配信します。CORS は全許可です。
+`/vosk` と `/rotate` は `static/html/vosk.html` / `rotate.html` が配置されている場合のみ有効です（このリポジトリには含まれていません）。静的ファイルは `packages/backend/static` から配信します。CORS は全許可です。
 
 補足: `src/route.ts` は HTTP ルーティングではなく、socket のルーム / ターゲット選択ヘルパーです。
 
@@ -227,7 +225,6 @@ pnpm install
 
 - `src/scenario/`: JSON シナリオ（相対／絶対時刻）をタイマーで `receiveEnter` に流して実行。`scenarioItsuki` は定期実行、`replay` はコマンドログの再生、`faceDetectScenario` は顔検知時の演出。
 - `src/schedule/`: `HH:MM(:SS)` 指定やログ JSON からの予約実行。
-- `src/nightMode/`: 全端末の顔認識停止・シナリオ停止・timelapse 停止・BLACK・masterGain=0 を一括制御。※現状 HTTP から有効化するルートは無く未配線。
 - `src/rotate/`: M5Stack の relay HTTP API（rotation / vibration）制御。
 - `src/arduinoAccess/`: Arduino の HTTP API（test / relay / cramp / oneshot）制御。
 
@@ -254,8 +251,7 @@ pnpm install
 
 ## 既知の注意点（旧構成の名残・未実装）
 
-- backend は raw `ws` を使用。root の `socket.io-client` 依存と `vite.config.ts` の `/socket.io` proxy は旧構成の名残です。
+- backend は raw `ws` を使用。`vite.config.ts` の `/socket.io` proxy は旧構成の名残です。
 - `packages/frontend` の `snow` / `snowleopard` script は `webpack` を呼びますが、webpack 設定・依存はありません（`pnpm -F frontend build` を使用）。
-- `html/form.html` / `src/form/main.ts` はビルド対象外です。
-- `SOLFEGGIO` は `receiveEnter.ts` が `SOLFEGIO`、`execCmd.ts` が `SOLFEGGIO` を判定しており綴りが不一致のため、現状どちらも動作しません。
+- `src/form/main.ts` はビルド対象外です（`static/html/form.html` は旧ビルドの残骸で、現在の Vite 設定からは生成されません）。
 - `src/clientMode/clockMode.ts` / `src/webSocket/*` は参照されていない旧実装です。

@@ -292,7 +292,7 @@ socketState.socket.on("connected", (data) => {
 | `recordReqFromServer` | 録音開始 |
 | `chatFromServer` | 音声+映像チャンクを受信して再生 |
 | `streamFromServer` | CHAT以外のストリームを受信して再生 |
-| `workletBufferFromServer` | AudioWorkletバッファを受信して再生 |
+| `workletBufferFromServer` | 旧 AudioWorklet バッファ再生ハンドラ（現在バックエンドから送信されない） |
 | `quantizeFromServer` | クォンタイズ設定を適用 |
 | `quantizeParamFromServer` | 対象ストリームの beat を適用 |
 | `gainFromServer` | ゲイン変更 |

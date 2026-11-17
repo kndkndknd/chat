@@ -9,9 +9,7 @@
   },
   "scripts": {
     "backend": "pnpm -F \"backend\"",
-    "frontend": "pnpm -F \"frontend\"",
-    "arduino": "pnpm -F \"arduino\"",
-    "snowleopard": "pnpm -F \"snowleopard\""
+    "frontend": "pnpm -F \"frontend\""
   },
   "devDependencies": {
     "@types/node": "20.8.0",

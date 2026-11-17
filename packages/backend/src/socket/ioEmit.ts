@@ -41,9 +41,9 @@ export const chatReqEmit = (target?: string) => {
 
 export const clientSettingEmit = (payload: { facedetection: boolean; hanged: boolean }, target?: string) => {
   if (target === undefined) {
-    ioState?.io.emit("clientSettingFromServer", payload);
+    ioState?.io.emit("clientSettingsFromServer", payload);
   } else {
-    ioState?.io.to(target).emit("clientSettingFromServer", payload);
+    ioState?.io.to(target).emit("clientSettingsFromServer", payload);
   }
 };
 

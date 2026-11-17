@@ -4,10 +4,10 @@
 
 `packages/backend/` に対する vitest ベースの単体テスト。
 
-- **テストランナー**: vitest 3.0.8（リポジトリルートの devDependency）
+- **テストランナー**: vitest 4.1.12（リポジトリルートの devDependency）
 - **対象**: `packages/backend/src/**` 配下で「値を返す純粋関数」と「値を返す state 依存関数」（純粋に近い計算ロジック）
 - **対象外**: 外部 I/O（Redis/Mongo/fs/sharp/spawn/werift/HTTP/socket等）に直接触れる関数。これらは `vi.mock` で差し替え不能なほど深く I/O と結合しているもの、または副作用が中心で戻り値を持たないものは除外。
-- **テスト規模**: 60 ファイル / 273 ケース（全合格）
+- **テスト規模**: 86 ファイル / 392 ケース（全合格）
 
 実行コマンド:
 ```bash
@@ -62,6 +62,7 @@ pnpm -F backend exec vitest run
 | `test/cmd/splitSpace/modulationByBPM.test.ts` | `modulationByBPM` | `src/cmd/splitSpace/modulationByBPM.ts` | 先頭は baseFrequency / index 別の周波数計算 / 空配列 / BPM<=0 はエラー |
 | `test/cmd/splitSpace/calculateModulationFrequency.test.ts` | `calculateModulationFrequency` | 同上 | plusminus=true/false / period<=0 でエラー / 非整数 period |
 | `test/cmd/splitSpace/classifyArgs.test.ts` | `classifyArgs` | `src/cmd/splitSpace/splitQuantize.ts` | 空 / TRUE-FALSE / stream（CHAT/ALL 含む） / streamList 追加 stream / beat<=32 / bpm>=33 / 4 要素混在 / 不正値破棄 / 重複は最初優先 / trim |
+| `test/cmd/clickFreq.test.ts` | `clickFreq` | `src/cmd/clickFreq.ts` | SAME / UP / DOWN / G#→A のオクターブ繰り上げ / A→G# の繰り下げ / スケール外周波数 |
 | `test/route/selectOtherClient.test.ts` | `selectOtherClient` | `src/route.ts` | 空 rooms / 単一キー / 複数キー（source 除外） |
 | `test/route/pickupTarget.test.ts` | `pickupTarget` | 同上 | adapter.rooms 未定義 / list キーマッチ / list 空 / undefined 値スキップ |
 | `test/route/pickCmdTarget.test.ts` | `pickCmdTarget` | 同上 | duplicate 経路 / none 経路 / 最小 timestamp 経路 / room フィルタ |
@@ -81,6 +82,7 @@ pnpm -F backend exec vitest run
 | `test/socket/IoFacade/to.test.ts` | `IoFacade.to` | 同上 | emit メソッド付きオブジェクト / OPEN な ws.send 呼び出し / 未登録 ID は no-op / CLOSED は send されない |
 | `test/socket/wsServer/deserialize.test.ts` | `deserialize` | `src/socket/wsServer.ts` | 通常 JSON / __type=ArrayBuffer 変換 / ネスト ArrayBuffer<br>※Node Buffer pool の仕様で返却 ArrayBuffer は実バイト長以上になり得る点に注意。バイト一致は検証していない |
 | `test/socket/ioEmit/voiceEmit.test.ts` | `voiceEmit` | `src/socket/ioEmit.ts` | VOICE モードなしは送信しない / 対象クライアントのみ / `all`・`ALL`・`scenario` は全員 / 非 VOICE クライアントは送らない |
+| `test/socket/ioEmit/clientSettingEmit.test.ts` | `clientSettingEmit` | `src/socket/ioEmit.ts` | target 省略時は全クライアントへ `clientSettingsFromServer` / target 指定時は対象のみ |
 | `test/schedule/exchangeRelativeSchedule.test.ts` | `exchangeRelativeSchedule` | `src/schedule/exchangeRelativeSchedule.ts` | 先頭起点の相対時刻 ms / ms 付き日時 / 1 件のみ |
 | `test/schedule/getScheduleFromJson.test.ts` | `getScheduleFromJson` | `src/schedule/getScheduleFromJson.ts` | 通常日時 → 相対 ms / 0000-00-00 はじまり → getTime ベース / 1 件のみ |
 | `test/stream/quantize/decideQuantizeFromAverage.test.ts` | `decideQuantizeFromAverage` | `src/stream/quantize/decideQuantizeFromAverage.ts` | argParams 指定で beat/flag を固定 / argParams 未指定で beat は平均・quantizeFlag は多数決（`gridFlag = !quantizeFlag`） / flag のみ指定で beat は平均 |
@@ -95,6 +97,13 @@ pnpm -F backend exec vitest run
 | `test/clientSetting/connectFromClient.test.ts` | `connectFromClient` | `src/clientSetting/connectFromClient.ts` | /nosound 早期 return / /1 で facedetection client 登録 / /3 で hanged / clientMode='client' /project / clientMode='noStream' / clientMode='arduinoClient' / urlPathName 'pi' で arduinoState.host 設定 |
 | `test/clientSetting/floatingPosition.test.ts` | `floatingPosition` | `src/clientSetting/floatingPosition.ts` | 既存 client は自分の position / projection 0 件 default / 非 projection 1 件 case 1 / projection あり時の基準 |
 | `test/cmd/charProcess.test.ts` | `charProcess` | `src/cmd/charProcess.ts` | Enter で空文字 / ArrowUp で getLogCmd 戻り値 / Backspace で末尾削除 / Tab・ArrowRight で空文字 / Escape / 通常文字連結 / BASS で previousState 更新 / Shift で変化なし |
+| `test/cmd/execEnter.test.ts` | `execEnter` | `src/cmd/execEnter.ts` | `SOLFEGGIO` / cmdList→`execCmd` / パラメータ / FILTER / FUSEJI・EMOJI / MUTE・UNMUTE / PREVIOUS / TWICE・HALF / SELF / NUMBER |
+| `test/cmd/receiveEnter.test.ts` | `receiveEnter` | `src/cmd/receiveEnter.ts` | `SOLFEGGIO` / CHAT / STOP / START / FLOATING |
+| `test/cmd/metronomeBpmSet.test.ts` | `metronomeBpmSet` | `src/cmd/metronomeBpmSet.ts` | 4タップの平均からBPM算出 / 不均一な間隔 / 未登録クライアントは無視 |
+| `test/cmd/sinewaveChange.test.ts` | `sinewaveChange` | `src/cmd/sinewaveChange.ts` | TWICE / HALF / id 指定 / 対象外コマンド |
+| `test/cmd/splitSpace/fadeCmd.test.ts` | `fadeCmd` | `src/cmd/splitSpace/fadeCmd.ts` | 再生中は flag=false / 停止中は flag=true / fadeSec / FADE IN・OUT トグル / 秒数指定 / OFF / 対象外 |
+| `test/cmd/splitSpace/splitSpace.test.ts` | `splitSpace` | `src/cmd/splitSpace/index.ts` | BPM / FADE / HELP / STOP / TIMELAPSE の代表分岐 |
+| `test/schedule/splitTimerCmd.test.ts` | `splitTimerCmd` | `src/schedule/splitTimerCmd.ts` | 3時間以内の絶対時刻 / 過去時刻の相対解釈 / MM:SS / 複数トークン |
 | `test/cmd/pickupCmdTarget/commonPickupCmdTarget.test.ts` | `commonPickupCmdTarget` | `src/cmd/pickupCmdTarget.ts` | option.target 優先 / CLICK ランダム / BASS の既存・空ケース / SIMULATE 全件 / SINEWAVE 未発音/同周波数/未発音端末優先 / default ケース |
 | `test/cmd/pickupCmdTarget/pickupCmdTarget.test.ts` | `pickupCmdTarget` | 同上 | CLICK ランダム / option.target |
 | `test/cmd/pickupCmdTarget/pickupPaCmdTarget.test.ts` | `pickupPaCmdTarget` | 同上 | CLICK で paCmdClient ランダム / option.target |

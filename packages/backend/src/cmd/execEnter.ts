@@ -2,7 +2,6 @@
 import { execCmd } from "./execCmd";
 // import { voiceEmit } from "./voiceEmit";
 import { execSinewave } from "./execSinewave";
-import { previousCmd } from "./previousCmd";
 import { m5Switch } from "../rotate/m5Access";
 import { m5State } from "../rotate/m5State";
 
@@ -90,9 +89,6 @@ export const execEnter = async (
       stringEmit(String(index) + "(sinewave)", true, id);
       //putString(io, String(index), state)
     });
-  } else if (strings === "PREVIOUS" || strings === "PREV") {
-    voiceEmit("PREVIOUS", id);
-    previousCmd();
   } else if (strings === "QUANTIZE") {
     if (id !== "all" && clientState.client[id] !== undefined && clientState.client[id].self) {
       quantizeCmd(id);
@@ -133,11 +129,7 @@ export const execEnter = async (
     const solfeggioArr = [285, 396, 417, 528, 639, 741, 852, 963];
     const frequency =
       solfeggioArr[Math.floor(Math.random() * solfeggioArr.length)];
-    if (clientState.client[id] !== undefined && clientState.client[id].self) {
-      execSinewave(frequency);
-    } else {
-      execSinewave(frequency);
-    }
+    execSinewave(frequency);
   } else if (strings === "SWITCH") {
     const switchState = m5State.vibration.relay === "on" ? false : true;
     m5Switch("vibration", switchState);

@@ -19,7 +19,7 @@ export const fadeCmd = (
       gain: cmdState.GAIN[cmdList[cmdString]],
     };
     if (
-      currentState.cmd[cmd.cmd].filter((id) => targetIdArr.includes[id])
+      currentState.cmd[cmd.cmd].filter((id) => targetIdArr.includes(id))
         .length > 0
     ) {
       cmd.flag = false;

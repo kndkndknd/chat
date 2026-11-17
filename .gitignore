@@ -1,4 +1,5 @@
 node_modules
+.pnpm-store
 # log*
 log/*
 upload
@@ -24,8 +25,6 @@ packages/frontend/src/*.js
 # import するため、ビルドに必須。上の *.js に巻き込まれて未コミットになると
 # クリーンチェックアウトでビルドが壊れるので、明示的に追跡対象へ戻す。
 !packages/frontend/src/wasm/simulate.js
-
-packages/arduino/dist/*
 
 voskModel/*
 
