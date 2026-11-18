@@ -1,10 +1,13 @@
 import { spawn } from "child_process";
 import axios from "axios";
-const pcm = require("pcm");
 
-import { streamState } from "../state";
+import { sampleRateState, streamState } from "../state";
 import { streamsRedis, streamApiUrl } from "../data";
 import { buffStateType } from "../../../../types";
+import {
+  getPcmBuffers,
+  LIVE_STREAM_SAMPLE_RATE,
+} from "./getPcmBuffers";
 import { putVideoStream } from "./uploadModule/putVideoStream";
 import { pushStateStream } from "./pushStateStream";
 
@@ -16,6 +19,9 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
       pushStateStream(stream);
     }
     streamState.random[stream] = true;
+    // 抽出した PCM と再生側のサンプルレートを一致させる。
+    sampleRateState.sampleRate[streamName] = LIVE_STREAM_SAMPLE_RATE;
+    sampleRateState.randomrate[streamName] = false;
 
     let streamData: { dirPath: string; fileName: string; audio: boolean }[];
     if (qWord !== undefined && qWord !== null) {
@@ -51,35 +57,18 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
         continue;
       }
 
-      const audioBuffers: Float32Array[] = [];
+      const bufferSize = streamState.basisBufferSize;
+      let audioBuffers: Float32Array[] = [];
       if (audioInfo) {
-        let tmpBuff = new Float32Array(streamState.basisBufferSize);
-        let buffIndex = 0;
-
-        await pcm.getPcmData(
-          mediaDirPath + "/" + tsFileName,
-          { stereo: true, sampleRate: 22050 },
-          function (sample, channel) {
-            tmpBuff[buffIndex] = sample;
-            buffIndex++;
-            if (buffIndex === streamState.basisBufferSize) {
-              audioBuffers.push(tmpBuff);
-              tmpBuff = new Float32Array(streamState.basisBufferSize);
-              buffIndex = 0;
-            }
-          },
-          function (err, output) {
-            if (err) {
-              console.log("err");
-              throw new Error(err);
-            }
-            console.log(
-              "pcm.getPcmData(" +
-                tsFileName +
-                ", { stereo: true, sampleRate: 44100 })"
-            );
-          }
-        );
+        try {
+          audioBuffers = await getPcmBuffers(
+            mediaDirPath + "/" + tsFileName,
+            bufferSize,
+          );
+        } catch (err) {
+          // 音声抽出に失敗しても映像だけは登録する。
+          console.error("getLiveStream PCM error:", err);
+        }
       }
 
       const maxLen = Math.max(videos.length, audioBuffers.length);
@@ -87,10 +76,10 @@ export const getLiveStream = async (stream: string, qWord?: string) => {
       for (let j = 0; j < maxLen; j++) {
         buffArr.push({
           source: streamName,
-          audio: audioBuffers[j]?.buffer ?? new Float32Array(streamState.basisBufferSize).buffer,
+          audio: audioBuffers[j]?.buffer ?? new Float32Array(bufferSize).buffer,
           video: videos[j] ?? "",
-          bufferSize: streamState.basisBufferSize,
-          duration: streamState.basisBufferSize / 44100,
+          bufferSize,
+          duration: bufferSize / LIVE_STREAM_SAMPLE_RATE,
         });
       }
       await streamsRedis.pushBatch(streamName, buffArr);

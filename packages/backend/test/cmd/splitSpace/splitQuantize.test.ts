@@ -74,6 +74,32 @@ describe("splitQuantize emitQuantizeText 連携", () => {
     expect(emitQuantizeText).toHaveBeenCalledWith(obj, ["c1"], "PLAYBACK");
   });
 
+  test("CHAT 指定時は CHAT を stream として渡す", () => {
+    const obj = makeObj({ c1: true });
+    (setParamsSplitQuantize as any).mockReturnValue(obj);
+
+    splitQuantize(["CHAT", "TRUE"], ["c1"]);
+
+    expect(setParamsSplitQuantize).toHaveBeenCalledWith(
+      { flag: true, stream: "CHAT" },
+      ["c1"],
+    );
+    expect(emitQuantizeText).toHaveBeenCalledWith(obj, ["c1"], "CHAT");
+  });
+
+  test("ALL 指定時は ALL を stream として渡す", () => {
+    const obj = makeObj({ c1: true });
+    (setParamsSplitQuantize as any).mockReturnValue(obj);
+
+    splitQuantize(["ALL", "TRUE"], ["c1"]);
+
+    expect(setParamsSplitQuantize).toHaveBeenCalledWith(
+      { flag: true, stream: "ALL" },
+      ["c1"],
+    );
+    expect(emitQuantizeText).toHaveBeenCalledWith(obj, ["c1"], "ALL");
+  });
+
   test("target 未指定時は全 client に送る", () => {
     const obj = makeObj({ c1: true, c2: false });
     (setParamsSplitQuantize as any).mockReturnValue(obj);

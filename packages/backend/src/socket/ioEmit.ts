@@ -39,24 +39,11 @@ export const chatReqEmit = (target?: string) => {
   }
 }
 
-// CINEMA: 対象クライアントに HLS の再生 URL を通知する。
-// m3u8/ts の実体は backend の /hls 静的配信から hls.js が取得する。
-export const cinemaEmit = (
-  data: { source: string; title: string; url: string; audio: boolean },
-  target?: string,
-) => {
-  if (target === undefined) {
-    ioState?.io.emit("cinemaFromServer", data);
-  } else {
-    ioState?.io.to(target).emit("cinemaFromServer", data);
-  }
-}
-
 export const clientSettingEmit = (payload: { facedetection: boolean; hanged: boolean }, target?: string) => {
   if (target === undefined) {
-    ioState?.io.emit("clientSettingFromServer", payload);
+    ioState?.io.emit("clientSettingsFromServer", payload);
   } else {
-    ioState?.io.to(target).emit("clientSettingFromServer", payload);
+    ioState?.io.to(target).emit("clientSettingsFromServer", payload);
   }
 };
 
@@ -133,6 +120,11 @@ export const loopToggleEmit = (stream: string, target: string) => {
   } else {
     ioState?.io.to(target).emit("loopToggleFromServer", { stream, target });
   }
+}
+
+// STOP 時の LOOP 解除。トグルではなく明示的な解除として送る。
+export const loopClearEmit = (stream: string, target: string) => {
+  ioState?.io.to(target).emit("loopClearFromServer", { stream, target });
 }
 
 export const mediaRecReqEmit = (data?: {container: string; mimeType: string; blob: ArrayBuffer }, target?: string) => {

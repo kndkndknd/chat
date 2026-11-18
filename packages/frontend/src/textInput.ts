@@ -1,7 +1,7 @@
 import { SocketFacade } from "./socket/SocketFacade";
 import { textPrint, erasePrint, eraseText } from "./canvasEvent";
 import { bass, sinewave } from "./webaudio";
-import { toggleGainUI } from "./ui/gainUI";
+import { hideGainUI, toggleGainUI } from "./ui/gainUI";
 import { voice } from "./voice";
 // import { frontState } from "./globalVariable";
 let bassFlag = false;
@@ -116,6 +116,9 @@ const processChar = (
     }
   } else if (character === "Enter" && stringsClient === "GAIN") {
     toggleGainUI();
+    // 各文字は backend の入力バッファにも積まれているため、GAIN 実行時は
+    // 明示的にクリアして次のコマンドに "GAIN" が残らないようにする。
+    socket.emit("clearStringFromClient");
     erasePrint(stx, strCnvs);
     stringsClient = "";
   } else if (
@@ -127,6 +130,11 @@ const processChar = (
   ) {
     // console.log(character + " pressed");
   } else {
+    if (character === "Escape") {
+      hideGainUI();
+      // backend の charProcess も Escape で入力を破棄するため、ローカルも揃える。
+      stringsClient = "";
+    }
     if (character === " ") {
     }
     if (/\w/.test(character) && character.length === 1) {

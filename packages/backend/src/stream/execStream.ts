@@ -8,11 +8,13 @@ import {
   bpmState,
 } from "../state";
 import { streamsRedis } from "../data";
-import { pickupStreamTarget, pickupPaStreamTarget } from "./pickupStreamTarget";
+import { resolveStreamTarget } from "./resolveStreamTarget";
+import { pickupPaStreamTarget } from "./pickupStreamTarget";
 import { glitchStream } from "./glitchStream";
 import { gridTimeoutVal } from "./gridTimeoutVal";
 import { streamEmit, stringEmit } from "../socket/ioEmit";
 import { tileMeta } from "../clientSetting/tileLayout";
+import { logUniformRandomRate } from "./sampleRateRandomize";
 
 export const execStream = async (
   source: string,
@@ -21,19 +23,14 @@ export const execStream = async (
   index?: number,
   target?: string,
 ) => {
-  currentState.stream[source] = true;
-  
-  console.log(`debug ${source} targetArr`, streamState.target[source]);
-  let targetId =
-    from === undefined
-      ? pickupStreamTarget(source)
-      : pickupStreamTarget(source, from);
-  if (streamState.pa[source]) {
-    targetId = pickupPaStreamTarget();
-  }
+  const targetId = resolveStreamTarget(source, from, target);
   if (targetId === "") {
+    console.log("no target", source, "from:", from, "target:", target);
     return;
   }
+  currentState.stream[source] = true;
+
+  console.log(`debug ${source} targetArr`, streamState.target[source]);
   console.log("from:", from);
   console.log("targetId", targetId);
 
@@ -160,13 +157,10 @@ export const execStream = async (
     }
 
     if (sampleRateState.randomrate[source]) {
-      stream.sampleRate =
-        sampleRateState.randomraterange[source].min +
-        Math.floor(
-          Math.random() *
-            (sampleRateState.randomraterange[source].max -
-              sampleRateState.randomraterange[source].min),
-        );
+      stream.sampleRate = logUniformRandomRate(
+        sampleRateState.randomraterange[source].min,
+        sampleRateState.randomraterange[source].max,
+      );
     }
     // console.log("sampleRateState", sampleRateState);
     if (!stream.video) console.log("not video");
@@ -295,13 +289,10 @@ export const paStreamEmit = async (
     }
 
     if (sampleRateState.randomrate[source]) {
-      stream.sampleRate =
-        sampleRateState.randomraterange[source].min +
-        Math.floor(
-          Math.random() *
-            (sampleRateState.randomraterange[source].max -
-              sampleRateState.randomraterange[source].min)
-        );
+      stream.sampleRate = logUniformRandomRate(
+        sampleRateState.randomraterange[source].min,
+        sampleRateState.randomraterange[source].max
+      );
     }
     console.log("sampleRateState", sampleRateState);
     if (!stream.video) console.log("not video");

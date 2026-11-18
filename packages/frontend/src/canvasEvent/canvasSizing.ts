@@ -1,4 +1,5 @@
 import { SocketFacade } from "../socket/SocketFacade";
+import { flagState } from "../state";
 
 export function canvasSizing(socket?: SocketFacade) {
   const windowWidth = window.innerWidth;
@@ -18,10 +19,12 @@ export function canvasSizing(socket?: SocketFacade) {
   const bckcnvsElement = <HTMLCanvasElement>document.getElementById("bckcnvs");
   bckcnvsElement.setAttribute("height", height + "px");
   bckcnvsElement.setAttribute("width", width + "px");
-  if (socket !== undefined) {
-    socket.emit("connectFromClient", {
-      clientMode: "client",
-      urlPathName: window.location.pathname,
+  if (
+    socket !== undefined &&
+    flagState.start &&
+    !window.location.pathname.includes("nosound")
+  ) {
+    socket.emit("resizeFromClient", {
       width: window.innerWidth,
       height: window.innerHeight,
     });

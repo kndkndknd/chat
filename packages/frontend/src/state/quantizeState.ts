@@ -19,6 +19,10 @@ export const quantizeState: quantizeType = {
     TIMELAPSE: {
       flag: false,
       beat: 1,
+    },
+    EMPTY: {
+      flag: false,
+      beat: 1,
     }
   }
 }

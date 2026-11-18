@@ -4,10 +4,10 @@
 
 `packages/frontend/` に対する vitest ベースの単体テスト。
 
-- **テストランナー**: vitest 3.0.8（リポジトリルートの devDependency）
-- **対象**: `packages/frontend/src/**` 配下で「値を返す純粋関数」と「値を返す state 依存関数」（純粋に近い計算ロジック）
-- **対象外**: DOM / Web Audio API / Canvas / WebSocket / WebRTC / face-api.js / hls.js / vosk-browser / MediaStream など、ブラウザ API に深く結合した関数。これらは戻り値を持たない / `void` の関数も多く、本テストではスコープ外。
-- **テスト規模**: 9 ファイル / 44 ケース（すべて合格）
+- **テストランナー**: vitest 4.1.12（リポジトリルートの devDependency）
+- **対象**: `packages/frontend/src/**` 配下で「値を返す純粋関数」と「値を返す state 依存関数」（純粋に近い計算ロジック）。GAIN UI は最小のDOMスタブで初期化・イベント・送信内容を検証します。
+- **対象外**: 実ブラウザのDOM描画 / Web Audio API / Canvas / WebSocket / WebRTC / face-api.js / vosk-browser / MediaStream など、ブラウザ API に深く結合した関数。これらは戻り値を持たない / `void` の関数も多く、本テストではスコープ外。
+- **テスト規模**: 24 ファイル / 129 ケース（すべて合格）
 
 実行コマンド:
 ```bash
@@ -54,20 +54,35 @@ pnpm -F frontend exec vitest run
 
 | テストファイル | 対象関数 | ソース | ケース内容 |
 |---|---|---|---|
+| `test/socket/SocketFacade/class.test.ts` | `SocketFacade` | `src/socket/SocketFacade.ts` | 接続時購読 / on→handler / connected で id 保存 / OPEN 時のみ emit / 指数バックオフ再接続 / close で停止 / connect 即時再接続 / disconnect 通知 |
 | `test/socket/SocketFacade/serialize.test.ts` | `serialize` | `src/socket/SocketFacade.ts` | { type, data } JSON 化 / ArrayBuffer マーカ変換 / ネスト ArrayBuffer / data=undefined / 8KB を超える ArrayBuffer (CHUNK 境界) |
 | `test/socket/SocketFacade/deserialize.test.ts` | `deserialize` | 同上 | 通常 JSON / __type=ArrayBuffer 復元（バイト一致） / ネスト ArrayBuffer / serialize→deserialize ラウンドトリップ |
 | `test/webaudio/sound/setBassNote.test.ts` | `setBassNote` | `src/webaudio/sound/bass.ts` | 確率テーブルの境界値（0/0.45/0.6/0.8/0.95）/ 戻り値が許容セットに含まれることを random 全範囲で確認 |
 | `test/mediaRecorder/supportedContainers.test.ts` | `supportedContainers` | `src/mediaRecorder/recorder.ts` | WebM が使えれば WebM のみ / WebM 不可で Ogg へフォールバック / 両方不可で空配列 / MediaRecorder 無しで空配列 |
+| `test/util/bpmCalc.test.ts` | `millisecondsPerBar` / `secondsPerEighthNote` / `millisecondsPerBeat` | `src/util/bpmCalc.ts` | 4拍のms / 8分音符の秒 / 1拍のms / BPM<=0 は例外 |
 
 ### STATE_READ 関数（`vi.mock` で state を差し替え）
 
 | テストファイル | 対象関数 | ソース | ケース内容 |
 |---|---|---|---|
 | `test/quantize/quantizeStop.test.ts` | `quantizeStop` | `src/quantize/quantizeStop.ts` | interval を停止し intervalFlag と各 stream の flag を false にする / interval=null でも壊れない / clearInterval 呼び出し確認 |
-| `test/quantize/quantizeFromServer.test.ts` | `quantizeFromServer` / `refreshQuantizeInterval` / `playPendingQuantizeChunk` | `src/quantize/quantizeFromServer.ts` | flag/beat 反映 / ON→OFF で streamChunk 破棄と CHAT の chatReq / 初回チャンク即再生（pending 消費・flag false 時は再生しない） / 稼働中は再アームしない / 全 false で停止 / BPM 変更の位相保持再アーム |
+| `test/quantize/quantizeFromServer.test.ts` | `quantizeFromServer` / `refreshQuantizeInterval` / `playPendingQuantizeChunk` | `src/quantize/quantizeFromServer.ts` | flag/beat 反映 / EMPTY・UPLOAD 追加の未知 stream を登録 / ON→OFF で streamChunk 破棄と CHAT の chatReq / 初回チャンク即再生（pending 消費・flag false 時は再生しない） / 稼働中は再アームしない / 全 false で停止 / BPM 変更の位相保持再アーム |
 | `test/quantize/bpmFromServer.test.ts` | `bpmFromServer` | `src/quantize/bpmFromServer.ts` | ストリーム指定で bar 更新と `refreshQuantizeInterval(true)` / METRONOME は metronome のみ / MODULATION は何もしない / source 非配列は return |
-| `test/quantize/quantizeParamFromServer.test.ts` | `quantizeParamFromServer` | `src/quantize/quantizeParamFromServer.ts` | 対象 stream の beat のみ反映（flag 不変） / streams 外・data なしは更新しない / CHAT beat の canvas 表示 |
-| `test/voice/voice.test.ts` | `voice` | `src/voice.ts` | 中央パンは speechSynthesis / パンありは `/api/voice` を Web Audio で再生 / 英語の女性音声優先 / MUTE 中は発話しない / 失敗時は speechSynthesis にフォールバック |
+| `test/quantize/quantizeParamFromServer.test.ts` | `quantizeParamFromServer` | `src/quantize/quantizeParamFromServer.ts` | 対象 stream の beat のみ反映（flag 不変） / 未知 stream は flag=false で追加 / streams 外・data なしは更新しない / CHAT beat の canvas 表示 |
+| `test/ui/gainUI.test.ts` | `initGainUI` / `toggleGainUI` / `hideGainUI` / `setGainUI` | `src/ui/gainUI.ts` | 10項目の初期化 / 同期前の無効化 / 値の反映 / 変更キーだけの部分送信 / 範囲外クランプ / CLICK の change 発音 / 表示トグル / 非表示 / 不正値のフォールバック |
+| `test/ui/textInput.test.ts` | `keyDown` | `src/textInput.ts` | GAIN + Enter でUIトグルと入力クリア / Escape でUI非表示と入力クリア |
+| `test/stream/loop/loopToggle.test.ts` | `loopToggle` / `loopClear` | `src/stream/loop/loopToggle.ts` | 追加 / トグル削除 / 必ず削除 / 未登録 stream の初期化 |
+| `test/stream/loop/loopPlay.test.ts` | `loopPlay` | `src/stream/loop/loopPlay.ts` | 対象でも flag=false なら再生しない / flag=true なら streamPlay |
+| `test/stream/socketFromServer/recordReqFromServer.test.ts` | `recordReqFromServer` | `src/stream/socketFromServer/recordReqFromServer.ts` | 古いタイマーが新しい録画を落とさない / 不正 timeout は無視 |
+| `test/webaudio/mute.test.ts` | `mute` | `src/webaudio/mute.ts` | muteGain を 0 へ / 1 へ戻す / 初期化前でも状態更新 |
+| `test/webaudio/params/applyGlobalGain.test.ts` | `applyGlobalGain` ほか | `src/webaudio/params/applyGlobalGain.ts` | ミックスバスへの即時適用 / クランプ / 非数値スキップ / 個別キー / METRONOME / 未初期化時 |
+| `test/state/muteState.test.ts` | `onMuteChange` / `emitMuteChange` | `src/state/muteState.ts` | 通知 / 複数リスナー / 解除後の非通知 |
+| `test/quantize/quantizeStream.test.ts` | `ensureQuantizeStream` | `src/quantize/quantizeStream.ts` | 未知 stream の flag=false 登録 / beat 指定 / 既存参照を返す |
+| `test/ui/textInputBranches.test.ts` | `keyDown` | `src/textInput.ts` | 通常文字 / Enter・VOICE / keyCode フォールバック / BASS / nosound / counter クールダウン |
+| `test/socket/socketHandler.test.ts` | `socket()` | `src/socket.ts` | 主要イベント登録 / connected / cmdFromServer / loopToggle・loopClear / mute / clientSettings / bpm・quantize / chatFromServer / streamFromServer |
+| `test/webaudio/sound/globalGainChannels.test.ts` | `sinewave` / `feedback` / `feedbackLevel` / `whitenoise` / `bass` / `simulate` | `src/webaudio/sound/*` | 発音中/停止の切り替えが active GainNode のみを変更 / counterbalance の相対値変換 |
+| `test/webaudio/sound/metronome.test.ts` | `metronome` | `src/webaudio/sound/metronome.ts` | 各tickで最新のグローバル音量を使用 |
+| `test/voice/voice.test.ts` | `voice` | `src/voice.ts` | 中央パンは speechSynthesis / パンありは `/api/voice` を Web Audio で再生 / 英語の女性音声優先 / MUTE 中は発話しない / MASTER を音量へ反映 / 失敗時は speechSynthesis にフォールバック |
 
 ## 共通テクニック
 
@@ -113,11 +128,11 @@ beforeEach(async () => {
 戻り値を持たない（`void`）か、ブラウザ API に深く結合しているため未テスト:
 
 - **DOM / Canvas**: `canvasEvent/*`（`canvasSizing` / `flickering` / `initVideo` / `showImage` / `textPrint` / `eraseText` / `print` / `toBase64` 他）
-- **Web Audio API**: `webaudio/sound/*`（`bass` 本体 / `click` / `feedback` / `metronome` / `simulate` / `sinewave` / `whitenoise` / `accelarateOsc` / `gpsOsc`） / `webaudio/init/initAudio` / `webaudio/params/gainChange`
-- **WebSocket / SocketFacade**: `connectWebSocket` / `keyDown` / `cmdMessage` / `SocketFacade.{constructor,_connect,emit,connect}`（クラスメソッド）
+- **Web Audio API**: `webaudio/sound/click` / `accelarateOsc` / `gpsOsc` / `webaudio/init/initAudio`（実AudioContext接続）。`bass` / `feedback` / `metronome` / `simulate` / `sinewave` / `whitenoise` / `applyGlobalGain` は state とモックノードで検証済み。
+- **WebSocket / SocketFacade**: `connectWebSocket` / `cmdMessage` / `SocketFacade.{constructor,_connect,emit,connect}`（クラスメソッド）
 - **MediaStream / Recording**: `recording/*` / `scriptProcessor/*` / `stream/init/initAudioStream` / `stream/play/playAudioStream` / `stream/play/streamPlay` / `stream/socketFromServer/*` / `stream/chatReq`
 - **WebRTC / face-api**: `faceApi/index` / `initialize.ts` / `initializeSnowleopard.ts`
 - **navigator API**: `gps/index`（Geolocation） / `sensor/index`（DeviceMotionEvent）
-- **その他**: `voice/index`（未使用の speechSynthesis ヘルパー。`voice.ts` 本体は `test/voice/voice.test.ts` でテスト） / `clientMode/clockMode` / `socket.ts` / `textInput.ts` の `keyDown` / `cmd/*` / `quantize/quantizePlay` / `quantize/old_setQuantize`
+- **その他**: `voice/index`（未使用の speechSynthesis ヘルパー。`voice.ts` 本体は `test/voice/voice.test.ts` でテスト） / `clientMode/clockMode` / `socket.ts` / `cmd/*` / `quantize/quantizePlay` / `quantize/old_setQuantize`
 
 これらは E2E もしくは結合テスト（実ブラウザを伴う）の対象とすることを推奨。

@@ -11,6 +11,7 @@ const { quantizePlayMock, chatReqMock, stateMock } = vi.hoisted(() => {
       CHAT: { flag: false, beat: 1 },
       PLAYBACK: { flag: false, beat: 1 },
       TIMELAPSE: { flag: false, beat: 1 },
+      EMPTY: { flag: false, beat: 1 },
     },
   };
   return {
@@ -22,6 +23,7 @@ const { quantizePlayMock, chatReqMock, stateMock } = vi.hoisted(() => {
         CHAT: true,
         PLAYBACK: true,
         TIMELAPSE: true,
+        EMPTY: true,
       } as Record<string, boolean>,
       streamChunk: {} as Record<string, any>,
       contextState: { audioContext: { currentTime: 0 } },
@@ -45,9 +47,18 @@ const resetState = () => {
   s.currentTime = 0;
   s.timeout = 0;
   s.intervalFlag = false;
+  const baseStreams = ["CHAT", "PLAYBACK", "TIMELAPSE", "EMPTY"];
   for (const key of Object.keys(s.stream)) {
-    s.stream[key as keyof typeof s.stream].flag = false;
-    s.stream[key as keyof typeof s.stream].beat = 1;
+    if (!baseStreams.includes(key)) {
+      delete (s.stream as Record<string, unknown>)[key];
+    }
+  }
+  for (const key of baseStreams) {
+    const stream = (s.stream as Record<string, { flag: boolean; beat: number }>)[
+      key
+    ];
+    stream.flag = false;
+    stream.beat = 1;
   }
   for (const key of Object.keys(stateMock.streamChunk)) {
     delete stateMock.streamChunk[key];
@@ -55,6 +66,7 @@ const resetState = () => {
   stateMock.streamFlagState.CHAT = true;
   stateMock.streamFlagState.PLAYBACK = true;
   stateMock.streamFlagState.TIMELAPSE = true;
+  stateMock.streamFlagState.EMPTY = true;
 };
 
 const makeChunk = () => ({
@@ -86,6 +98,22 @@ describe("quantizeFromServer", () => {
 
     expect(stateMock.quantizeState.stream.CHAT.flag).toBe(true);
     expect(stateMock.quantizeState.stream.CHAT.beat).toBe(4);
+    // flag が立ったので interval が開始される
+    expect(stateMock.quantizeState.interval).not.toBeNull();
+  });
+
+  test("EMPTY や UPLOAD で追加された未知の stream も quantizeState に登録する", () => {
+    mod.quantizeFromServer({
+      EMPTY: { quantizeFlag: true, beat: 8, gridFlag: false },
+      UPLOADED: { quantizeFlag: true, beat: 4, gridFlag: false },
+    } as any);
+
+    const streams = stateMock.quantizeState.stream as Record<
+      string,
+      { flag: boolean; beat: number }
+    >;
+    expect(streams.EMPTY).toEqual({ flag: true, beat: 8 });
+    expect(streams.UPLOADED).toEqual({ flag: true, beat: 4 });
     // flag が立ったので interval が開始される
     expect(stateMock.quantizeState.interval).not.toBeNull();
   });

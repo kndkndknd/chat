@@ -1,61 +1,106 @@
 import * as fs from "fs";
-import { spawn } from "child_process";
+import * as path from "path";
 
-import { streamState } from "../../state";
-import { streamsRedis } from "../../data";
+import { redis } from "../../redis/client";
+import {
+  buffKey,
+  indexKey,
+  serializeStream,
+} from "../../redis/streamsRedis";
 import { buffStateType } from "../../../../../types";
 
 import { promiseGetPcmData } from "./getPcmData";
 import { promiseGetImageData } from "./getImageData";
 import { pushStateStream } from "../pushStateStream";
+import { UploadRange } from "./durationPattern";
 
-export const uploadVideo = async (f: string, durationArr, mediaDirPath) => {
-  const fSplit = f.split(".");
-  const fName = fSplit[0];
+const PCM_BUFFER_SIZE = 8192;
+const PCM_SAMPLE_RATE = 22050;
+
+export const uploadVideo = async (
+  f: string,
+  durationArr: UploadRange[],
+  mediaDirPath: string,
+) => {
+  const fName = f.split(".")[0];
+  const filePath = path.join(mediaDirPath, f);
+  // 既存ストリームを壊さないよう、一時キーへ積んでから RENAME で置換する。
+  const tempKey = `${buffKey(fName)}:upload_tmp`;
 
   try {
     await pushStateStream(fName);
+    await redis.del(tempKey);
 
-    await durationArr.forEach(async (duration) => {
+    let hasData = false;
+    for (const range of durationArr) {
+      const tmpDir = await fs.promises.mkdtemp(
+        path.join(mediaDirPath, "upload-"),
+      );
       const getPcmOption = {
         stereo: true,
-        sampleRate: 22050,
-        ss: duration.ss,
-        t: duration.t,
+        sampleRate: PCM_SAMPLE_RATE,
+        ss: range.ss,
+        t: range.t,
       };
-      const getPcmResult = <ArrayBuffer[]>await promiseGetPcmData(
-        `${mediaDirPath}/${f}`,
-        8192,
-        getPcmOption,
-      );
-      console.log("getPcmResult", getPcmResult.length);
-      const getImageResult = <string[]>(
-        await promiseGetImageData(f, mediaDirPath, getPcmOption)
-      );
-      // console.log("getImageResult", getImageResult.length);
 
-      await streamsRedis.clear(fName);
-      const maxLen = Math.max(getPcmResult.length, getImageResult.length);
-      const buffArr: buffStateType[] = [];
-      for (let i = 0; i < maxLen; i++) {
-        if(!getPcmResult[i] || !getImageResult[i]) {
-          console.warn(`Warning: Missing data at index ${i} for file ${fName}. Skipping this chunk.`);
-          continue;
+      try {
+        const [pcmResult, imageResult] = await Promise.allSettled([
+          promiseGetPcmData(filePath, PCM_BUFFER_SIZE, getPcmOption),
+          promiseGetImageData(f, mediaDirPath, getPcmOption, tmpDir),
+        ]);
+        if (pcmResult.status === "rejected") {
+          throw pcmResult.reason;
         }
-        buffArr.push({
-          source: fName,
-          audio: (getPcmResult[i] as ArrayBuffer) ?? new ArrayBuffer(0),
-          video: getImageResult[i] ?? "",
-          bufferSize: 8192,
-          duration: 8192 / 44100,
-        });
+        if (imageResult.status === "rejected") {
+          throw imageResult.reason;
+        }
+        const getPcmResult = pcmResult.value;
+        const getImageResult = imageResult.value;
+        console.log("getPcmResult", getPcmResult.length);
+        console.log("getImageResult", getImageResult.length);
+
+        const maxLen = Math.max(
+          getPcmResult.length,
+          getImageResult.length,
+        );
+        if (maxLen === 0) continue;
+
+        const timestamp = Date.now();
+        const entries: string[] = [];
+        for (let i = 0; i < maxLen; i++) {
+          const buff: buffStateType = {
+            source: fName,
+            audio:
+              getPcmResult[i] ??
+              new Float32Array(PCM_BUFFER_SIZE).buffer,
+            video: getImageResult[i] ?? "",
+            bufferSize: PCM_BUFFER_SIZE,
+            duration: PCM_BUFFER_SIZE / 44100,
+            timestamp,
+          };
+          entries.push(serializeStream(buff));
+        }
+        await redis.rpush(tempKey, ...entries);
+        hasData = true;
+      } finally {
+        await fs.promises
+          .rm(tmpDir, { recursive: true, force: true })
+          .catch(() => undefined);
       }
-      await streamsRedis.pushBatch(fName, buffArr);
-    });
-    return await true;
+    }
+
+    if (!hasData) {
+      await redis.del(tempKey);
+      return false;
+    }
+
+    await redis.rename(tempKey, buffKey(fName));
+    await redis.set(indexKey(fName), 0);
+    return true;
   } catch (err) {
+    await redis.del(tempKey).catch(() => undefined);
     console.log("uploadVideo error", err);
     console.error(err);
-    return await false;
+    return false;
   }
 };

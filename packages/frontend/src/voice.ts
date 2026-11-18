@@ -1,7 +1,18 @@
-import { contextState, flagState, stereoPannerState } from "./state";
+import { contextState, flagState, gainState, stereoPannerState } from "./state";
 import { onMuteChange } from "./state/muteState";
 
 type VoiceData = { text: string; lang: string; volume?: number };
+
+const clamp01 = (value: number): number =>
+  Math.min(1, Math.max(0, value));
+
+// MASTER は Web Audio の masterGain と speechSynthesis の volume の両方に適用する。
+// 初期化前や未接続時は 1 として扱う。
+const effectiveVolume = (data: VoiceData): number =>
+  clamp01(
+    (data.volume !== undefined ? data.volume : 1) *
+      (gainState.masterGain?.gain.value ?? 1),
+  );
 
 // speechSynthesis.getVoices() は初回空のことがあるため、早めに読み込んでおく。
 if (
@@ -106,13 +117,14 @@ const formatSpeechText = (text: string): string =>
     ? text.split("").join(" ")
     : text;
 
-const createUtterance = (data: VoiceData): SpeechSynthesisUtterance => {
+const createUtterance = (
+  data: VoiceData,
+  volume: number,
+): SpeechSynthesisUtterance => {
   const uttr = new SpeechSynthesisUtterance();
   uttr.lang = data.lang;
-  // volume は 0〜1。指定があればそれを使う（未指定時はデフォルトの 1）
-  if (data.volume !== undefined) {
-    uttr.volume = data.volume;
-  }
+  // volume は 0〜1。MASTER と data.volume を掛けた値を反映する。
+  uttr.volume = volume;
   uttr.text = formatSpeechText(data.text);
   return uttr;
 };
@@ -128,7 +140,10 @@ const speakWithSpeechSynthesis = (data: VoiceData): void => {
     return;
   }
 
-  const uttr = createUtterance(data);
+  const volume = effectiveVolume(data);
+  if (volume <= 0) return;
+
+  const uttr = createUtterance(data, volume);
 
   // 英語は標準的な女性音声を優先し、なければ言語一致の voice にフォールバックする。
   const applyVoice = () => {
@@ -156,7 +171,7 @@ const decodeAudioData = (
 // サーバー TTS が使えない環境 (Linux など) で毎回リクエストしないためのフラグ。
 let serverVoiceUnavailable = false;
 
-// サーバー (macOS say) で生成した WAV を Web Audio の masterPanner 経由で再生する。
+// サーバー (macOS say) で生成した WAV を Web Audio の masterGain 経由で再生する。
 // speechSynthesis の出力は Web Audio のグラフ外なので、left/right パスでは
 // パンを適用できないための代替経路。中央パンは speechSynthesis を使う。
 const playServerVoice = async (data: VoiceData): Promise<boolean> => {
@@ -196,7 +211,9 @@ const playServerVoice = async (data: VoiceData): Promise<boolean> => {
     const gain = context.createGain();
     gain.gain.value = data.volume !== undefined ? data.volume : 1;
     source.connect(gain);
-    gain.connect(panner);
+    // MASTER を反映するため masterGain に接続する。
+    // masterGain が未初期化の場合だけ、従来どおり masterPanner へ接続する。
+    gain.connect(gainState.masterGain ?? panner);
     source.start();
     return true;
   } catch (error) {

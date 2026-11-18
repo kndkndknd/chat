@@ -65,7 +65,7 @@ export const receiveEnter = async (
     strings === "SWITCH" ||
     strings === "ROTATE" ||
     strings === "CLOCK" ||
-    strings === "SOLFEGIO" ||
+    strings === "SOLFEGGIO" ||
     strings === "FILTER" ||
     strings === "QUANTIZE" ||
     strings === "SELF" ||

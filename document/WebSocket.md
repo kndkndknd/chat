@@ -112,6 +112,7 @@ ws.send({ type: "connected", data: { id } })  ← クライアントに ID を�
 | イベント | データ型 | 処理 |
 |---|---|---|
 | `connectFromClient` | `{ clientMode, urlPathName, width, height, isMobile }` | `connectFromClient()` でクライアント状態を初期化、成功時 `debugFromServer` を返す |
+| `resizeFromClient` | `{ width, height }` | `updateClientSize()` で既存クライアントの position を更新（登録は行わない） |
 | `charFromClient` | `string` | `charProcess()` でコマンド文字を蓄積・解析 |
 | `chatFromClient` | `buffStateType` | `chatReceive()` でバッファをRedisにプッシュし、配信先に転送 |
 | `streamReqFromClient` | `string` (source名) | `streamEmit()` でストリームバッファを該当クライアントに送信 |
@@ -123,14 +124,19 @@ ws.send({ type: "connected", data: { id } })  ← クライアントに ID を�
 | `wholeReqFromClient` | `{ audio, video, source, bufferSize } \| undefined` | `receiveWholeReq()` でWHOLEストリーム処理 |
 | `faceDetectFromClient` | `{ x, width, height }` | 顔検出カウンタをインクリメント、PAYBACKバッファをタイムスタンプ検索して送信 |
 
+受信データは `packages/backend/src/socket/validateMessage.ts` で検証し、不正なデータは処理しない。`workletBufferFromClient` / `chatFromClient` の `source` は `CHAT` または `streamList` に含まれる値だけを許可する。WebSocket の `maxPayload` は 48MB。
+
 **切断処理:**
 ```
 ws.on("close")
   ↓
 facade.removeClient(id)
-clientState.client[id] を削除
-clientState.streamClient, cmdClient から除去
-bpmState[id] を削除
+handleRelayDisconnect(id)
+removeClientState(id)
+  ├ clientState.client / cmdClient / streamClient / pa* / sinewaveClient
+  ├ bpmState / arduinoClient
+  ├ streamState.target / loop
+  └ currentState.cmd / sinewave, previousState.cmd, cmdState.VOICE
 ```
 
 **`deserialize` (内部関数):**  
@@ -280,11 +286,13 @@ socketState.socket.on("connected", (data) => {
 | `erasePrintFromServer` | キャンバスのテキストを消去 |
 | `cmdFromServer` | BPM・ストリーム等のコマンドを適用 |
 | `stopFromServer` | 音声フェードアウト・停止 |
+| `loopToggleFromServer` | 対象ストリームの LOOP 状態を切り替える |
+| `loopClearFromServer` | STOP 時に LOOP を明示的に解除する（トグルしない） |
 | `chatReqFromServer` | 次のCHATバッファを要求 (`chatReq`) |
 | `recordReqFromServer` | 録音開始 |
 | `chatFromServer` | 音声+映像チャンクを受信して再生 |
 | `streamFromServer` | CHAT以外のストリームを受信して再生 |
-| `workletBufferFromServer` | AudioWorkletバッファを受信して再生 |
+| `workletBufferFromServer` | 旧 AudioWorklet バッファ再生ハンドラ（現在バックエンドから送信されない） |
 | `quantizeFromServer` | クォンタイズ設定を適用 |
 | `quantizeParamFromServer` | 対象ストリームの beat を適用 |
 | `gainFromServer` | ゲイン変更 |
@@ -297,7 +305,6 @@ socketState.socket.on("connected", (data) => {
 | `bufferRecReqFromServer` | チャンク録画開始 |
 | `bufferFromServer` | WebM動画データを受信して再生 |
 | `mediaRecFromServer` | 保持した録画（`VIDEOBUFFER`）を受信して `playRecording` で再生 |
-| `cinemaFromServer` | CINEMA の HLS URL を受信して `cinemaPlay` で上映（`STOP` で `cinemaStop`） |
 | `wholeCmdFromServer` | WHOLEコマンド処理 |
 | `personDetectFromServer` | フリッカリング演出 |
 | `disconnect` | 1秒後に `connect()` で再接続 |

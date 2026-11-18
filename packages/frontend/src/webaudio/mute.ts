@@ -2,7 +2,7 @@ import { contextState, flagState, gainState } from "../state";
 import { emitMuteChange } from "../state/muteState";
 
 export const mute = (flag: boolean) => {
-  // WebAudio の初期化前でも、状態と HLS / WebRTC 側のミュートは先に反映する。
+  // WebAudio の初期化前でも、状態と WebRTC 側のミュートは先に反映する。
   flagState.mute = flag;
   emitMuteChange(flag);
 

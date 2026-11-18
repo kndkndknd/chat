@@ -1,4 +1,4 @@
-import { cmdState, currentState, clientState } from "../state";
+import { cmdState, currentState } from "../state";
 import { cmdList } from "../data";
 
 import { execStop } from "./execStop";
@@ -9,7 +9,6 @@ import { pickupCmdTarget } from "./pickupCmdTarget";
 // import { getLengthFromBPM } from "../util/getLengthFromBPM";
 import { metronomeEmit } from "./metronomeEmit";
 import { clickFreq } from "./clickFreq";
-import { hlsEmit } from "../hls/hlsEmit";
 
 export const execCmd = (
   cmdStrings: string,
@@ -17,12 +16,16 @@ export const execCmd = (
   flag?: boolean,
 ) => {
   const command = getCmd(cmdStrings, target, flag);
+  // ALL QUANTIZE など、getCmd が対応していないコマンドは何もしない。
+  // ここで return しないと command.type 参照で TypeError になり、
+  // 呼び出し元が await していないため未処理 rejection になる。
+  if (!command) {
+    return;
+  }
   switch (command.type) {
     case "CMD":
       if(command.cmd.cmd === "METRONOME") {
         metronomeEmit(command.cmd, command.target?.[0]);
-      } else if(command.cmd.cmd === "CINEMA") {
-        hlsEmit(command.cmd, command.target ?? []);
       } else {
         cmdEmit(command.target ?? [""], command.cmd);
       }
@@ -60,23 +63,6 @@ export const getCmd = (cmdStrings: string,
     : pickupCmdTarget(cmdStrings);
 
   switch (cmdStrings) {
-    case "CINEMA":
-    case "VIDEO":
-    case "VID":
-    case "MOVIE":
-    case "MOV":
-      cmd = {
-        cmd: "CINEMA",
-      };
-      // 番号指定 (CINEMA 1) があればその端末、無ければ接続中の全ストリーム端末へ上映する。
-      return {
-        type: "CMD",
-        cmd,
-        target:
-          target !== undefined && target
-            ? targetIdArr
-            : [...clientState.streamClient],
-      };
     case "CLICK":
       console.log(cmdState.GAIN.CLICK);
       cmd = {

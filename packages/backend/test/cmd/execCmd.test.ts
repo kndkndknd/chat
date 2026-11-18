@@ -53,13 +53,19 @@ vi.mock("../../src/cmd/clickFreq", () => ({
   clickFreq: vi.fn(),
 }));
 
-import { getCmd } from "../../src/cmd/execCmd";
+import { execCmd, getCmd } from "../../src/cmd/execCmd";
 import { pickupCmdTarget } from "../../src/cmd/pickupCmdTarget";
 import { clickFreq } from "../../src/cmd/clickFreq";
 import { cmdState, currentState } from "../../src/state";
 
 const mockedPickup = vi.mocked(pickupCmdTarget);
 const mockedClickFreq = vi.mocked(clickFreq);
+
+describe("execCmd", () => {
+  test("未対応コマンド (ALL QUANTIZE など) は例外を投げず何もしない", () => {
+    expect(() => execCmd("QUANTIZE", "c1")).not.toThrow();
+  });
+});
 
 describe("getCmd", () => {
   beforeEach(() => {

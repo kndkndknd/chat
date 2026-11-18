@@ -3,12 +3,31 @@ import * as Https from "https";
 import * as Http from "http";
 
 import { buffStateType, gainStateType } from "../../../../types";
-import { clientState, currentState, bpmState, flagState } from "../state";
+import { currentState, flagState } from "../state";
+import {
+  isChatData,
+  isConnectData,
+  isFaceDetectData,
+  isGainData,
+  isMediaUploadData,
+  isIceCandidate,
+  isRecord,
+  isRelayRegisterData,
+  isResizeData,
+  isSdpDescription,
+  isStreamReqData,
+  isWholeData,
+  isWorkletData,
+} from "./validateMessage";
 import { chatReceive } from "../stream/chatReceive";
 import { charProcess } from "../cmd/charProcess";
 import { execStream } from "../stream/execStream";
 import { ioState } from "../state/states/ioState";
-import { connectFromClient } from "../clientSetting/connectFromClient";
+import {
+  connectFromClient,
+  updateClientSize,
+} from "../clientSetting/connectFromClient";
+import { removeClientState } from "../clientSetting/disconnectFromClient";
 import { emitClientSettings } from "../clientSetting/clientSettingsEmit";
 import { countersRedis } from "../redis/streamsRedis";
 import { faceDetectScenario } from "../scenario/faceDetectScenario";
@@ -26,7 +45,7 @@ import {
   handleRelayDisconnect,
 } from "../relay";
 import { IoFacade } from "./IoFacade";
-import { stringEmit, videoBufferEmit, muteReqEmit } from "./ioEmit";
+import { stringEmit, videoBufferEmit, muteReqEmit, erasePrintEmit } from "./ioEmit";
 
 let strings = "";
 
@@ -50,7 +69,12 @@ export const wsServer = (
   const facade = new IoFacade();
   ioState.io = facade;
 
-  const wss = new WebSocket.Server({ server: httpserver, path: "/ws" });
+  const wss = new WebSocket.Server({
+    server: httpserver,
+    path: "/ws",
+    // VIDEOBUFFER の 32MB blob を base64 化しても収まる上限。
+    maxPayload: 48 * 1024 * 1024,
+  });
 
   wss.on("connection", (ws: WebSocket, req) => {
     const id = facade.generateId();
@@ -65,18 +89,26 @@ export const wsServer = (
     // フロント側は初期化前でも flagState.mute に保持し、initAudio 時に反映する。
     muteReqEmit(flagState.mute, id);
 
-    ws.on("message", async (rawData: Buffer) => {
-      let msg: { type: string; data: unknown };
+    const onMessage = async (rawData: Buffer) => {
+      let msg: unknown;
       try {
         msg = deserialize(rawData.toString());
       } catch {
         console.error("invalid JSON from client", id);
         return;
       }
+      if (!isRecord(msg) || typeof msg.type !== "string") {
+        console.error("invalid message envelope from client", id);
+        return;
+      }
       const { type, data } = msg;
 
       switch (type) {
         case "connectFromClient": {
+          if (!isConnectData(data)) {
+            console.warn("invalid connectFromClient data:", id);
+            break;
+          }
           const result = connectFromClient(data, id, ipAddress);
           if (result) {
             ws.send(JSON.stringify({ type: "debugFromServer" }));
@@ -89,42 +121,78 @@ export const wsServer = (
           break;
         }
 
-        case "charFromClient":
+        case "charFromClient": {
+          if (typeof data !== "string") {
+            console.warn("invalid charFromClient data:", id);
+            break;
+          }
           console.log("id: " + id);
-          strings = charProcess(data as string, strings, id);
+          strings = charProcess(data, strings, id);
           break;
+        }
+
+        // GAIN UI を開いたときなど、入力途中の文字列だけを破棄する。
+        case "clearStringFromClient": {
+          strings = "";
+          erasePrintEmit();
+          break;
+        }
 
         case "chatFromClient": {
+          if (!isChatData(data)) {
+            console.warn("invalid chatFromClient data:", id);
+            break;
+          }
           console.log("debug chatFromClient", currentState.stream);
-          const buffer = data as buffStateType;
-          if (buffer.from === undefined) buffer.from = id;
-          chatReceive(buffer);
+          const buffer = {
+            ...data,
+            from: data.from ?? id,
+          } as buffStateType;
+          await chatReceive(buffer);
           break;
         }
 
         case "streamReqFromClient": {
-          const source =
-            typeof data === "string" ? data : (data as { source: string }).source;
-          const index =
-            typeof data === "string" ? undefined : (data as { index?: number }).index;
+          let source: string;
+          let index: number | undefined;
+          if (typeof data === "string") {
+            source = data;
+          } else if (isStreamReqData(data)) {
+            source = data.source;
+            index = data.index;
+          } else {
+            console.warn("invalid streamReqFromClient data:", id);
+            break;
+          }
           console.log(source, "index:", index);
           if (currentState.stream[source]) {
-            execStream(source, id, undefined, index);
+            await execStream(source, id, undefined, index);
           }
           break;
         }
 
-        case "workletBufferFromClient":
-          await workletBufferFromClient(
-            data as { video: string; audio: ArrayBuffer; source: string; bufferSize: number; index?: number;}, id
-          );
+        case "workletBufferFromClient": {
+          if (!isWorkletData(data)) {
+            console.warn("invalid workletBufferFromClient data:", id);
+            break;
+          }
+          await workletBufferFromClient(data, id);
           break;
+        }
 
         case "mediaUploadFromClient":
+          if (!isMediaUploadData(data)) {
+            console.warn("invalid mediaUploadFromClient data:", id);
+            break;
+          }
           // Redis 障害等で reject してもハンドラの未処理 rejection にしない。
           try {
             await mediaUploadFromClient(
-              data as { container: string; mimeType: string; blob: ArrayBuffer },
+              data as {
+                container: string;
+                mimeType: string;
+                blob: ArrayBuffer;
+              },
               id
             );
           } catch (err) {
@@ -152,6 +220,10 @@ export const wsServer = (
         }
 
         case "gainFromClient":
+          if (!isGainData(data)) {
+            console.warn("invalid gainFromClient data:", id);
+            break;
+          }
           console.log("gainFromClient", data);
           gainFromClient(data as gainStateType, facade);
           break;
@@ -162,21 +234,38 @@ export const wsServer = (
           break;
 
         case "wholeReqFromClient":
+          if (data !== undefined && !isWholeData(data)) {
+            console.warn("invalid wholeReqFromClient data:", id);
+            break;
+          }
           await receiveWholeReq(
-            data as { audio: ArrayBuffer; video: string; source: string; bufferSize: number } | undefined
+            data as
+              | {
+                  audio: ArrayBuffer;
+                  video: string;
+                  source: string;
+                  bufferSize: number;
+                }
+              | undefined
           );
           break;
 
         case "rotateReqFromClient": {
-          const value = data === true;
-          console.log("rotateReqFromClient", id, value);
-          await m5Switch("rotation", value);
+          if (typeof data !== "boolean") {
+            console.warn("invalid rotateReqFromClient data:", id);
+            break;
+          }
+          console.log("rotateReqFromClient", id, data);
+          await m5Switch("rotation", data);
           break;
         }
 
         case "faceDetectFromClient": {
-          const faceData = data as { x: number; width: number; height: number };
-          console.log("faceDetectFromClient", faceData);
+          if (!isFaceDetectData(data)) {
+            console.warn("invalid faceDetectFromClient data:", id);
+            break;
+          }
+          console.log("faceDetectFromClient", data);
           countersRedis.increment("faceDetect").then((count) => {
             console.log("faceDetect count:", count);
           });
@@ -188,50 +277,77 @@ export const wsServer = (
         // 既存ロジックとは分離した relay* 系。chat_sync とは無関係で、
         // chat_itsuki 内ブラウザ間 (/webrtc sender ←→ /relay receiver) の中継。
         case "relayRegisterFromClient":
-          registerRelay((data as { role: "sender" | "receiver" }).role, id);
+          if (!isRelayRegisterData(data)) {
+            console.warn("invalid relayRegisterFromClient data:", id);
+            break;
+          }
+          registerRelay(data.role, id);
           break;
 
         case "relayOfferFromClient": {
-          const d = data as { to: string; offer: RTCSessionDescriptionInit };
-          relayOffer(d.to, d.offer, id);
+          if (
+            !isRecord(data) ||
+            typeof data.to !== "string" ||
+            !isSdpDescription(data.offer)
+          ) {
+            console.warn("invalid relayOfferFromClient data:", id);
+            break;
+          }
+          relayOffer(data.to, data.offer, id);
           break;
         }
 
         case "relayAnswerFromClient": {
-          const d = data as { to: string; answer: RTCSessionDescriptionInit };
-          relayAnswer(d.to, d.answer, id);
+          if (
+            !isRecord(data) ||
+            typeof data.to !== "string" ||
+            !isSdpDescription(data.answer)
+          ) {
+            console.warn("invalid relayAnswerFromClient data:", id);
+            break;
+          }
+          relayAnswer(data.to, data.answer, id);
           break;
         }
 
         case "relayIceFromClient": {
-          const d = data as { to: string; candidate: RTCIceCandidateInit };
-          relayIce(d.to, d.candidate, id);
+          if (
+            !isRecord(data) ||
+            typeof data.to !== "string" ||
+            !isIceCandidate(data.candidate)
+          ) {
+            console.warn("invalid relayIceFromClient data:", id);
+            break;
+          }
+          relayIce(data.to, data.candidate, id);
+          break;
+        }
+
+        case "resizeFromClient": {
+          if (!isResizeData(data)) {
+            console.warn("invalid resizeFromClient data:", id);
+            break;
+          }
+          updateClientSize(id, data);
           break;
         }
 
         default:
           console.log("unknown message type:", type);
       }
+    };
+
+    ws.on("message", (rawData: Buffer) => {
+      void onMessage(rawData).catch((error) => {
+        console.error(`[ws] message handling failed (${id}):`, error);
+      });
     });
 
     ws.on("close", () => {
       console.log("disconnect:", id);
       facade.removeClient(id);
       handleRelayDisconnect(id);
-      if (clientState.client[id]) delete clientState.client[id];
-      if (clientState.streamClient.includes(id)) {
-        clientState.streamClient = clientState.streamClient.filter((el) => el !== id);
-      }
-      if (clientState.cmdClient.includes(id)) {
-        clientState.cmdClient = clientState.cmdClient.filter((el) => el !== id);
-      }
-      if (bpmState[id] !== undefined) {
-        delete bpmState[id];
-      }
-      console.log("clients:", clientState.client);
-      console.log("streamClient:", clientState.streamClient);
-      console.log("cmdClient:", clientState.cmdClient);
-      console.log("bpm", bpmState);
+      removeClientState(id);
     });
   });
 

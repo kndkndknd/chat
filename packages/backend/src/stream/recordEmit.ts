@@ -26,6 +26,32 @@ export const initRecordIndex = async (): Promise<void> => {
 
 const RECORD_TIMEOUT_MS = 10000;
 
+// 複数の録画リクエストが重なった場合、古いタイマーが新しい録画の
+// RECORD フラグを落とさないよう、世代番号で最新のタイマーだけを有効にする。
+let recordTimer: NodeJS.Timeout | null = null;
+let recordGeneration = 0;
+
+const scheduleRecordEnd = (): void => {
+  const generation = ++recordGeneration;
+  if (recordTimer !== null) {
+    clearTimeout(recordTimer);
+  }
+  recordTimer = setTimeout(() => {
+    if (recordGeneration !== generation) return;
+    recordTimer = null;
+    currentState.RECORD = false;
+  }, RECORD_TIMEOUT_MS);
+};
+
+export const cancelRecordTimer = (): void => {
+  if (recordTimer !== null) {
+    clearTimeout(recordTimer);
+    recordTimer = null;
+  }
+  recordGeneration++;
+  currentState.RECORD = false;
+};
+
 export const recordEmit = (target?: string, textPrint?: boolean) => {
   console.log("target", target);
   // if (!currentState.RECORD) {
@@ -40,11 +66,8 @@ export const recordEmit = (target?: string, textPrint?: boolean) => {
   }
   recordIndex++;
   // クライアントは timeout で録画を止めるので、同じタイミングで RECORD を戻す。
-  // これを戻さないと faceDetectScenario の RECORD ガードに永久に弾かれ、
-  // 2回目以降の顔認識で recordEmit が送られなくなる。
-  setTimeout(() => {
-    currentState.RECORD = false;
-  }, RECORD_TIMEOUT_MS);
+  // 連続リクエスト時は古いタイマーを破棄し、最新の録画終了時だけ戻す。
+  scheduleRecordEnd();
   if (cmdState.VOICE.length > 0) {
     cmdState.VOICE.forEach((element) => {
       //          io.to(element).emit('voiceFromServer', 'RECORD')
@@ -68,6 +91,7 @@ export const recordAsOtherEmit = (
   if (!currentState.RECORD) {
     console.log(`start record as ${source}`);
     currentState.RECORD = true;
+    scheduleRecordEnd();
     pushStateStream(source);
     if (target && target !== undefined) {
       console.log(`target: ${target}`);
@@ -84,6 +108,6 @@ export const recordAsOtherEmit = (
     }
   } else {
     console.log(`stop record as ${source}`);
-    currentState.RECORD = false;
+    cancelRecordTimer();
   }
 };

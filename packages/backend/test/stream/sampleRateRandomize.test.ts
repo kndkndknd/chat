@@ -22,10 +22,13 @@ describe("sampleRateRandomize", () => {
     vi.restoreAllMocks();
   });
 
-  test("random モード時は min + random*(max-min) を返す", () => {
+  test("random モード時は対数一様分布で min〜max の値を返す", () => {
     (sampleRateState as any).randomratemode = "random";
     // Math.random()=0 → min が返る
     expect(sampleRateRandomize("CHAT")).toBe(1000);
+    // Math.random()=0.5 → 幾何平均 sqrt(min*max) が返る
+    vi.spyOn(Math, "random").mockReturnValue(0.5);
+    expect(sampleRateRandomize("CHAT")).toBeCloseTo(Math.sqrt(1000 * 2000));
   });
 
   test("diatonic モード時は baseFreq の倍数のうち range 内の値", () => {

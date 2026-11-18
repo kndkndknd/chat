@@ -53,6 +53,23 @@ describe("gainFromClient", () => {
     expect(cmdState.GAIN.BASS).toBe(0.2);
   });
 
+  test("範囲外の値は 0〜2 にクランプする", () => {
+    const { io } = makeIo();
+    gainFromClient({ ...DEFAULTS, MASTER: 3, BASS: -1 } as gainStateType, io);
+    expect(cmdState.GAIN.MASTER).toBe(2);
+    expect(cmdState.GAIN.BASS).toBe(0);
+  });
+
+  test("有限数でない値は無視する", () => {
+    const { io } = makeIo();
+    gainFromClient(
+      { ...DEFAULTS, MASTER: Number.NaN, BASS: Number.POSITIVE_INFINITY } as gainStateType,
+      io,
+    );
+    expect(cmdState.GAIN.MASTER).toBe(1.0);
+    expect(cmdState.GAIN.BASS).toBe(1.5);
+  });
+
   test("cmdState.GAIN に存在しないキーは無視する", () => {
     const { io } = makeIo();
     gainFromClient({ UNKNOWN: 9 } as unknown as gainStateType, io);

@@ -9,7 +9,11 @@ export const emitQuantizeText = (
   clients: string[],
   stream?: string,
 ): void => {
-  const streamKey = stream !== undefined && stream ? stream : streamList[0];
+  // ALL 指定時は全ストリームが同じ flag になるため、既定の表示対象を使う。
+  const streamKey =
+    stream !== undefined && stream && stream !== "ALL"
+      ? stream
+      : streamList[0];
   for (const client of clients) {
     if (client === undefined) continue;
     const state = quantizeObj[client]?.[streamKey];

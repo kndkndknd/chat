@@ -23,6 +23,7 @@ const makeDirty = () => {
   cmdState.GAIN.MASTER = 0.1;
   cmdState.FADE.IN = 3;
   cmdState.VOICE = ["c1"];
+  cmdState.voiceLang = "ja-JP";
   cmdState.CLICKFREQ = 100;
   for (const stream of Object.keys(sampleRateState.sampleRate)) {
     sampleRateState.sampleRate[stream] = 22050;
@@ -77,6 +78,7 @@ describe("resetParameters", () => {
     expect(cmdState.GAIN.MASTER).toBe(1.0);
     expect(cmdState.FADE.IN).toBe(0);
     expect(cmdState.VOICE).toEqual([]);
+    expect(cmdState.voiceLang).toBe("en-US");
     expect(cmdState.CLICKFREQ).toBe(440);
     for (const stream of Object.keys(sampleRateState.sampleRate)) {
       expect(sampleRateState.sampleRate[stream]).toBe(44100);
@@ -105,7 +107,20 @@ describe("resetParameters", () => {
     for (const stream of Object.keys(glitchState.glitch)) {
       expect(glitchState.glitch[stream]).toBe(false);
     }
-    // 指定していない PORTAMENT は変更されない
+    // 指定していない PORTAMENT / voiceLang は変更されない
+    expect(cmdState.PORTAMENT).toBe(5);
+    expect(cmdState.voiceLang).toBe("ja-JP");
+  });
+
+  test("VOICE は VOICE モードと言語を初期化する", () => {
+    makeDirty();
+
+    const reset = resetParameters(["VOICE"]);
+
+    expect(reset).toEqual(["VOICE"]);
+    expect(cmdState.VOICE).toEqual([]);
+    expect(cmdState.voiceLang).toBe("en-US");
+    // VOICE 以外は変更されない
     expect(cmdState.PORTAMENT).toBe(5);
   });
 

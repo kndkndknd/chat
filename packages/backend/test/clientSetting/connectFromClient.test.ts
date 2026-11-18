@@ -30,7 +30,10 @@ vi.mock("../../src/clientSetting/floatingPosition", () => ({
   floatingPosition: () => ({ top: 0, left: 0, width: 10, height: 10 }),
 }));
 
-import { connectFromClient } from "../../src/clientSetting/connectFromClient";
+import {
+  connectFromClient,
+  updateClientSize,
+} from "../../src/clientSetting/connectFromClient";
 import {
   clientState,
   streamState,
@@ -155,5 +158,58 @@ describe("connectFromClient", () => {
       "192.168.0.10",
     );
     expect(arduinoState.host).toBe("192.168.0.10");
+  });
+
+  test("/1 を同じ ID で再登録しても重複せず、自分を退避しない", () => {
+    const data = {
+      urlPathName: "/1",
+      isMobile: false,
+      width: 100,
+      height: 200,
+    };
+    connectFromClient(data, "idRepeat", "ip");
+    connectFromClient(data, "idRepeat", "ip");
+
+    expect(clientState.cmdClient).toEqual(["idRepeat"]);
+    expect(clientState.streamClient).toEqual(["idRepeat"]);
+    expect((clientState.client as any).idRepeat.index).toBe(1);
+  });
+
+  test("通常 client を同じ ID で再登録しても重複しない", () => {
+    const data = {
+      clientMode: "client",
+      urlPathName: "/client",
+      isMobile: false,
+      width: 100,
+      height: 100,
+    };
+    connectFromClient(data, "idRepeatClient", "ip");
+    connectFromClient(data, "idRepeatClient", "ip");
+
+    expect(clientState.cmdClient).toEqual(["idRepeatClient"]);
+    expect(clientState.streamClient).toEqual(["idRepeatClient"]);
+  });
+
+  test("updateClientSize は登録済みクライアントの position を更新する", () => {
+    connectFromClient(
+      {
+        clientMode: "client",
+        urlPathName: "/client",
+        isMobile: false,
+        width: 100,
+        height: 100,
+      },
+      "idSize",
+      "ip",
+    );
+
+    updateClientSize("idSize", { width: 640, height: 360 });
+
+    expect((clientState.client as any).idSize.position).toEqual({
+      top: 0,
+      left: 0,
+      width: 640,
+      height: 360,
+    });
   });
 });

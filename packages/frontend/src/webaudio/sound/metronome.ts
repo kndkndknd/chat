@@ -1,6 +1,7 @@
 import { metronomeState } from "../../state";
 import { textPrint } from "../../canvasEvent";
 import { click } from "./click";
+import { getGlobalGainValue } from "../params/applyGlobalGain";
 
 export const metronome = (flag: boolean, latency: number, gain: number) => {
   metronomeState.bar = 4 * latency;
@@ -8,9 +9,8 @@ export const metronome = (flag: boolean, latency: number, gain: number) => {
     console.log("metronome init");
     textPrint("METRONOME");
     metronomeState.intervalId = window.setInterval(() => {
-      console.log("metronome");
-      console.log(gain);
-      click(gain, 440);
+      // 各tickで最新のグローバル音量を読む。
+      click(getGlobalGainValue("METRONOME"), 440);
       textPrint("CLICK", { timeout: true });
       // setTimeout(() => {
       //   erasePrint();
@@ -21,7 +21,7 @@ export const metronome = (flag: boolean, latency: number, gain: number) => {
     console.log("metronome change");
     clearInterval(metronomeState.intervalId);
     metronomeState.intervalId = window.setInterval(() => {
-      click(gain, 440);
+      click(getGlobalGainValue("METRONOME"), 440);
       textPrint("CLICK", { timeout: true });
       // setTimeout(() => {
       //   erasePrint();

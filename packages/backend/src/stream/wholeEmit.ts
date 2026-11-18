@@ -5,6 +5,7 @@ import { genEmptyBuff } from "./genEmptyBuff";
 import { clientState, cmdState, sampleRateState, glitchState, currentState, bpmState } from "../state";
 import { wholeCmdEmit } from "../socket/ioEmit";
 import { gridTimeoutVal } from "./gridTimeoutVal";
+import { logUniformRandomRate } from "./sampleRateRandomize";
 
 export const wholeEmit = async () => {
   if (!currentState.WHOLE) {
@@ -54,7 +55,10 @@ export const wholeEmit = async () => {
       audio,
       video,
       bufferSize,
-      sampleRate: sampleRateState.randomraterange[targetCmd].min + Math.random() * (sampleRateState.randomraterange[targetCmd].max - sampleRateState.randomraterange[targetCmd].min),
+      sampleRate: logUniformRandomRate(
+        sampleRateState.randomraterange[targetCmd].min,
+        sampleRateState.randomraterange[targetCmd].max,
+      ),
       glitch: Math.random() < 0.5 ? true : false,
       duration: bufferSize / sampleRateState.sampleRate[targetCmd] * 1000,
     };

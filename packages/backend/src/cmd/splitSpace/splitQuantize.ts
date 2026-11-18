@@ -16,7 +16,7 @@ type Stream = (typeof streamList)[number];
 
 type quantizeParamClass = Partial<{
   flag: boolean; // 要素① "TRUE"/"FALSE" -> boolean
-  stream: Stream; // 要素② streamListのいずれか
+  stream: Stream; // 要素② streamList / CHAT / ALL
   beat: number; // 要素③ 数値文字列かつ <= 32
   bpm: number; // 要素④ 数値文字列かつ >= 33
 }>;
@@ -42,10 +42,13 @@ export function classifyArgs(input: string[]): quantizeParamClass {
       continue;
     }
 
-    // ② stream
+    // ② stream（CHAT は streamList に含まれないため個別に許可する）
+    // ALL は「CHAT を含む全ストリーム」を意味する。
     if (
       params.stream === undefined &&
-      (streamList as readonly string[]).includes(upper)
+      (upper === "CHAT" ||
+        upper === "ALL" ||
+        (streamList as readonly string[]).includes(upper))
     ) {
       params.stream = upper as Stream;
       continue;

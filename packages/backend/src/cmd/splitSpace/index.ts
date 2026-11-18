@@ -1,4 +1,5 @@
 import { clientState, cmdState, streamState, glitchState } from "../../state";
+import { ioState } from "../../state/states/ioState";
 import { streamList, parameterList, streamsRedis } from "../../data";
 import { execCmd } from "../execCmd";
 import { execSinewave } from "../execSinewave";
@@ -43,6 +44,7 @@ import { scheduleSplitCmd } from "../../schedule/scheduleSplitCmd";
 import { getScheduleFromSplitSpace } from "../../schedule/getScheduleFromSplitSpace";
 import { deleteLog } from "../../logging/deleteLog";
 import { getTypeArr } from "./getTypeArr";
+import { clampGain, isGainKey } from "../gainValue";
 import { glitchParam } from "./glitchParam";
 
 import { initRedis } from "../../redis/initRedis";
@@ -271,20 +273,19 @@ export const splitSpace = async (
   } else if (
     stringArr[0] === "GAIN" &&
     stringArr.length === 3 &&
-    Object.keys(cmdState.GAIN).includes(stringArr[1]) &&
+    isGainKey(stringArr[1]) &&
     arrTypeArr[2] === "number"
   ) {
-    cmdState.GAIN[stringArr[1]] = Number(stringArr[2]);
-    console.log(cmdState.GAIN);
-    stringEmit(stringArr[1] + " GAIN: " + stringArr[2]);
-    // 動作確認用
+    const value = clampGain(Number(stringArr[2]));
+    cmdState.GAIN[stringArr[1]] = value;
+    // グローバルミキサー: コマンドからの変更も全クライアントへ即時反映する。
+    ioState.io?.emit("gainFromServer", cmdState.GAIN);
+    stringEmit(stringArr[1] + " GAIN: " + value);
   } else if (
     stringArr[0] === "GAIN" &&
-    Object.keys(cmdState.GAIN).includes(stringArr[1])
+    isGainKey(stringArr[1])
   ) {
-    if (stringArr.length === 3 && arrTypeArr[2] === "number") {
-      cmdState.GAIN[stringArr[1]] = Number(stringArr[2]);
-    }
+    // 値の表示のみ。GAIN <key> <value> は上の分岐で処理済み。
     stringEmit(
       `${stringArr[1]} GAIN: ${String(cmdState.GAIN[stringArr[1]])}`,
       true,

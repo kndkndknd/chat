@@ -15,7 +15,9 @@ export const pushStateStream = (
   // states: cmdStateType,
   random?: boolean
 ) => {
-  streamList.push(streamName);
+  if (!streamList.includes(streamName)) {
+    streamList.push(streamName);
+  }
   currentState.stream[streamName] = false;
   previousState.stream[streamName] = false;
   sampleRateState.sampleRate[streamName] = 44100;
@@ -35,10 +37,14 @@ export const pushStateStream = (
   };
   // bpmState.stream[streamName] = {};
   for (const client in bpmState) {
-    bpmState[client].stream[streamName] = {
-      beat: 0,
-      gridFlag: true,
-      quantizeFlag: false,
-    };
+    // 既に同じ stream が登録されている場合は、QUANTIZE / BEAT の設定を
+    // 保持する（chatReceive 等で同じ source が繰り返し届くケースがある）。
+    if (bpmState[client].stream[streamName] === undefined) {
+      bpmState[client].stream[streamName] = {
+        beat: 0,
+        gridFlag: true,
+        quantizeFlag: false,
+      };
+    }
   }
 };

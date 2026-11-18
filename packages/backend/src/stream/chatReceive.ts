@@ -9,7 +9,7 @@ import {
   bpmState,
 } from "../state";
 
-import { chatsRedis, streamsRedis } from "../data";
+import { chatsRedis, streamsRedis, streamList } from "../data";
 import { glitchStream } from "./glitchStream";
 import { pushStateStream } from "./pushStateStream";
 import { pickupPaStreamTarget, pickupStreamTarget } from "./pickupStreamTarget";
@@ -23,6 +23,10 @@ export const chatReceive = async (
   buffer?: buffStateType
 ) => {
   if (buffer !== undefined) {
+    if (buffer.source !== "CHAT" && !streamList.includes(buffer.source)) {
+      console.warn("rejected unknown stream source:", buffer.source);
+      return;
+    }
     switch (buffer.source) {
       case "CHAT":
         console.log("chatReceive before redis push, buffer from:", buffer.from);

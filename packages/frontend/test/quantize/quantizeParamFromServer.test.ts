@@ -29,9 +29,18 @@ const makeData = (beats: Record<string, number>) =>
 describe("quantizeParamFromServer", () => {
   beforeEach(() => {
     textPrintMock.mockClear();
-    stateMock.quantizeState.stream.CHAT = { flag: true, beat: 1 };
-    stateMock.quantizeState.stream.PLAYBACK = { flag: true, beat: 1 };
-    stateMock.quantizeState.stream.TIMELAPSE = { flag: false, beat: 1 };
+    const streams = stateMock.quantizeState.stream as Record<
+      string,
+      { flag: boolean; beat: number }
+    >;
+    for (const key of Object.keys(streams)) {
+      if (!["CHAT", "PLAYBACK", "TIMELAPSE"].includes(key)) {
+        delete streams[key];
+      }
+    }
+    streams.CHAT = { flag: true, beat: 1 };
+    streams.PLAYBACK = { flag: true, beat: 1 };
+    streams.TIMELAPSE = { flag: false, beat: 1 };
   });
 
   test("対象 stream の beat のみ反映し flag は変更しない", () => {
@@ -59,6 +68,16 @@ describe("quantizeParamFromServer", () => {
 
     expect(stateMock.quantizeState.stream.CHAT.beat).toBe(4);
     expect(stateMock.quantizeState.stream.PLAYBACK.beat).toBe(1);
+  });
+
+  test("未知の stream は flag=false で追加し beat を反映する", () => {
+    quantizeParamFromServer(makeData({ UPLOADED: 8 }), ["UPLOADED"]);
+
+    const streams = stateMock.quantizeState.stream as Record<
+      string,
+      { flag: boolean; beat: number }
+    >;
+    expect(streams.UPLOADED).toEqual({ flag: false, beat: 8 });
   });
 
   test("CHAT の beat を canvas に表示する", () => {

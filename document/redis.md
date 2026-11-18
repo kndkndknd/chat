@@ -72,6 +72,7 @@ redis.on("error", (err) => {
 
 - `ioredis` の単一クライアントをモジュールスコープでシングルトンとしてエクスポート。
 - 接続先は環境変数 `REDIS_URL` を優先、未設定なら `redis://localhost:6379`。
+- `app.ts` は最初に `./env` を import し、`redis/client.ts` の評価より先に `.env` を読み込む。
 - エラーは `console.error` でログするのみで、再接続は ioredis のデフォルト挙動に委ねる。
 - アプリケーションコードは `import { redis } from "../redis/client"` で同じ接続を共有する。
 
@@ -252,13 +253,12 @@ export const getMongoDb = async (): Promise<Db> => { /* lazy connect */ };
 - `mongodb` パッケージ (^6) を利用。`MongoClient` をモジュールスコープのシングルトンとして保持。
 - 初回 `getMongoDb()` 呼び出し時に lazy connect。同じ Promise を使い回すため再接続は発生しない。
 - DB 名は環境変数 `MONGO_DB` (既定 `itsuki`)。コレクション名はそのままストリーム名 (`PLAYBACK` / `TIMELAPSE` / ...)。
-- Docker 構成は `docker/docker-compose.yml` の `mongo` サービス (image `mongo:7.0`、ホストポート `27017`、
-  bind mount `./mongo/mongo_data`) で起動。
+- `docker/docker-compose.yml` の `mongo` サービス (image `mongo:7.0`、ホストポート `27017`、
+  bind mount `./mongo/mongo_data`) は現在コメントアウトされている（既定で起動するのは Redis と nginx）。
 
-### enterQuiet 時の Mongo 退避 (`src/mongo/flushStreams.ts`)
+### Mongo 退避 (`src/mongo/flushStreams.ts`)
 
-`src/scenario/nightSchedule.ts` の `enterQuiet()` が `flushPlaybackAndTimelapse()` を fire-and-forget で
-呼び出す。
+`flushPlaybackAndTimelapse()` は現在呼び出し元がなく、必要時に手動で実行する（旧 `src/scenario/nightSchedule.ts` は現行チェックアウトに存在しない）。
 
 `flushStreamToMongo(name)`:
 1. `LRANGE streams:<name>:buff 0 -1` で生 JSON を全件取得。
@@ -289,8 +289,8 @@ export const getMongoDb = async (): Promise<Db> => { /* lazy connect */ };
 `streams:YESTERDAY:buff` に展開され、`YESTERDAY` ストリームとして再生対象に使える状態になる。
 
 ### 注意点
-- Mongo 接続失敗は `getMongoDb()` の Promise reject で各呼び出し元の try/catch に伝搬する。`nightSchedule`
-  と `scenarioItsuki` 側はどちらもログのみで処理継続する。
+- Mongo 接続失敗は `getMongoDb()` の Promise reject で各呼び出し元の try/catch に伝搬する。`scenarioItsuki`
+  側はログのみで処理継続する。
 - `recordIndex` を持たない旧 PLAYBACK エントリ (本機能導入前のデータ) は `loadYesterdayPlayback` の
   「closest doc に recordIndex 無し」分岐で skip される。
 - `flushStreamToMongo` は `insertMany` を 1 回で行うため、バッファが極端に大きい場合はメモリ・BSON 上限
@@ -343,6 +343,7 @@ cmdLogging("START");
 ```
 packages/backend/src/
 ├── app.ts                            ── 起動 (loadAllStates → initStreams) と POST /api/persondetect
+├── env.ts                            ── .env bootstrap (app.ts の最初に import)
 ├── redis/
 │   ├── client.ts                     ── ioredis インスタンス
 │   ├── stateRedis.ts                 ── createPersistedState / loadAllStates / Proxy + debounce
@@ -387,7 +388,6 @@ packages/backend/src/
 │   │   └── uploadVideo.ts            ── PCM + 画像化した動画チャンクを pushBatch
 │   └── toPostgres/postStream.ts      ── streamsRedis から読み出し外部 PostgreSQL に POST
 ├── scenario/
-│   ├── nightSchedule.ts              ── enterQuiet で flushPlaybackAndTimelapse を起動
 │   └── scenarioItsuki.ts             ── runOnce 毎に loadYesterdayPlayback → loadScenario → execScenario
 ├── cmd/splitSpace/
 │   ├── index.ts                      ── CLEAR / REDIS CLEAR などの分岐

@@ -6,7 +6,8 @@ declare function registerProcessor(
   ChatProcessor: typeof AudioWorkletProcessor,
 ): void;
 
-const DEFAULT_BUFFER_SIZE = 8192 / 4;
+// bufferSizeState.bufferSize と揃える（frames 単位）。
+const DEFAULT_BUFFER_SIZE = 8192;
 
 interface ChatProcessorOptions {
   processorOptions?: {

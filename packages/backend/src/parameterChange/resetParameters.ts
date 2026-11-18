@@ -25,6 +25,7 @@ const gainDefaults: gainStateType = {
 
 const sampleRateDefault = 44100;
 const clickFreqDefault = 440;
+const voiceLangDefault = "en-US";
 
 export const RESETTABLE_PARAMETERS = [
   "PORTAMENT",
@@ -95,6 +96,7 @@ const resetRandom = () => {
 
 const resetVoice = () => {
   cmdState.VOICE = [];
+  cmdState.voiceLang = voiceLangDefault;
 };
 
 const resetFilter = () => {

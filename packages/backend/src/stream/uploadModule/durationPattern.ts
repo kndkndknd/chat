@@ -1,54 +1,71 @@
-import { uploadParams } from "../../data";
+export type UploadRange = { ss: string; t: string };
 
-export const durationPattern = (duration: number, stringArr: Array<string>) => {
-  const lengthArr: Array<{ t: string; ss?: string }> = [
-    { t: uploadParams.t, ss: uploadParams.ss },
-  ];
-  switch (stringArr.length) {
-    case 4:
-      if (stringArr[3].includes(":")) {
-        let timeArr = stringArr[3].split(":");
-        if (timeArr.length === 3) {
-          lengthArr[0].t = stringArr[3];
-        } else if (timeArr.length === 2) {
-          lengthArr[0].t = "00:" + stringArr[3];
-        }
-      }
-    // breakないため、4の場合も3の処理をする
-    case 3:
-      if (stringArr[2].includes(":")) {
-        let timeArr = stringArr[2].split(":");
-        if (timeArr.length === 3) {
-          lengthArr[0].ss = stringArr[2];
-        } else if (timeArr.length === 2) {
-          lengthArr[0].ss = "00:" + stringArr[2];
-        }
-      } else if (stringArr[2] === "FULL") {
-        lengthArr[0].t = String(duration);
-        lengthArr[0].ss = "0:00:00";
-      }
-      break;
-  }
-  if (lengthArr[0].ss === undefined) {
-    lengthArr[0].ss === "0:00:00";
-  }
+// 長尺動画も一定メモリで処理できるよう、連続した20秒区間に分割する。
+export const UPLOAD_CHUNK_SECONDS = 20;
 
-  if (duration < 20) {
-    lengthArr[0].t = String(duration);
-  }
+const parseTimeToSeconds = (value?: string): number | undefined => {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  if (trimmed === "") return undefined;
 
-  if (duration > 60) {
-    lengthArr.shift();
-    const basisDuration = 20;
-    const arrLength = Math.floor(duration / basisDuration) - 1;
-    for (let i = 0; i < arrLength; i++) {
-      lengthArr.push({
-        ss: String(i * basisDuration + Math.random() * basisDuration),
-        t: String(Math.random() * basisDuration),
-      });
+  const parts = trimmed.split(":");
+  if (parts.length === 0 || parts.length > 3) return undefined;
+  const nums = parts.map(Number);
+  if (nums.some((num) => !Number.isFinite(num))) return undefined;
+
+  if (nums.length === 3) {
+    return nums[0] * 3600 + nums[1] * 60 + nums[2];
+  }
+  if (nums.length === 2) {
+    return nums[0] * 60 + nums[1];
+  }
+  return nums[0];
+};
+
+const formatSeconds = (seconds: number): string =>
+  String(Math.round(seconds * 1000) / 1000);
+
+/**
+ * UPLOAD の抽出区間を返す。
+ *
+ * - 引数なし / FULL: 0秒から動画末尾までを連続20秒区間で返す
+ * - 開始時刻のみ: 開始時刻から末尾まで
+ * - 開始時刻 + 長さ: 指定区間を連続20秒区間で返す
+ */
+export const durationPattern = (
+  duration: number,
+  stringArr: Array<string>,
+): UploadRange[] => {
+  if (!Number.isFinite(duration) || duration <= 0) return [];
+
+  let start = 0;
+  let end = duration;
+
+  const startArg = stringArr[2];
+  if (startArg !== undefined && startArg !== "FULL") {
+    const parsedStart = parseTimeToSeconds(startArg);
+    if (parsedStart !== undefined) start = parsedStart;
+  }
+  start = Math.max(0, start);
+  if (start >= end) return [];
+
+  const lengthArg = stringArr[3];
+  if (lengthArg !== undefined) {
+    const parsedLength = parseTimeToSeconds(lengthArg);
+    if (parsedLength !== undefined && parsedLength > 0) {
+      end = Math.min(end, start + parsedLength);
     }
   }
 
-  console.log(lengthArr);
-  return lengthArr;
+  const ranges: UploadRange[] = [];
+  let cursor = start;
+  while (cursor < end) {
+    const chunkEnd = Math.min(cursor + UPLOAD_CHUNK_SECONDS, end);
+    ranges.push({
+      ss: formatSeconds(cursor),
+      t: formatSeconds(chunkEnd - cursor),
+    });
+    cursor = chunkEnd;
+  }
+  return ranges;
 };

@@ -1,71 +1,35 @@
 import { streamState, clientState } from "../state";
 
+const isActiveStreamClient = (id: string): boolean =>
+  clientState.client[id]?.stream === true;
+
+const activeStreamClients = (): string[] =>
+  clientState.streamClient.filter(isActiveStreamClient);
+
+const activeTargets = (stream: string): string[] =>
+  (streamState.target[stream] ?? []).filter(isActiveStreamClient);
+
+const pickRandom = (arr: string[]): string =>
+  arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : "";
+
 export const pickupStreamTarget = (stream: string, from?: string): string => {
-  console.log("streamState.target", streamState.target[stream]);
-  if (
-    streamState.target[stream] !== undefined &&
-    streamState.target[stream].length > 1
-  ) {
-    // from以外のtargetがあればFromを除外した配列を返し、fromがなければtarget全体を返す
-    // const targetArr =
-    //   from === undefined
-    //     ? streamState.target[stream]
-    //     : streamState.target[stream].filter((id) => {
-    //         console.log("from", from);
-    //         console.log("id", id);
-    //         return id === from;
-    //       });
-    // console.log("filtered targetArr", targetArr);
-
-    // const targetArr = streamState.target[stream];
-    let targetArr =
-      stream === "CHAT"
-        ? streamState.target[stream].filter((id) => {
-            console.log(id !== from);
-            return id !== from;
-          })
-        : streamState.target[stream];
-    console.log("from", from);
-    // console.log("testArr", testArr);
-    // const targetArr = streamState.target[stream];
-    console.log("targetArr(target ari)", targetArr);
-    // fromを除外した結果targetがなくなればfromを返す、あればtargetの中からランダムに返す
-    if (targetArr.length > 0) {
-      // if (states.arduino.connected) {
-      //   console.log("push arduino");
-      //   targetArr = [...targetArr, ...targetArr];
-      //   targetArr.push("arduino");
-      // }
-      const targetId = targetArr[Math.floor(Math.random() * targetArr.length)];
-      console.log("targetId", targetId);
-      return targetId;
-    } else {
-      console.log("from");
-      return from;
-    }
-  } else if (
-    streamState.target[stream] !== undefined &&
-    streamState.target[stream].length === 1
-  ) {
-    console.log(stream, "targetArr(1)", streamState.target[stream]);
-    return streamState.target[stream][0];
-  } else {
-    // targetがなければランダムに返す（CHAT以外かつfromが指定されていればそれを優先）
-    console.log("random");
-    if (from !== undefined && stream !== "CHAT") return from;
-    let targetArr = clientState.streamClient;
-    console.log("targetArr", targetArr);
-    // if (states.arduino.connected) {
-    //   targetArr = [...targetArr, ...targetArr, ...targetArr];
-    //   console.log("push arduino");
-    //   targetArr.push("arduino");
-    // }
-
-    return targetArr.length > 0 ? targetArr[Math.floor(Math.random() * targetArr.length)] : "";
+  let targetArr = activeTargets(stream);
+  if (stream === "CHAT" && from !== undefined) {
+    targetArr = targetArr.filter((id) => id !== from);
   }
+
+  if (targetArr.length > 0) {
+    if (targetArr.length === 1) return targetArr[0];
+    return pickRandom(targetArr);
+  }
+
+  // 明示的な from が有効なら、対象が空になった場合はそれを優先する。
+  if (from !== undefined && isActiveStreamClient(from)) {
+    return from;
+  }
+
+  return pickRandom(activeStreamClients());
 };
 
-export const pickupPaStreamTarget = (): string => {
-  console.log('pa')
-  return clientState.paStreamClient.length > 0 ? clientState.paStreamClient[Math.floor(Math.random() * clientState.paStreamClient.length)] : "";
-}
+export const pickupPaStreamTarget = (): string =>
+  pickRandom(clientState.paStreamClient.filter(isActiveStreamClient));

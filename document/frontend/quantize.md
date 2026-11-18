@@ -2,7 +2,7 @@
 
 ## 概要
 
-サーバから送られる BPM / クオンタイズ設定を受け取り、対象ストリーム（`CHAT` / `PLAYBACK` / `TIMELAPSE`）の音声・映像バッファを小節単位で再生するフロントエンドの仕組みです。
+サーバから送られる BPM / クオンタイズ設定を受け取り、対象ストリーム（`CHAT` / `PLAYBACK` / `TIMELAPSE` / `EMPTY`、および `UPLOAD` 等で後から追加されたストリーム）の音声・映像バッファを小節単位で再生するフロントエンドの仕組みです。
 
 - バックエンドはクライアント単位で `bpmState[client]`（`bpmClientStateType`）を保持し、`bpmState[client].stream`（`bpmStreamStateType`）に各ストリームのクオンタイズ状態（`beat` / `gridFlag` / `quantizeFlag`）を持ちます。
 - 値を変更したタイミングで `bpmFromServer` / `quantizeFromServer` / `quantizeParamFromServer` を emit し、フロントは `quantizeState` に反映して `quantizePlay` で再生します。
@@ -34,7 +34,7 @@
 | `currentTime` | `number` | 直近 tick の `audioContext.currentTime`（記録用）。 |
 | `timeout` | `number` | 未使用。 |
 | `intervalFlag` | `boolean` | interval が稼働中かどうか（書き込みのみ・参照なし）。 |
-| `stream` | `{ [stream: string]: { flag: boolean; beat: number } }` | ストリーム別のクオンタイズ設定。`CHAT` / `PLAYBACK` / `TIMELAPSE` を保持。 |
+| `stream` | `{ [stream: string]: { flag: boolean; beat: number } }` | ストリーム別のクオンタイズ設定。初期値は `CHAT` / `PLAYBACK` / `TIMELAPSE` / `EMPTY`。`UPLOAD` 等で追加された stream はサーバイベント受信時に追加される。 |
 
 - `stream[<name>].flag` … そのストリームのクオンタイズ ON/OFF。
 - `stream[<name>].beat` … 1 小節内の分割数。`0` は「ランダム」を意味します。
@@ -73,7 +73,7 @@
 - ハンドラ: `src/socket.ts` → `quantizeFromServer(data)`。
 - 処理（`src/quantize/quantizeFromServer.ts`）:
   1. 第 2 引数 `bpm` が渡され、`> 0` なら `quantizeState.bar = millisecondsPerBar(bpm)`。**現行の `socket.ts` は第 2 引数を渡さないため未使用**。
-  2. `data` の各ストリームについて、`quantizeState.stream` にキーが存在すれば `flag = quantizeFlag`、`beat = beat` を反映。
+  2. `data` の各ストリームについて、`quantizeState.stream` にキーがなければ `{ flag: false, beat }` で追加し、`flag = quantizeFlag`、`beat = beat` を反映。
   3. ON/OFF 遷移を検出して付随処理を行う。
      - OFF → ON … `pendingFirstPlay[stream] = true`（後述の初回即再生用）。
      - ON → OFF … `pendingFirstPlay[stream] = false`、`streamChunk[stream] = {}` に破棄。`CHAT` なら `chatReq(socketState.socketId)` を呼び録音リレーを再開。
@@ -86,7 +86,7 @@
 - payload は `{ data, stream }` のラッパー形式です。`data` が `bpmStreamStateType`（bare）、`stream` が対象ストリーム名の配列です。
 - ハンドラ: `src/socket.ts` → `quantizeParamFromServer(data.data, data.stream)`。
 - 処理（`src/quantize/quantizeParamFromServer.ts`）:
-  1. `quantizeState.stream` の各キーのうち、`streams` に含まれかつ `data[stream]` が存在するものについて `beat = data[stream].beat` を反映。
+  1. `streams` に含まれかつ `data[stream]` が存在する各ストリームについて `beat = data[stream].beat` を反映。`quantizeState.stream` に無いストリームは `{ flag: false, beat }` で追加。
   2. `flag` は変更しません（ON/OFF は `quantizeFromServer` の担当）。
   3. `textPrint` で `BEAT: <CHAT の beat>` を canvas に表示（`{ timeout: true }` で 500ms 後に自動消去）。
   4. `refreshQuantizeInterval()` は呼びません（`beat` は tick ごとに参照されるため、interval の再生成は不要）。
@@ -142,9 +142,9 @@ QUANTIZE を ON にした直後は初回 tick が 1 小節後になるため、�
 - 発音時、`streamFlagState[data.source]` が真のときのみ:
   - `playAudioStream(audio, sampleRate, glitch, bufferSize)`
   - `video` があれば `showImage`（300ms 後に `erasePrint`）、無ければ `textPrint(source.toLowerCase())`
-- 再生スケジュール後、次バッファを要求:
-  - `source === "CHAT"` … `chatReq(socketState.socketId)`
-  - それ以外 … `socket.emit("streamReqFromClient", data.source)`
+- 再生スケジュール後、`CHAT` 以外は次バッファを要求:
+  - `source !== "CHAT"` … `socket.emit("streamReqFromClient", data.source)`
+  - `CHAT` は `quantizePlay` では要求せず、`socket.ts` の `chatFromServer` がバッファ保持後に `chatReq` を呼ぶ。
 
 ## 停止（`src/quantize/quantizeStop.ts`）
 
@@ -156,6 +156,8 @@ QUANTIZE を ON にした直後は初回 tick が 1 小節後になるため、�
 - `bar` はミリ秒です。`millisecondsPerBar(bpm) = 4 * 60000 / bpm`（`src/util/bpmCalc.ts`）。`bpmFromServer` / `quantizeFromServer` ともこの単位に統一されています。
 - interval は自己再スケジュール型の `setTimeout` チェーンで、常に最新の `bar` を使用します。BPM 変更時は経過時間を考慮して位相を保ったまま再アームします。
 - `quantizeParamFromServer`（beat 変更）は interval を再アームしません（tick ごとに `beat` を参照するため）。
+- `EMPTY` と `UPLOAD` / `RECORD AS` / `FIND` / `YESTERDAY` / `GET` 等で `pushStateStream` された stream は、`quantizeFromServer` / `quantizeParamFromServer` の受信時に `quantizeState.stream` へ追加されます。以後は通常のストリームと同じく `QUANTIZE` / `BEAT` の対象になります。
+- 引数付き `QUANTIZE` では `CHAT` もストリーム名として指定できます（例: `QUANTIZE CHAT TRUE`, `QUANTIZE CHAT 8 TRUE`）。`QUANTIZE ALL ...` は `CHAT` と `UPLOAD` 等で追加されたストリームを含む全ストリームが対象です。
 - ある小節で `streamChunk[stream]` が未受信（`audio` 無し）または `streamFlagState[stream]` が false の場合、`quantizePlay` が呼ばれないため、その小節は発音も次バッファ要求も行われません（次にチャンクを受信するまで待ちになります）。
 
 ## バックエンドとの対応

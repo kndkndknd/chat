@@ -10,39 +10,11 @@
 
 ---
 
-## 1. バックエンド — 日次スケジューラ系
+## 1. バックエンド — 周期スケジューラ系
 
-### 1.1 ナイトモード自動スケジューラ
-- **ファイル**: `backend/src/nightMode/nightModeSchedule.ts`
-- **インターバル**: 60,000ms（1分ごとに現在時刻を判定）
-- **時刻ウィンドウ**: 19:30 以降、または 10:30 より前（深夜をまたぐ夜間ウィンドウ）
-- **動作**:
-  - 毎分 `tickNightModeSchedule(new Date())` を実行。
-  - 夜間ウィンドウに「入った」境界で `enableNightMode()`、ウィンドウから「出た」境界で `disableNightMode()` を**1回だけ**発火（`scheduledNightOn` フラグで境界検出）。
-  - 起動時にすでに夜間ウィンドウ内なら即 `enableNightMode()`。
-  - tick 取りこぼしや再起動に強い設計（時刻の状態差分で判定するため）。
-- **起動/停止**: `startNightModeSchedule()` / `stopNightModeSchedule()`（後者で `clearInterval`）。
+> 注: 過去仕様にあったナイトモード / クワイエットスケジューラ（`nightMode/`、`scenario/nightSchedule.ts`）は、現行チェックアウトに実装が存在しないため本ドキュメントでは扱わない。
 
-### 1.2 ナイト（クワイエット）スケジューラ — 活動停止
-- **ファイル**: `backend/src/scenario/nightSchedule.ts`
-- **インターバル**: 60,000ms（1分ごと）
-- **クワイエット時間帯**: 11:00 より前、または 19:00 以降（**日曜は 18:00 以降**）
-  - `isQuietTime`: `h < 11 → true`、開始時刻は `day === 0 ? 18 : 19`。
-- **動作**:
-  - クワイエットに「入る」境界 `enterQuiet()`:
-    - `stopScenarioItsuki()`（シナリオ周期停止）
-    - 先頭クライアントへ `stopEmit()`（ストリーム停止）
-    - `timelapseFromServer { cmd: "FALSE" }` をブロードキャスト（タイムラプス無効化）
-    - `flushPlaybackAndTimelapse()` で DB へフラッシュ
-  - クワイエットから「出る」境界 `exitQuiet()`:
-    - `timelapseFromServer { cmd: "TRUE" }`（タイムラプス有効化）
-    - `scenarioItsuki()` 再開
-  - 状態は `nightScheduleState.quiet` で管理。
-- **起動**: `startNightSchedule()`。
-
-> 1.1 と 1.2 は別物。1.1 は表示系の「ナイトモード」、1.2 は「シナリオ・ストリーム・タイムラプスの活動停止」。時刻条件も異なる。
-
-### 1.3 シナリオ周期実行（scenarioItsuki）
+### 1.1 シナリオ周期実行（scenarioItsuki）
 - **ファイル**: `backend/src/scenario/scenarioItsuki.ts`
 - **インターバル**: 3,000,000ms（**50分**、`INTERVAL = 50` 分）
 - **動作**:
@@ -345,8 +317,6 @@
 
 | 定数 / 値 | 値 | ファイル | 用途 |
 |---|---|---|---|
-| ナイトモード判定 | 60,000ms | nightModeSchedule.ts | 19:30 ON / 10:30 OFF |
-| クワイエット判定 | 60,000ms | nightSchedule.ts | <11時 or ≥19時(日曜18時) |
 | `INTERVAL_MS` | 3,000,000ms(50分) | scenarioItsuki.ts | シナリオ周期 |
 | `FACE_DETECT_BLOCK_AFTER_MS` | 90,000ms | faceDetectScenario.ts | 顔検出後ブロック加算 |
 | `SNAPSHOT_DISPLAY_MS` | 1,000ms | faceDetectScenario.ts | スナップショット協調 |
@@ -381,7 +351,7 @@
 ## 14. 設計パターンの要点
 
 1. **指数バックオフ**: WebSocket（フロント）と WebRTC（バックエンド）はいずれも基準1秒×2^attempt・上限30秒。
-2. **時刻ベース・スケジューラ**: ナイトモード(1.1)・クワイエット(1.2)は毎分 tick し、状態差分で境界を検出するため tick 取りこぼし・再起動に強い。
+2. **時刻予約**: `src/schedule/` が `HH:MM(:SS)` 指定やログ JSON からの予約実行を担当する。
 3. **周期実行**: シナリオ50分、センサ500ms、顔検出100ms など階層的な周期。
 4. **グリッド/量子化**: 音楽系遅延はすべて BPM 由来またはグリッド整列（ヒューマナイズのためのランダムジッター含む）。
 5. **フロント/バック協調**: スナップショット表示(1秒)・顔検出ブロック(シナリオ長+90秒)などを socket イベントで同期。

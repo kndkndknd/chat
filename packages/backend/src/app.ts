@@ -1,3 +1,4 @@
+import "./env";
 import * as fs from "fs";
 import { default as Express } from "express";
 import * as path from "path";
@@ -5,13 +6,6 @@ import { default as favicon } from "serve-favicon";
 import * as Https from "https";
 import { wsServer } from "./socket/wsServer";
 import { networkInterfaces } from "os";
-import dotenv from "dotenv";
-
-const dotenvPath = path.join(__dirname, "../../..", ".env");
-if (fs.existsSync(dotenvPath)) {
-  console.log("Loading .env file from:", dotenvPath);
-  dotenv.config({ path: dotenvPath });
-}
 
 import { cmdLogging } from "./logging/cmdLogging";
 import { initStreams } from "./data";
@@ -23,6 +17,9 @@ import {
   flagState,
 } from "./state";
 import { muteReqEmit } from "./socket/ioEmit";
+import { sanitizeClientReferences } from "./clientSetting/disconnectFromClient";
+import { resetRuntimeStreamState } from "./state/startupState";
+import { normalizeGainState } from "./cmd/gainValue";
 import { streamsRedis } from "./redis/streamsRedis";
 import {
   isResettableParameter,
@@ -51,9 +48,6 @@ app.use(Express.json());
 // console.log(__dirname);
 
 app.use(Express.static(path.join(__dirname, "..", "static")));
-// CINEMA 上映用の HLS (m3u8/ts) をリポジトリ外の ../hls から配信する。
-// TLS 鍵と同じく __dirname から4階層上が /Users/knd/chat になる。
-app.use("/hls", Express.static(path.join(__dirname, "../../../..", "hls")));
 app.use(favicon(path.join(__dirname, "..", "lib/favicon.ico")));
 
 const allowCrossDomain = function (req, res, next) {
@@ -286,6 +280,7 @@ app.post("/api/clear-buffer", async function (req, res) {
 // body.targets を省略（または空配列）すると全パラメータをリセットする。
 // 指定する場合は PORTAMENT / SAMPLERATE / GLITCH / GRID / QUANTIZE / RANDOM /
 // VOICE / FILTER / GAIN / FADE / BPM / CLICKFREQ のいずれか（別名 PORT, RATE も可）。
+// VOICE は VOICE モードのクライアント一覧と voiceLang をまとめて初期化する。
 app.post("/api/parameter/reset", function (req, res) {
   const rawTargets = req.body?.targets;
   if (rawTargets !== undefined && !Array.isArray(rawTargets)) {
@@ -346,6 +341,12 @@ app.post("/api/parameter/reset", function (req, res) {
 
 loadAllStates()
   .then(() => {
+    // 再起動前に永続化された切断済みクライアント ID を除去する。
+    sanitizeClientReferences();
+    // 前回プロセスの再生状態を引き継がない。
+    resetRuntimeStreamState();
+    // Redis から復元したゲインが古い範囲外値でも 0〜2 に正規化する。
+    normalizeGainState(cmdState.GAIN);
     // サーバ起動時は randomrate を CHAT/PLAYBACK/TIMELAPSE について必ず true にする
     // sampleRateState.randomrate.CHAT = true;
     // sampleRateState.randomrate.PLAYBACK = true;

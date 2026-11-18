@@ -53,6 +53,8 @@ export const initializeSnowleopard = async (
   erasePrint();
   await initVideo();
   await initAudio(initWhitenoiseScriptProcessor);
+  // snowleopard には GAIN UI がないため、ここでグローバルゲインを同期する。
+  socket.emit("gainReqFromClient");
 
   if (!getLegacyGetUserMedia()) {
     return null;

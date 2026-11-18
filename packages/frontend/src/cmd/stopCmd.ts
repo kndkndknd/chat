@@ -5,6 +5,8 @@ import {
   flagState,
   streamFlagState,
   audioWorkletState,
+  loopChunk,
+  streamState,
 } from "../state";
 
 export const stopCmd = (fade: number, except?: string) => {
@@ -34,6 +36,12 @@ export const stopCmd = (fade: number, except?: string) => {
 
   for (const key in audioWorkletState.chat.flag) {
     audioWorkletState.chat.flag[key] = false;
+  }
+  for (const key of Object.keys(streamState.loop)) {
+    streamState.loop[key] = [];
+  }
+  for (const key of Object.keys(loopChunk)) {
+    loopChunk[key] = null;
   }
   console.log("stopCmd", streamFlagState);
 };

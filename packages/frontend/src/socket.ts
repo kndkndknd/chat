@@ -19,22 +19,29 @@ import {
   wholeCmdOption
 } from "../../../types";
 import { emojiState, erasePrint, textPrint, showImage, flickering, drawTile, clearTiles } from "./canvasEvent";
-import { cinemaPlay, cinemaStop } from "./hls/cinemaPlayer";
 import { stopCmd, cmdFromServer } from "./cmd";
 import { quantizeFromServer, playPendingQuantizeChunk } from "./quantize/quantizeFromServer";
 import { quantizeParamFromServer } from "./quantize/quantizeParamFromServer";
 import { chatReq, recordReqFromServer, streamPlay, playAudioStream } from "./stream";
 import { setGainUI } from "./ui/gainUI";
+import { applyGlobalGain } from "./webaudio/params/applyGlobalGain";
 import { wholeCmd } from "./cmd/wholeCmd";
 import { initFaceDetection, stopFaceDetection, blockFaceDetection } from "./faceApi";
 import { recordAll, uploadRecording, playRecording } from "./mediaRecorder";
 import { bpmFromServer } from "./quantize/bpmFromServer";
-import { loopToggle } from "./stream/loop/loopToggle";
+import {
+  loopClear,
+  loopToggle,
+} from "./stream/loop/loopToggle";
 import { streamReq } from "./stream/streamReq";
 import { voice } from "./voice";
 import { mute } from "./webaudio";
 
 export const socket = (): void => {
+  // 再接続時も最新のグローバルゲインを取得する。
+  socketState.socket.on("connected", () => {
+    socketState.socket.emit("gainReqFromClient");
+  });
 
   socketState.socket.on("accelarateFlagFromServer", () => {
     if (flagState.isMobile) {
@@ -68,14 +75,6 @@ export const socket = (): void => {
     textPrint("buffer");
   });
 
-
-  // CINEMA: 対象端末に通知された HLS プレイリスト URL を hls.js で再生する
-  socketState.socket.on(
-    "cinemaFromServer",
-    (data: { source: string; title: string; url: string; audio: boolean }) => {
-      cinemaPlay(data);
-    },
-  );
 
   socketState.socket.on("chatReqFromServer", () => {
     chatReq(String(socketState.socket.id));
@@ -176,10 +175,10 @@ export const socket = (): void => {
   });
 
   // gainFromClient(スライダー操作)/ gainReqFromClient(UI を開く)への応答。
-  // 実際の音量(GainNode)には適用せず、入力欄の表示のみ更新する。
-  // スライダー操作時の発音は gainUI 側のローカル audition が担う。
+  // 表示を更新し、グローバル音量を発音中の音声へ即時適用する。
   socketState.socket.on("gainFromServer", (data) => {
-    setGainUI(data);
+    const normalized = setGainUI(data);
+    applyGlobalGain(normalized);
   });
 
   socketState.socket.on("gpsFlagFromServer", () => {
@@ -199,6 +198,13 @@ export const socket = (): void => {
     (data: { stream: string; target: string }) => {
       console.log("loopToggleFromServer debug", data);
       loopToggle(data.stream, data.target);
+    },
+  );
+
+  socketState.socket.on(
+    "loopClearFromServer",
+    (data: { stream: string; target: string }) => {
+      loopClear(data.stream, data.target);
     },
   );
 
@@ -255,7 +261,6 @@ export const socket = (): void => {
     "stopFromServer",
     (data: { fadeOutVal: number; target?: string }) => {
       erasePrint();
-      cinemaStop();
       if (data.target === undefined || data.target === "ALL") {
         stopCmd(data.fadeOutVal);
       }
@@ -314,7 +319,7 @@ export const socket = (): void => {
       } else {
         if (data.floating === undefined || !data.floating) {
           loopChunk[data.source] = data;
-          streamPlay("STREAM", data /*, cinemaFlag*/);
+          streamPlay("STREAM", data);
           streamReq(socketState.socket, "STREAM", data, data.source);
         } else {
           showImage(data.video, data.position);

@@ -1,4 +1,29 @@
-import { flagState, audioWorkletState } from "../../state";
+import { audioWorkletState } from "../../state";
+
+type Timer = ReturnType<typeof setTimeout> | null;
+
+const recordTimers: Record<string, Timer> = {};
+const recordGenerations: Record<string, number> = {};
+
+// 同じ source の録画リクエストが重なった場合、古いタイマーが新しい録画の
+// フラグを落とさないよう、世代番号で最新のタイマーだけを有効にする。
+const startRecord = (source: string, timeout: number): void => {
+  const generation = (recordGenerations[source] ?? 0) + 1;
+  recordGenerations[source] = generation;
+
+  const previous = recordTimers[source];
+  if (previous !== null && previous !== undefined) {
+    clearTimeout(previous);
+  }
+
+  audioWorkletState.chat.flag[source] = true;
+  recordTimers[source] = setTimeout(() => {
+    if (recordGenerations[source] !== generation) return;
+    audioWorkletState.chat.flag[source] = false;
+    recordTimers[source] = null;
+    console.log(`stop record as ${source}`);
+  }, timeout);
+};
 
 export const recordReqFromServer = (recordReq: {
   source: string;
@@ -6,28 +31,24 @@ export const recordReqFromServer = (recordReq: {
   index?: number;
 }) => {
   console.log("recordReq", recordReq);
-  switch (recordReq.source) {
-    case "PLAYBACK":
-      // flagState.recordFlag = true;
-      console.log(`start record as ${recordReq.source}`);
-      audioWorkletState.chat.flag.PLAYBACK = true;
-      if (recordReq.index !== undefined) {
-        audioWorkletState.chat.recordIndex.PLAYBACK = recordReq.index;
-      }
-      setTimeout(() => {
-        // flagState.recordFlag = false;
-        audioWorkletState.chat.flag.PLAYBACK = false;
-        console.log(`stop record as ${recordReq.source}`);
-      }, recordReq.timeout);
-      break;
-    default:
-      console.log("other");
-      // flagState.otherStreamFlag = recordReq.source;
-      audioWorkletState.chat.flag[recordReq.source] = true;
-      setTimeout(() => {
-        // flagState.otherStreamFlag = "";
-        audioWorkletState.chat.flag[recordReq.source] = false;
-      }, recordReq.timeout);
-      break;
+  if (
+    typeof recordReq?.source !== "string" ||
+    !Number.isFinite(recordReq.timeout) ||
+    recordReq.timeout <= 0
+  ) {
+    console.warn("invalid recordReqFromServer data:", recordReq);
+    return;
   }
+
+  if (recordReq.source === "PLAYBACK") {
+    if (recordReq.index !== undefined) {
+      audioWorkletState.chat.recordIndex.PLAYBACK = recordReq.index;
+    }
+    console.log(`start record as ${recordReq.source}`);
+    startRecord(recordReq.source, recordReq.timeout);
+    return;
+  }
+
+  console.log("other");
+  startRecord(recordReq.source, recordReq.timeout);
 };

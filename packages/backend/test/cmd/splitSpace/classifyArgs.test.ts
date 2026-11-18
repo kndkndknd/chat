@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { classifyArgs } from "../../../src/cmd/splitSpace/splitQuantize";
+import { streamList } from "../../../src/data";
 
 describe("classifyArgs", () => {
   test("空配列は {} を返す", () => {
@@ -11,9 +12,23 @@ describe("classifyArgs", () => {
     expect(classifyArgs(["false"])).toEqual({ flag: false });
   });
 
-  test("streamList の値（CHAT/PLAYBACK/TIMELAPSE/EMPTY）は stream に格納", () => {
+  test("stream 名（CHAT/ALL/PLAYBACK/TIMELAPSE/EMPTY）は stream に格納", () => {
+    expect(classifyArgs(["CHAT"])).toEqual({ stream: "CHAT" });
+    expect(classifyArgs(["chat"])).toEqual({ stream: "CHAT" });
+    expect(classifyArgs(["ALL"])).toEqual({ stream: "ALL" });
+    expect(classifyArgs(["all"])).toEqual({ stream: "ALL" });
     expect(classifyArgs(["PLAYBACK"])).toEqual({ stream: "PLAYBACK" });
     expect(classifyArgs(["empty"])).toEqual({ stream: "EMPTY" });
+  });
+
+  test("streamList に追加された UPLOAD 等の stream も分類できる", () => {
+    (streamList as string[]).push("UPLOADED");
+    try {
+      expect(classifyArgs(["UPLOADED"])).toEqual({ stream: "UPLOADED" });
+    } finally {
+      const index = streamList.indexOf("UPLOADED");
+      if (index >= 0) streamList.splice(index, 1);
+    }
   });
 
   test("数値が <=32 なら beat に、>=33 なら bpm に格納", () => {
