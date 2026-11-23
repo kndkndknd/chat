@@ -227,8 +227,8 @@ importers:
         version: 0.22.2
     devDependencies:
       '@types/audioworklet':
-        specifier: ^0.0.101
-        version: 0.0.101
+        specifier: ^0.0.102
+        version: 0.0.102
       node-emoji:
         specifier: 2.2.0
         version: 2.2.0
@@ -881,8 +881,8 @@ packages:
     resolution: {integrity: sha512-uwQdiklNjqBnHPeseOdG0sGxrI3+d6lybaKu2+ou3ajVeKdPEwpWbgqA6iHjq1iylnOGkgkbbnQ6r2lwkiIIHw==}
     engines: {yarn: '>= 1.3.2'}
 
-  '@types/audioworklet@0.0.101':
-    resolution: {integrity: sha512-HLAYPux6EUQNSV0wLbQ8cgcszzlMUAKvejd09UG+QUUedq5cVLSWOOLjbwexeOp06Hy3eS6CTdCdsTwG3PrZEA==}
+  '@types/audioworklet@0.0.102':
+    resolution: {integrity: sha512-zJ9/SIB6YReEcpXNItrKqT2OxoEO10QBvm8vq7RCl+lQMyl2U0915AB6kcoDbbqzLzlNuQHFNZPe0bthwsFq2A==}
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
@@ -2050,7 +2050,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  '@types/audioworklet@0.0.101': {}
+  '@types/audioworklet@0.0.102': {}
 
   '@types/body-parser@1.19.6':
     dependencies:
