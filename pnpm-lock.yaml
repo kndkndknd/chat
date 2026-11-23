@@ -188,8 +188,8 @@ importers:
         specifier: 1.21.1
         version: 1.21.1(debug@4.4.3)
       dotenv:
-        specifier: 16.3.1
-        version: 16.3.1
+        specifier: 18.0.10
+        version: 18.0.10
       express:
         specifier: 4.22.3
         version: 4.22.3
@@ -1092,9 +1092,10 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
-  dotenv@16.3.1:
-    resolution: {integrity: sha512-IPzF4w4/Rd94bA9imS68tZBaYyBWSCE47V1RGuMrB94iyTOIEwRmVL2x/4An+6mETpLrKJ5hQkB8W4kFAadeIQ==}
+  dotenv@18.0.10:
+    resolution: {integrity: sha512-89FAA1xchzK2mxVWdr5F/0rldwiueXs6zJM86rO66EzekR1iBdiXRthyG+m5GvkJaFH3C2LESzamTkgndmLT2A==}
     engines: {node: '>=12'}
+    hasBin: true
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -2267,7 +2268,7 @@ snapshots:
 
   detect-libc@2.1.2: {}
 
-  dotenv@16.3.1: {}
+  dotenv@18.0.10: {}
 
   dunder-proto@1.0.1:
     dependencies:
