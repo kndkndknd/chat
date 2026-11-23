@@ -1,6 +1,6 @@
 # RANDOM RATE（サンプルレートのランダマイズ）
 
-> 最終更新: 2026-11-08
+> 最終更新: 2026-11-22
 > 対象: `RANDOM RATE ...` コマンド、`sampleRateState` の `randomrate` / `randomraterange` / `randomratenote`。
 
 ## 概要
@@ -15,7 +15,7 @@
 
 | キー | CHAT | PLAYBACK | TIMELAPSE | EMPTY |
 | --- | --- | --- | --- | --- |
-| `randomrate` | `true` | `true` | `true` | `false` |
+| `randomrate` | `false` | `false` | `false` | `false` |
 | `randomraterange` | 4000〜132300 | 4000〜132300 | 4000〜132300 | 4000〜132300 |
 | `randomratenote` | `false` | `false` | `false` | （キーなし） |
 
