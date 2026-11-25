@@ -31,6 +31,15 @@ describe("sampleRateRandomize", () => {
     expect(sampleRateRandomize("CHAT")).toBeCloseTo(Math.sqrt(1000 * 2000));
   });
 
+  test("uniform モード時は完全ランダム（線形一様）で min〜max の値を返す", () => {
+    (sampleRateState as any).randomratemode = "uniform";
+    // Math.random()=0 → min が返る
+    expect(sampleRateRandomize("CHAT")).toBe(1000);
+    // Math.random()=0.5 → 中間値が返る（対数一様なら約1414）
+    vi.spyOn(Math, "random").mockReturnValue(0.5);
+    expect(sampleRateRandomize("CHAT")).toBe(1500);
+  });
+
   test("diatonic モード時は baseFreq の倍数のうち range 内の値", () => {
     (sampleRateState as any).randomratemode = "diatonic";
     // PLAYBACK: min=5512.5 → minMultiple=1, max=22050 → maxMultiple=4

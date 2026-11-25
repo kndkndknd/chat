@@ -16,6 +16,18 @@ export const splitRandomRate = (stringArr: string[]) => {
       );
     } else if (
       stringArr.length === 3 &&
+      (stringArr[2] === "RANDOM" || stringArr[2] === "LOG")
+    ) {
+      // RANDOM: 完全ランダム（線形一様）、LOG: 対数一様分布
+      if (stringArr[2] === "RANDOM") {
+        sampleRateState.randomratemode = "uniform";
+        stringEmit("SAMPLERATE RANDOM MODE: RANDOM");
+      } else {
+        sampleRateState.randomratemode = "random";
+        stringEmit("SAMPLERATE RANDOM MODE: LOG");
+      }
+    } else if (
+      stringArr.length === 3 &&
       Object.keys(sampleRateState.randomrate).includes(stringArr[2])
     ) {
       sampleRateState.randomrate[stringArr[2]] =

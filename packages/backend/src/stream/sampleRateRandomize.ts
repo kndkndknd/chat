@@ -9,21 +9,24 @@ export const logUniformRandomRate = (min: number, max: number): number => {
   return min * Math.pow(max / min, Math.random());
 };
 
-export const sampleRateRandomize = (stream: string) => {
+// 線形一様分布（完全ランダム）で min〜max の周波数を選ぶ。
+export const uniformRandomRate = (min: number, max: number): number => {
+  if (max <= min) {
+    return min;
+  }
+  return min + Math.random() * (max - min);
+};
+
+export const randomRateForStream = (stream: string): number => {
   const max = sampleRateState.randomraterange[stream].max;
   const min = sampleRateState.randomraterange[stream].min;
-  if (sampleRateState.randomratemode === "random") {
-    const freq = logUniformRandomRate(min, max);
-    console.log("sampleRateRandomize: ", freq);
-    return freq;
+  // "random" は従来どおり対数一様分布、"uniform" は完全ランダム。
+  if (sampleRateState.randomratemode === "uniform") {
+    return uniformRandomRate(min, max);
   } else if (sampleRateState.randomratemode === "diatonic") {
     const baseFreq = 5512.5;
-    const minMultiple = Math.ceil(
-      sampleRateState.randomraterange[stream].min / baseFreq
-    );
-    const maxMultiple = Math.floor(
-      sampleRateState.randomraterange[stream].max / baseFreq
-    );
+    const minMultiple = Math.ceil(min / baseFreq);
+    const maxMultiple = Math.floor(max / baseFreq);
     if (minMultiple > maxMultiple) {
       throw new Error("minFreq > maxFreq");
     }
@@ -62,4 +65,11 @@ export const sampleRateRandomize = (stream: string) => {
     console.log("sampleRateRandomize: ", frequencies);
     return frequencies[Math.floor(Math.random() * frequencies.length)];
   }
+  return logUniformRandomRate(min, max);
+};
+
+export const sampleRateRandomize = (stream: string) => {
+  const freq = randomRateForStream(stream);
+  console.log("sampleRateRandomize: ", freq);
+  return freq;
 };

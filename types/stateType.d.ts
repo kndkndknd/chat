@@ -92,7 +92,7 @@ export type sampleRateStateType = {
       max: number;
     };
   };
-  randomratemode: "diatonic" | "serial" | "random" | "randomrange";
+  randomratemode: "diatonic" | "serial" | "random" | "uniform" | "randomrange";
   randomratekey: string;
   randomratenote: {
     [key: string]: boolean;
